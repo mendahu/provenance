@@ -222,13 +222,14 @@ An Observation is the edge between a Citation and a Record. Separate `observatio
 
 ## 4.1 `citations`
 
-A Citation selects an addressable portion of an Artifact.
+A Citation selects an addressable portion of exactly one Artifact.
+
+Each Citation is independently resolvable from its `artifact_id` and locator. Citations are not nested; a locator contains all information required to identify its target within the Artifact.
 
 ```sql
 CREATE TABLE citations (
     id              BLOB PRIMARY KEY,
     artifact_id     BLOB NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
-    parent_id       BLOB REFERENCES citations(id) ON DELETE CASCADE,
     locator_type    TEXT NOT NULL,
     locator_json    TEXT NOT NULL,
     alt_text        TEXT,
@@ -237,6 +238,22 @@ CREATE TABLE citations (
 ```
 
 Examples of `locator_type` / `locator_json` include pages, image regions, time ranges, and table rows. The locator representation remains intentionally polymorphic because different media require different addressing systems.
+
+For example, a table row on a particular page should be represented by a self-contained locator such as:
+
+```json
+{"type":"table_row","page":14,"row":7}
+```
+
+rather than by making a row Citation a child of a separate page Citation.
+
+This keeps Citation identity simple:
+
+```text
+Citation = Artifact + complete locator
+```
+
+UI hierarchy or containment can be derived from locators when useful without making that hierarchy part of the persisted evidence model.
 
 ## 4.2 `observations`
 
@@ -425,7 +442,7 @@ CREATE TABLE participations (
     person_id      BLOB NOT NULL REFERENCES persons(id),
     event_id       BLOB NOT NULL REFERENCES events(id),
     role           TEXT,
-    notes          TEXT,
+    notes           TEXT,
     merged_into_id BLOB REFERENCES participations(id)
 ) STRICT;
 ```
@@ -582,7 +599,7 @@ PersonRecord:
    - Generic `(record_type, record_id)` is simple but weakly constrained.
 
 6. **Record fields**
-   - Which properties belong directly on Record tables versus being assembled from Observations?
+   - Which properties belong directly on Record tables vs are assembled from Observations?
 
 7. **Canonical entity fields**
    - Canonical entities should remain usable without turning every field into a Claim.
