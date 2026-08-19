@@ -2,41 +2,51 @@
 
 ## Status
 
-Draft architecture notes. This document captures the current working model for the three principal data layers:
+Draft architecture notes. This document describes the relationship between Provenance's three principal research layers. Layer-specific schema belongs in dedicated data-model documents rather than being duplicated here.
 
-1. **Source** — evidence as acquired.
-2. **Interpretation** — a researcher's source-scoped reading of that evidence.
-3. **Conclusion** — cross-source canonical entities and the claims that connect source-local records to them.
+The authoritative Source-layer schema is [`source-layer-data-model.md`](source-layer-data-model.md).
 
-The model is intentionally evidence-first. It should preserve ambiguity, conflicting interpretations, missing information, and incomplete identity resolution without forcing premature reconciliation.
+The cross-cutting audit/revision model is defined in [`audit-revision-history.md`](audit-revision-history.md).
 
 ---
 
-# 1. Design philosophy
+# 1. The three layers
 
-## 1.1 The three layers
+Provenance uses an evidence-first model with three principal layers:
 
-### Source
+```text
+Source
+  ↓
+Interpretation
+  ↓
+Conclusion
+```
+
+The boundaries are intentional. Evidence should be preserved without forcing interpretation, and interpretation should remain revisable without rewriting the evidence from which it was derived.
+
+## 1.1 Source
 
 The Source layer answers:
 
 > What evidence do we possess?
 
-It should contain little or no genealogical interpretation. A source may be a birth certificate, census page, photograph, oral testimony, DNA match report, book, web page capture, GEDCOM file, or other evidentiary object.
+It contains the evidence as acquired, descriptive catalog metadata, concrete Artifacts, and locally managed Files.
 
-A source may have one or more artifacts. An artifact is a concrete representation of the source: a scan, photograph, PDF, audio recording, downloaded JSON file, etc.
+A Source may be a birth certificate, census page, photograph, oral testimony, DNA match report, book, website capture, GEDCOM file, family-tree export, or another evidentiary object.
 
-The Source layer deliberately does **not** attempt to identify people, normalize dates, resolve places, or decide what facts are true.
+The Source layer deliberately does not identify historical people, normalize historical assertions, resolve places, or decide what facts are true.
 
-### Interpretation
+Its complete schema and storage rules are maintained in [`source-layer-data-model.md`](source-layer-data-model.md).
+
+## 1.2 Interpretation
 
 The Interpretation layer answers:
 
 > What does this particular source appear to say?
 
-Everything in this layer is scoped to a source or source stack and may contain researcher interpretation.
+Everything in this layer is scoped to a Source or Source Stack and may contain researcher interpretation.
 
-The progression is:
+The conceptual progression is:
 
 ```text
 Artifact
@@ -48,47 +58,65 @@ Observation
 Record
 ```
 
-A citation is therefore interpretive: selecting a page, crop, polygon, timestamp, row, or other locator already asserts that this portion of the artifact is meaningful.
+A Citation is interpretive: selecting a page, crop, polygon, timestamp, row, or other locator already asserts that this portion of an Artifact is meaningful.
 
-An observation records an interpretation of cited evidence. Multiple observations may coexist even when they conflict.
+An Observation records an interpretation of cited evidence. Multiple Observations may coexist even when they conflict.
 
-Records organize observations into source-local entities and relationships. Records do **not** have cross-source identity. Two `person_record` rows in two different sources may describe the same historical person, but the Interpretation layer does not assume that.
+Records organize Observations into source-local entities and relationships. Records do not have cross-source identity. Two `person_record` rows in different Sources may describe the same historical person, but the Interpretation layer does not assume that.
 
-### Conclusion
+Typical source-local record classes include:
+
+```text
+PersonRecord
+EventRecord
+PlaceRecord
+RelationshipRecord
+ParticipationRecord
+```
+
+Records must remain globally addressable even though they are source-scoped, because one Source may provide evidence about a Record interpreted from another Source—for example, oral testimony identifying a person depicted in a photograph.
+
+## 1.3 Conclusion
 
 The Conclusion layer answers:
 
-> What does the researcher currently conclude about the historical world after considering one or more source stacks?
+> What does the researcher currently conclude about the historical world after considering one or more sources?
 
-This layer contains canonical research entities such as Persons, Events, Places, Relationships, and Participations.
-
-Canonical does **not** mean complete, final, or universally authoritative. A canonical Person may be unnamed and provisional. A canonical Place may be only partially located. Two canonical entities may later be discovered to represent the same real-world entity and be merged.
-
-The primary bridge from Interpretation to Conclusion is a **claim** that a source-local record resolves to or corresponds to a canonical entity.
-
-For example:
+This layer contains canonical research entities such as:
 
 ```text
-PersonRecord ── claim ──> Person
-EventRecord  ── claim ──> Event
-PlaceRecord  ── claim ──> Place
-RelationshipRecord ── claim ──> Relationship
+Person
+Event
+Place
+Relationship
+Participation
+```
+
+Canonical does not mean complete, final, or universally authoritative. A canonical Person may be unnamed and provisional. A Place may be only partially located. Two canonical entities may later be discovered to represent the same real-world entity and be merged.
+
+The primary bridge from Interpretation to Conclusion is a Claim that a source-local Record resolves to or corresponds to a canonical entity:
+
+```text
+PersonRecord        ── claim ──> Person
+EventRecord         ── claim ──> Event
+PlaceRecord         ── claim ──> Place
+RelationshipRecord  ── claim ──> Relationship
 ParticipationRecord ── claim ──> Participation
 ```
 
-A claim can be supported by one or more records from one or more source stacks.
+A Claim may be supported by multiple Records from multiple Sources.
 
-The model intentionally avoids requiring a claim for every individual field. A claim that an `event_record` corresponds to an `event` makes the entire source-local event record available as evidence about that event.
+The model intentionally avoids requiring a Claim for every individual field. A Claim that an EventRecord corresponds to an Event makes the source-local EventRecord available as evidence about that Event while retaining its detailed provenance beneath it.
 
 ---
 
 # 2. Core architectural rules
 
-## Preserve evidence; make interpretation revisable
+## 2.1 Preserve evidence; make interpretation revisable
 
-The source artifact must never be rewritten to match later interpretations.
+Source evidence must never be rewritten to match a later interpretation.
 
-For example, if handwriting is ambiguous:
+For ambiguous handwriting, for example:
 
 ```text
 Citation C1
@@ -101,11 +129,11 @@ Observation O2
   transcription = "Richard Smith"
 ```
 
-Both observations may coexist.
+Both interpretations may coexist while the underlying Artifact remains unchanged.
 
-## Records are source-scoped
+## 2.2 Records are source-scoped
 
-A record describes an entity as represented within a particular source stack.
+A Record describes an entity as represented within a particular Source Stack.
 
 ```text
 Birth certificate
@@ -115,20 +143,20 @@ Birth certificate
   EventRecord D  — birth
 ```
 
-These records do not become reusable cross-source entities.
+These Records do not become reusable cross-source entities. Cross-source identity belongs to the Conclusion layer.
 
-## Canonical entities may be sparse
+## 2.3 Canonical entities may be sparse
 
-A researcher may know that an ancestor's parent must have existed without knowing the parent's name.
+A researcher may know that an ancestor's parent must have existed without knowing that parent's name.
 
 ```text
 Person PER-7KD45
   preferred_name = NULL
 ```
 
-This is valid. The entity can later be merged with a more completely identified Person if evidence establishes that they are the same human.
+This is valid. The entity can later be reconciled or merged when additional evidence establishes its identity.
 
-## Merge means identity
+## 2.4 Merge means identity
 
 Merge is reserved for cases where two canonical entities previously treated as distinct are later concluded to be the same real-world thing.
 
@@ -137,11 +165,28 @@ PER-A same_as PER-B
 PLC-A same_as PLC-B
 ```
 
-A historical relationship such as York → Toronto is not necessarily a merge. It may instead be represented as a loose place reference.
+Historical relationships or succession between entities are not necessarily merges.
 
-## Resolver logic is application-level
+## 2.5 Negative claims are explicit
 
-The database preserves multiple source-backed values. Application-level resolvers may synthesize a useful display value without creating new persisted claims.
+Absence of a positive Claim is not equivalent to a negative Claim.
+
+```text
+No claim:
+  unknown whether Robert is Jake's father
+
+Positive claim:
+  Robert is Jake's father
+
+Negative claim:
+  Robert is not Jake's father
+```
+
+Negation belongs to the proposition. Conflicting evidence is a separate property of the evidence supporting or opposing a Claim.
+
+## 2.6 Resolver logic is application-level
+
+The database preserves multiple source-backed values. Application-level resolvers may synthesize useful display values without creating new persisted Claims.
 
 For example:
 
@@ -156,23 +201,36 @@ may display as:
 May 1800
 ```
 
-because the second value is more specific and non-conflicting.
+when the values are compatible and the second is more specific.
 
-This derived display state is disposable and reproducible.
+Derived display state is disposable and reproducible.
 
-## Audit history owns generic change metadata
+## 2.7 Audit history owns generic change metadata
 
-Generic persistence bookkeeping such as `created_at`, `updated_at`, `created_by_user_id`, and `updated_by_user_id` does not belong on core domain tables.
+Generic persistence bookkeeping such as:
 
-Creation, modification, deletion, user attribution, and revision ordering are recorded by the append-only audit/revision model defined in `audit-revision-history.md`. A timestamp remains on a domain row only when time is itself part of the domain data rather than bookkeeping.
+```text
+created_at
+updated_at
+created_by_user_id
+updated_by_user_id
+```
+
+does not belong on core domain tables.
+
+Creation, modification, deletion, user attribution, and revision ordering are recorded by the append-only audit/revision model in [`audit-revision-history.md`](audit-revision-history.md).
+
+A timestamp remains on a domain row only when time itself is domain data rather than persistence bookkeeping.
 
 ---
 
-# 3. Identifier strategy
+# 3. Shared persistence conventions
 
-Every persistent row should have a globally unique machine identifier, likely UUIDv7 stored as a 16-byte BLOB in SQLite.
+## 3.1 Identifiers
 
-Selected canonical entities also receive short human-readable references:
+Persistent rows use globally unique machine identifiers, currently UUIDv7 stored as 16-byte SQLite `BLOB` values.
+
+Selected user-facing entities may additionally receive short human-readable references:
 
 ```text
 PER-7KD45  Person
@@ -182,926 +240,116 @@ REL-A71DZ  Relationship
 SRC-F4N2P  Source
 ```
 
-Human references are conveniences, not primary identity. Internal source-scoped rows such as observations and records do not necessarily need human-readable references.
+Human references are conveniences, not primary identity.
 
----
+## 3.2 Strict SQLite typing
 
-# 4. Source layer
+Ordinary schema tables use SQLite `STRICT` typing. This is a project-wide persistence rule rather than a per-table preference.
 
-## 4.1 `source_types`
+## 3.3 Structured dates
 
-Source types are a controlled but extensible vocabulary used to classify sources. Their initial purpose is search and filtering, for example: "show me all birth certificates in this project."
-
-Provenance should seed new projects with a useful set of common source types, while allowing users to add additional types without requiring a schema migration or application release. Built-in types are defaults, not a closed enum and not structurally privileged source subclasses.
-
-```sql
-CREATE TABLE source_types (
-    id              BLOB PRIMARY KEY,
-    key             TEXT UNIQUE NOT NULL,
-    label           TEXT NOT NULL,
-    description     TEXT,
-    builtin         INTEGER NOT NULL DEFAULT 0
-);
-```
-
-An initial population might include:
-
-```text
-birth_certificate      Birth certificate
-census                 Census
-photograph             Photograph
-oral_testimony         Oral testimony
-dna_match_report       DNA match report
-book                   Book
-website_capture        Website capture
-gedcom_file            GEDCOM file
-family_tree_export     Family tree export
-```
-
-The vocabulary should remain easy to extend. A user may add project-specific or jurisdiction-specific types such as `quebec_notarial_act`, `funeral_card`, or `family_bible` and those types should participate in search and filtering exactly like seeded types.
-
-At this stage, `source_types` should not imply type-specific database tables, validation rules, or interpretation behavior. If common source types later receive specialized UI workflows, import mappings, icons, or suggested metadata, those should be application-level affordances unless an actual persistence invariant requires otherwise.
-
-## 4.2 `sources`
-
-A source is the canonical evidentiary object.
-
-```sql
-CREATE TABLE sources (
-    id              BLOB PRIMARY KEY,          -- UUIDv7
-    ref             TEXT UNIQUE,               -- e.g. SRC-F4N2P
-    source_type_id  BLOB NOT NULL REFERENCES source_types(id),
-    title           TEXT,
-    description     TEXT
-);
-```
-
-## 4.3 Source metadata philosophy
-
-Sources often have descriptive metadata that varies substantially by source type. A book may have an author, publisher, edition, and publication date; a birth certificate may have an issuing authority and registration number; oral testimony may have an interview date and interviewer.
-
-These properties should not become a large collection of nullable columns on `sources`, nor should every source type require its own table. Instead, source metadata uses a small extensible field vocabulary.
-
-Source metadata is deliberately descriptive rather than deeply normalized. Its purpose is to faithfully record useful catalog-like information about the source and provide a consistent UI, not to interpret the historical world represented by the source.
-
-For example, if a book identifies its authors as:
-
-```text
-Alice Smith and Robert Jones
-```
-
-then the `author` metadata value may simply preserve that entire string. The Source layer does not need to split it into two author entities or attempt to resolve either name to a canonical Person.
-
-The general rule is:
-
-> Source metadata records descriptive values as encountered or entered by the researcher. Assertions that those values correspond to other domain entities, if supported later, are separate relationships and do not change the stored metadata value.
-
-### `source_metadata_fields`
-
-Metadata fields provide a controlled but extensible vocabulary of descriptive properties.
-
-Most metadata is plain text. Dates are the intentional exception because chronological sorting and filtering are useful and Provenance already requires a structured genealogical date model.
-
-```sql
-CREATE TABLE source_metadata_fields (
-    id              BLOB PRIMARY KEY,
-    key             TEXT UNIQUE NOT NULL,
-    label           TEXT NOT NULL,
-    data_type       TEXT NOT NULL DEFAULT 'text',
-    description     TEXT,
-    builtin         INTEGER NOT NULL DEFAULT 0,
-
-    CHECK (data_type IN ('text', 'date'))
-);
-```
-
-Example fields might include:
-
-```text
-author              text
-publisher           text
-edition             text
-isbn                text
-repository          text
-call_number         text
-jurisdiction        text
-registration_number text
-publication_date    date
-issue_date          date
-interview_date      date
-```
-
-As with source types, Provenance may seed common fields while allowing users to define additional fields.
-
-### `source_type_metadata_fields`
-
-Source types may suggest which metadata fields are normally useful. This relationship is primarily a UI/cataloging aid rather than a constraint.
-
-```sql
-CREATE TABLE source_type_metadata_fields (
-    source_type_id  BLOB NOT NULL REFERENCES source_types(id) ON DELETE CASCADE,
-    field_id        BLOB NOT NULL REFERENCES source_metadata_fields(id) ON DELETE CASCADE,
-    sort_order      INTEGER,
-    PRIMARY KEY (source_type_id, field_id)
-);
-```
-
-For example, `book` might suggest:
-
-```text
-author
-publisher
-publication_date
-edition
-isbn
-```
-
-while `birth_certificate` might suggest:
-
-```text
-registration_number
-issuing_authority
-issue_date
-repository
-```
-
-These associations do not make the fields mandatory and do not prevent a source from using other metadata fields.
-
-### `source_metadata`
-
-Metadata values preserve a textual representation. Date-capable fields may additionally point to the shared structured `date_values` model.
-
-```sql
-CREATE TABLE source_metadata (
-    id              BLOB PRIMARY KEY,
-    source_id       BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
-    field_id        BLOB NOT NULL REFERENCES source_metadata_fields(id),
-    value_text      TEXT,
-    date_value_id   BLOB REFERENCES date_values(id)
-);
-```
-
-For ordinary metadata:
-
-```text
-author
-  value_text = "Alice Smith and Robert Jones"
-```
-
-For date metadata:
-
-```text
-publication_date
-  value_text = "about the year 1890"
-  date_value_id = DateValue(ABT 1890)
-```
-
-The textual value is useful for fidelity: it may preserve wording from the source that is not identical to the normalized structured date. The structured date is supplementary and supports chronological operations.
-
-A date metadata field does not require the Source layer to interpret people, places, organizations, or other values into canonical entities. Date structure is a targeted exception, not the beginning of a general typed EAV system.
-
-The `date_values` table is defined later in this document. Migration order should account for the foreign-key dependency.
-
-## 4.4 `artifacts`
-
-An artifact is a concrete representation of a source.
-
-```sql
-CREATE TABLE artifacts (
-    id              BLOB PRIMARY KEY,
-    source_id       BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
-    artifact_type   TEXT NOT NULL,
-    file_path       TEXT,
-    media_type      TEXT,
-    checksum_sha256 TEXT,
-    byte_size       INTEGER,
-    metadata_json   TEXT
-);
-```
-
-Examples:
-
-```text
-Source: original birth certificate
-  Artifact: photocopy PDF
-  Artifact: JPEG photograph
-
-Source: family photograph
-  Artifact: original TIFF scan
-  Artifact: smaller JPEG derivative
-
-Source: oral testimony
-  Artifact: audio recording
-  Artifact: written notes
-```
-
-Artifact metadata is technical metadata rather than genealogical interpretation.
-
----
-
-# 5. Interpretation layer
-
-## 5.1 Source stacks
-
-A source can contain multiple independent semantic matrices. A census is the clearest example: two unrelated households on the same census page may form separate source stacks.
-
-```sql
-CREATE TABLE source_stacks (
-    id          BLOB PRIMARY KEY,
-    source_id   BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
-    label       TEXT,
-    notes       TEXT
-);
-```
-
-A simple certificate may have one stack. A census may have many.
-
-## 5.2 `citations`
-
-A citation selects an addressable portion of an artifact.
-
-```sql
-CREATE TABLE citations (
-    id              BLOB PRIMARY KEY,
-    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
-    artifact_id     BLOB NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
-    parent_id       BLOB REFERENCES citations(id) ON DELETE CASCADE,
-    locator_type    TEXT NOT NULL,
-    locator_json    TEXT NOT NULL,
-    alt_text        TEXT,
-    notes           TEXT
-);
-```
-
-Examples of `locator_type` / `locator_json`:
-
-```json
-{"type":"page","page":14}
-```
-
-```json
-{"type":"image_region","x":0.31,"y":0.18,"width":0.12,"height":0.29}
-```
-
-```json
-{"type":"time_range","start":802.4,"end":845.1}
-```
-
-```json
-{"type":"table_row","page":14,"row":7}
-```
-
-Citation locators are intentionally polymorphic because different media require different addressing systems.
-
-## 5.3 `observations`
-
-An observation is a source-scoped semantic interpretation of one or more citations.
-
-Multiple observations may coexist and conflict.
-
-```sql
-CREATE TABLE observations (
-    id              BLOB PRIMARY KEY,
-    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
-    observation_type TEXT NOT NULL,
-    value_type       TEXT,
-    value_text       TEXT,
-    value_json       TEXT,
-    confidence       REAL,
-    notes            TEXT
-);
-```
-
-Observations may be supported by multiple citations:
-
-```sql
-CREATE TABLE observation_citations (
-    observation_id  BLOB NOT NULL REFERENCES observations(id) ON DELETE CASCADE,
-    citation_id     BLOB NOT NULL REFERENCES citations(id) ON DELETE CASCADE,
-    PRIMARY KEY (observation_id, citation_id)
-);
-```
-
-Examples:
-
-```text
-transcription = "Robert Smith"
-reported_date = DateValue(...)
-reported_relationship = "father"
-reported_place = "York, Upper Canada"
-explicitly_blank = true
-```
-
-An observation may also refer to a record in another source stack. This is needed for evidence such as oral testimony identifying a person depicted in a photograph.
-
-Rather than hard-coding every possible target type here, the exact implementation of cross-record observation references remains an open schema question.
-
-## 5.4 Record tables
-
-Records form the semantic graph described by a source stack.
-
-### `person_records`
-
-```sql
-CREATE TABLE person_records (
-    id              BLOB PRIMARY KEY,
-    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
-    label           TEXT,
-    notes           TEXT
-);
-```
-
-### `event_records`
-
-```sql
-CREATE TABLE event_records (
-    id              BLOB PRIMARY KEY,
-    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
-    event_type      TEXT,
-    date_value_id   BLOB,
-    place_record_id BLOB,
-    notes           TEXT,
-    FOREIGN KEY (place_record_id) REFERENCES place_records(id)
-);
-```
-
-The forward reference to `place_records` is shown conceptually; table creation order would be adjusted in the real migration.
-
-### `place_records`
-
-A PlaceRecord describes the place expression contained in one source stack. It does not recreate the canonical place hierarchy.
-
-```sql
-CREATE TABLE place_records (
-    id              BLOB PRIMARY KEY,
-    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
-    display_value   TEXT,
-    notes           TEXT
-);
-```
-
-For example:
-
-```text
-"York, Upper Canada, British North America"
-```
-
-may be one `place_record`, later resolved to canonical Place `York`.
-
-### `relationship_records`
-
-```sql
-CREATE TABLE relationship_records (
-    id              BLOB PRIMARY KEY,
-    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
-    relationship_type TEXT NOT NULL,
-    person_a_id     BLOB NOT NULL REFERENCES person_records(id),
-    person_b_id     BLOB NOT NULL REFERENCES person_records(id),
-    notes           TEXT
-);
-```
-
-The meaning of `person_a` and `person_b` depends on `relationship_type`; this may later evolve into explicitly named roles.
-
-### `participation_records`
-
-```sql
-CREATE TABLE participation_records (
-    id              BLOB PRIMARY KEY,
-    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
-    person_record_id BLOB NOT NULL REFERENCES person_records(id),
-    event_record_id BLOB NOT NULL REFERENCES event_records(id),
-    role            TEXT,
-    notes           TEXT
-);
-```
-
-Examples:
-
-```text
-child participates in birth as subject
-father participates in birth as father
-John participates in wedding as witness
-```
-
-## 5.5 Connecting observations to records
-
-Observations should retain field-level provenance without requiring fields themselves to become claims.
-
-A generic record-field assignment table is one possible design:
-
-```sql
-CREATE TABLE record_observations (
-    record_type     TEXT NOT NULL,
-    record_id       BLOB NOT NULL,
-    field_name      TEXT NOT NULL,
-    observation_id  BLOB NOT NULL REFERENCES observations(id) ON DELETE CASCADE,
-    PRIMARY KEY (record_type, record_id, field_name, observation_id)
-);
-```
-
-This is intentionally provisional. SQLite cannot enforce a foreign key from `record_id` to several possible record tables. We may instead use typed join tables such as `person_record_observations`, `event_record_observations`, etc.
-
-Typed join tables are more verbose but provide stronger relational integrity.
-
----
-
-# 6. Structured value objects
-
-## 6.1 Date values
-
-Genealogical dates should not be SQL `DATE` or `DATETIME` values. They need to represent partial dates, approximations, before/after bounds, ranges, periods, alternate calendars, and missing components.
+Genealogical dates cannot be represented adequately by ordinary SQL `DATE` or `DATETIME` values. Provenance requires a shared structured date value capable of representing partial dates, approximations, bounds, ranges, periods, alternate calendars, and missing components.
 
 GEDCOM 7 should be treated as the minimum semantic capability.
 
-Dates are domain value objects, but may still be stored in a dedicated relational table.
-
-```sql
-CREATE TABLE date_values (
-    id              BLOB PRIMARY KEY,
-    kind            TEXT NOT NULL,
-    qualifier       TEXT,
-    calendar        TEXT,
-
-    start_year      INTEGER,
-    start_month     INTEGER,
-    start_day       INTEGER,
-
-    end_year        INTEGER,
-    end_month       INTEGER,
-    end_day         INTEGER,
-
-    phrase          TEXT,
-
-    CHECK (start_month IS NULL OR start_month BETWEEN 1 AND 12),
-    CHECK (end_month   IS NULL OR end_month BETWEEN 1 AND 12),
-    CHECK (start_day   IS NULL OR start_day BETWEEN 1 AND 31),
-    CHECK (end_day     IS NULL OR end_day BETWEEN 1 AND 31)
-);
-```
-
-Examples:
-
-```text
-14 MAY 1985
-MAY 1985
-1985
-ABT 1985
-BEF 1900
-BET 1880 AND 1885
-FROM 1880 TO 1885
-```
-
-A persistence ID does not imply that a DateValue has domain identity. It is still conceptually a value object.
-
-Application-level date resolvers can compare multiple source values and synthesize display values without modifying the stored evidence.
+The structured DateValue is a shared value object used where date semantics are required across layers. Its persistence schema should have one authoritative definition rather than being copied into each layer document.
 
 ---
 
-# 7. Conclusion layer
+# 4. Layer boundaries
 
-## 7.1 `persons`
+A useful shorthand is:
 
-```sql
-CREATE TABLE persons (
-    id              BLOB PRIMARY KEY,
-    ref             TEXT UNIQUE NOT NULL,
-    preferred_name  TEXT,
-    status          TEXT,
-    notes           TEXT,
-    merged_into_id  BLOB REFERENCES persons(id)
-);
-```
+```text
+SOURCE
+What evidence do we possess?
 
-A Person may have no name or dates. Sparse and provisional Persons are valid.
+INTERPRETATION
+What does this evidence appear to say?
 
-## 7.2 `places`
-
-The canonical Place model is intentionally modest. It is intended to support genealogy, not historical GIS.
-
-Core capabilities:
-
-1. Nest places.
-2. Create loose references between places.
-3. Merge places when they are discovered to be identical.
-
-```sql
-CREATE TABLE places (
-    id              BLOB PRIMARY KEY,
-    ref             TEXT UNIQUE NOT NULL,
-    name            TEXT NOT NULL,
-    place_type      TEXT,
-    parent_place_id BLOB REFERENCES places(id),
-    valid_date_id   BLOB REFERENCES date_values(id),
-    notes           TEXT,
-    merged_into_id  BLOB REFERENCES places(id)
-);
+CONCLUSION
+What do we currently conclude after considering the evidence?
 ```
 
 Examples:
 
 ```text
-Canada
-  Ontario
-    Toronto
-```
+Source
+  1897 birth certificate
 
-An underspecified canonical place is allowed:
+Artifact
+  locally ingested scan
 
-```text
-Springfield
-  parent = NULL
-```
+Citation
+  line containing father's name
 
-If later shown to be Springfield, Illinois, it may be merged with that canonical place.
+Observation
+  transcription = "William Smith"
 
-### `place_references`
+PersonRecord
+  father represented by this certificate
 
-```sql
-CREATE TABLE place_references (
-    id              BLOB PRIMARY KEY,
-    from_place_id   BLOB NOT NULL REFERENCES places(id),
-    to_place_id     BLOB NOT NULL REFERENCES places(id),
-    reference_type  TEXT NOT NULL,
-    valid_date_id   BLOB REFERENCES date_values(id),
-    notes           TEXT
-);
-```
-
-Examples:
-
-```text
-York --historically_related--> Toronto
-Upper Canada --historically_related--> Ontario
-```
-
-The relationship may be modeled as coarsely or precisely as the researcher wishes.
-
-## 7.3 `events`
-
-```sql
-CREATE TABLE events (
-    id              BLOB PRIMARY KEY,
-    ref             TEXT UNIQUE NOT NULL,
-    event_type      TEXT NOT NULL,
-    date_value_id   BLOB REFERENCES date_values(id),
-    place_id        BLOB REFERENCES places(id),
-    notes           TEXT,
-    merged_into_id  BLOB REFERENCES events(id)
-);
-```
-
-## 7.4 `relationships`
-
-```sql
-CREATE TABLE relationships (
-    id                BLOB PRIMARY KEY,
-    ref               TEXT UNIQUE NOT NULL,
-    relationship_type TEXT NOT NULL,
-    person_a_id       BLOB NOT NULL REFERENCES persons(id),
-    person_b_id       BLOB NOT NULL REFERENCES persons(id),
-    status            TEXT,
-    notes             TEXT,
-    merged_into_id    BLOB REFERENCES relationships(id)
-);
-```
-
-Examples:
-
-```text
-parent / child
-spouse
-sibling
-adoptive parent
-other researcher-defined relationship
-```
-
-Derived relationships such as sibling or niece/nephew may be calculated by application logic rather than always persisted.
-
-## 7.5 `participations`
-
-```sql
-CREATE TABLE participations (
-    id              BLOB PRIMARY KEY,
-    person_id       BLOB NOT NULL REFERENCES persons(id),
-    event_id        BLOB NOT NULL REFERENCES events(id),
-    role            TEXT,
-    notes           TEXT,
-    merged_into_id  BLOB REFERENCES participations(id)
-);
-```
-
----
-
-# 8. Claims
-
-Claims are the explicit interface between source-local records and the canonical graph, and can also support researcher conclusions assembled from multiple records.
-
-The current simplifying principle is:
-
-> Claims cite records, not individual fields.
-
-A record is the Interpretation layer's semantic unit. Observations provide detailed provenance beneath it.
-
-## 8.1 Generic claim table
-
-A first-pass claim representation:
-
-```sql
-CREATE TABLE claims (
-    id              BLOB PRIMARY KEY,
-    claim_type      TEXT NOT NULL,
-    polarity        TEXT NOT NULL DEFAULT 'positive',
-    confidence      REAL,
-    status          TEXT NOT NULL,
-    notes           TEXT,
-
-    CHECK (polarity IN ('positive', 'negative'))
-);
-```
-
-`claim_type` examples:
-
-```text
-record_resolves_to_entity
-same_as
-not_same_as
-research_conclusion
-```
-
-## 8.2 Claim subjects and objects
-
-Generic polymorphic subject/object references are awkward in relational SQL. A pragmatic first implementation may use typed claim tables for the common reconciliation cases.
-
-### Person record resolution
-
-```sql
-CREATE TABLE person_record_claims (
-    claim_id         BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    person_record_id BLOB NOT NULL REFERENCES person_records(id),
-    person_id        BLOB NOT NULL REFERENCES persons(id)
-);
-```
-
-### Event record resolution
-
-```sql
-CREATE TABLE event_record_claims (
-    claim_id         BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    event_record_id  BLOB NOT NULL REFERENCES event_records(id),
-    event_id         BLOB NOT NULL REFERENCES events(id)
-);
-```
-
-### Place record resolution
-
-```sql
-CREATE TABLE place_record_claims (
-    claim_id         BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    place_record_id  BLOB NOT NULL REFERENCES place_records(id),
-    place_id         BLOB NOT NULL REFERENCES places(id)
-);
-```
-
-### Relationship record resolution
-
-```sql
-CREATE TABLE relationship_record_claims (
-    claim_id               BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    relationship_record_id BLOB NOT NULL REFERENCES relationship_records(id),
-    relationship_id        BLOB NOT NULL REFERENCES relationships(id)
-);
-```
-
-### Participation record resolution
-
-```sql
-CREATE TABLE participation_record_claims (
-    claim_id                BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    participation_record_id BLOB NOT NULL REFERENCES participation_records(id),
-    participation_id        BLOB NOT NULL REFERENCES participations(id)
-);
-```
-
-Typed tables avoid weak polymorphic foreign keys while preserving a common Claim abstraction.
-
-## 8.3 Claim evidence
-
-Claims may be supported by multiple records.
-
-The generic domain concept is:
-
-```text
 Claim
-  evidence:
-    Record A
-    Record B
-    Record C
+  this PersonRecord resolves to PER-123
+
+Person
+  PER-123, the researcher's current canonical identity
 ```
 
-A strict relational implementation may use typed evidence tables rather than a polymorphic `(record_type, record_id)` pair.
-
-A provisional compact form is:
-
-```sql
-CREATE TABLE claim_evidence (
-    claim_id        BLOB NOT NULL REFERENCES claims(id) ON DELETE CASCADE,
-    record_type     TEXT NOT NULL,
-    record_id       BLOB NOT NULL,
-    stance          TEXT NOT NULL DEFAULT 'supporting',
-    notes           TEXT,
-    PRIMARY KEY (claim_id, record_type, record_id),
-    CHECK (stance IN ('supporting', 'conflicting'))
-);
-```
-
-This does not provide database-enforced foreign-key integrity for `record_id`. If that proves undesirable, split this into typed evidence tables.
-
-## 8.4 Negative claims
-
-A negative claim is distinct from absence of a positive claim.
-
-```text
-No claim:
-  unknown whether Robert is Jake's father
-
-Positive claim:
-  Robert is Jake's father
-
-Negative claim:
-  Robert is not Jake's father
-```
-
-Negation belongs to the proposition (`claims.polarity`). Conflicting evidence belongs to the claim-evidence edge (`claim_evidence.stance`).
-
-These must remain separate concepts.
+Each layer preserves information needed by the next without collapsing into it.
 
 ---
 
-# 9. Merge model
+# 5. Cross-layer examples
 
-A merge should be explicit and reversible/auditable in principle.
-
-Example:
+## 5.1 Photograph and testimony
 
 ```text
-PER-A "Unknown father"
-PER-B "William Smith"
+Photograph Source
+  Artifact: scan.jpg
+  Citation: crop around one person
+  Observation: a person is depicted
+  PersonRecord: unidentified depicted person
 
-Claim:
-  PER-A same_as PER-B
+Testimony Source
+  Artifact: audio or research note
+  Citation: "That's my grandfather"
+  Observation: speaker identifies the depicted PersonRecord as grandfather
 
-Merge:
-  PER-A.merged_into_id = PER-B
+Conclusion
+  Claim: photograph PersonRecord resolves to canonical Person
 ```
 
-Old IDs and human references should continue resolving to the surviving entity. This is important for sync, external references, old notes, and imports.
+The testimony remains evidence from the testimony Source even though it refers to a Record interpreted from the photograph Source.
 
-The same mechanism can apply to Place, Event, Relationship, and other canonical entities where identity reconciliation is meaningful.
-
----
-
-# 10. Photos and testimony example
-
-## Photo source
-
-```text
-Source: unmarked family photograph
-Artifact: scan.jpg
-Citation: crop around one person
-Observation: a person is depicted
-PersonRecord: unidentified depicted person
-```
-
-## Testimony source
-
-```text
-Source: oral testimony from relative
-Artifact: audio or research note
-Citation: "That's my grandfather"
-Observation:
-  subject = PersonRecord from photo source
-  meaning = speaker identifies depicted person as grandfather
-```
-
-The testimony observation belongs to the testimony source stack but may reference a globally addressable record from the photograph stack.
-
-The Conclusion layer can then claim that the photo `person_record` resolves to a canonical Person.
-
-This requires records to be source-scoped but globally addressable.
-
----
-
-# 11. DNA example
+## 5.2 DNA evidence
 
 DNA matching can be treated as another source of genealogical evidence rather than requiring the core application to become genetics software.
 
-Example:
-
 ```text
-Source: 23andMe DNA match report
-Artifact: export, screenshot, JSON, CSV, etc.
+Source: DNA match report
+Artifact: locally retained export/screenshot/JSON/CSV
 Citation: match result
 Observations:
   shared DNA
   predicted relationship
   match display name
 PersonRecord:
-  the matched person/profile
+  matched person/profile
 ```
 
-A 23andMe Family Tree export can similarly become a source containing PersonRecords and RelationshipRecords, including inferred anonymous connecting people.
+A family-tree export can similarly become a Source containing interpreted PersonRecords and RelationshipRecords, including inferred anonymous connecting people.
 
-Raw genotype artifacts may be preserved without being interpreted by the core genealogy model.
+Raw genotype Files may be preserved without being interpreted by the core genealogy model.
 
 ---
 
-# 12. Open schema questions
+# 6. Documentation ownership
 
-The following should remain explicitly unresolved until implementation pressure clarifies them:
+To avoid competing schema definitions:
 
-1. **Observation → Record references**
-   - Generic polymorphic table vs typed join tables.
+- [`source-layer-data-model.md`](source-layer-data-model.md) is authoritative for Source-layer tables and Artifact/File storage.
+- [`audit-revision-history.md`](audit-revision-history.md) is authoritative for audit and revision history.
+- This document is authoritative only for the high-level three-layer philosophy and cross-layer boundaries.
 
-2. **Observation references to records in other source stacks**
-   - Required for testimony identifying a person in a photograph.
-   - Needs strong provenance while preserving source-stack ownership.
-
-3. **Generic claims vs typed claim tables**
-   - Domain model benefits from generic claims.
-   - SQLite foreign-key integrity favors typed claim tables.
-
-4. **Claim evidence implementation**
-   - Generic `(record_type, record_id)` is simple but weakly constrained.
-   - Typed evidence tables are verbose but safe.
-
-5. **Record fields**
-   - Which properties belong directly on record tables vs are exclusively assembled from observations?
-
-6. **Canonical entity fields**
-   - Canonical entities should remain usable without turning every field into a Claim.
-   - Conflicting source values can remain unresolved and be synthesized by application-level resolvers.
-
-7. **Place reference semantics**
-   - Keep deliberately loose unless actual genealogy workflows require more formal types.
-
-8. **Human-readable refs**
-   - Determine which entity classes warrant visible refs. Internal source-scoped records probably do not.
-
-9. **Cross-layer references from source metadata**
-   - Source metadata should remain descriptive and unnormalized.
-   - If a metadata value is later explicitly associated with a canonical Person, Place, or other entity, model that as a separate optional relationship rather than changing the metadata value itself.
-
----
-
-# 13. Current high-level schema
-
-```text
-SOURCE
-
-SourceType ── suggests ──> SourceMetadataField
-    │
-    └── Source
-         ├── SourceMetadata
-         └── Artifact
-
-
-INTERPRETATION
-
-Source
-  └── SourceStack
-       ├── Citation
-       │    └── Observation
-       │
-       └── source-local record graph
-            ├── PersonRecord
-            ├── EventRecord
-            ├── PlaceRecord
-            ├── RelationshipRecord
-            └── ParticipationRecord
-
-
-CONCLUSION
-
-Person
-Event
-Place
-Relationship
-Participation
-
-     ▲
-     │ claims resolve / connect records
-     │
-source-local record graph
-
-Canonical entities may also be related to one another through ordinary
-canonical relationships and may later be merged when identity is established.
-```
-
-The central distinction is:
-
-> **Source:** what evidence exists.
->
-> **Interpretation:** what a particular source appears to say.
->
-> **Conclusion:** what the researcher currently believes about the historical world.
+As the Interpretation and Conclusion schemas are refined, their detailed table definitions should likewise move into dedicated layer documents rather than being reintroduced here.
