@@ -2,9 +2,11 @@
 
 ## Status
 
-Draft architecture notes. This document describes the relationship between Provenance's three principal research layers. Layer-specific schema belongs in dedicated data-model documents rather than being duplicated here.
+Draft architecture notes. This document describes the relationship between Provenance's three principal research layers and retains the current draft schema for the Interpretation and Conclusion layers while those models are being refined.
 
 The authoritative Source-layer schema is [`source-layer-data-model.md`](source-layer-data-model.md).
+
+The shared structured date model is defined in [`structured-date-model.md`](structured-date-model.md).
 
 The cross-cutting audit/revision model is defined in [`audit-revision-history.md`](audit-revision-history.md).
 
@@ -207,28 +209,19 @@ Derived display state is disposable and reproducible.
 
 ## 2.7 Audit history owns generic change metadata
 
-Generic persistence bookkeeping such as:
-
-```text
-created_at
-updated_at
-created_by_user_id
-updated_by_user_id
-```
-
-does not belong on core domain tables.
+Generic persistence bookkeeping such as `created_at`, `updated_at`, `created_by_user_id`, and `updated_by_user_id` does not belong on core domain tables.
 
 Creation, modification, deletion, user attribution, and revision ordering are recorded by the append-only audit/revision model in [`audit-revision-history.md`](audit-revision-history.md).
-
-A timestamp remains on a domain row only when time itself is domain data rather than persistence bookkeeping.
 
 ---
 
 # 3. Shared persistence conventions
 
-## 3.1 Identifiers
-
 Persistent rows use globally unique machine identifiers, currently UUIDv7 stored as 16-byte SQLite `BLOB` values.
+
+Ordinary schema tables use SQLite `STRICT` typing.
+
+Structured genealogical dates use the shared model in [`structured-date-model.md`](structured-date-model.md).
 
 Selected user-facing entities may additionally receive short human-readable references:
 
@@ -242,67 +235,411 @@ SRC-F4N2P  Source
 
 Human references are conveniences, not primary identity.
 
-## 3.2 Strict SQLite typing
-
-Ordinary schema tables use SQLite `STRICT` typing. This is a project-wide persistence rule rather than a per-table preference.
-
-## 3.3 Structured dates
-
-Genealogical dates cannot be represented adequately by ordinary SQL `DATE` or `DATETIME` values. Provenance requires a shared structured date value capable of representing partial dates, approximations, bounds, ranges, periods, alternate calendars, and missing components.
-
-GEDCOM 7 should be treated as the minimum semantic capability.
-
-The structured DateValue is a shared value object used where date semantics are required across layers. Its persistence schema should have one authoritative definition rather than being copied into each layer document.
-
 ---
 
-# 4. Layer boundaries
+# 4. Interpretation layer — current draft schema
 
-A useful shorthand is:
+The following schema is a restored working draft and is intentionally subject to refinement.
 
-```text
-SOURCE
-What evidence do we possess?
+## 4.1 `source_stacks`
 
-INTERPRETATION
-What does this evidence appear to say?
+A Source can contain multiple independent semantic matrices. A census is the clearest example: unrelated households on the same page may form separate Source Stacks.
 
-CONCLUSION
-What do we currently conclude after considering the evidence?
+```sql
+CREATE TABLE source_stacks (
+    id          BLOB PRIMARY KEY,
+    source_id   BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    label       TEXT,
+    notes       TEXT
+) STRICT;
+```
+
+A simple certificate may have one stack. A census may have many.
+
+## 4.2 `citations`
+
+A Citation selects an addressable portion of an Artifact.
+
+```sql
+CREATE TABLE citations (
+    id              BLOB PRIMARY KEY,
+    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
+    artifact_id     BLOB NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+    parent_id       BLOB REFERENCES citations(id) ON DELETE CASCADE,
+    locator_type    TEXT NOT NULL,
+    locator_json    TEXT NOT NULL,
+    alt_text        TEXT,
+    notes           TEXT
+) STRICT;
+```
+
+Examples of `locator_type` / `locator_json`:
+
+```json
+{"type":"page","page":14}
+```
+
+```json
+{"type":"image_region","x":0.31,"y":0.18,"width":0.12,"height":0.29}
+```
+
+```json
+{"type":"time_range","start":802.4,"end":845.1}
+```
+
+```json
+{"type":"table_row","page":14,"row":7}
+```
+
+Citation locators are intentionally polymorphic because different media require different addressing systems.
+
+## 4.3 `observations`
+
+An Observation is a source-scoped semantic interpretation of one or more Citations.
+
+Multiple Observations may coexist and conflict.
+
+```sql
+CREATE TABLE observations (
+    id               BLOB PRIMARY KEY,
+    source_stack_id  BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
+    observation_type TEXT NOT NULL,
+    value_type       TEXT,
+    value_text       TEXT,
+    value_json       TEXT,
+    confidence       REAL,
+    notes            TEXT
+) STRICT;
+```
+
+Observations may be supported by multiple Citations:
+
+```sql
+CREATE TABLE observation_citations (
+    observation_id  BLOB NOT NULL REFERENCES observations(id) ON DELETE CASCADE,
+    citation_id     BLOB NOT NULL REFERENCES citations(id) ON DELETE CASCADE,
+    PRIMARY KEY (observation_id, citation_id)
+) STRICT;
 ```
 
 Examples:
 
 ```text
-Source
-  1897 birth certificate
-
-Artifact
-  locally ingested scan
-
-Citation
-  line containing father's name
-
-Observation
-  transcription = "William Smith"
-
-PersonRecord
-  father represented by this certificate
-
-Claim
-  this PersonRecord resolves to PER-123
-
-Person
-  PER-123, the researcher's current canonical identity
+transcription = "Robert Smith"
+reported_date = DateValue(...)
+reported_relationship = "father"
+reported_place = "York, Upper Canada"
+explicitly_blank = true
 ```
 
-Each layer preserves information needed by the next without collapsing into it.
+An Observation may also refer to a Record in another Source Stack. This is needed for evidence such as oral testimony identifying a person depicted in a photograph. The exact implementation remains an open schema question.
+
+## 4.4 Record tables
+
+Records form the semantic graph described by a Source Stack.
+
+### `person_records`
+
+```sql
+CREATE TABLE person_records (
+    id              BLOB PRIMARY KEY,
+    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
+    label           TEXT,
+    notes           TEXT
+) STRICT;
+```
+
+### `place_records`
+
+```sql
+CREATE TABLE place_records (
+    id              BLOB PRIMARY KEY,
+    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
+    display_value   TEXT,
+    notes           TEXT
+) STRICT;
+```
+
+A PlaceRecord describes the place expression contained in one Source Stack. It does not recreate the canonical place hierarchy.
+
+### `event_records`
+
+```sql
+CREATE TABLE event_records (
+    id              BLOB PRIMARY KEY,
+    source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
+    event_type      TEXT,
+    date_value_id   BLOB REFERENCES date_values(id),
+    place_record_id BLOB REFERENCES place_records(id),
+    notes           TEXT
+) STRICT;
+```
+
+### `relationship_records`
+
+```sql
+CREATE TABLE relationship_records (
+    id                BLOB PRIMARY KEY,
+    source_stack_id   BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
+    relationship_type TEXT NOT NULL,
+    person_a_id       BLOB NOT NULL REFERENCES person_records(id),
+    person_b_id       BLOB NOT NULL REFERENCES person_records(id),
+    notes             TEXT
+) STRICT;
+```
+
+The meaning of `person_a` and `person_b` depends on `relationship_type`; this may later evolve into explicitly named roles.
+
+### `participation_records`
+
+```sql
+CREATE TABLE participation_records (
+    id               BLOB PRIMARY KEY,
+    source_stack_id  BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
+    person_record_id BLOB NOT NULL REFERENCES person_records(id),
+    event_record_id  BLOB NOT NULL REFERENCES event_records(id),
+    role             TEXT,
+    notes            TEXT
+) STRICT;
+```
+
+Examples:
+
+```text
+child participates in birth as subject
+father participates in birth as father
+John participates in wedding as witness
+```
+
+## 4.5 Connecting Observations to Records
+
+A generic Record-field assignment table was the previous working draft:
+
+```sql
+CREATE TABLE record_observations (
+    record_type     TEXT NOT NULL,
+    record_id       BLOB NOT NULL,
+    field_name      TEXT NOT NULL,
+    observation_id  BLOB NOT NULL REFERENCES observations(id) ON DELETE CASCADE,
+    PRIMARY KEY (record_type, record_id, field_name, observation_id)
+) STRICT;
+```
+
+This remains provisional because SQLite cannot enforce a foreign key from `record_id` to several possible Record tables. Typed join tables may ultimately provide stronger relational integrity.
 
 ---
 
-# 5. Cross-layer examples
+# 5. Conclusion layer — current draft schema
 
-## 5.1 Photograph and testimony
+The following is likewise a restored working draft rather than a finalized schema.
+
+## 5.1 `persons`
+
+```sql
+CREATE TABLE persons (
+    id              BLOB PRIMARY KEY,
+    ref             TEXT UNIQUE NOT NULL,
+    preferred_name  TEXT,
+    status          TEXT,
+    notes           TEXT,
+    merged_into_id  BLOB REFERENCES persons(id)
+) STRICT;
+```
+
+A Person may have no name or dates. Sparse and provisional Persons are valid.
+
+## 5.2 `places`
+
+```sql
+CREATE TABLE places (
+    id              BLOB PRIMARY KEY,
+    ref             TEXT UNIQUE NOT NULL,
+    name            TEXT NOT NULL,
+    place_type      TEXT,
+    parent_place_id BLOB REFERENCES places(id),
+    valid_date_id   BLOB REFERENCES date_values(id),
+    notes           TEXT,
+    merged_into_id  BLOB REFERENCES places(id)
+) STRICT;
+```
+
+The canonical Place model is intentionally modest: nesting, loose references, and merge when identity is established.
+
+### `place_references`
+
+```sql
+CREATE TABLE place_references (
+    id              BLOB PRIMARY KEY,
+    from_place_id   BLOB NOT NULL REFERENCES places(id),
+    to_place_id     BLOB NOT NULL REFERENCES places(id),
+    reference_type  TEXT NOT NULL,
+    valid_date_id   BLOB REFERENCES date_values(id),
+    notes           TEXT
+) STRICT;
+```
+
+Examples:
+
+```text
+York --historically_related--> Toronto
+Upper Canada --historically_related--> Ontario
+```
+
+## 5.3 `events`
+
+```sql
+CREATE TABLE events (
+    id              BLOB PRIMARY KEY,
+    ref             TEXT UNIQUE NOT NULL,
+    event_type      TEXT NOT NULL,
+    date_value_id   BLOB REFERENCES date_values(id),
+    place_id        BLOB REFERENCES places(id),
+    notes           TEXT,
+    merged_into_id  BLOB REFERENCES events(id)
+) STRICT;
+```
+
+## 5.4 `relationships`
+
+```sql
+CREATE TABLE relationships (
+    id                BLOB PRIMARY KEY,
+    ref               TEXT UNIQUE NOT NULL,
+    relationship_type TEXT NOT NULL,
+    person_a_id       BLOB NOT NULL REFERENCES persons(id),
+    person_b_id       BLOB NOT NULL REFERENCES persons(id),
+    status            TEXT,
+    notes             TEXT,
+    merged_into_id    BLOB REFERENCES relationships(id)
+) STRICT;
+```
+
+Derived relationships such as sibling or niece/nephew may be calculated by application logic rather than always persisted.
+
+## 5.5 `participations`
+
+```sql
+CREATE TABLE participations (
+    id             BLOB PRIMARY KEY,
+    person_id      BLOB NOT NULL REFERENCES persons(id),
+    event_id       BLOB NOT NULL REFERENCES events(id),
+    role           TEXT,
+    notes          TEXT,
+    merged_into_id BLOB REFERENCES participations(id)
+) STRICT;
+```
+
+---
+
+# 6. Claims — current draft schema
+
+Claims are the explicit interface between source-local Records and the canonical graph.
+
+The current simplifying principle is:
+
+> Claims cite Records, not individual fields.
+
+## 6.1 `claims`
+
+```sql
+CREATE TABLE claims (
+    id          BLOB PRIMARY KEY,
+    claim_type  TEXT NOT NULL,
+    polarity    TEXT NOT NULL DEFAULT 'positive',
+    confidence  REAL,
+    status      TEXT NOT NULL,
+    notes       TEXT,
+
+    CHECK (polarity IN ('positive', 'negative'))
+) STRICT;
+```
+
+`claim_type` examples:
+
+```text
+record_resolves_to_entity
+same_as
+not_same_as
+research_conclusion
+```
+
+## 6.2 Typed Record-resolution Claims
+
+```sql
+CREATE TABLE person_record_claims (
+    claim_id         BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
+    person_record_id BLOB NOT NULL REFERENCES person_records(id),
+    person_id        BLOB NOT NULL REFERENCES persons(id)
+) STRICT;
+
+CREATE TABLE event_record_claims (
+    claim_id         BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
+    event_record_id  BLOB NOT NULL REFERENCES event_records(id),
+    event_id         BLOB NOT NULL REFERENCES events(id)
+) STRICT;
+
+CREATE TABLE place_record_claims (
+    claim_id         BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
+    place_record_id  BLOB NOT NULL REFERENCES place_records(id),
+    place_id         BLOB NOT NULL REFERENCES places(id)
+) STRICT;
+
+CREATE TABLE relationship_record_claims (
+    claim_id               BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
+    relationship_record_id BLOB NOT NULL REFERENCES relationship_records(id),
+    relationship_id        BLOB NOT NULL REFERENCES relationships(id)
+) STRICT;
+
+CREATE TABLE participation_record_claims (
+    claim_id                BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
+    participation_record_id BLOB NOT NULL REFERENCES participation_records(id),
+    participation_id        BLOB NOT NULL REFERENCES participations(id)
+) STRICT;
+```
+
+Typed tables avoid weak polymorphic foreign keys while preserving a common Claim abstraction.
+
+## 6.3 Claim evidence
+
+```sql
+CREATE TABLE claim_evidence (
+    claim_id        BLOB NOT NULL REFERENCES claims(id) ON DELETE CASCADE,
+    record_type     TEXT NOT NULL,
+    record_id       BLOB NOT NULL,
+    stance          TEXT NOT NULL DEFAULT 'supporting',
+    notes           TEXT,
+
+    PRIMARY KEY (claim_id, record_type, record_id),
+    CHECK (stance IN ('supporting', 'conflicting'))
+) STRICT;
+```
+
+This remains provisional because the generic `record_id` cannot have a database-enforced foreign key to multiple Record tables.
+
+---
+
+# 7. Merge model
+
+A merge should be explicit and reversible/auditable in principle.
+
+```text
+PER-A "Unknown father"
+PER-B "William Smith"
+
+Claim:
+  PER-A same_as PER-B
+
+Merge:
+  PER-A.merged_into_id = PER-B
+```
+
+Old IDs and human references should continue resolving to the surviving entity.
+
+---
+
+# 8. Cross-layer examples
+
+## 8.1 Photograph and testimony
 
 ```text
 Photograph Source
@@ -320,11 +657,7 @@ Conclusion
   Claim: photograph PersonRecord resolves to canonical Person
 ```
 
-The testimony remains evidence from the testimony Source even though it refers to a Record interpreted from the photograph Source.
-
-## 5.2 DNA evidence
-
-DNA matching can be treated as another source of genealogical evidence rather than requiring the core application to become genetics software.
+## 8.2 DNA evidence
 
 ```text
 Source: DNA match report
@@ -338,18 +671,43 @@ PersonRecord:
   matched person/profile
 ```
 
-A family-tree export can similarly become a Source containing interpreted PersonRecords and RelationshipRecords, including inferred anonymous connecting people.
+---
 
-Raw genotype Files may be preserved without being interpreted by the core genealogy model.
+# 9. Open schema questions
+
+1. **Observation → Record references**
+   - Generic polymorphic table vs typed join tables.
+
+2. **Observation references to Records in other Source Stacks**
+   - Required for testimony identifying a person in a photograph.
+
+3. **Generic Claims vs typed Claim tables**
+   - Domain model benefits from generic Claims; SQLite foreign-key integrity favors typed tables.
+
+4. **Claim evidence implementation**
+   - Generic `(record_type, record_id)` is simple but weakly constrained.
+
+5. **Record fields**
+   - Which properties belong directly on Record tables vs are assembled from Observations?
+
+6. **Canonical entity fields**
+   - Canonical entities should remain usable without turning every field into a Claim.
+
+7. **Place reference semantics**
+   - Keep deliberately loose unless actual genealogy workflows require more formal types.
+
+8. **Human-readable refs**
+   - Determine which entity classes warrant visible refs.
 
 ---
 
-# 6. Documentation ownership
+# 10. Documentation ownership
 
 To avoid competing schema definitions:
 
 - [`source-layer-data-model.md`](source-layer-data-model.md) is authoritative for Source-layer tables and Artifact/File storage.
+- [`structured-date-model.md`](structured-date-model.md) is authoritative for shared DateValue persistence.
 - [`audit-revision-history.md`](audit-revision-history.md) is authoritative for audit and revision history.
-- This document is authoritative only for the high-level three-layer philosophy and cross-layer boundaries.
+- This document currently retains the working Interpretation, Conclusion, and Claim schema until those layers are extracted into dedicated documents.
 
-As the Interpretation and Conclusion schemas are refined, their detailed table definitions should likewise move into dedicated layer documents rather than being reintroduced here.
+The restored SQL above comes from the schema removed in commit `4a27111483f8a826f23c47d16322771e8f6c9935`, updated only to conform to current persistence conventions.
