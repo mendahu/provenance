@@ -56,9 +56,9 @@ Observation
 Record
 ```
 
-A Citation identifies an addressable portion of an Artifact.
+A Citation identifies an addressable portion of an Artifact and may preserve the researcher's transcription and description of that evidence.
 
-An Observation is the interpretive bridge between cited evidence and a source-local Record. It records what the researcher believes that cited evidence says about that Record.
+An Observation is the interpretive bridge between cited evidence and a source-local Record. It records what the researcher believes that cited evidence means about that Record.
 
 Records organize those normalized observations into source-local entities and relationships. Records do not directly reference Sources; their provenance is derived through the chain:
 
@@ -122,20 +122,7 @@ A Claim may be supported by multiple Records from multiple Sources.
 
 Source evidence must never be rewritten to match a later interpretation.
 
-For ambiguous handwriting, for example:
-
-```text
-Citation C1
-  image crop
-
-Observation O1
-  transcription = "Robert Smith"
-
-Observation O2
-  transcription = "Richard Smith"
-```
-
-Both interpretations may coexist while the underlying Artifact remains unchanged.
+For ambiguous handwriting, the Citation may preserve a faithful researcher transcription such as `Robins [?]` or `[William?] Smith`. Normalization of that reading belongs to an Observation rather than rewriting the Citation transcription.
 
 ## 2.2 Records are source-local through provenance
 
@@ -232,9 +219,32 @@ CREATE TABLE citations (
     artifact_id     BLOB NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
     locator_type    TEXT NOT NULL,
     locator_json    TEXT NOT NULL,
-    alt_text        TEXT,
+    transcription   TEXT,
+    description     TEXT,
     notes           TEXT
 ) STRICT;
+```
+
+`transcription` preserves the researcher's reading of textual or spoken content within the cited evidence. It is intended to remain faithful to the evidence, including uncertainty where appropriate, rather than silently normalizing abbreviations, names, places, or other values. For example, `Wm Robins` may be transcribed as written and normalized to `William Robins` later through an Observation.
+
+`description` records what the researcher observes in the cited evidence. It is media-neutral and may describe visual, textual, audio, or other characteristics. It is not specifically an accessibility `alt_text` field.
+
+`notes` is available for other researcher commentary about the Citation itself.
+
+Conceptually:
+
+```text
+Artifact
+    raw evidence
+
+Citation.transcription
+    what I read/hear
+
+Citation.description
+    what I observe
+
+Observation
+    what I think it means
 ```
 
 Examples of `locator_type` / `locator_json` include pages, image regions, time ranges, and table rows. The locator representation remains intentionally polymorphic because different media require different addressing systems.
@@ -552,12 +562,13 @@ Old IDs and human references should continue resolving to the surviving entity.
 Photograph Source
   Artifact: scan.jpg
   Citation: crop around one person
+  Citation.description: "Man standing beside a Model T, wearing a military uniform"
   Observation: cited crop depicts PersonRecord A
   PersonRecord A: unidentified depicted person
 
 Testimony Source
   Artifact: audio or research note
-  Citation: "That's my grandfather"
+  Citation.transcription: "That's my grandfather"
   Observation: cited testimony refers to the depicted PersonRecord
 
 Conclusion
