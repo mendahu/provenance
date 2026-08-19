@@ -211,13 +211,12 @@ An Observation is the edge between a Citation and a Record. Separate `observatio
 
 A Citation selects an addressable portion of exactly one Artifact.
 
-Each Citation is independently resolvable from its `artifact_id` and locator. Citations are not nested; a locator contains all information required to identify its target within the Artifact.
+Each Citation is independently resolvable from its `artifact_id` and locator. Citations are not nested; the locator contains all information required to identify its target within the Artifact.
 
 ```sql
 CREATE TABLE citations (
     id              BLOB PRIMARY KEY,
     artifact_id     BLOB NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
-    locator_type    TEXT NOT NULL,
     locator_json    TEXT NOT NULL,
     transcription   TEXT,
     description     TEXT,
@@ -247,23 +246,256 @@ Observation
     what I think it means
 ```
 
-Examples of `locator_type` / `locator_json` include pages, image regions, time ranges, and table rows. The locator representation remains intentionally polymorphic because different media require different addressing systems.
+### 4.1.1 Locator design
 
-For example, a table row on a particular page should be represented by a self-contained locator such as:
+A locator is a versioned JSON document containing an ordered list of selectors. Each selector narrows the context established by the selectors before it.
 
-```json
-{"type":"table_row","page":14,"row":7}
-```
+This makes locators composable rather than forcing every Citation into one mutually exclusive `locator_type`.
 
-rather than by making a row Citation a child of a separate page Citation.
-
-This keeps Citation identity simple:
+For example:
 
 ```text
-Citation = Artifact + complete locator
+Artifact: PDF
+  → page 14
+  → rectangular region on that page
 ```
 
-UI hierarchy or containment can be derived from locators when useful without making that hierarchy part of the persisted evidence model.
+is one Citation with two selectors, not a page Citation containing a child region Citation.
+
+The top-level locator schema is:
+
+```json
+{
+  "version": 1,
+  "selectors": [
+    { "type": "..." }
+  ]
+}
+```
+
+Semantically:
+
+```text
+LocatorV1 {
+    version: 1
+    selectors: Selector[]   // ordered, at least one
+}
+```
+
+The application must validate the selector chain as a whole. A selector is interpreted relative to the context produced by the preceding selector. For example, `page` can select a page from a PDF and `region` can then select a rectangle within that page.
+
+The selector vocabulary is application-defined but extensible. The MVP should implement only selectors needed by concrete workflows. Unknown selector types must be preserved losslessly even if the current client cannot render or edit them.
+
+There is intentionally no separate `locator_type` database column. A composable locator may contain several selector types, so a single database-level type would be ambiguous and redundant.
+
+### 4.1.2 `page` selector
+
+Selects a numbered page from a paginated Artifact such as a PDF.
+
+```json
+{
+  "type": "page",
+  "number": 14
+}
+```
+
+Schema:
+
+```text
+PageSelector {
+    type: "page"
+    number: integer >= 1
+}
+```
+
+Page numbers are physical/document page positions as understood by the application. If future requirements need printed page labels such as roman numerals or archive folio notation, those should be modeled explicitly rather than overloading `number`.
+
+### 4.1.3 `region` selector
+
+Selects a rectangular region from an image-like context, including a standalone image, a rendered PDF page, or a video frame context.
+
+```json
+{
+  "type": "region",
+  "x": 0.31,
+  "y": 0.18,
+  "width": 0.42,
+  "height": 0.21,
+  "unit": "normalized"
+}
+```
+
+Schema:
+
+```text
+RegionSelector {
+    type: "region"
+    x: number between 0 and 1
+    y: number between 0 and 1
+    width: number > 0 and <= 1
+    height: number > 0 and <= 1
+    unit: "normalized"
+}
+```
+
+For version 1, region coordinates are normalized to the dimensions of the current image-like context rather than stored as rendered pixels. This keeps a Citation stable across display resolutions and generated previews.
+
+The application must additionally validate that the rectangle remains within the context bounds:
+
+```text
+x + width <= 1
+y + height <= 1
+```
+
+A crop within a PDF is therefore naturally represented as:
+
+```json
+{
+  "version": 1,
+  "selectors": [
+    { "type": "page", "number": 14 },
+    {
+      "type": "region",
+      "x": 0.31,
+      "y": 0.18,
+      "width": 0.42,
+      "height": 0.21,
+      "unit": "normalized"
+    }
+  ]
+}
+```
+
+The same `region` selector works directly against a standalone image without a preceding `page` selector.
+
+### 4.1.4 `time_range` selector
+
+Selects an interval from time-based media such as audio or video.
+
+```json
+{
+  "type": "time_range",
+  "start_ms": 802400,
+  "end_ms": 845100
+}
+```
+
+Schema:
+
+```text
+TimeRangeSelector {
+    type: "time_range"
+    start_ms: integer >= 0
+    end_ms: integer > start_ms
+}
+```
+
+Milliseconds are used as the canonical stored unit so the representation is unambiguous and integer-based.
+
+Selectors may be composed. For example, a Citation could identify a region of a video frame during a particular interval:
+
+```json
+{
+  "version": 1,
+  "selectors": [
+    {
+      "type": "time_range",
+      "start_ms": 15120,
+      "end_ms": 19440
+    },
+    {
+      "type": "region",
+      "x": 0.12,
+      "y": 0.08,
+      "width": 0.30,
+      "height": 0.45,
+      "unit": "normalized"
+    }
+  ]
+}
+```
+
+### 4.1.5 `text_quote` selector
+
+Selects textual content by its text rather than by unstable paragraph numbering or rendered coordinates.
+
+```json
+{
+  "type": "text_quote",
+  "exact": "William Robins, carpenter",
+  "prefix": "household of ",
+  "suffix": " aged 43"
+}
+```
+
+Schema:
+
+```text
+TextQuoteSelector {
+    type: "text_quote"
+    exact: non-empty string
+    prefix?: string
+    suffix?: string
+}
+```
+
+`exact` contains the text being selected. Optional `prefix` and `suffix` provide surrounding context to disambiguate repeated text without becoming part of the selected content.
+
+For a PDF with a text layer, a page plus text quote can identify a paragraph or phrase without relying on a paragraph number:
+
+```json
+{
+  "version": 1,
+  "selectors": [
+    { "type": "page", "number": 14 },
+    {
+      "type": "text_quote",
+      "exact": "William Robins, carpenter",
+      "prefix": "household of ",
+      "suffix": " aged 43"
+    }
+  ]
+}
+```
+
+### 4.1.6 Future selectors
+
+The selector system is intentionally open to additional addressable media and structured data. Possible future selectors include:
+
+```text
+text_position
+table_row
+table_cell
+csv_row
+json_pointer
+xpath
+```
+
+These are not part of the version 1 supported vocabulary until a concrete workflow requires them.
+
+Adding a selector type does not require changing the `citations` table. It requires defining that selector's JSON shape, validation rules, and application behavior.
+
+### 4.1.7 Locator invariants
+
+For locator version 1:
+
+1. `version` must equal `1`.
+2. `selectors` must contain at least one selector.
+3. Selectors are ordered and interpreted from the Artifact inward.
+4. Every selector must contain a string `type` discriminator.
+5. Known selector types must satisfy their type-specific schema and context requirements.
+6. Unknown selector types are preserved losslessly for forward compatibility.
+7. A Citation must be independently resolvable from `artifact_id` plus `locator_json`; it never depends on another Citation.
+8. Coordinates are stored relative to the selected media context, not a particular UI rendering.
+9. Locator JSON identifies where the evidence is; transcription, description, and interpretation remain separate concerns.
+
+Conceptually:
+
+```text
+Citation = Artifact + complete composable locator
+```
+
+UI hierarchy or containment can be derived from locator selector chains when useful without making Citation hierarchy part of the persisted evidence model.
 
 ## 4.2 `observations`
 
@@ -452,7 +684,7 @@ CREATE TABLE participations (
     person_id      BLOB NOT NULL REFERENCES persons(id),
     event_id       BLOB NOT NULL REFERENCES events(id),
     role           TEXT,
-    notes           TEXT,
+    notes          TEXT,
     merged_into_id BLOB REFERENCES participations(id)
 ) STRICT;
 ```
@@ -562,13 +794,12 @@ Old IDs and human references should continue resolving to the surviving entity.
 Photograph Source
   Artifact: scan.jpg
   Citation: crop around one person
-  Citation.description: "Man standing beside a Model T, wearing a military uniform"
   Observation: cited crop depicts PersonRecord A
   PersonRecord A: unidentified depicted person
 
 Testimony Source
   Artifact: audio or research note
-  Citation.transcription: "That's my grandfather"
+  Citation: "That's my grandfather"
   Observation: cited testimony refers to the depicted PersonRecord
 
 Conclusion
