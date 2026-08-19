@@ -182,7 +182,43 @@ Human references are conveniences, not primary identity. Internal source-scoped 
 
 # 4. Source layer
 
-## 4.1 `sources`
+## 4.1 `source_types`
+
+Source types are a controlled but extensible vocabulary used to classify sources. Their initial purpose is search and filtering, for example: "show me all birth certificates in this project."
+
+Provenance should seed new projects with a useful set of common source types, while allowing users to add additional types without requiring a schema migration or application release. Built-in types are defaults, not a closed enum and not structurally privileged source subclasses.
+
+```sql
+CREATE TABLE source_types (
+    id              BLOB PRIMARY KEY,
+    key             TEXT UNIQUE NOT NULL,
+    label           TEXT NOT NULL,
+    description     TEXT,
+    builtin         INTEGER NOT NULL DEFAULT 0,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
+);
+```
+
+An initial population might include:
+
+```text
+birth_certificate      Birth certificate
+census                 Census
+photograph             Photograph
+oral_testimony         Oral testimony
+dna_match_report       DNA match report
+book                   Book
+website_capture        Website capture
+gedcom_file            GEDCOM file
+family_tree_export     Family tree export
+```
+
+The vocabulary should remain easy to extend. A user may add project-specific or jurisdiction-specific types such as `quebec_notarial_act`, `funeral_card`, or `family_bible` and those types should participate in search and filtering exactly like seeded types.
+
+At this stage, `source_types` should not imply type-specific database tables, validation rules, or interpretation behavior. If common source types later receive specialized UI workflows, import mappings, icons, or suggested metadata, those should be application-level affordances unless an actual persistence invariant requires otherwise.
+
+## 4.2 `sources`
 
 A source is the canonical evidentiary object.
 
@@ -190,7 +226,7 @@ A source is the canonical evidentiary object.
 CREATE TABLE sources (
     id              BLOB PRIMARY KEY,          -- UUIDv7
     ref             TEXT UNIQUE,               -- e.g. SRC-F4N2P
-    source_type     TEXT NOT NULL,
+    source_type_id  BLOB NOT NULL REFERENCES source_types(id),
     title           TEXT,
     description     TEXT,
     created_at      TEXT NOT NULL,
@@ -198,23 +234,7 @@ CREATE TABLE sources (
 );
 ```
 
-Examples of `source_type`:
-
-```text
-birth_certificate
-census
-photograph
-oral_testimony
-dna_match_report
-book
-website_capture
-gedcom_file
-family_tree_export
-```
-
-`source_type` should probably use an extensible vocabulary rather than a closed SQL enum.
-
-## 4.2 `artifacts`
+## 4.3 `artifacts`
 
 An artifact is a concrete representation of a source.
 
