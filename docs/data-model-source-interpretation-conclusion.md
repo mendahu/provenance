@@ -256,8 +256,8 @@ For example:
 
 ```text
 Artifact: PDF
-  → page 14
-  → rectangular region on that page
+  → artifact page 37 / marked page 23
+  → polygon region on that page
 ```
 
 is one Citation with two selectors, not a page Citation containing a child region Citation.
@@ -282,7 +282,7 @@ LocatorV1 {
 }
 ```
 
-The application must validate the selector chain as a whole. A selector is interpreted relative to the context produced by the preceding selector. For example, `page` can select a page from a PDF and `region` can then select a rectangle within that page.
+The application must validate the selector chain as a whole. A selector is interpreted relative to the context produced by the preceding selector. For example, `page` can select a page from a PDF and `region` can then select a polygon within that page.
 
 The selector vocabulary is application-defined but extensible. The MVP should implement only selectors needed by concrete workflows. Unknown selector types must be preserved losslessly even if the current client cannot render or edit them.
 
@@ -290,12 +290,17 @@ There is intentionally no separate `locator_type` database column. A composable 
 
 ### 4.1.2 `page` selector
 
-Selects a numbered page from a paginated Artifact such as a PDF.
+The `page` selector identifies a page by its position in the Artifact itself.
+
+For a PDF, `artifact_page` is the 1-based page position the application uses to navigate the PDF and is the authoritative locator value.
+
+A scanned book, register, newspaper, or archival document may display a different page number or label on the scanned page itself. That source pagination is retained separately as optional descriptive information in `page_label`.
 
 ```json
 {
   "type": "page",
-  "number": 14
+  "artifact_page": 37,
+  "page_label": "23"
 }
 ```
 
@@ -304,23 +309,42 @@ Schema:
 ```text
 PageSelector {
     type: "page"
-    number: integer >= 1
+    artifact_page: integer >= 1
+    page_label?: string
 }
 ```
 
-Page numbers are physical/document page positions as understood by the application. If future requirements need printed page labels such as roman numerals or archive folio notation, those should be modeled explicitly rather than overloading `number`.
+`page_label` is deliberately text rather than an integer because source pagination may contain values such as:
+
+```text
+iv
+xii
+A-3
+23a
+folio 17r
+```
+
+An unnumbered page simply omits `page_label`.
+
+The general rule is:
+
+> `artifact_page` answers where the Citation is in the digital Artifact. `page_label` records how that page identifies itself in the underlying source.
 
 ### 4.1.3 `region` selector
 
-Selects a rectangular region from an image-like context, including a standalone image, a rendered PDF page, or a video frame context.
+Selects an arbitrary polygonal region from an image-like context, including a standalone image, a rendered PDF page, or a video frame context.
+
+A polygon is used rather than a rectangle so the same selector can represent simple rectangular crops as well as irregular evidence such as handwriting blocks, seals, marginal notes, damaged fragments, or people in photographs.
 
 ```json
 {
   "type": "region",
-  "x": 0.31,
-  "y": 0.18,
-  "width": 0.42,
-  "height": 0.21,
+  "points": [
+    { "x": 0.31, "y": 0.18 },
+    { "x": 0.73, "y": 0.18 },
+    { "x": 0.70, "y": 0.39 },
+    { "x": 0.34, "y": 0.42 }
+  ],
   "unit": "normalized"
 }
 ```
@@ -330,36 +354,49 @@ Schema:
 ```text
 RegionSelector {
     type: "region"
+    points: Point[]       // at least 3 points
+    unit: "normalized"
+}
+
+Point {
     x: number between 0 and 1
     y: number between 0 and 1
-    width: number > 0 and <= 1
-    height: number > 0 and <= 1
-    unit: "normalized"
 }
 ```
 
-For version 1, region coordinates are normalized to the dimensions of the current image-like context rather than stored as rendered pixels. This keeps a Citation stable across display resolutions and generated previews.
+The polygon is implicitly closed by connecting the final point back to the first point. The first point should not be repeated at the end of the array.
 
-The application must additionally validate that the rectangle remains within the context bounds:
+For version 1:
 
-```text
-x + width <= 1
-y + height <= 1
-```
+- `points` must contain at least three distinct points;
+- every point must lie within the normalized media bounds;
+- points are interpreted in array order as the polygon boundary;
+- the polygon must not self-intersect;
+- degenerate polygons with zero area are invalid.
 
-A crop within a PDF is therefore naturally represented as:
+Normalized coordinates keep Citations stable across rendering resolutions and generated previews.
+
+A rectangle is represented as an ordinary four-point polygon. The application may provide rectangular drag-selection as a UI convenience and serialize it as four points.
+
+A crop within a PDF is represented compositionally:
 
 ```json
 {
   "version": 1,
   "selectors": [
-    { "type": "page", "number": 14 },
+    {
+      "type": "page",
+      "artifact_page": 37,
+      "page_label": "23"
+    },
     {
       "type": "region",
-      "x": 0.31,
-      "y": 0.18,
-      "width": 0.42,
-      "height": 0.21,
+      "points": [
+        { "x": 0.31, "y": 0.18 },
+        { "x": 0.73, "y": 0.18 },
+        { "x": 0.70, "y": 0.39 },
+        { "x": 0.34, "y": 0.42 }
+      ],
       "unit": "normalized"
     }
   ]
@@ -392,7 +429,7 @@ TimeRangeSelector {
 
 Milliseconds are used as the canonical stored unit so the representation is unambiguous and integer-based.
 
-Selectors may be composed. For example, a Citation could identify a region of a video frame during a particular interval:
+Selectors may be composed. For example, a Citation could identify a polygonal region of a video frame during a particular interval:
 
 ```json
 {
@@ -405,10 +442,12 @@ Selectors may be composed. For example, a Citation could identify a region of a 
     },
     {
       "type": "region",
-      "x": 0.12,
-      "y": 0.08,
-      "width": 0.30,
-      "height": 0.45,
+      "points": [
+        { "x": 0.12, "y": 0.08 },
+        { "x": 0.42, "y": 0.08 },
+        { "x": 0.42, "y": 0.53 },
+        { "x": 0.12, "y": 0.53 }
+      ],
       "unit": "normalized"
     }
   ]
@@ -447,7 +486,11 @@ For a PDF with a text layer, a page plus text quote can identify a paragraph or 
 {
   "version": 1,
   "selectors": [
-    { "type": "page", "number": 14 },
+    {
+      "type": "page",
+      "artifact_page": 37,
+      "page_label": "23"
+    },
     {
       "type": "text_quote",
       "exact": "William Robins, carpenter",
@@ -486,8 +529,11 @@ For locator version 1:
 5. Known selector types must satisfy their type-specific schema and context requirements.
 6. Unknown selector types are preserved losslessly for forward compatibility.
 7. A Citation must be independently resolvable from `artifact_id` plus `locator_json`; it never depends on another Citation.
-8. Coordinates are stored relative to the selected media context, not a particular UI rendering.
-9. Locator JSON identifies where the evidence is; transcription, description, and interpretation remain separate concerns.
+8. Region vertices use normalized coordinates relative to the selected media context, not a particular UI rendering.
+9. Region polygons contain at least three distinct points, are non-self-intersecting, and have non-zero area.
+10. For paginated digital Artifacts, the Artifact page position is authoritative for navigation.
+11. Printed or marked source pagination is supplementary descriptive data and does not replace the Artifact page position.
+12. Locator JSON identifies where the evidence is; transcription, description, and interpretation remain separate concerns.
 
 Conceptually:
 
