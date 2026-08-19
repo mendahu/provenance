@@ -160,6 +160,12 @@ because the second value is more specific and non-conflicting.
 
 This derived display state is disposable and reproducible.
 
+## Audit history owns generic change metadata
+
+Generic persistence bookkeeping such as `created_at`, `updated_at`, `created_by_user_id`, and `updated_by_user_id` does not belong on core domain tables.
+
+Creation, modification, deletion, user attribution, and revision ordering are recorded by the append-only audit/revision model defined in `audit-revision-history.md`. A timestamp remains on a domain row only when time is itself part of the domain data rather than bookkeeping.
+
 ---
 
 # 3. Identifier strategy
@@ -194,9 +200,7 @@ CREATE TABLE source_types (
     key             TEXT UNIQUE NOT NULL,
     label           TEXT NOT NULL,
     description     TEXT,
-    builtin         INTEGER NOT NULL DEFAULT 0,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    builtin         INTEGER NOT NULL DEFAULT 0
 );
 ```
 
@@ -228,9 +232,7 @@ CREATE TABLE sources (
     ref             TEXT UNIQUE,               -- e.g. SRC-F4N2P
     source_type_id  BLOB NOT NULL REFERENCES source_types(id),
     title           TEXT,
-    description     TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    description     TEXT
 );
 ```
 
@@ -268,8 +270,6 @@ CREATE TABLE source_metadata_fields (
     data_type       TEXT NOT NULL DEFAULT 'text',
     description     TEXT,
     builtin         INTEGER NOT NULL DEFAULT 0,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL,
 
     CHECK (data_type IN ('text', 'date'))
 );
@@ -337,9 +337,7 @@ CREATE TABLE source_metadata (
     source_id       BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
     field_id        BLOB NOT NULL REFERENCES source_metadata_fields(id),
     value_text      TEXT,
-    date_value_id   BLOB REFERENCES date_values(id),
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    date_value_id   BLOB REFERENCES date_values(id)
 );
 ```
 
@@ -377,9 +375,7 @@ CREATE TABLE artifacts (
     media_type      TEXT,
     checksum_sha256 TEXT,
     byte_size       INTEGER,
-    metadata_json   TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    metadata_json   TEXT
 );
 ```
 
@@ -414,9 +410,7 @@ CREATE TABLE source_stacks (
     id          BLOB PRIMARY KEY,
     source_id   BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
     label       TEXT,
-    notes       TEXT,
-    created_at  TEXT NOT NULL,
-    updated_at  TEXT NOT NULL
+    notes       TEXT
 );
 ```
 
@@ -435,9 +429,7 @@ CREATE TABLE citations (
     locator_type    TEXT NOT NULL,
     locator_json    TEXT NOT NULL,
     alt_text        TEXT,
-    notes           TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    notes           TEXT
 );
 ```
 
@@ -476,9 +468,7 @@ CREATE TABLE observations (
     value_text       TEXT,
     value_json       TEXT,
     confidence       REAL,
-    notes            TEXT,
-    created_at       TEXT NOT NULL,
-    updated_at       TEXT NOT NULL
+    notes            TEXT
 );
 ```
 
@@ -517,9 +507,7 @@ CREATE TABLE person_records (
     id              BLOB PRIMARY KEY,
     source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
     label           TEXT,
-    notes           TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    notes           TEXT
 );
 ```
 
@@ -533,8 +521,6 @@ CREATE TABLE event_records (
     date_value_id   BLOB,
     place_record_id BLOB,
     notes           TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL,
     FOREIGN KEY (place_record_id) REFERENCES place_records(id)
 );
 ```
@@ -550,9 +536,7 @@ CREATE TABLE place_records (
     id              BLOB PRIMARY KEY,
     source_stack_id BLOB NOT NULL REFERENCES source_stacks(id) ON DELETE CASCADE,
     display_value   TEXT,
-    notes           TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    notes           TEXT
 );
 ```
 
@@ -573,9 +557,7 @@ CREATE TABLE relationship_records (
     relationship_type TEXT NOT NULL,
     person_a_id     BLOB NOT NULL REFERENCES person_records(id),
     person_b_id     BLOB NOT NULL REFERENCES person_records(id),
-    notes           TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    notes           TEXT
 );
 ```
 
@@ -590,9 +572,7 @@ CREATE TABLE participation_records (
     person_record_id BLOB NOT NULL REFERENCES person_records(id),
     event_record_id BLOB NOT NULL REFERENCES event_records(id),
     role            TEXT,
-    notes           TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    notes           TEXT
 );
 ```
 
@@ -689,9 +669,7 @@ CREATE TABLE persons (
     preferred_name  TEXT,
     status          TEXT,
     notes           TEXT,
-    merged_into_id  BLOB REFERENCES persons(id),
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    merged_into_id  BLOB REFERENCES persons(id)
 );
 ```
 
@@ -716,9 +694,7 @@ CREATE TABLE places (
     parent_place_id BLOB REFERENCES places(id),
     valid_date_id   BLOB REFERENCES date_values(id),
     notes           TEXT,
-    merged_into_id  BLOB REFERENCES places(id),
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    merged_into_id  BLOB REFERENCES places(id)
 );
 ```
 
@@ -748,9 +724,7 @@ CREATE TABLE place_references (
     to_place_id     BLOB NOT NULL REFERENCES places(id),
     reference_type  TEXT NOT NULL,
     valid_date_id   BLOB REFERENCES date_values(id),
-    notes           TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    notes           TEXT
 );
 ```
 
@@ -773,9 +747,7 @@ CREATE TABLE events (
     date_value_id   BLOB REFERENCES date_values(id),
     place_id        BLOB REFERENCES places(id),
     notes           TEXT,
-    merged_into_id  BLOB REFERENCES events(id),
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL
+    merged_into_id  BLOB REFERENCES events(id)
 );
 ```
 
@@ -790,9 +762,7 @@ CREATE TABLE relationships (
     person_b_id       BLOB NOT NULL REFERENCES persons(id),
     status            TEXT,
     notes             TEXT,
-    merged_into_id    BLOB REFERENCES relationships(id),
-    created_at        TEXT NOT NULL,
-    updated_at        TEXT NOT NULL
+    merged_into_id    BLOB REFERENCES relationships(id)
 );
 ```
 
@@ -812,14 +782,12 @@ Derived relationships such as sibling or niece/nephew may be calculated by appli
 
 ```sql
 CREATE TABLE participations (
-    id            BLOB PRIMARY KEY,
-    person_id     BLOB NOT NULL REFERENCES persons(id),
-    event_id      BLOB NOT NULL REFERENCES events(id),
-    role          TEXT,
-    notes         TEXT,
-    merged_into_id BLOB REFERENCES participations(id),
-    created_at    TEXT NOT NULL,
-    updated_at    TEXT NOT NULL
+    id              BLOB PRIMARY KEY,
+    person_id       BLOB NOT NULL REFERENCES persons(id),
+    event_id        BLOB NOT NULL REFERENCES events(id),
+    role            TEXT,
+    notes           TEXT,
+    merged_into_id  BLOB REFERENCES participations(id)
 );
 ```
 
@@ -847,8 +815,6 @@ CREATE TABLE claims (
     confidence      REAL,
     status          TEXT NOT NULL,
     notes           TEXT,
-    created_at      TEXT NOT NULL,
-    updated_at      TEXT NOT NULL,
 
     CHECK (polarity IN ('positive', 'negative'))
 );
@@ -901,9 +867,9 @@ CREATE TABLE place_record_claims (
 
 ```sql
 CREATE TABLE relationship_record_claims (
-    claim_id              BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
+    claim_id               BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
     relationship_record_id BLOB NOT NULL REFERENCES relationship_records(id),
-    relationship_id       BLOB NOT NULL REFERENCES relationships(id)
+    relationship_id        BLOB NOT NULL REFERENCES relationships(id)
 );
 ```
 
