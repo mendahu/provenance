@@ -234,7 +234,137 @@ CREATE TABLE sources (
 );
 ```
 
-## 4.3 `artifacts`
+## 4.3 Source metadata philosophy
+
+Sources often have descriptive metadata that varies substantially by source type. A book may have an author, publisher, edition, and publication date; a birth certificate may have an issuing authority and registration number; oral testimony may have an interview date and interviewer.
+
+These properties should not become a large collection of nullable columns on `sources`, nor should every source type require its own table. Instead, source metadata uses a small extensible field vocabulary.
+
+Source metadata is deliberately descriptive rather than deeply normalized. Its purpose is to faithfully record useful catalog-like information about the source and provide a consistent UI, not to interpret the historical world represented by the source.
+
+For example, if a book identifies its authors as:
+
+```text
+Alice Smith and Robert Jones
+```
+
+then the `author` metadata value may simply preserve that entire string. The Source layer does not need to split it into two author entities or attempt to resolve either name to a canonical Person.
+
+The general rule is:
+
+> Source metadata records descriptive values as encountered or entered by the researcher. Assertions that those values correspond to other domain entities, if supported later, are separate relationships and do not change the stored metadata value.
+
+### `source_metadata_fields`
+
+Metadata fields provide a controlled but extensible vocabulary of descriptive properties.
+
+Most metadata is plain text. Dates are the intentional exception because chronological sorting and filtering are useful and Provenance already requires a structured genealogical date model.
+
+```sql
+CREATE TABLE source_metadata_fields (
+    id              BLOB PRIMARY KEY,
+    key             TEXT UNIQUE NOT NULL,
+    label           TEXT NOT NULL,
+    data_type       TEXT NOT NULL DEFAULT 'text',
+    description     TEXT,
+    builtin         INTEGER NOT NULL DEFAULT 0,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL,
+
+    CHECK (data_type IN ('text', 'date'))
+);
+```
+
+Example fields might include:
+
+```text
+author              text
+publisher           text
+edition             text
+isbn                text
+repository          text
+call_number         text
+jurisdiction        text
+registration_number text
+publication_date    date
+issue_date          date
+interview_date      date
+```
+
+As with source types, Provenance may seed common fields while allowing users to define additional fields.
+
+### `source_type_metadata_fields`
+
+Source types may suggest which metadata fields are normally useful. This relationship is primarily a UI/cataloging aid rather than a constraint.
+
+```sql
+CREATE TABLE source_type_metadata_fields (
+    source_type_id  BLOB NOT NULL REFERENCES source_types(id) ON DELETE CASCADE,
+    field_id        BLOB NOT NULL REFERENCES source_metadata_fields(id) ON DELETE CASCADE,
+    sort_order      INTEGER,
+    PRIMARY KEY (source_type_id, field_id)
+);
+```
+
+For example, `book` might suggest:
+
+```text
+author
+publisher
+publication_date
+edition
+isbn
+```
+
+while `birth_certificate` might suggest:
+
+```text
+registration_number
+issuing_authority
+issue_date
+repository
+```
+
+These associations do not make the fields mandatory and do not prevent a source from using other metadata fields.
+
+### `source_metadata`
+
+Metadata values preserve a textual representation. Date-capable fields may additionally point to the shared structured `date_values` model.
+
+```sql
+CREATE TABLE source_metadata (
+    id              BLOB PRIMARY KEY,
+    source_id       BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    field_id        BLOB NOT NULL REFERENCES source_metadata_fields(id),
+    value_text      TEXT,
+    date_value_id   BLOB REFERENCES date_values(id),
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
+);
+```
+
+For ordinary metadata:
+
+```text
+author
+  value_text = "Alice Smith and Robert Jones"
+```
+
+For date metadata:
+
+```text
+publication_date
+  value_text = "about the year 1890"
+  date_value_id = DateValue(ABT 1890)
+```
+
+The textual value is useful for fidelity: it may preserve wording from the source that is not identical to the normalized structured date. The structured date is supplementary and supports chronological operations.
+
+A date metadata field does not require the Source layer to interpret people, places, organizations, or other values into canonical entities. Date structure is a targeted exception, not the beginning of a general typed EAV system.
+
+The `date_values` table is defined later in this document. Migration order should account for the foreign-key dependency.
+
+## 4.4 `artifacts`
 
 An artifact is a concrete representation of a source.
 
@@ -952,6 +1082,10 @@ The following should remain explicitly unresolved until implementation pressure 
 8. **Human-readable refs**
    - Determine which entity classes warrant visible refs. Internal source-scoped records probably do not.
 
+9. **Cross-layer references from source metadata**
+   - Source metadata should remain descriptive and unnormalized.
+   - If a metadata value is later explicitly associated with a canonical Person, Place, or other entity, model that as a separate optional relationship rather than changing the metadata value itself.
+
 ---
 
 # 13. Current high-level schema
@@ -959,8 +1093,11 @@ The following should remain explicitly unresolved until implementation pressure 
 ```text
 SOURCE
 
-Source
-  └── Artifact
+SourceType ── suggests ──> SourceMetadataField
+    │
+    └── Source
+         ├── SourceMetadata
+         └── Artifact
 
 
 INTERPRETATION
