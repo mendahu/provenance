@@ -70,6 +70,14 @@ For example:
 
 The audit log records that those domain objects changed. It does not substitute for them.
 
+## 1.5 Strict SQLite typing
+
+All Provenance tables should use SQLite `STRICT` tables unless a specific technical reason requires otherwise.
+
+This keeps the SQLite implementation closer to the strong typing expected from a relational schema and prevents values of unrelated storage classes from being silently accepted into columns.
+
+UUIDv7 identifiers are stored as 16-byte `BLOB` values. `BLOB` is therefore the SQLite storage representation of the UUID, not an indication that the identifier is an arbitrary binary payload.
+
 ---
 
 # 2. Revisions
@@ -80,13 +88,13 @@ One action may modify several rows or several tables, and those changes should r
 
 ```sql
 CREATE TABLE audit_transactions (
-    id              BLOB PRIMARY KEY,          -- UUIDv7
+    id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
     revision        INTEGER NOT NULL UNIQUE,
     user_id         BLOB REFERENCES users(id),
     action_type     TEXT,
     description     TEXT,
     created_at      TEXT NOT NULL
-);
+) STRICT;
 ```
 
 ## 2.1 `revision`
@@ -101,7 +109,7 @@ Revision 141
 Revision 142
 ```
 
-`created_at` remains useful descriptive information, but timestamps are not the authoritative ordering mechanism.
+`created_at` is part of the audit event itself and records when the revision occurred; timestamps are not the authoritative ordering mechanism.
 
 For a local SQLite project, revision allocation and the corresponding domain changes should occur inside the same database transaction.
 
@@ -148,7 +156,7 @@ Each row affected by a revision receives an `audit_changes` entry.
 
 ```sql
 CREATE TABLE audit_changes (
-    id                      BLOB PRIMARY KEY,   -- UUIDv7
+    id                      BLOB PRIMARY KEY,   -- UUIDv7, 16 bytes
     audit_transaction_id    BLOB NOT NULL
         REFERENCES audit_transactions(id),
 
@@ -158,7 +166,7 @@ CREATE TABLE audit_changes (
     changes_json            TEXT NOT NULL,
 
     CHECK (action IN ('create', 'update', 'delete'))
-);
+) STRICT;
 ```
 
 The audit tables themselves should not be audited recursively.
@@ -354,20 +362,22 @@ The exact migration/versioning mechanism should be designed alongside the applic
 
 ---
 
-# 8. Relationship to timestamps on domain rows
+# 8. Relationship to bookkeeping on domain rows
 
-Tables may continue to contain ordinary fields such as:
+Core domain tables should not carry generic bookkeeping fields such as:
 
 ```text
 created_at
 updated_at
+created_by_user_id
+updated_by_user_id
 ```
 
-These are convenient current-state data and should not be considered the historical record.
+Creation, modification, deletion, attribution, and revision ordering are represented authoritatively by the audit stream.
 
-The audit stream answers who changed a row, how it changed, and in which revision. The domain timestamps answer when the current row was created or last updated without requiring an audit query.
+A timestamp or user reference belongs directly on a domain row only when it has domain meaning rather than merely recording persistence activity. For example, an interview date is genealogical/source metadata; the time at which a researcher edited that metadata belongs in the audit transaction.
 
-Similarly, explicit `created_by_user_id` or `updated_by_user_id` columns should not be added mechanically to every table. Creator/editor attribution is already represented authoritatively by revisions unless a specific current-state query justifies denormalization.
+The audit tables themselves necessarily contain audit-domain metadata such as `audit_transactions.created_at` and `user_id` because those values describe the revision event.
 
 ---
 
@@ -398,14 +408,16 @@ A future `reverses_transaction_id` reference on `audit_transactions` may be usef
 The first implementation should follow these rules:
 
 1. Audit support exists in schema version 1.
-2. Ordinary persistent writes are always wrapped in an `audit_transaction`.
-3. Revision numbers provide deterministic ordering.
-4. A revision groups every row mutation belonging to one logical action.
-5. Diffs contain both old and new values.
-6. Create and delete events contain enough state for full reconstruction.
-7. Audit rows are append-only.
-8. Undo creates a new revision.
-9. The audit stream is authoritative; snapshots are derived data.
-10. Audit history supplements rather than replaces Source, Interpretation, Conclusion, Claim, and merge semantics.
+2. All ordinary schema tables use SQLite `STRICT` typing.
+3. Ordinary persistent writes are always wrapped in an `audit_transaction`.
+4. Revision numbers provide deterministic ordering.
+5. A revision groups every row mutation belonging to one logical action.
+6. Diffs contain both old and new values.
+7. Create and delete events contain enough state for full reconstruction.
+8. Audit rows are append-only.
+9. Undo creates a new revision.
+10. The audit stream is authoritative; snapshots are derived data.
+11. Generic creation/update timestamps and user IDs are not duplicated across domain tables.
+12. Audit history supplements rather than replaces Source, Interpretation, Conclusion, Claim, and merge semantics.
 
 The goal is not merely to know that data changed. Provenance should be able to explain **how the research database arrived at its current state**.
