@@ -39,7 +39,7 @@ Alice Smith and Robert Jones
 
 then its `author` metadata may preserve that exact string. The Source layer does not need to split the authors or resolve either one to a canonical Person.
 
-Dates are the intentional exception: date-valued metadata may additionally use Provenance's shared structured genealogical date representation so dates can be sorted and filtered.
+Dates are the intentional exception: date-valued metadata may additionally reference Provenance's shared structured genealogical date representation so dates can be sorted and filtered. That cross-layer value model is defined in [`structured-date-model.md`](structured-date-model.md).
 
 ## 1.3 Offline-first ingestion
 
@@ -79,10 +79,10 @@ source_types
                                 |
                                 +--< file_derivatives >-- files
 
-source_metadata.date_value_id --> date_values
+source_metadata.date_value_id --> date_values (shared cross-layer model)
 ```
 
-The File store is shared infrastructure, but it is defined here because Artifacts are its primary Source-layer consumer.
+The File store is shared infrastructure, but it is defined here because Artifacts are its primary Source-layer consumer. The `date_values` table is not defined here; see [`structured-date-model.md`](structured-date-model.md).
 
 ---
 
@@ -227,7 +227,7 @@ author
   value_text = "Alice Smith and Robert Jones"
 ```
 
-Date metadata may preserve both the entered/source wording and its structured representation:
+Date metadata may preserve both the entered/source wording and a structured representation:
 
 ```text
 publication_date
@@ -237,57 +237,13 @@ publication_date
 
 The text remains useful for fidelity even when a structured date exists.
 
+The schema and semantics of `date_values` are defined in [`structured-date-model.md`](structured-date-model.md).
+
 Application validation should enforce the intended relationship between `source_metadata_fields.data_type` and `date_value_id`; SQLite cannot express that cross-table constraint with a simple `CHECK`.
 
 ---
 
-# 6. Shared structured date values
-
-`date_values` is a shared domain value-object table used beyond the Source layer, but Source metadata depends on it and its relevant schema is included here for completeness.
-
-Genealogical dates cannot be represented adequately by SQL `DATE` alone. They must support partial dates, approximations, before/after bounds, ranges, periods, alternate calendars, and phrases.
-
-```sql
-CREATE TABLE date_values (
-    id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
-    kind            TEXT NOT NULL,
-    qualifier       TEXT,
-    calendar        TEXT,
-
-    start_year      INTEGER,
-    start_month     INTEGER,
-    start_day       INTEGER,
-
-    end_year        INTEGER,
-    end_month       INTEGER,
-    end_day         INTEGER,
-
-    phrase          TEXT,
-
-    CHECK (start_month IS NULL OR start_month BETWEEN 1 AND 12),
-    CHECK (end_month   IS NULL OR end_month BETWEEN 1 AND 12),
-    CHECK (start_day   IS NULL OR start_day BETWEEN 1 AND 31),
-    CHECK (end_day     IS NULL OR end_day BETWEEN 1 AND 31)
-) STRICT;
-```
-
-Examples include:
-
-```text
-14 MAY 1985
-MAY 1985
-1985
-ABT 1985
-BEF 1900
-BET 1880 AND 1885
-FROM 1880 TO 1885
-```
-
-The persistence ID does not imply domain identity; a DateValue remains conceptually a value object.
-
----
-
-# 7. `files`
+# 6. `files`
 
 A File is a locally managed immutable digital storage object.
 
@@ -339,7 +295,7 @@ The initial implementation does not support destructive deletion of primary File
 
 ---
 
-# 8. `artifacts`
+# 7. `artifacts`
 
 An Artifact is a concrete evidentiary representation of a Source.
 
@@ -376,7 +332,7 @@ Application-generated thumbnails and previews are not additional Artifacts.
 
 ---
 
-# 9. `file_derivatives`
+# 8. `file_derivatives`
 
 Generated assets are relationships between a source File and another File generated from it.
 
@@ -419,7 +375,7 @@ Derivative generation and cache eviction do not need to create research audit ev
 
 ---
 
-# 10. Audit and historical file versions
+# 9. Audit and historical file versions
 
 The Source-layer tables do not contain generic version columns. The append-only audit system records their mutations.
 
@@ -446,7 +402,7 @@ Primary File retention must account for historical references, not merely curren
 
 ---
 
-# 11. Current Source-layer schema
+# 10. Current Source-layer schema
 
 The Source layer currently consists of:
 
@@ -459,24 +415,25 @@ source_metadata
 artifacts
 ```
 
-with these directly supporting tables:
+with these directly supporting storage tables:
 
 ```text
 files
 file_derivatives
-date_values        shared value-object infrastructure
 ```
+
+`date_values` is shared cross-layer value-object infrastructure and is defined separately in [`structured-date-model.md`](structured-date-model.md).
 
 The audit tables are cross-cutting infrastructure and are defined separately in `audit-revision-history.md`.
 
 ---
 
-# 12. Current architectural rules
+# 11. Current architectural rules
 
 1. Sources are evidentiary objects and remain free of genealogical interpretation.
 2. Source types use a seeded, controlled, user-extensible vocabulary rather than an enum.
 3. Source metadata is descriptive and minimally structured.
-4. Metadata values are text by default; structured genealogical dates are the intentional exception.
+4. Metadata values are text by default; shared structured genealogical dates are the intentional exception.
 5. Source types may suggest metadata fields but do not require them.
 6. External provenance belongs to the Source and must not be required to access ingested evidence.
 7. Artifacts are concrete representations of Sources and do not have an `artifact_type` taxonomy.
