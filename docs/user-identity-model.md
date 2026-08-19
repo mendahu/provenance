@@ -2,95 +2,82 @@
 
 ## Status
 
-Draft architecture notes. This document defines how Provenance represents researchers and contributors while remaining local-first and leaving room for future synchronization, sharing, hosted backup, and web access.
+Draft architecture notes. This document defines the MVP contributor identity model and the extension boundaries for future synchronization, sharing, hosted backup, and web access.
 
-The central requirement is:
+The MVP requirement is deliberately small:
 
-> A researcher must be able to create and use a Provenance project without creating an online account, while every research change must still have a durable contributor identity that can survive later synchronization or sharing.
+> A researcher must be able to create and use a Provenance project locally without authentication, while every audited research change has a durable contributor identity that can later participate in a broader collaboration model without rewriting history.
 
 ---
 
-# 1. Separate contributor identity from authentication
+# 1. MVP scope
 
-Provenance should not treat "user" and "login account" as the same concept.
+The MVP supports a single local user on a desktop installation.
 
-There are three distinct concerns:
+There is no required login, cloud account, project membership system, role system, public-key identity, or external identity provider.
+
+The only current identity requirement is durable audit attribution.
 
 ```text
-Contributor identity
-    Who performed this research action?
-
-External identity
-    Is this contributor known to some external account or identity system?
-
-Authentication
-    How does a service prove that someone is allowed to act as that identity?
+Who made this research change?
 ```
 
-Only the first two belong in a portable project dataset.
-
-Authentication credentials, sessions, password hashes, OAuth refresh tokens, passkeys, and similar secrets belong to the application or service providing authentication. They should not be embedded in a genealogy project file that may be copied, backed up, exported, or shared with other researchers.
+That question is answered by a globally unique User UUID and a display name.
 
 ---
 
 # 2. Local-first identity
 
-A fresh desktop installation must not require authentication.
-
-On first use, Provenance can create a local user identity with a globally unique UUIDv7 and ask only for enough information to identify the researcher in audit history, typically a display name.
+On first use, Provenance creates a local user identity with a UUIDv7 and asks for a display name.
 
 For example:
 
 ```text
-Jake Robins
-USR-UUID = 019c...
+User U1
+  id = 019c...
+  display_name = "Jake Robins"
 ```
 
-That UUID is the durable identity used in project history.
+That UUID becomes the durable contributor identity used by audit history.
 
-Creating a new project then records this user in the project and audit revisions can immediately attribute actions to that identity.
+Creating a project records the local User in the project, and ordinary audited writes reference that User.
 
 ```text
 Revision 1
-  user_id = Jake's local UUID
+  user_id = U1
   action = create_project
 ```
 
-No email address, password, cloud service, or network connection is required.
+No email address, password, network connection, or online service is required.
 
-The same local application identity may be reused when the researcher creates additional projects, allowing the same UUID to identify that contributor consistently across their own local datasets.
+The desktop application should reuse the same local User UUID when the researcher creates additional projects. This keeps the identity globally stable rather than generating a new contributor identity per project.
 
 ---
 
-# 3. `users`
+# 3. Current `users` schema
 
-The `users` table represents durable research contributors known to a project.
-
-It is intentionally small.
+The MVP `users` table is intentionally minimal.
 
 ```sql
 CREATE TABLE users (
     id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
-    display_name    TEXT NOT NULL,
-    kind            TEXT NOT NULL DEFAULT 'human',
-    status          TEXT NOT NULL DEFAULT 'active',
-
-    CHECK (kind IN ('human', 'system')),
-    CHECK (status IN ('active', 'inactive'))
+    display_name    TEXT NOT NULL
 ) STRICT;
 ```
 
 ## 3.1 `id`
 
-`id` is the contributor's durable identity and must remain stable across synchronization.
+`id` is the durable contributor identity.
 
-It is not scoped to one particular project. A locally created user should retain the same UUID when that person's identity is introduced into other Provenance projects.
+It is a globally unique UUIDv7 rather than a project-local integer, email address, username, or machine identifier.
 
-This makes audit histories from different replicas or projects capable of referring to the same contributor without relying on mutable properties such as name or email address.
+That choice is the primary extensibility mechanism. Future synchronization can transport the same User UUID between replicas without changing historical `audit_transactions.user_id` references.
 
 ## 3.2 `display_name`
 
-`display_name` is the human-readable attribution shown in the research UI and audit history.
+`display_name` is the human-readable attribution shown in research history and other UI.
+
+It need not be unique and is not authentication data.
 
 Examples:
 
@@ -100,107 +87,39 @@ Jane Smith
 A. García
 ```
 
-It is not required to be globally unique and is not an authentication credential.
-
-A user's name may change over time. The audit system records that change like any other durable project data.
-
-## 3.3 `kind`
-
-Most users are human researchers.
-
-A `system` identity allows durable attribution for automated operations that genuinely create or modify research state, such as a future importer or synchronization process where attributing the action only to a human would be misleading.
-
-Application cache operations such as generating thumbnails do not need research audit attribution and therefore do not require system-user revisions.
-
-## 3.4 `status`
-
-A contributor should generally not be deleted simply because they no longer participate in a project. Historical audit revisions continue to reference the contributor.
-
-`inactive` allows a contributor to be retired from current use while preserving attribution history.
-
-The initial implementation should not support destructive deletion of users that are referenced by audit history.
+If the display name changes, that durable project-data change is itself auditable.
 
 ---
 
-# 4. External identity links
+# 4. Relationship to audit history
 
-A local Provenance user may later become associated with one or more external identity systems.
+`audit_transactions.user_id` references `users.id`.
 
-Examples might include:
-
-```text
-Provenance hosted account
-Google OIDC identity
-Apple identity
-enterprise identity provider
-future peer-to-peer synchronization identity
+```sql
+audit_transactions.user_id BLOB REFERENCES users(id)
 ```
 
-These relationships should extend the existing local user rather than replace it.
+The User row is the authoritative attribution identity for research changes.
 
 For example:
 
 ```text
-Before sign-in
-
-User 019c...
-  display_name = "Jake Robins"
-
-After linking hosted account
-
-User 019c...
-  display_name = "Jake Robins"
-  external identity -> provenance / acct_8372
+Revision 142
+User: Jake Robins
+Action: replace_artifact_file
 ```
 
-The local research history continues to reference the same User UUID.
+Because the display name is stored in the project, the audit history remains understandable offline.
 
-## 4.1 `user_external_identities`
-
-```sql
-CREATE TABLE user_external_identities (
-    id                  BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
-    user_id             BLOB NOT NULL REFERENCES users(id),
-    provider            TEXT NOT NULL,
-    provider_subject    TEXT NOT NULL,
-    display_identifier  TEXT,
-
-    UNIQUE (provider, provider_subject)
-) STRICT;
-```
-
-### `provider`
-
-`provider` identifies the identity namespace, not necessarily the authentication protocol.
-
-Examples:
-
-```text
-provenance
-apple
-google
-example-genealogy-service
-```
-
-### `provider_subject`
-
-`provider_subject` is the stable identifier assigned by that provider.
-
-For OAuth/OIDC-style systems this should normally be the provider's immutable subject identifier rather than an email address.
-
-Email addresses and usernames can change and therefore should not be used as durable identity keys.
-
-### `display_identifier`
-
-`display_identifier` is optional convenience information such as an email address or username useful to the researcher when recognizing the linked account.
-
-It is descriptive only. It is not the durable key and should not be trusted as proof of identity.
+Users referenced by audit history should not be destructively deleted in ordinary application behavior because historical attribution must remain resolvable.
 
 ---
 
-# 5. Authentication does not belong in the project database
+# 5. Identity is not authentication
 
-The project database should not contain authentication secrets.
+Even though the MVP has no authentication system, the design should preserve a clear boundary between contributor identity and login/authentication concepts.
+
+The portable project database should not acquire authentication secrets later simply because collaboration is added.
 
 Do not store project-level fields such as:
 
@@ -213,140 +132,41 @@ session cookie
 passkey private material
 ```
 
-A desktop application may use operating-system facilities such as Keychain or Credential Manager for local secrets.
+A future desktop authentication or synchronization layer may use operating-system secure storage. A hosted service may maintain its own authentication database.
 
-A hosted Provenance service may maintain its own account/authentication database.
-
-Conceptually:
-
-```text
-Portable genealogy project
-
-users
-user_external_identities
-audit_transactions
-research data
-
-        ↑ identity mapping
-        │
-        │
-Hosted service / desktop app security domain
-
-auth accounts
-credentials
-sessions
-OAuth tokens
-passkeys
-permissions
-```
-
-The hosted service authenticates an account, resolves it to a stable external identity, and then determines which project User that identity corresponds to.
-
-This keeps copied project files free of reusable login credentials.
+The project User UUID remains the research attribution identity regardless of how a future service authenticates the person using it.
 
 ---
 
-# 6. Relationship to audit history
+# 6. Future extension boundaries
 
-`audit_transactions.user_id` references `users.id`.
+The following concepts are intentionally **not part of the MVP schema**, but the current User UUID model is designed so they can be added later without changing existing audit history.
+
+## 6.1 External identity mappings
+
+A future hosted or third-party identity may be linked to an existing User.
+
+A possible future table is:
 
 ```sql
-audit_transactions.user_id BLOB REFERENCES users(id)
+CREATE TABLE user_external_identities (
+    id                  BLOB PRIMARY KEY,
+    user_id             BLOB NOT NULL REFERENCES users(id),
+    provider            TEXT NOT NULL,
+    provider_subject    TEXT NOT NULL,
+    display_identifier  TEXT,
+
+    UNIQUE (provider, provider_subject)
+) STRICT;
 ```
 
-The User row is the durable attribution identity. External account mappings are supplementary.
+This is **not an MVP table**.
 
-This means an audit history remains understandable offline:
+The important principle is that an external account would extend an existing `users.id`; it would not replace the User UUID already referenced by audit history.
 
-```text
-Revision 142
-User: Jake Robins
-Action: replace_artifact_file
-```
+## 6.2 Project membership and authorization
 
-without contacting an identity service.
-
-If Jake later links or unlinks a hosted account, historical revisions still refer to the same local User.
-
-A user referenced by audit history must remain resolvable even if the contributor becomes inactive or an external account disappears.
-
----
-
-# 7. Synchronization and contributor discovery
-
-When datasets or revisions are synchronized, User rows referenced by incoming audit transactions must travel with those transactions.
-
-For example:
-
-```text
-Alice's replica
-  User A = Alice
-
-Bob's replica
-  User B = Bob
-
-After shared synchronization
-
-Project users
-  User A = Alice
-  User B = Bob
-
-Audit history
-  revisions by User A
-  revisions by User B
-```
-
-Because User IDs are globally unique UUIDs, the replicas do not need to assign new project-local numeric identities.
-
-External identity links can help determine that a contributor arriving from another replica corresponds to an already-known account, but synchronization correctness should not depend solely on mutable values such as display name or email address.
-
----
-
-# 8. Identity reconciliation
-
-A future sync system may encounter two User rows that appear to represent the same human but were independently created before the identities were linked.
-
-For example:
-
-```text
-User A
-  "Jake Robins"
-  created on Mac
-
-User B
-  "Jake Robins"
-  created on Windows before synchronization
-```
-
-Provenance must not silently rewrite historical audit references merely because names match.
-
-Identity reconciliation should be explicit.
-
-The simplest initial rule is:
-
-> User UUIDs remain distinct unless the application can establish an explicit identity link or the researcher deliberately reconciles them.
-
-A future user-alias/merge mechanism may allow the UI to treat User A and User B as the same contributor while preserving original audit IDs. That mechanism should be designed when synchronization work makes the concrete requirements clear.
-
----
-
-# 9. Project access and permissions are separate
-
-A User identifies a contributor. It does not, by itself, answer whether that contributor is currently authorized to read or modify a project.
-
-These are separate questions:
-
-```text
-Identity
-  Who is this contributor?
-
-Authorization
-  What may this contributor do with this project?
-```
-
-For a purely local single-user project, no project permission model is necessary.
-
-A future sync or hosted service may need roles such as:
+Future collaboration may require concepts such as:
 
 ```text
 owner
@@ -354,17 +174,43 @@ editor
 viewer
 ```
 
-Those permissions should be modeled by the synchronization/hosting layer or by a future explicit project-membership model. They should not be encoded as properties of `users`, because the same User may have different permissions in different projects.
+These belong to a project-membership or synchronization authorization model, not to `users`.
 
-This also prevents a local project from requiring cloud-style authorization machinery before sharing exists.
+A User answers:
+
+```text
+Who is this contributor?
+```
+
+A future membership model answers:
+
+```text
+What may this contributor do in this project?
+```
+
+The MVP does not need a membership table because there is only one local user.
+
+## 6.3 Cryptographic/synchronization identity
+
+A future peer-to-peer or untrusted sync system may require contributors to prove ownership of their User identity using a public/private keypair.
+
+That should be layered onto the existing User UUID rather than embedded in the MVP identity record before there is a concrete synchronization design.
+
+Private key material must not be stored in the portable project database.
+
+## 6.4 Identity reconciliation
+
+Future synchronization may encounter two independently created User UUIDs that represent the same human.
+
+Those identities must not be silently merged based on display names or email addresses. A future explicit reconciliation/alias mechanism can handle that while preserving original audit references.
 
 ---
 
-# 10. Email addresses and profile information
+# 7. Email and profile information
 
-The core User record should remain intentionally minimal.
+The MVP does not store email addresses or conventional account-profile fields.
 
-Fields such as:
+Do not add fields such as:
 
 ```text
 email
@@ -374,72 +220,40 @@ biography
 website
 ```
 
-should not be added merely because conventional account systems usually contain them.
+without a concrete product requirement.
 
-If Provenance later has a concrete research or collaboration use case for contributor profile metadata, that can be introduced separately.
-
-In particular, email should not initially be required because:
-
-- local users do not need one;
-- email is not a durable identity key;
-- a contributor may use different emails with different services;
-- storing unnecessary personal information inside shared genealogy datasets has privacy costs.
+In particular, email should not be used as the User identity because it is mutable, unnecessary for local use, and may differ between future services.
 
 ---
 
-# 11. Example lifecycle
-
-## Local-only start
+# 8. MVP lifecycle
 
 ```text
-1. Jake installs Provenance on macOS.
-2. Provenance creates User U1 with a UUIDv7.
-3. Jake enters display name "Jake Robins".
-4. Jake creates a genealogy project.
-5. The project stores User U1.
-6. Audit revisions reference U1.
+1. Researcher installs Provenance on macOS or Windows.
+2. Provenance creates a local UUIDv7 User identity.
+3. Researcher enters a display name.
+4. Researcher creates a project.
+5. The project stores that User row.
+6. Audit transactions reference that User UUID.
+7. No authentication or collaboration infrastructure is involved.
 ```
 
-No authentication exists or is required.
-
-## Later hosted backup
+If collaboration is added later:
 
 ```text
-1. Jake enables Provenance hosted backup.
-2. The service authenticates Jake using its own account system.
-3. U1 is linked to the hosted account through user_external_identities.
-4. Existing project history remains unchanged.
+8. Existing User UUID remains unchanged.
+9. New identity/authentication/membership mechanisms attach to it.
+10. Existing audit history requires no migration of contributor identity.
 ```
-
-## Later collaboration
-
-```text
-1. Jane accepts access through a future synchronization service.
-2. Jane has her own durable User U2.
-3. U2 is introduced into the shared project.
-4. Jane's new audit revisions reference U2.
-5. Jake's historical revisions continue to reference U1.
-```
-
-The project remains intelligible if subsequently opened offline.
 
 ---
 
-# 12. Current schema
+# 9. Current schema
 
 ```text
 users
   id
   display_name
-  kind
-  status
-
-user_external_identities
-  id
-  user_id -> users.id
-  provider
-  provider_subject
-  display_identifier
 
 users
   ↑
@@ -448,26 +262,24 @@ users
 audit_transactions
 ```
 
-Authentication and project authorization deliberately sit outside this core portable identity schema.
+Everything else in this document's future-extension section is intentionally deferred.
 
 ---
 
-# 13. Current architectural rules
+# 10. Current architectural rules
 
-1. A local user account is created without requiring authentication or network access.
-2. Every contributor receives a globally unique UUIDv7 identity.
-3. `users` represents durable research attribution, not login credentials.
-4. Display names are descriptive and need not be unique.
-5. Email is not required and is not a durable identity key.
-6. External accounts extend a local User through `user_external_identities`; they do not replace the User ID.
-7. Provider subject identifiers, rather than email addresses, are used for durable external identity mappings.
-8. Authentication credentials and sessions do not live in portable project databases.
-9. `audit_transactions.user_id` references the durable project User identity.
-10. Users referenced by history are preserved; inactive contributors are not destructively deleted.
-11. User identity and project authorization are separate concerns.
-12. Permissions should not be stored directly on `users`.
-13. Synchronization transports referenced User identities along with research history.
-14. Independently created duplicate contributor identities are not silently merged.
-15. All tables use SQLite `STRICT` typing.
+1. MVP supports one local user per desktop application identity.
+2. No authentication or network access is required.
+3. `users` contains only `id` and `display_name` in the MVP.
+4. User IDs are globally unique UUIDv7 values rather than project-local integers.
+5. The same local User UUID should be reused across projects created by that desktop identity.
+6. `audit_transactions.user_id` references the durable User UUID.
+7. Display names are descriptive and need not be unique.
+8. Users referenced by audit history are preserved.
+9. Email is not required and is not an identity key.
+10. Authentication credentials do not belong in portable project databases.
+11. External identities, membership/roles, cryptographic identity, and identity reconciliation are future concerns rather than MVP schema.
+12. Future identity mechanisms should extend the existing User UUID rather than replacing it.
+13. All tables use SQLite `STRICT` typing.
 
-This design allows Provenance to begin as a completely local desktop application while keeping contributor identity stable enough to support future synchronization, collaboration, backup, and hosted services without redesigning research attribution.
+This keeps the MVP implementation small while preserving the one decision that is difficult to retrofit later: a stable, globally unique contributor identity for audit history.
