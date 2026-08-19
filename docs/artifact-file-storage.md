@@ -82,6 +82,30 @@ Source: Smith family Bible
 
 `artifacts.file_id` is therefore nullable.
 
+## 1.5 Files are immutable and history-preserving
+
+Once a File is ingested, its byte content is immutable.
+
+A File's identity is tied to its SHA-256 checksum, so replacing its bytes in place would violate the storage model. If a better scan, corrected export, or otherwise different byte stream is acquired, Provenance creates a new File row and updates the Artifact to reference that new File.
+
+For example:
+
+```text
+Revision 220
+  CREATE File B
+  UPDATE Artifact.file_id: File A -> File B
+```
+
+The prior File A remains preserved.
+
+This is required because the audit history may refer to File A when reconstructing earlier project state.
+
+The governing rule is:
+
+> Any File that has ever been referenced by audited research data is retained so historical revisions remain reconstructable.
+
+Ordinary orphan cleanup must therefore not delete a File merely because no current Artifact references it.
+
 ---
 
 # 2. Files are storage objects
@@ -174,6 +198,39 @@ This is technical information used for rendering and file handling. It is not an
 
 `byte_size` records the exact size of the ingested object and provides an additional integrity and storage-management signal.
 
+## 3.6 File replacement
+
+A File is never edited in place to represent different bytes.
+
+When an Artifact receives a replacement file:
+
+```text
+1. ingest the replacement bytes;
+2. calculate SHA-256;
+3. create or reuse the matching File row;
+4. update Artifact.file_id;
+5. record the File creation and Artifact update in the same audit revision.
+```
+
+Example:
+
+```text
+Artifact A
+  file_id = File A   -- photocopy scan
+
+replacement operation
+
+File B               -- higher-quality scan
+Artifact A
+  file_id = File B
+
+Audit revision
+  CREATE File B
+  UPDATE Artifact A.file_id: File A -> File B
+```
+
+File A remains available for historical reconstruction.
+
 ---
 
 # 4. `artifacts`
@@ -205,7 +262,23 @@ The first is intentionally omitted; the remaining technical fields belong to `fi
 
 ---
 
-# 5. Examples
+# 5. Deletion policy
+
+The initial implementation should not support destructive deletion of Files.
+
+Removing a current reference to a File is allowed through ordinary audited domain changes, such as replacing `artifacts.file_id`, but the File row and content-addressed object remain preserved.
+
+Likewise, deleting an Artifact or Source in a future implementation must not automatically delete historically referenced Files.
+
+The initial storage model therefore intentionally favors historical integrity over reclaiming disk space.
+
+A future explicit purge feature, if ever added, must be treated as a destructive maintenance operation rather than ordinary CRUD. It would need to account for audit reconstruction and make clear that purged historical states can no longer be fully materialized.
+
+Until such a feature is deliberately designed, Files are retained indefinitely.
+
+---
+
+# 6. Examples
 
 ## Digitized certificate
 
@@ -222,6 +295,25 @@ File A:
   media_type = "image/jpeg"
   byte_size = 4281932
 ```
+
+## Replacing a scan
+
+```text
+Source: 1897 birth certificate
+
+Artifact:
+  description = "Scan of certificate"
+
+Revision 100:
+  Artifact.file_id -> File A
+  File A = photocopy scan
+
+Revision 145:
+  CREATE File B = higher-quality scan
+  UPDATE Artifact.file_id: File A -> File B
+```
+
+The current Artifact opens File B. Historical reconstruction at Revision 100 still opens File A.
 
 ## Multiple representations
 
@@ -265,7 +357,7 @@ The external reference may be retained as Source metadata or another future Sour
 
 ---
 
-# 6. Current architectural rules
+# 7. Current architectural rules
 
 1. Artifacts do not have an `artifact_type` field.
 2. Files are modeled separately from Artifacts.
@@ -274,10 +366,15 @@ The external reference may be retained as Source metadata or another future Sour
 5. Digital evidence is ingested into local application-managed storage.
 6. External URLs and locations belong to Source provenance and are not Artifact runtime dependencies.
 7. Files are content-addressed by SHA-256.
-8. The managed storage path is derived from the checksum rather than persisted in the database.
-9. The filename presented at ingestion is retained as `original_filename`.
-10. MIME/media type and byte size belong to the File.
-11. Artifacts without files are valid and support physical-only evidence.
-12. All tables use SQLite `STRICT` typing.
+8. File byte content is immutable after ingestion.
+9. Replacing a file creates or reuses a different content-addressed File and updates the Artifact reference under audit.
+10. Previously referenced Files remain preserved for historical reconstruction.
+11. The initial implementation does not support destructive File deletion.
+12. Ordinary orphan cleanup must not remove historically referenced Files.
+13. The managed storage path is derived from the checksum rather than persisted in the database.
+14. The filename presented at ingestion is retained as `original_filename`.
+15. MIME/media type and byte size belong to the File.
+16. Artifacts without files are valid and support physical-only evidence.
+17. All tables use SQLite `STRICT` typing.
 
-This model keeps genealogy semantics, evidentiary representation, and storage infrastructure separate while making every ingested digital source durable and usable offline.
+This model keeps genealogy semantics, evidentiary representation, and storage infrastructure separate while making every ingested digital source durable, historically reconstructable, and usable offline.
