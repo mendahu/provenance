@@ -16,11 +16,11 @@ Examples include:
 
 ```text
 PDF page
-PDF page -> rectangular crop
+PDF page -> polygon region
 PDF page -> quoted text
-image -> rectangular crop
+image -> polygon region
 audio -> time range
-video -> time range -> rectangular frame region
+video -> time range -> polygon frame region
 ```
 
 The locator is therefore a versioned, ordered chain of selectors. Each selector narrows the context produced by the selectors before it.
@@ -125,15 +125,19 @@ The general rule is:
 
 # 4. `region` selector
 
-Selects a rectangular region from an image-like context, including a standalone image, a rendered PDF page, or a video-frame context.
+Selects an arbitrary polygonal region from an image-like context, including a standalone image, a rendered PDF page, or a video-frame context.
+
+A polygon is used rather than a rectangle so the same selector can represent both simple rectangular crops and irregularly shaped evidence such as handwriting blocks, seals, marginal notes, damaged document fragments, or people in photographs.
 
 ```json
 {
   "type": "region",
-  "x": 0.31,
-  "y": 0.18,
-  "width": 0.42,
-  "height": 0.21,
+  "points": [
+    { "x": 0.31, "y": 0.18 },
+    { "x": 0.73, "y": 0.18 },
+    { "x": 0.70, "y": 0.39 },
+    { "x": 0.34, "y": 0.42 }
+  ],
   "unit": "normalized"
 }
 ```
@@ -143,22 +147,44 @@ Schema:
 ```text
 RegionSelector {
     type: "region"
+    points: Point[]       // at least 3 points
+    unit: "normalized"
+}
+
+Point {
     x: number between 0 and 1
     y: number between 0 and 1
-    width: number > 0 and <= 1
-    height: number > 0 and <= 1
-    unit: "normalized"
 }
 ```
 
-Additional validation:
+The polygon is implicitly closed by connecting the final point back to the first point. The first point therefore should not be repeated at the end of the array.
 
-```text
-x + width <= 1
-y + height <= 1
-```
+For version 1:
+
+- `points` must contain at least three distinct points;
+- every point must lie within the normalized media bounds;
+- points are interpreted in array order as the polygon boundary;
+- the polygon must not self-intersect;
+- degenerate polygons with zero area are invalid.
 
 Normalized coordinates keep Citations stable across rendering resolutions and generated previews.
+
+A rectangle is represented as an ordinary four-point polygon. For example:
+
+```json
+{
+  "type": "region",
+  "points": [
+    { "x": 0.31, "y": 0.18 },
+    { "x": 0.73, "y": 0.18 },
+    { "x": 0.73, "y": 0.39 },
+    { "x": 0.31, "y": 0.39 }
+  ],
+  "unit": "normalized"
+}
+```
+
+The application may provide a rectangular drag-selection UI as a convenience and serialize the resulting rectangle as four polygon points. More advanced tools may allow users to add or move arbitrary vertices without requiring a schema change.
 
 A crop on a scanned PDF page is represented compositionally:
 
@@ -173,10 +199,12 @@ A crop on a scanned PDF page is represented compositionally:
     },
     {
       "type": "region",
-      "x": 0.31,
-      "y": 0.18,
-      "width": 0.42,
-      "height": 0.21,
+      "points": [
+        { "x": 0.31, "y": 0.18 },
+        { "x": 0.73, "y": 0.18 },
+        { "x": 0.70, "y": 0.39 },
+        { "x": 0.34, "y": 0.42 }
+      ],
       "unit": "normalized"
     }
   ]
@@ -222,10 +250,12 @@ A video Citation can compose time and spatial selection:
     },
     {
       "type": "region",
-      "x": 0.12,
-      "y": 0.08,
-      "width": 0.30,
-      "height": 0.45,
+      "points": [
+        { "x": 0.12, "y": 0.08 },
+        { "x": 0.42, "y": 0.08 },
+        { "x": 0.42, "y": 0.53 },
+        { "x": 0.12, "y": 0.53 }
+      ],
       "unit": "normalized"
     }
   ]
@@ -314,10 +344,11 @@ For locator version 1:
 6. Unknown selector types are preserved losslessly for forward compatibility.
 7. A Citation is independently resolvable from `artifact_id` plus `locator_json`.
 8. A Citation never depends on another Citation for its location.
-9. Region coordinates are relative to the selected media context rather than a UI rendering.
-10. For paginated digital Artifacts, the Artifact page position is authoritative for navigation.
-11. Printed or marked source pagination is supplementary descriptive data and does not replace the Artifact page position.
-12. Locator JSON identifies where the evidence is; transcription, description, and interpretation are separate concerns.
+9. Region vertices use normalized coordinates relative to the selected media context rather than a UI rendering.
+10. Region polygons contain at least three distinct points, are non-self-intersecting, and have non-zero area.
+11. For paginated digital Artifacts, the Artifact page position is authoritative for navigation.
+12. Printed or marked source pagination is supplementary descriptive data and does not replace the Artifact page position.
+13. Locator JSON identifies where the evidence is; transcription, description, and interpretation are separate concerns.
 
 Conceptually:
 
