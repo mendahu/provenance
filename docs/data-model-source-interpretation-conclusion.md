@@ -50,39 +50,37 @@ The conceptual progression is:
 Artifact
   ↓ researcher selects a meaningful portion
 Citation
-  ↓ researcher interprets that portion
+  ↓ supports
 Observation
-  ↓ observation contributes normalized data to
-Record
+  ↓ asserts a Property about
+Node
 ```
 
 A Citation identifies an addressable portion of an Artifact and may preserve the researcher's transcription and description of that evidence.
 
-An Observation is the interpretive bridge between cited evidence and a source-local Record. It records what the researcher believes that cited evidence means about that Record.
+A Node is a source-local, globally addressable thing encountered while interpreting evidence. Nodes deliberately carry very little domain structure themselves. Their semantics come from their Node Type and the Observations that describe and connect them.
 
-Records organize those normalized observations into source-local entities and relationships. Records do not directly reference Sources; their provenance is derived through the chain:
+An Observation is the smallest independently addressable unit of interpreted evidence. It is an atomic, cited assertion with the general shape:
 
 ```text
-Record
+subject Node -- Property --> typed value
+```
+
+The value may be a scalar/structured value or another Node. A Node-valued Observation therefore forms an edge in the Interpretation graph.
+
+The Interpretation layer is an extensible, schema-described property graph. It stores explicit normalized assertions derived from evidence but does not persist relationships or conclusions that can merely be inferred from those assertions. Genealogical inference and higher-order semantics belong to application and Conclusion logic.
+
+A Node's provenance is derived through its Observations:
+
+```text
+Node
   ← Observation
   ← Citation
   ← Artifact
   ← Source
 ```
 
-There is no persisted `source_stack` grouping. If a Source produces several disconnected semantic matrices, those matrices arise naturally from the resulting Citation/Observation/Record graph. Optional user-facing grouping can be introduced later if a concrete workflow requires it.
-
-Typical source-local Record classes include:
-
-```text
-PersonRecord
-EventRecord
-PlaceRecord
-RelationshipRecord
-ParticipationRecord
-```
-
-Records remain globally addressable even though they are source-local in meaning, because evidence from one Source may refer to a Record interpreted from another Source.
+There is no persisted `source_stack` or specialized Record hierarchy. Disconnected semantic matrices arise naturally from the resulting Node/Observation graph.
 
 ## 1.3 Conclusion
 
@@ -124,13 +122,27 @@ Source evidence must never be rewritten to match a later interpretation.
 
 For ambiguous handwriting, the Citation may preserve a faithful researcher transcription such as `Robins [?]` or `[William?] Smith`. Normalization of that reading belongs to an Observation rather than rewriting the Citation transcription.
 
-## 2.2 Records are source-local through provenance
+## 2.2 Interpretation is a cited property graph
 
-A Record describes an entity as represented by interpreted evidence from a Source. It does not need a direct `source_id`; its provenance is carried by the Observation and Citation chain.
+Nodes provide stable identity for source-local things. Observations provide atomic, cited assertions about those Nodes. Properties define the meaning and primitive value type of those assertions.
 
-Cross-source identity belongs to the Conclusion layer.
+The database should enforce generic graph integrity and primitive typing. It should not attempt to encode the entire genealogy ontology into rigid table structure.
 
-## 2.3 Canonical entities may be sparse
+## 2.3 Interpretation vocabulary is extensible
+
+Node Types and Properties are first-class data. Provenance ships with a useful built-in vocabulary, but researchers may add new Node Types and Properties without a database schema migration.
+
+All Properties, including user-defined Properties, declare a value type. Unknown or custom vocabulary remains preservable and generically usable even when the core application has no specialized semantics for it.
+
+Core application logic and future plugins may provide first-class behavior for recognized vocabulary while leaving storage generic.
+
+## 2.4 Derived semantics belong to the application layer
+
+The Interpretation schema stores explicit normalized assertions derived from evidence. Relationships that can be inferred from those assertions are application-level projections rather than duplicated persisted Interpretation data.
+
+For example, a birth Event with child and father Participations can allow the application to infer a father/child relationship without separately persisting that inferred relationship.
+
+## 2.5 Canonical entities may be sparse
 
 A researcher may know that an ancestor's parent must have existed without knowing that parent's name.
 
@@ -141,7 +153,7 @@ Person PER-7KD45
 
 This is valid. The entity can later be reconciled or merged when additional evidence establishes its identity.
 
-## 2.4 Merge means identity
+## 2.6 Merge means identity
 
 Merge is reserved for cases where two canonical entities previously treated as distinct are later concluded to be the same real-world thing.
 
@@ -152,7 +164,7 @@ PLC-A same_as PLC-B
 
 Historical relationships or succession between entities are not necessarily merges.
 
-## 2.5 Negative claims are explicit
+## 2.7 Negative claims are explicit
 
 Absence of a positive Claim is not equivalent to a negative Claim.
 
@@ -169,11 +181,11 @@ Negative claim:
 
 Negation belongs to the proposition. Conflicting evidence is a separate property of the evidence supporting or opposing a Claim.
 
-## 2.6 Resolver logic is application-level
+## 2.8 Resolver logic is application-level
 
 The database preserves multiple source-backed values. Application-level resolvers may synthesize useful display values without creating new persisted Claims.
 
-## 2.7 Audit history owns generic change metadata
+## 2.9 Audit history owns generic change metadata
 
 Generic persistence bookkeeping such as `created_at`, `updated_at`, `created_by_user_id`, and `updated_by_user_id` does not belong on core domain tables.
 
@@ -195,17 +207,20 @@ Selected user-facing entities may additionally receive short human-readable refe
 
 # 4. Interpretation layer — current draft schema
 
-The Interpretation schema is being refined table-by-table. The current high-level relationship is authoritative even where individual Record fields remain provisional:
+The Interpretation layer is a generic, schema-described property graph:
 
 ```text
 Source
   └── Artifact
         └── Citation
               └── Observation
-                    └── Record
+                    ├── subject Node
+                    ├── Property
+                    └── typed value
+                          └── may be another Node
 ```
 
-An Observation is the edge between a Citation and a Record. Separate `observation_citations` and `record_observations` join tables are therefore not part of the current model.
+There are no specialized `person_records`, `event_records`, `place_records`, `relationship_records`, or `participation_records` tables. A Node's type and its cited Observations provide the structure that those Record tables previously attempted to encode.
 
 ## 4.1 `citations`
 
@@ -543,106 +558,269 @@ Citation = Artifact + complete composable locator
 
 UI hierarchy or containment can be derived from locator selector chains when useful without making Citation hierarchy part of the persisted evidence model.
 
-## 4.2 `observations`
+## 4.2 Node vocabulary
 
-An Observation normalizes/interprets one Citation and associates that interpretation with one Record.
+### 4.2.1 `node_types`
+
+Node Types define the semantic category of a Node. They are data rather than a database enum so the vocabulary can be extended without schema migrations.
+
+```sql
+CREATE TABLE node_types (
+    key             TEXT PRIMARY KEY,
+    label           TEXT NOT NULL,
+    description     TEXT,
+    is_builtin      INTEGER NOT NULL DEFAULT 0,
+
+    CHECK (is_builtin IN (0, 1))
+) STRICT;
+```
+
+The initial built-in vocabulary is expected to include at least:
+
+```text
+person
+    A person represented by interpreted evidence.
+
+event
+    An occurrence represented by interpreted evidence.
+
+place
+    A geographic or named place represented by interpreted evidence.
+
+relationship
+    A general association that is useful when the evidence cannot be faithfully
+    represented through a more specific event/context structure.
+
+participation
+    An association between a person and an event, including the person's role
+    in that event.
+
+event_location
+    An association between an event and a place.
+```
+
+These names describe application semantics, not different SQL structures. Every instance is stored in the same `nodes` table.
+
+`relationship`, `participation`, and `event_location` are examples of bridge-like Nodes. Structurally, however, the database does not distinguish root entities from bridge entities. Any Node can be related to any other Node through a Node-valued Observation. The application vocabulary defines what those relationships mean and which combinations are semantically useful.
+
+### 4.2.2 `nodes`
+
+A Node gives stable identity to a source-local thing or association encountered during interpretation.
+
+```sql
+CREATE TABLE nodes (
+    id              BLOB PRIMARY KEY,
+    node_type_key   TEXT NOT NULL REFERENCES node_types(key),
+    label           TEXT,
+    notes           TEXT
+) STRICT;
+```
+
+Nodes deliberately contain little domain data. A person's name, an Event's date, a Place's name, or a Participation's role belongs in cited Observations rather than fixed Node columns.
+
+A Node can therefore be sparse. Creating a `person` Node does not require knowing a name, date, or any other property.
+
+## 4.3 Property vocabulary
+
+### 4.3.1 `properties`
+
+Properties are first-class, user-extensible definitions of predicates that may appear in Observations.
+
+```sql
+CREATE TABLE properties (
+    id              BLOB PRIMARY KEY,
+    key             TEXT UNIQUE NOT NULL,
+    label           TEXT NOT NULL,
+    description     TEXT,
+    value_type      TEXT NOT NULL,
+    is_builtin      INTEGER NOT NULL DEFAULT 0,
+
+    CHECK (value_type IN (
+        'text',
+        'integer',
+        'real',
+        'boolean',
+        'date',
+        'node'
+    )),
+    CHECK (is_builtin IN (0, 1))
+) STRICT;
+```
+
+A Property's `value_type` is intrinsic to the Property. For example:
+
+```text
+name          -> text
+birth_date    -> date
+age_at_event  -> integer
+place         -> node
+person        -> node
+role          -> text
+```
+
+The semantic vocabulary is open, but the primitive value system is intentionally constrained. A researcher may define a new Property without introducing a new storage type.
+
+Built-in Properties may receive first-class application behavior. User-defined Properties remain first-class persisted data and can be generically displayed, searched, audited, synced, and referenced. Plugins may add specialized semantics for additional Properties later.
+
+### 4.3.2 `node_type_properties`
+
+This table defines which Properties are valid for which Node Types.
+
+```sql
+CREATE TABLE node_type_properties (
+    node_type_key   TEXT NOT NULL REFERENCES node_types(key),
+    property_id     BLOB NOT NULL REFERENCES properties(id),
+
+    PRIMARY KEY (node_type_key, property_id)
+) STRICT;
+```
+
+For example:
+
+```text
+person        -> name
+person        -> birth_date
+
+event         -> event_type
+event         -> date
+
+participation -> person
+participation -> event
+participation -> role
+
+event_location -> event
+event_location -> place
+```
+
+This is a vocabulary/schema relationship, not historical research data. It says that `participation.person` is a meaningful shape in the Interpretation graph; it does not assert that any particular Person participated in any particular Event.
+
+The vocabulary should be seeded with common definitions but remain researcher-extensible.
+
+For Node-valued Properties, the application vocabulary may additionally constrain allowed target Node Types (for example, `participation.person` should target a `person` Node). The exact persistence mechanism for those target constraints remains to be finalized; it should not force the core graph into genealogy-specific SQL tables.
+
+## 4.4 Relationships between Nodes
+
+There is intentionally no separate table containing historical graph edges.
+
+A relationship between two Nodes is an Observation whose Property has `value_type = 'node'`:
+
+```text
+subject Node -- Property --> object Node
+```
+
+For example:
+
+```text
+Participation PT1 -- person --> Person P1
+Participation PT1 -- event  --> Event E1
+Participation PT1 -- role   --> "father"
+```
+
+or, where the evidence gives only an indeterminate/general association:
+
+```text
+Relationship R1 -- participant --> Person P1
+Relationship R1 -- participant --> Person P2
+Relationship R1 -- relationship_type --> "cousin"
+```
+
+The graph stores only explicit normalized interpretation. It does not need to persist an additional `father_of` edge if application logic can infer that relationship from a birth Event and its Participations.
+
+This allows the same structural model to represent nuclear family roles, extended kinship, step relationships, guardianship, employment, friendship, household roles, and unanticipated historical associations without adding bridge tables.
+
+## 4.5 `observations`
+
+An Observation is the atomic unit of interpreted evidence. Every Observation is independently addressable and is supported by one Citation.
 
 Conceptually:
 
 ```text
-Citation
-  "this region of the artifact"
-
-Observation
-  "this region says William Smith is the name of this PersonRecord"
-
-Record
-  source-local person represented by the evidence
+Observation {
+    citation
+    subject Node
+    Property
+    typed value
+}
 ```
 
-The exact SQL representation of the Record target is intentionally still open because SQLite cannot enforce a foreign key from one polymorphic `record_id` to several Record tables.
+The Citation preserves what the source actually contains; the Observation may normalize that evidence into a domain value. For example:
 
-A provisional shape is:
+```text
+Citation.transcription
+    "Age: 42"
+
+Observation
+    Person P1 -- birth_date --> DateValue(...)
+```
+
+This distinction lets Observation values remain strongly typed without attempting to reproduce every possible source representation.
+
+The intended primitive value categories are currently:
+
+```text
+text
+integer
+real
+boolean
+date
+node
+```
+
+A provisional SQL shape is:
 
 ```sql
 CREATE TABLE observations (
-    id               BLOB PRIMARY KEY,
-    citation_id      BLOB NOT NULL REFERENCES citations(id),
-    record_type      TEXT NOT NULL,
-    record_id        BLOB NOT NULL,
-    field_name       TEXT,
-    observation_type TEXT NOT NULL,
-    value_type       TEXT,
-    value_text       TEXT,
-    value_json       TEXT,
-    confidence       REAL,
-    notes            TEXT
-) STRICT;
-```
-
-This shape is illustrative rather than finalized. In particular, `record_type` / `record_id`, field targeting, and typed value storage are the next areas to refine.
-
-## 4.3 Record tables
-
-Records represent normalized source-local entities and relationships. They do not directly carry `source_id` or `source_stack_id`; their evidentiary provenance is derived from attached Observations.
-
-### `person_records`
-
-```sql
-CREATE TABLE person_records (
-    id      BLOB PRIMARY KEY,
-    label   TEXT,
-    notes   TEXT
-) STRICT;
-```
-
-### `place_records`
-
-```sql
-CREATE TABLE place_records (
     id              BLOB PRIMARY KEY,
-    display_value   TEXT,
-    notes           TEXT
+    citation_id     BLOB NOT NULL REFERENCES citations(id),
+    subject_node_id BLOB NOT NULL REFERENCES nodes(id),
+    property_id     BLOB NOT NULL REFERENCES properties(id),
+
+    value_text      TEXT,
+    value_integer   INTEGER,
+    value_real      REAL,
+    value_boolean   INTEGER,
+    value_date_id   BLOB REFERENCES date_values(id),
+    value_node_id   BLOB REFERENCES nodes(id),
+
+    confidence      REAL,
+    notes           TEXT,
+
+    CHECK (value_boolean IS NULL OR value_boolean IN (0, 1))
 ) STRICT;
 ```
 
-### `event_records`
+Exactly one value representation must be populated, and it must match `properties.value_type`. The final database-level enforcement mechanism for that cross-table constraint is still open; likely options include composite foreign-key structure plus a small validation trigger.
 
-```sql
-CREATE TABLE event_records (
-    id              BLOB PRIMARY KEY,
-    event_type      TEXT,
-    date_value_id   BLOB REFERENCES date_values(id),
-    place_record_id BLOB REFERENCES place_records(id),
-    notes           TEXT
-) STRICT;
+For Node-valued Observations, the object Node must exist and should satisfy any target Node Type constraint defined by the vocabulary.
+
+A single Citation may support many atomic Observations:
+
+```text
+Citation C1
+  -> Person P1 -- name       --> "William Robins"
+  -> Person P1 -- occupation --> "Carpenter"
+  -> Person P1 -- birth_date --> DateValue(...)
 ```
 
-### `relationship_records`
+Multiple Observations may also make different assertions about the same Property without forcing a single value onto the Node. Conflicting or alternative interpretations therefore remain independently citable and auditable.
 
-```sql
-CREATE TABLE relationship_records (
-    id                BLOB PRIMARY KEY,
-    relationship_type TEXT NOT NULL,
-    person_a_id       BLOB NOT NULL REFERENCES person_records(id),
-    person_b_id       BLOB NOT NULL REFERENCES person_records(id),
-    notes             TEXT
-) STRICT;
-```
+## 4.6 Interpretation-layer invariants
 
-### `participation_records`
+The current design aims to preserve these invariants:
 
-```sql
-CREATE TABLE participation_records (
-    id               BLOB PRIMARY KEY,
-    person_record_id BLOB NOT NULL REFERENCES person_records(id),
-    event_record_id  BLOB NOT NULL REFERENCES event_records(id),
-    role             TEXT,
-    notes            TEXT
-) STRICT;
-```
-
-These Record fields remain provisional and will be refined after Citations and Observations are settled.
+1. Every Node has exactly one Node Type.
+2. Node Types and Properties are extensible persisted vocabulary, not closed application enums.
+3. Every Observation has its own stable identity.
+4. Every Observation is supported by exactly one Citation.
+5. Every Observation has exactly one subject Node and one Property.
+6. Every Observation has exactly one typed value.
+7. The Observation value must match the Property's declared `value_type`.
+8. A Property used on a Node must be allowed for that Node's Node Type.
+9. A Node-valued Observation forms a graph edge and its object Node must exist.
+10. Application vocabulary may constrain the target Node Type of Node-valued Properties.
+11. Citation text/description preserves the evidence representation; Observations contain normalized interpretation.
+12. Derived genealogical semantics are not duplicated into the Interpretation graph merely for convenience.
+13. Unknown/custom Node Types and Properties remain preservable and generically usable without first-class application support.
 
 ---
 
@@ -730,7 +908,7 @@ CREATE TABLE participations (
     person_id      BLOB NOT NULL REFERENCES persons(id),
     event_id       BLOB NOT NULL REFERENCES events(id),
     role           TEXT,
-    notes          TEXT,
+    notes           TEXT,
     merged_into_id BLOB REFERENCES participations(id)
 ) STRICT;
 ```
@@ -870,15 +1048,14 @@ PersonRecord:
 
 # 9. Open schema questions
 
-1. **Observation → Record representation**
-   - Observation is conceptually the direct Citation-to-Record edge.
-   - Determine whether SQL should use a polymorphic target, typed Observation tables, or another integrity-preserving representation.
+1. **Observation value enforcement**
+   - Finalize database-level enforcement that an Observation has exactly one value and that its storage column matches the referenced Property's `value_type`.
 
-2. **Observation value structure**
-   - Refine `field_name`, `observation_type`, and typed values instead of committing prematurely to generic JSON/text.
+2. **Node-valued Property target constraints**
+   - Define how the vocabulary expresses allowed target Node Types without hard-coding genealogy-specific edges into SQL tables.
 
-3. **Cross-source Record references**
-   - Needed for evidence such as testimony identifying a PersonRecord interpreted from a photograph.
+3. **Built-in vocabulary**
+   - Define the initial Node Types and Properties shipped with new projects while keeping both researcher-extensible.
 
 4. **Generic Claims vs typed Claim tables**
    - Domain model benefits from generic Claims; SQLite foreign-key integrity favors typed tables.
@@ -886,8 +1063,8 @@ PersonRecord:
 5. **Claim evidence implementation**
    - Generic `(record_type, record_id)` is simple but weakly constrained.
 
-6. **Record fields**
-   - Which properties belong directly on Record tables vs are assembled from Observations?
+6. **Conclusion integration with the new Interpretation graph**
+   - The existing Conclusion/Claim schema still reflects the earlier Record model and has intentionally not been changed as part of this Interpretation-layer revision.
 
 7. **Canonical entity fields**
    - Canonical entities should remain usable without turning every field into a Claim.
