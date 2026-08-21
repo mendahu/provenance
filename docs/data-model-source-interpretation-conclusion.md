@@ -8,6 +8,8 @@ The authoritative Source-layer schema is [`source-layer-data-model.md`](source-l
 
 The shared structured date model is defined in [`structured-date-model.md`](structured-date-model.md).
 
+The shared structured name model is defined in [`structured-name-model.md`](structured-name-model.md).
+
 The cross-cutting audit/revision model is defined in [`audit-revision-history.md`](audit-revision-history.md).
 
 ---
@@ -100,21 +102,32 @@ Event
 Place
 Relationship
 Participation
+Location
 ```
 
-Canonical does not mean complete, final, or universally authoritative. A canonical Person may be unnamed and provisional. A Place may be only partially located. Two canonical entities may later be discovered to represent the same real-world entity and be merged.
+These are rows in one `canonical_entities` table distinguished by `kind`, not parallel per-kind tables.
 
-The primary bridge from Interpretation to Conclusion is a Claim that a source-local Record resolves to or corresponds to a canonical entity:
+Canonical does not mean complete, final, or universally authoritative. A person entity may be unnamed and provisional. A Place may be only partially located. Two canonical entities may later be discovered to represent the same real-world entity and be merged.
+
+Interpretation keeps source-local Nodes separate for traceability: two Sources that mention the same historical person normally produce two `person` Nodes. The Conclusion layer correlates those Nodes and gives the researcher a durable working subject.
+
+The primary bridge is therefore **sameness**, not field-level resolution onto a Record:
 
 ```text
-PersonRecord        ── claim ──> Person
-EventRecord         ── claim ──> Event
-PlaceRecord         ── claim ──> Place
-RelationshipRecord  ── claim ──> Relationship
-ParticipationRecord ── claim ──> Participation
+Node A ── sameness claim (same_as / distinct_from) ── Node B
+
+canonical_entities E (kind = person)
+  representative_node_id → one Node in an accepted same_as component
+  members(E) = Nodes reachable from that representative via accepted same_as
 ```
 
-A Claim may be supported by multiple Records from multiple Sources.
+Sameness Claims are higher-order than Observations. An Observation says what a particular Source appears to assert about a Node. A Sameness Claim says the researcher concludes that two Nodes do or do not co-refer, with its own evidence chain.
+
+The same sameness and promotion pattern applies across Node Types that need working subjects (`person`, `event`, `relationship`, `participation`, `location`, and later `place`). Canonical entities are rows in one shared table — durable handles for Node clusters (ref, label, notes, merge). Domain payload and association links are derived from the Interpretation graph, not duplicated onto canonical rows.
+
+When a promoted cluster carries conflicting member Observations, soft display merges may be computed automatically. Durable conclusions about a Property on a canonical entity are **Reconciliation Claims**.
+
+Places as a domain are parked for a later rewrite; `kind = place` may exist in the unified table, but Place-specific structure is out of scope for this draft.
 
 ---
 
@@ -154,21 +167,28 @@ A researcher may know that an ancestor's parent must have existed without knowin
 
 ```text
 Person PER-7KD45
-  preferred_name = NULL
+  label = "Mother of James"
 ```
 
-This is valid. The entity can later be reconciled or merged when additional evidence establishes its identity.
+This is valid. Genealogical names, when known, come from cited NameValue Observations on member Nodes (and optional name Reconciliation Claims). The canonical `label` is only a researcher working identifier. The entity can later be reconciled or merged when additional evidence establishes its identity.
 
-## 2.6 Merge means identity
+## 2.6 Sameness and merge are related but distinct
 
-Merge is reserved for cases where two canonical entities previously treated as distinct are later concluded to be the same real-world thing.
+**Node sameness** correlates Interpretation subjects:
 
 ```text
-PER-A same_as PER-B
-PLC-A same_as PLC-B
+Node A same_as Node B
+Node A distinct_from Node B
 ```
 
-Historical relationships or succession between entities are not necessarily merges.
+**Canonical merge** joins two Conclusion entities that were previously treated as distinct working subjects:
+
+```text
+PER-A merged_into PER-B
+PLC-A merged_into PLC-B
+```
+
+Accepting Node sameness may cause two Persons' membership components to connect; the application should then merge or otherwise reconcile those canonical entities. Historical relationships or succession between entities are not necessarily sameness or merge.
 
 ## 2.7 Negation is explicit
 
@@ -187,7 +207,7 @@ Negative:
   the name is not Jake
 ```
 
-At Interpretation, polarity belongs on the Observation: it records what a particular source appears to assert or deny. At Conclusion, polarity belongs on the Claim: it records what the researcher currently concludes after considering evidence.
+At Interpretation, polarity belongs on the Observation: it records what a particular source appears to assert or deny. At Conclusion, Node co-reference is expressed with Sameness Claims (`same_as` / `distinct_from`) rather than by omitting a link. Future attribute-level conclusions may use their own polarity; that is separate from Observation polarity and from Node sameness.
 
 Conflicting evidence remains a separate concern from negation. Two positive Observations with different values conflict; a negative Observation denies a specific proposition.
 
@@ -211,7 +231,9 @@ Ordinary schema tables use SQLite `STRICT` typing.
 
 Structured genealogical dates use the shared model in [`structured-date-model.md`](structured-date-model.md).
 
-Selected user-facing entities may additionally receive short human-readable references.
+Structured personal names use the shared model in [`structured-name-model.md`](structured-name-model.md).
+
+Selected user-facing entities may additionally receive short human-readable references (`ref`), unique within the project. Current Interpretation and Conclusion drafts include `ref` on Sources, Citations, Nodes, Observations, and `canonical_entities`.
 
 ---
 
@@ -241,6 +263,7 @@ Each Citation is independently resolvable from its `artifact_id` and locator. Ci
 ```sql
 CREATE TABLE citations (
     id              BLOB PRIMARY KEY,
+    ref             TEXT UNIQUE,               -- e.g. CIT-3K9M2
     artifact_id     BLOB NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
     locator_json    TEXT NOT NULL,
     transcription   TEXT,
@@ -248,6 +271,7 @@ CREATE TABLE citations (
 ) STRICT;
 ```
 
+`ref` is an optional short human-readable reference for UI and discussion, parallel to Source refs.
 `transcription` preserves the researcher's reading of textual or spoken content within the cited evidence. It is intended to remain faithful to the evidence, including uncertainty where appropriate, rather than silently normalizing abbreviations, names, places, or other values. For example, `Wm Robins` may be transcribed as written and normalized to `William Robins` later through an Observation.
 
 `description` records what the researcher observes in the cited evidence. It is media-neutral and may describe visual, textual, audio, or other characteristics. It is not specifically an accessibility `alt_text` field.
@@ -633,6 +657,7 @@ A Node gives stable identity to a source-local thing or association encountered 
 ```sql
 CREATE TABLE nodes (
     id              BLOB PRIMARY KEY,
+    ref             TEXT UNIQUE,               -- e.g. NOD-7KD45
     source_id       BLOB NOT NULL REFERENCES sources(id),
     node_type_key   TEXT NOT NULL REFERENCES node_types(key),
     label           TEXT,
@@ -640,6 +665,7 @@ CREATE TABLE nodes (
 ) STRICT;
 ```
 
+`ref` is an optional short human-readable reference for UI and discussion.
 `source_id` is the Node's home Source — typically the Source being interpreted when the Node was created. It exists so the application can efficiently surface Nodes that belong with a given Source during common same-source workflows. It does not restrict which Citations or Observations may reference the Node; cross-source Observations remain valid.
 
 For Nodes of type `source`, `source_id` has a stronger meaning: it identifies the Source this Node reifies. The application should maintain at most one `source` Node per Source row. Other Sources may then make cited Observations about that Node—bare references such as “this book mentions that marriage certificate,” free-text remarks about authenticity or errors, or both—without collapsing that material into Observations about historical persons alone, and without requiring structured Source-quality columns.
@@ -669,6 +695,7 @@ CREATE TABLE properties (
         'real',
         'boolean',
         'date',
+        'name',
         'node'
     ))
 ) STRICT;
@@ -677,7 +704,8 @@ CREATE TABLE properties (
 A Property's `value_type` is intrinsic to the Property. For example:
 
 ```text
-name          -> text
+name          -> name
+name_format   -> text    # name_format_profiles.key; primarily Conclusion reconciliation
 birth_date    -> date
 age_at_event  -> integer
 place         -> node
@@ -691,6 +719,10 @@ mentions      -> node
 The semantic vocabulary is open, but the primitive value system is intentionally constrained. A researcher may define a new Property without introducing a new storage type.
 
 `value_type = 'date'` always means the shared structured DateValue model in [`structured-date-model.md`](structured-date-model.md), not a SQL date or free-text date string.
+
+`value_type = 'name'` always means the shared structured NameValue model in [`structured-name-model.md`](structured-name-model.md), not a single undifferentiated text string. A NameValue always has a full-form `form` and may optionally include ordered parts with an open part-type vocabulary for search and reconciliation.
+
+`name_format` is primarily a Conclusion Property (Reconciliation Claim on a person entity). It need not appear in `node_type_properties` for Interpretation unless a Source itself asserts a naming convention.
 
 Application semantics attach to stable `key` values, matching `node_types`. Seeded Properties may receive first-class application behavior. User-defined Properties remain first-class persisted data and can be generically displayed, searched, audited, synced, and referenced. Plugins may add specialized semantics for additional Properties later.
 
@@ -831,7 +863,7 @@ Citation.transcription
 
 Observation
     polarity = negative
-    Person P1 -- name --> "Jake"
+    Person P1 -- name --> NameValue(form = "Jake")
 ```
 
 Absence of any name Observation means the name is unknown from that evidence. It does not mean the name is not Jake.
@@ -846,6 +878,7 @@ integer
 real
 boolean
 date
+name
 node
 ```
 
@@ -854,6 +887,7 @@ A provisional SQL shape is:
 ```sql
 CREATE TABLE observations (
     id              BLOB PRIMARY KEY,
+    ref             TEXT UNIQUE,               -- e.g. OBS-2F8Q1
     citation_id     BLOB NOT NULL REFERENCES citations(id),
     subject_node_id BLOB NOT NULL REFERENCES nodes(id),
     property_key    TEXT NOT NULL REFERENCES properties(key),
@@ -864,6 +898,7 @@ CREATE TABLE observations (
     value_real      REAL,
     value_boolean   INTEGER,
     value_date_id   BLOB REFERENCES date_values(id),
+    value_name_id   BLOB REFERENCES name_values(id),
     value_node_id   BLOB REFERENCES nodes(id),
 
     CHECK (polarity IN ('positive', 'negative')),
@@ -871,6 +906,7 @@ CREATE TABLE observations (
 ) STRICT;
 ```
 
+`ref` is an optional short human-readable reference for UI and discussion.
 Exactly one value representation must be populated, and it must match `properties.value_type`. The final database-level enforcement mechanism for that cross-table constraint is still open; likely options include composite foreign-key structure plus a small validation trigger.
 
 Reading uncertainty belongs in Citation transcription or description when needed. Alternative or competing interpretations are modeled as separate Observations rather than a numeric confidence score on a single row. Researcher commentary about a particular Observation belongs in `observation_notes`.
@@ -891,12 +927,12 @@ A single Citation may support many atomic Observations:
 
 ```text
 Citation C1
-  -> Person P1 -- name       --> "William Robins"
+  -> Person P1 -- name       --> NameValue(form = "William Robins", …)
   -> Person P1 -- occupation --> "Carpenter"
   -> Person P1 -- birth_date --> DateValue(...)
 ```
 
-Multiple Observations may also make different assertions about the same Property without forcing a single value onto the Node. Conflicting or alternative interpretations therefore remain independently citable and auditable.
+Multiple Observations may also make different assertions about the same Property without forcing a single value onto the Node. Conflicting or alternative interpretations therefore remain independently citable and auditable. Multiple name Observations on one person Node are expected when Sources use different forms, nicknames, or name changes.
 
 ## 4.6 Interpretation-layer invariants
 
@@ -913,240 +949,388 @@ The current design aims to preserve these invariants:
 9. Every Observation has an explicit polarity of `positive` or `negative`; absence of an Observation is not negation.
 10. The Observation value must match the Property's declared `value_type`.
 11. Date-valued Observations reference a structured DateValue; they do not store SQL dates or free-text dates as the typed value.
-12. A Property used on a Node must be allowed for that Node's Node Type.
-13. A Node-valued Observation forms a graph edge and its object Node must exist.
-14. Application vocabulary may constrain the target Node Type of Node-valued Properties.
-15. Citation text/description preserves the evidence representation; Observations contain normalized interpretation.
-16. Derived genealogical semantics are not duplicated into the Interpretation graph merely for convenience.
-17. Unknown/custom Node Types, Properties, and open vocabulary values (such as event types and roles) remain preservable and generically usable without first-class application support.
-18. First-class application behavior may recognize seeded keys and values; it must not require the schema to close those vocabularies or encode every genealogical edge case.
+12. Name-valued Observations reference a structured NameValue; they do not store an undifferentiated name string as the typed value.
+13. A Property used on a Node must be allowed for that Node's Node Type.
+14. A Node-valued Observation forms a graph edge and its object Node must exist.
+15. Application vocabulary may constrain the target Node Type of Node-valued Properties.
+16. Citation text/description preserves the evidence representation; Observations contain normalized interpretation.
+17. Derived genealogical semantics are not duplicated into the Interpretation graph merely for convenience.
+18. Unknown/custom Node Types, Properties, and open vocabulary values (such as event types and roles) remain preservable and generically usable without first-class application support.
+19. First-class application behavior may recognize seeded keys and values; it must not require the schema to close those vocabularies or encode every genealogical edge case.
 
 ---
 
 # 5. Conclusion layer — current draft schema
 
-## 5.1 `persons`
+This draft replaces the earlier Record-resolution Claim model. Records no longer exist; Interpretation subjects are Nodes. Conclusion correlates Nodes and maintains canonical research entities.
 
-```sql
-CREATE TABLE persons (
-    id              BLOB PRIMARY KEY,
-    ref             TEXT UNIQUE NOT NULL,
-    preferred_name  TEXT,
-    status          TEXT,
-    notes           TEXT,
-    merged_into_id  BLOB REFERENCES persons(id)
-) STRICT;
-```
-
-A Person may have no name or dates. Sparse and provisional Persons are valid.
-
-## 5.2 `places`
-
-```sql
-CREATE TABLE places (
-    id              BLOB PRIMARY KEY,
-    ref             TEXT UNIQUE NOT NULL,
-    name            TEXT NOT NULL,
-    place_type      TEXT,
-    parent_place_id BLOB REFERENCES places(id),
-    valid_date_id   BLOB REFERENCES date_values(id),
-    notes           TEXT,
-    merged_into_id  BLOB REFERENCES places(id)
-) STRICT;
-```
-
-The canonical Place model is intentionally modest: nesting, loose references, and merge when identity is established.
-
-### `place_references`
-
-```sql
-CREATE TABLE place_references (
-    id              BLOB PRIMARY KEY,
-    from_place_id   BLOB NOT NULL REFERENCES places(id),
-    to_place_id     BLOB NOT NULL REFERENCES places(id),
-    reference_type  TEXT NOT NULL,
-    valid_date_id   BLOB REFERENCES date_values(id),
-    notes           TEXT
-) STRICT;
-```
-
-## 5.3 `events`
-
-```sql
-CREATE TABLE events (
-    id              BLOB PRIMARY KEY,
-    ref             TEXT UNIQUE NOT NULL,
-    event_type      TEXT NOT NULL,
-    date_value_id   BLOB REFERENCES date_values(id),
-    place_id        BLOB REFERENCES places(id),
-    notes           TEXT,
-    merged_into_id  BLOB REFERENCES events(id)
-) STRICT;
-```
-
-## 5.4 `relationships`
-
-```sql
-CREATE TABLE relationships (
-    id                BLOB PRIMARY KEY,
-    ref               TEXT UNIQUE NOT NULL,
-    relationship_type TEXT NOT NULL,
-    person_a_id       BLOB NOT NULL REFERENCES persons(id),
-    person_b_id       BLOB NOT NULL REFERENCES persons(id),
-    status            TEXT,
-    notes             TEXT,
-    merged_into_id    BLOB REFERENCES relationships(id)
-) STRICT;
-```
-
-## 5.5 `participations`
-
-```sql
-CREATE TABLE participations (
-    id             BLOB PRIMARY KEY,
-    person_id      BLOB NOT NULL REFERENCES persons(id),
-    event_id       BLOB NOT NULL REFERENCES events(id),
-    role           TEXT,
-    notes           TEXT,
-    merged_into_id BLOB REFERENCES participations(id)
-) STRICT;
-```
-
----
-
-# 6. Claims — current draft schema
-
-Claims are the explicit interface between source-local Records and the canonical graph.
-
-The current simplifying principle is:
-
-> Claims cite Records, not individual fields.
-
-## 6.1 `claims`
-
-```sql
-CREATE TABLE claims (
-    id          BLOB PRIMARY KEY,
-    claim_type  TEXT NOT NULL,
-    polarity    TEXT NOT NULL DEFAULT 'positive',
-    confidence  REAL,
-    status      TEXT NOT NULL,
-    notes       TEXT,
-
-    CHECK (polarity IN ('positive', 'negative'))
-) STRICT;
-```
-
-Claim `polarity` is the researcher's concluded affirmation or denial. It is distinct from Observation `polarity`, which records what a particular source appears to assert or deny.
-## 6.2 Typed Record-resolution Claims
-
-```sql
-CREATE TABLE person_record_claims (
-    claim_id         BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    person_record_id BLOB NOT NULL REFERENCES person_records(id),
-    person_id        BLOB NOT NULL REFERENCES persons(id)
-) STRICT;
-
-CREATE TABLE event_record_claims (
-    claim_id         BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    event_record_id  BLOB NOT NULL REFERENCES event_records(id),
-    event_id         BLOB NOT NULL REFERENCES events(id)
-) STRICT;
-
-CREATE TABLE place_record_claims (
-    claim_id         BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    place_record_id  BLOB NOT NULL REFERENCES place_records(id),
-    place_id         BLOB NOT NULL REFERENCES places(id)
-) STRICT;
-
-CREATE TABLE relationship_record_claims (
-    claim_id               BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    relationship_record_id BLOB NOT NULL REFERENCES relationship_records(id),
-    relationship_id        BLOB NOT NULL REFERENCES relationships(id)
-) STRICT;
-
-CREATE TABLE participation_record_claims (
-    claim_id                BLOB PRIMARY KEY REFERENCES claims(id) ON DELETE CASCADE,
-    participation_record_id BLOB NOT NULL REFERENCES participation_records(id),
-    participation_id        BLOB NOT NULL REFERENCES participations(id)
-) STRICT;
-```
-
-## 6.3 Claim evidence
-
-```sql
-CREATE TABLE claim_evidence (
-    claim_id        BLOB NOT NULL REFERENCES claims(id) ON DELETE CASCADE,
-    record_type     TEXT NOT NULL,
-    record_id       BLOB NOT NULL,
-    stance          TEXT NOT NULL DEFAULT 'supporting',
-    notes           TEXT,
-
-    PRIMARY KEY (claim_id, record_type, record_id),
-    CHECK (stance IN ('supporting', 'conflicting'))
-) STRICT;
-```
-
-This remains provisional because the generic `record_id` cannot have a database-enforced foreign key to multiple Record tables.
-
----
-
-# 7. Merge model
-
-A merge should be explicit and reversible/auditable in principle.
+## 5.1 Design summary
 
 ```text
-PER-A "Unknown father"
-PER-B "William Smith"
-
-Claim:
-  PER-A same_as PER-B
-
-Merge:
-  PER-A.merged_into_id = PER-B
+Interpretation Nodes  <── sameness_claims (same_as / distinct_from) ──>  Interpretation Nodes
+                                    │
+                                    │ accepted same_as edges form components
+                                    ▼
+canonical_entities
+  - kind (person | event | relationship | participation | location | …)
+  - stable UUID and human ref
+  - representative_node_id (mutable anchor into one component)
+  - label (researcher working identifier)
+  - members = derived closure over accepted same_as from that representative
+  - domain payload derived from member-Node Observations + reconciliation_claims
 ```
 
-Old IDs and human references should continue resolving to the surviving entity.
+Important separations:
+
+1. **Sameness Claim** — proposition about two Nodes, with its own evidence.
+2. **Canonical entity** — one table for all promoted kinds; durable id not tied forever to the progenitor Node.
+3. **Membership** — derived from the claim graph + representative; not an independently edited join table.
+4. **Derived structure and payload** — participants, roles, types, dates, names, and similar facts are read from Observations on member Nodes, optionally overridden by Reconciliation Claims.
+5. **Canonical merge** — `merged_into_id` within the same `kind`.
+6. **Promotion is sparse and independent** — promoting one entity does not auto-promote related Nodes.
+7. **Reconciliation Claim** — concluded value of one Property on one canonical entity; real FK to `canonical_entities`.
+
+SQLite can enforce foreign keys and basic checks. Connected-component membership, kind/representative consistency, and representative repointing on split are **application invariants**.
+
+## 5.2 `sameness_claims`
+
+A Sameness Claim asserts that two Nodes do or do not refer to the same historical thing.
+
+```sql
+CREATE TABLE sameness_claims (
+    id              BLOB PRIMARY KEY,
+    node_a_id       BLOB NOT NULL REFERENCES nodes(id),
+    node_b_id       BLOB NOT NULL REFERENCES nodes(id),
+    relation        TEXT NOT NULL,
+    status          TEXT NOT NULL,
+    argument        TEXT,
+
+    CHECK (relation IN ('same_as', 'distinct_from')),
+    CHECK (node_a_id < node_b_id),
+    UNIQUE (node_a_id, node_b_id)
+) STRICT;
+```
+
+`relation = same_as` means the researcher concludes the Nodes co-refer.  
+`relation = distinct_from` means the researcher concludes they do not.
+
+There is at most one Sameness Claim per unordered Node pair. Endpoint order is canonicalized with `node_a_id < node_b_id` so `(A, B)` and `(B, A)` cannot both exist. A pair therefore cannot simultaneously carry `same_as` and `distinct_from`; changing the conclusion updates the existing row (and is audited), rather than inserting a second Claim.
+
+`status` is application-defined for workflow (for example provisional vs accepted vs rejected). Only **accepted** `same_as` Claims participate in membership closure. The exact status vocabulary can be refined later.
+
+`argument` holds the researcher's reasoning chain for the claim — correlation narrative, circumstantial synthesis, or a short note when a single Observation already makes the case. Reasoning stays here rather than scattered across evidence rows.
+
+Sameness Claims point at Nodes, not at canonical entities. Each pairwise correlation has its own row and evidence so `A same_as B` and `B same_as C` can be justified independently. Transitive membership follows from the accepted graph; evidence does not have to be repeated onto a single “cluster claim.”
+
+Both Nodes in a Claim should normally share the same Node Type. Enforcing that is an application rule unless a later schema mechanism is added.
+
+## 5.3 `sameness_claim_evidence`
+
+Evidence rows are pointers to Observations that participate in the claim's exhibit list. An individual Observation does not carry a stance toward the Sameness Claim; the claim's `relation` and `argument` express the researcher's conclusion over the whole set.
+
+```sql
+CREATE TABLE sameness_claim_evidence (
+    sameness_claim_id   BLOB NOT NULL REFERENCES sameness_claims(id) ON DELETE CASCADE,
+    observation_id      BLOB NOT NULL REFERENCES observations(id),
+
+    PRIMARY KEY (sameness_claim_id, observation_id)
+) STRICT;
+```
+
+Pin every relevant Observation here; write the conclusion and inference in `sameness_claims.argument`.
+
+## 5.4 `canonical_entities`
+
+Because canonical rows are thin handles, they share one table instead of parallel `persons` / `events` / … tables.
+
+```sql
+CREATE TABLE canonical_entities (
+    id                      BLOB PRIMARY KEY,
+    kind                    TEXT NOT NULL,
+    ref                     TEXT UNIQUE NOT NULL,
+    representative_node_id  BLOB NOT NULL REFERENCES nodes(id),
+    label                   TEXT,
+    merged_into_id          BLOB REFERENCES canonical_entities(id),
+
+    CHECK (kind IN (
+        'person',
+        'place',
+        'event',
+        'relationship',
+        'participation',
+        'location'
+    ))
+) STRICT;
+```
+
+```text
+members(entity) =
+  all Nodes reachable from entity.representative_node_id
+  via accepted sameness_claims where relation = 'same_as'
+```
+
+Rules:
+
+- `kind` must match the representative Node's `node_type_key` (application invariant).
+- `merged_into_id`, when set, should reference another entity of the same `kind`.
+- `label` is an optional researcher working identifier (for example `Mother of James`). It is not a genealogical name and must not substitute for NameValue Observations or name Reconciliation Claims.
+- `ref` is the stable short public reference (for example `PER-7KD45`).
+- Creating an entity from a single Node sets `representative_node_id` to that Node. Later accepted `same_as` Claims expand membership automatically.
+- Promotion is independent across kinds: promoting a person entity does not auto-promote related events, participations, or locations.
+- **Places:** `kind = place` is reserved, but Place-specific modeling (hierarchy, gazetteer behavior, and similar) is parked for a later domain pass.
+
+```sql
+CREATE TABLE canonical_entity_notes (
+    id                      BLOB PRIMARY KEY,
+    canonical_entity_id     BLOB NOT NULL
+        REFERENCES canonical_entities(id) ON DELETE CASCADE,
+    body                    TEXT NOT NULL
+) STRICT;
+```
+
+One notes table covers every kind because there is a single parent table and a real foreign key.
+
+### 5.4.1 Derived endpoints
+
+Association kinds (`relationship`, `participation`, `location`) do not store foreign keys to other canonical entities. Endpoints are derived:
+
+```text
+Participation entity C
+  representative → participation Node PT1
+  members(C) = {PT1, PT2, …}
+
+For each member Node:
+  Observations: PT -- person --> person Node N
+                PT -- event  --> event Node E
+                PT -- role   --> "father"
+
+Resolve N → canonical entity P where P.kind = person and N ∈ members(P)
+Resolve E → canonical entity Ev where Ev.kind = event and E ∈ members(Ev)
+```
+
+The UI can show “Person P participated in Event Ev as father” without canonical association FKs. The same pattern applies to Relationships and Locations.
+
+## 5.5 `reconciliation_claims`
+
+After Nodes are correlated and a canonical entity is promoted, conflicting or competing member Observations may still disagree about a Property (name, birth date, role, event type, and so on). Soft display merges can often be computed automatically without persistence. When the researcher (or a persisted automatic process) needs a durable concluded value, that is a **Reconciliation Claim**.
+
+A Reconciliation Claim asserts:
+
+```text
+for canonical entity E, Property P has concluded value V
+```
+
+It is extensible across kinds and Properties because it references `properties.key` and stores a typed value the same way Observations do.
+
+```sql
+CREATE TABLE reconciliation_claims (
+    id              BLOB PRIMARY KEY,
+    entity_id       BLOB NOT NULL REFERENCES canonical_entities(id) ON DELETE CASCADE,
+    property_key    TEXT NOT NULL REFERENCES properties(key),
+    status          TEXT NOT NULL,
+    origin          TEXT NOT NULL DEFAULT 'researcher',
+    argument        TEXT,
+
+    value_text      TEXT,
+    value_integer   INTEGER,
+    value_real      REAL,
+    value_boolean   INTEGER,
+    value_date_id   BLOB REFERENCES date_values(id),
+    value_name_id   BLOB REFERENCES name_values(id),
+    value_node_id   BLOB REFERENCES nodes(id),
+
+    CHECK (origin IN ('researcher', 'automatic')),
+    CHECK (value_boolean IS NULL OR value_boolean IN (0, 1)),
+    UNIQUE (entity_id, property_key)
+) STRICT;
+```
+
+`entity_id` is a real foreign key to `canonical_entities`. The entity's `kind` is available via that join; it is not duplicated on the claim row.
+
+`property_key` is the extensibility hook. Any Property in the vocabulary may be concluded on a suitable entity (subject to application rules about which Properties make sense for that `kind`).
+
+Exactly one value representation must be populated, and it must match `properties.value_type`, parallel to Observations. The concluded value may:
+
+- match one member Observation's value (researcher selects a winner);
+- be a synthesized value that no single Observation holds exactly (for example a DateValue spanning Apr–May 1985, or a NameValue merging parts);
+- be produced by an automatic reconciler and persisted with `origin = automatic` when the project wants a durable soft merge.
+
+There is at most one Reconciliation Claim per `(entity, property)`. Changing the concluded value updates that row (and is audited).
+
+`argument` holds researcher reasoning when needed. Soft display-only merges that are never persisted do not require a claim.
+
+### Name format as reconciliation
+
+Cultural name display/entry ordering is not a column on `canonical_entities`. It is concluded like other Person-scoped facts:
+
+```text
+Property name_format -> text   # value is a name_format_profiles.key, e.g. "western"
+```
+
+- `project_settings.default_name_format_key` supplies the UI default when a person entity has no accepted `name_format` Reconciliation Claim.
+- When the researcher commits a format for a Person (including as part of reconciling names across cultures), they persist a Reconciliation Claim for `name_format`.
+- Evidence pins are optional for `name_format` (it is often a preference rather than source-derived); `argument` may still record why that profile was chosen.
+- Concluded `name` values remain separate Reconciliation Claims (`property_key = name`, NameValue). Format and name content are related in the UI but distinct Properties.
+
+See [`structured-name-model.md`](structured-name-model.md).
+
+### Auto versus persisted reconciliation
+
+| Situation | Typical handling |
+|---|---|
+| Compatible values (May 1985 with 14 May 1985; James with James K. Robins) | Application projection for display; no claim required |
+| Light conflict with a graceful blend (Apr 1985 vs May 1985 → range) | Projection, or optional persisted claim with `origin = automatic` |
+| Hard conflict or explicit researcher choice | Persisted claim with `origin = researcher`, evidence pins, and `argument` |
+
+Absence of a Reconciliation Claim means “no durable concluded value yet,” not “no evidence.” The UI may still show member Observations and soft merges. For `name_format`, absence means “use the project default.”
+
+### 5.5.1 `reconciliation_claim_evidence`
+
+```sql
+CREATE TABLE reconciliation_claim_evidence (
+    reconciliation_claim_id BLOB NOT NULL
+        REFERENCES reconciliation_claims(id) ON DELETE CASCADE,
+    observation_id          BLOB NOT NULL REFERENCES observations(id),
+
+    PRIMARY KEY (reconciliation_claim_id, observation_id)
+) STRICT;
+```
+
+Evidence rows are pointers to Observations that participate in the claim's exhibit list — typically Observations on member Nodes that assert the same Property (or otherwise bear on the conclusion). Individual Observations do not carry a stance toward the claim; `argument` and the concluded value express the conclusion over the set.
+
+### 5.5.2 Example
+
+```text
+canonical_entities row E1
+  kind = person
+  members: person Nodes N1, N2
+
+N1 Observation: birth_date → DateValue(14 MAY 1985)
+N2 Observation: birth_date → DateValue(MAY 1985)
+  → soft display merge; no claim required
+
+N1 Observation: birth_date → DateValue(MAY 1985)
+N2 Observation: birth_date → DateValue(APR 1985)
+  → optional automatic claim on E1 / birth_date
+  → or researcher claim choosing one side / synthesizing a range
+
+N1 Observation: name → NameValue(form="James K. Robins", …)
+N2 Observation: name → NameValue(form="James Robins", …)
+  → often soft-mergeable; claim on E1 / name if committing a preferred NameValue
+  → optional claim on E1 / name_format = "western" when committing display/entry convention
+```
+
+## 5.6 Canonical merge
+
+When two canonical entities of the same `kind` should become one working subject:
+
+```text
+E-A label = "Unknown father"
+E-B label = "William Smith"
+
+Merge:
+  E-A.merged_into_id = E-B
+```
+
+Typical trigger: an accepted `same_as` Claim connects Nodes that currently sit under two different canonical entities of that kind. The application merges the entities and keeps a single representative in the combined component.
+
+Old ids and human refs should continue resolving to the surviving entity. Merge remains explicit and auditable. Reconciliation Claims on the absorbed entity must be merged or re-pointed by application rules.
+
+## 5.7 Conclusion-layer invariants
+
+1. Sameness Claims reference two distinct Nodes and never substitute for Observations.
+2. There is at most one Sameness Claim per unordered Node pair (`UNIQUE (node_a_id, node_b_id)` with canonical endpoint order).
+3. Each accepted `same_as` component should correspond to at most one non-merged `canonical_entities` row of the matching `kind`.
+4. A canonical entity's members are exactly the Nodes in the accepted `same_as` component containing its `representative_node_id`.
+5. Membership is not stored as an independently editable join table.
+6. `representative_node_id` may change when the previous representative leaves the component; the canonical entity id does not change for that reason alone.
+7. `kind` matches the representative Node's `node_type_key`.
+8. `distinct_from` and rejected Claims do not enlarge membership.
+9. Canonical entities do not store association endpoint FKs or denormalized Interpretation payload; durable concluded values use Reconciliation Claims.
+10. Promoting one canonical entity does not require or imply promoting related entities.
+11. There is at most one Reconciliation Claim per `(entity_id, property_key)`.
+12. A Reconciliation Claim's typed value must match `properties.value_type`, parallel to Observations.
+13. Soft display merges may exist without a Reconciliation Claim; absence of a claim is not absence of evidence.
+14. Person name format is concluded via Property `name_format` (or falls back to `project_settings.default_name_format_key`), not a column on `canonical_entities`.
+15. Place-specific domain structure is out of scope for this draft.
 
 ---
 
-# 8. Cross-layer examples
+# 6. Claims scope note
 
-## 8.1 Photograph and testimony
+This draft's Conclusion Claims are:
+
+- **Sameness Claims** (`sameness_claims`) — Node co-reference;
+- **Reconciliation Claims** (`reconciliation_claims`) — concluded Property values on `canonical_entities`.
+
+The older generic `claims` / Record-resolution tables and per-kind canonical tables (`persons`, `events`, …) are removed in favor of this model. Sameness and reconciliation remain distinct claim kinds.
+
+---
+
+# 7. Cross-layer examples
+
+## 7.1 Photograph and testimony
 
 ```text
 Photograph Source
   Artifact: scan.jpg
   Citation: crop around one person
-  Observation: cited crop depicts PersonRecord A
-  PersonRecord A: unidentified depicted person
+  Observation: cited crop depicts person Node N1
+  Node N1 (person, home Source = photograph)
 
 Testimony Source
   Artifact: audio or research note
   Citation: "That's my grandfather"
-  Observation: cited testimony refers to the depicted PersonRecord
+  Observation: testimony refers to the same depicted person as Node N1
+  Node N2 (person, home Source = testimony)
 
 Conclusion
-  Claim: photograph PersonRecord resolves to canonical Person
+  canonical_entities E1 (kind=person, representative_node_id = N1)
+  sameness_claim: N1 same_as N2 (accepted), with evidence Observations
+  members(E1) = {N1, N2}
 ```
 
-## 8.2 DNA evidence
+## 7.2 Conflicting certificate and letter
+
+```text
+Birth certificate Source C
+  person Node NC, birth_date Observation → 1 JAN 1800
+  source Node SC reifying C
+
+Letter Source L
+  Observations:
+    SC -- remark --> "date of birth on certificate mistyped"
+    person Node NL -- birth_date --> 2 JAN 1800
+    person Node NL -- birth_date --> 1 JAN 1800 (polarity negative)
+
+Conclusion
+  sameness_claim: NC same_as NL (accepted), evidence cites both Sources' Observations
+  canonical_entities E (kind=person, representative → NC or NL); members = {NC, NL}
+  reconciliation_claim on E, property birth_date:
+    value → DateValue(2 JAN 1800)   # researcher choice, or synthesized
+    evidence → the birth_date Observations (and related letter Observations as needed)
+    argument → why the letter's correction is preferred
+```
+
+## 7.3 DNA evidence
 
 ```text
 Source: DNA match report
 Artifact: locally retained export/screenshot/JSON/CSV
 Citation: match result
-Observations:
+Observations on person Node ND:
   shared DNA
   predicted relationship
   match display name
-PersonRecord:
-  matched person/profile
+
+Conclusion
+  sameness_claims may later correlate ND with other person Nodes
+  canonical person entity created/extended via representative + accepted same_as closure
 ```
 
 ---
 
-# 9. Open schema questions
+# 8. Open schema questions
 
 1. **Observation value enforcement**
    - Finalize database-level enforcement that an Observation has exactly one value and that its storage column matches the referenced Property's `value_type`.
@@ -1157,31 +1341,35 @@ PersonRecord:
 3. **Seeded vocabulary**
    - Define the initial Node Types, Properties, and common open values (event types, participation roles, and similar) shipped with new projects while keeping all of them researcher-extensible. Keep `source`-Node commentary as lightweight free text unless a concrete workflow requires structured source-quality Properties.
 
-4. **Generic Claims vs typed Claim tables**
-   - Domain model benefits from generic Claims; SQLite foreign-key integrity favors typed tables.
+4. **Sameness claim status vocabulary**
+   - Finalize statuses (provisional, accepted, rejected, superseded, and similar) and which statuses participate in membership closure.
 
-5. **Claim evidence implementation**
-   - Generic `(record_type, record_id)` is simple but weakly constrained.
+5. **Sameness claim evidence breadth**
+   - Observations-only exhibit pins plus claim `argument` may be enough; revisit only if premise Sameness Claims or other exhibit types become common.
 
-6. **Conclusion integration with the new Interpretation graph**
-   - The existing Conclusion/Claim schema still reflects the earlier Record model and has intentionally not been changed as part of this Interpretation-layer revision.
+6. **Same-type enforcement**
+   - Whether Node Type pairs on sameness Claims are application-validated only or schema-assisted.
 
-7. **Canonical entity fields**
-   - Canonical entities should remain usable without turning every field into a Claim.
+7. **Reconciliation claim status and origin**
+   - Align status vocabulary with Sameness Claims where useful; decide when automatic soft merges should be persisted (`origin = automatic`) versus display-only.
 
-8. **Place reference semantics**
-   - Keep deliberately loose unless actual genealogy workflows require more formal types.
+8. **Canonical `label` vs concluded names**
+   - `label` remains the only intentional working field on `canonical_entities`; genealogical names and `name_format` use Reconciliation Claims.
 
-9. **Human-readable refs**
-   - Determine which entity classes warrant visible refs.
+9. **Place domain**
+   - Parked for a later rewrite. `kind = place` is reserved on `canonical_entities`; Place-specific structure is out of scope until then.
+
+10. **Human-readable refs**
+   - Confirm ref assignment/format across Sources, Citations, Nodes, Observations, and canonical entities (nullable vs required, prefix conventions).
 
 ---
 
-# 10. Documentation ownership
+# 9. Documentation ownership
 
 To avoid competing schema definitions:
 
 - [`source-layer-data-model.md`](source-layer-data-model.md) is authoritative for Source-layer tables and Artifact/File storage.
 - [`structured-date-model.md`](structured-date-model.md) is authoritative for shared DateValue persistence.
+- [`structured-name-model.md`](structured-name-model.md) is authoritative for shared NameValue persistence.
 - [`audit-revision-history.md`](audit-revision-history.md) is authoritative for audit and revision history.
-- This document currently retains the working Interpretation, Conclusion, and Claim schema until those layers are extracted into dedicated documents.
+- This document currently retains the working Interpretation and Conclusion schema until those layers are extracted into dedicated documents.
