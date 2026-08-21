@@ -181,7 +181,7 @@ Resolution order for UI display/entry:
 
 Evidence pins on a `name_format` claim are optional (the choice is often a researcher preference rather than source-derived). `argument` may still record why that profile was chosen. Concluded genealogical names remain separate claims on Property `name` (NameValue).
 
-The profile does not replace `NameValue.form` or cited Observations. It tells the application how to present and edit structured parts for that Person (and how to suggest ordering when capturing new name evidence).
+The profile does not replace `NameValue.form` or cited Observations. It tells the application how to present and edit structured parts for that Person (and how to suggest ordering when capturing new name evidence). Reconciliation Claims themselves are defined in [`conclusion-layer-data-model.md`](conclusion-layer-data-model.md).
 
 ---
 
