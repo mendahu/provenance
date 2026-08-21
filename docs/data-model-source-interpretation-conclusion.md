@@ -60,17 +60,21 @@ A Citation identifies an addressable portion of an Artifact and may preserve the
 
 A Node is a source-local, globally addressable thing encountered while interpreting evidence. Nodes deliberately carry very little domain structure themselves. Their semantics come from their Node Type and the Observations that describe and connect them.
 
+Each Node records a home `source_id` for the Source in which it was primarily encountered. That is a UI and organization aid, not a confinement rule: Observations from Citations under other Sources may still target the Node.
+
 An Observation is the smallest independently addressable unit of interpreted evidence. It is an atomic, cited assertion with the general shape:
 
 ```text
 subject Node -- Property --> typed value
 ```
 
+The assertion may be positive or negative. A negative Observation records that the source appears to deny the proposition (for example, that a person's name is not Jake), rather than merely omitting a positive assertion.
+
 The value may be a scalar/structured value or another Node. A Node-valued Observation therefore forms an edge in the Interpretation graph.
 
 The Interpretation layer is an extensible, schema-described property graph. It stores explicit normalized assertions derived from evidence but does not persist relationships or conclusions that can merely be inferred from those assertions. Genealogical inference and higher-order semantics belong to application and Conclusion logic.
 
-A Node's provenance is derived through its Observations:
+A Node's assertion provenance is derived through its Observations:
 
 ```text
 Node
@@ -130,17 +134,19 @@ The database should enforce generic graph integrity and primitive typing. It sho
 
 ## 2.3 Interpretation vocabulary is extensible
 
-Node Types and Properties are first-class data. Provenance ships with a useful built-in vocabulary, but researchers may add new Node Types and Properties without a database schema migration.
+Node Types and Properties are first-class data. Provenance ships with a useful seeded vocabulary, but researchers may add new Node Types and Properties without a database schema migration.
 
 All Properties, including user-defined Properties, declare a value type. Unknown or custom vocabulary remains preservable and generically usable even when the core application has no specialized semantics for it.
 
-Core application logic and future plugins may provide first-class behavior for recognized vocabulary while leaving storage generic.
+Predicate _values_ such as `event_type` and participation `role` are likewise open text vocabulary: seeded with useful defaults, researcher-extensible, and not enforced as closed database enums. The Interpretation layer must remain ready for event kinds and roles the product cannot anticipate.
+
+Core application logic and future plugins may provide first-class behavior for recognized keys and values while leaving storage generic. For example, the application may treat an Event with `event_type = birth` and a Participation with `role = subject` as that person's birth, without requiring the schema to encode birth-specific tables or mandatory role constraints.
 
 ## 2.4 Derived semantics belong to the application layer
 
 The Interpretation schema stores explicit normalized assertions derived from evidence. Relationships that can be inferred from those assertions are application-level projections rather than duplicated persisted Interpretation data.
 
-For example, a birth Event with child and father Participations can allow the application to infer a father/child relationship without separately persisting that inferred relationship.
+For example, a birth Event with subject and father Participations can allow the application to infer a father/child relationship without separately persisting that inferred relationship.
 
 ## 2.5 Canonical entities may be sparse
 
@@ -164,22 +170,26 @@ PLC-A same_as PLC-B
 
 Historical relationships or succession between entities are not necessarily merges.
 
-## 2.7 Negative claims are explicit
+## 2.7 Negation is explicit
 
-Absence of a positive Claim is not equivalent to a negative Claim.
+Absence of a positive assertion is not equivalent to a negative assertion.
+
+This applies at both Interpretation and Conclusion:
 
 ```text
-No claim:
-  unknown whether Robert is Jake's father
+No Observation / no Claim:
+  unknown whether the name is Jake
 
-Positive claim:
-  Robert is Jake's father
+Positive:
+  the name is Jake
 
-Negative claim:
-  Robert is not Jake's father
+Negative:
+  the name is not Jake
 ```
 
-Negation belongs to the proposition. Conflicting evidence is a separate property of the evidence supporting or opposing a Claim.
+At Interpretation, polarity belongs on the Observation: it records what a particular source appears to assert or deny. At Conclusion, polarity belongs on the Claim: it records what the researcher currently concludes after considering evidence.
+
+Conflicting evidence remains a separate concern from negation. Two positive Observations with different values conflict; a negative Observation denies a specific proposition.
 
 ## 2.8 Resolver logic is application-level
 
@@ -234,8 +244,7 @@ CREATE TABLE citations (
     artifact_id     BLOB NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
     locator_json    TEXT NOT NULL,
     transcription   TEXT,
-    description     TEXT,
-    notes           TEXT
+    description     TEXT
 ) STRICT;
 ```
 
@@ -243,7 +252,7 @@ CREATE TABLE citations (
 
 `description` records what the researcher observes in the cited evidence. It is media-neutral and may describe visual, textual, audio, or other characteristics. It is not specifically an accessibility `alt_text` field.
 
-`notes` is available for other researcher commentary about the Citation itself.
+Researcher commentary about the Citation itself belongs in `citation_notes`.
 
 Conceptually:
 
@@ -257,9 +266,24 @@ Citation.transcription
 Citation.description
     what I observe
 
+citation_notes
+    researcher commentary about this Citation
+
 Observation
     what I think it means
 ```
+
+Research notes attached to a Citation live in a typed child table. Multiple notes are allowed so commentary can accumulate without overwriting earlier remarks.
+
+```sql
+CREATE TABLE citation_notes (
+    id              BLOB PRIMARY KEY,
+    citation_id     BLOB NOT NULL REFERENCES citations(id) ON DELETE CASCADE,
+    body            TEXT NOT NULL
+) STRICT;
+```
+
+Notes use a typed table with a real foreign key rather than a polymorphic notes table. Creation, edit, and deletion attribution belong to audit history.
 
 ### 4.1.1 Locator design
 
@@ -282,9 +306,7 @@ The top-level locator schema is:
 ```json
 {
   "version": 1,
-  "selectors": [
-    { "type": "..." }
-  ]
+  "selectors": [{ "type": "..." }]
 }
 ```
 
@@ -357,7 +379,7 @@ A polygon is used rather than a rectangle so the same selector can represent sim
   "points": [
     { "x": 0.31, "y": 0.18 },
     { "x": 0.73, "y": 0.18 },
-    { "x": 0.70, "y": 0.39 },
+    { "x": 0.7, "y": 0.39 },
     { "x": 0.34, "y": 0.42 }
   ],
   "unit": "normalized"
@@ -409,7 +431,7 @@ A crop within a PDF is represented compositionally:
       "points": [
         { "x": 0.31, "y": 0.18 },
         { "x": 0.73, "y": 0.18 },
-        { "x": 0.70, "y": 0.39 },
+        { "x": 0.7, "y": 0.39 },
         { "x": 0.34, "y": 0.42 }
       ],
       "unit": "normalized"
@@ -568,14 +590,11 @@ Node Types define the semantic category of a Node. They are data rather than a d
 CREATE TABLE node_types (
     key             TEXT PRIMARY KEY,
     label           TEXT NOT NULL,
-    description     TEXT,
-    is_builtin      INTEGER NOT NULL DEFAULT 0,
-
-    CHECK (is_builtin IN (0, 1))
+    description     TEXT
 ) STRICT;
 ```
 
-The initial built-in vocabulary is expected to include at least:
+Application semantics attach to stable `key` values rather than a persisted built-in flag. The initial seeded vocabulary is expected to include at least:
 
 ```text
 person
@@ -595,13 +614,17 @@ participation
     An association between a person and an event, including the person's role
     in that event.
 
-event_location
+location
     An association between an event and a place.
+
+source
+    A Source reified as an Interpretation subject so other evidence can
+    refer to it or comment on it.
 ```
 
 These names describe application semantics, not different SQL structures. Every instance is stored in the same `nodes` table.
 
-`relationship`, `participation`, and `event_location` are examples of bridge-like Nodes. Structurally, however, the database does not distinguish root entities from bridge entities. Any Node can be related to any other Node through a Node-valued Observation. The application vocabulary defines what those relationships mean and which combinations are semantically useful.
+`relationship`, `participation`, and `location` are examples of bridge-like Nodes. `source` is a reification Node: it lets the Interpretation graph talk about evidentiary objects, not only historical persons, events, and places. Structurally, however, the database does not distinguish these categories. Any Node can be related to any other Node through a Node-valued Observation. The application vocabulary defines what those relationships mean and which combinations are semantically useful.
 
 ### 4.2.2 `nodes`
 
@@ -610,13 +633,20 @@ A Node gives stable identity to a source-local thing or association encountered 
 ```sql
 CREATE TABLE nodes (
     id              BLOB PRIMARY KEY,
+    source_id       BLOB NOT NULL REFERENCES sources(id),
     node_type_key   TEXT NOT NULL REFERENCES node_types(key),
     label           TEXT,
-    notes           TEXT
+    description     TEXT
 ) STRICT;
 ```
 
+`source_id` is the Node's home Source — typically the Source being interpreted when the Node was created. It exists so the application can efficiently surface Nodes that belong with a given Source during common same-source workflows. It does not restrict which Citations or Observations may reference the Node; cross-source Observations remain valid.
+
+For Nodes of type `source`, `source_id` has a stronger meaning: it identifies the Source this Node reifies. The application should maintain at most one `source` Node per Source row. Other Sources may then make cited Observations about that Node—bare references such as “this book mentions that marriage certificate,” free-text remarks about authenticity or errors, or both—without collapsing that material into Observations about historical persons alone, and without requiring structured Source-quality columns.
+
 Nodes deliberately contain little domain data. A person's name, an Event's date, a Place's name, or a Participation's role belongs in cited Observations rather than fixed Node columns.
+
+`description` is an optional short summary of the Node itself. Nodes do not have a multi-note table; researcher commentary about interpreted assertions belongs on the supporting Observations and can be aggregated from `observation_notes` when a Node-centric view is needed.
 
 A Node can therefore be sparse. Creating a `person` Node does not require knowing a name, date, or any other property.
 
@@ -628,12 +658,10 @@ Properties are first-class, user-extensible definitions of predicates that may a
 
 ```sql
 CREATE TABLE properties (
-    id              BLOB PRIMARY KEY,
-    key             TEXT UNIQUE NOT NULL,
+    key             TEXT PRIMARY KEY,
     label           TEXT NOT NULL,
     description     TEXT,
     value_type      TEXT NOT NULL,
-    is_builtin      INTEGER NOT NULL DEFAULT 0,
 
     CHECK (value_type IN (
         'text',
@@ -642,8 +670,7 @@ CREATE TABLE properties (
         'boolean',
         'date',
         'node'
-    )),
-    CHECK (is_builtin IN (0, 1))
+    ))
 ) STRICT;
 ```
 
@@ -656,11 +683,29 @@ age_at_event  -> integer
 place         -> node
 person        -> node
 role          -> text
+event_type    -> text
+remark        -> text
+mentions      -> node
 ```
 
 The semantic vocabulary is open, but the primitive value system is intentionally constrained. A researcher may define a new Property without introducing a new storage type.
 
-Built-in Properties may receive first-class application behavior. User-defined Properties remain first-class persisted data and can be generically displayed, searched, audited, synced, and referenced. Plugins may add specialized semantics for additional Properties later.
+`value_type = 'date'` always means the shared structured DateValue model in [`structured-date-model.md`](structured-date-model.md), not a SQL date or free-text date string.
+
+Application semantics attach to stable `key` values, matching `node_types`. Seeded Properties may receive first-class application behavior. User-defined Properties remain first-class persisted data and can be generically displayed, searched, audited, synced, and referenced. Plugins may add specialized semantics for additional Properties later.
+
+Open text values such as `event_type` and `role` are seeded with common defaults (for example `birth`, `death`, `marriage`, and participation roles such as `subject`, `father`, `mother`, `witness`) but remain researcher-extensible. The schema does not close those sets or require particular roles for particular event types; first-class workflows recognize well-known values in application logic.
+
+Interactions between `source` Nodes should stay deliberately lightweight. Provenance does not seed a structured source-quality ontology (`is_authentic`, defect codes, and similar).
+
+Two common shapes:
+
+```text
+mentions   -> node   # bare source-to-source reference; target is typically a source Node
+remark     -> text   # free-text commentary about a source Node
+```
+
+A book that merely cites a marriage certificate can record `BookSource -- mentions --> CertificateSource` with no remark. A letter that challenges a certificate can add text `remark` Observations and, when needed, ordinary person-level Observations as well. Structured Properties beyond this may be added later only if a concrete workflow requires them.
 
 ### 4.3.2 `node_type_properties`
 
@@ -669,9 +714,9 @@ This table defines which Properties are valid for which Node Types.
 ```sql
 CREATE TABLE node_type_properties (
     node_type_key   TEXT NOT NULL REFERENCES node_types(key),
-    property_id     BLOB NOT NULL REFERENCES properties(id),
+    property_key    TEXT NOT NULL REFERENCES properties(key),
 
-    PRIMARY KEY (node_type_key, property_id)
+    PRIMARY KEY (node_type_key, property_key)
 ) STRICT;
 ```
 
@@ -688,8 +733,11 @@ participation -> person
 participation -> event
 participation -> role
 
-event_location -> event
-event_location -> place
+location      -> event
+location      -> place
+
+source        -> mentions
+source        -> remark
 ```
 
 This is a vocabulary/schema relationship, not historical research data. It says that `participation.person` is a meaningful shape in the Interpretation graph; it does not assert that any particular Person participated in any particular Event.
@@ -713,7 +761,7 @@ For example:
 ```text
 Participation PT1 -- person --> Person P1
 Participation PT1 -- event  --> Event E1
-Participation PT1 -- role   --> "father"
+Participation PT1 -- role   --> "subject"
 ```
 
 or, where the evidence gives only an indeterminate/general association:
@@ -728,6 +776,26 @@ The graph stores only explicit normalized interpretation. It does not need to pe
 
 This allows the same structural model to represent nuclear family roles, extended kinship, step relationships, guardianship, employment, friendship, household roles, and unanticipated historical associations without adding bridge tables.
 
+The same mechanism covers source-to-source evidence. That includes bare references and optional free-text commentary:
+
+```text
+Source Node SB1 (reifies book B)
+Source Node SC1 (reifies marriage certificate C)
+Person Node P1
+
+Book Citation B1 supports a bare reference:
+  SB1 -- mentions --> SC1
+
+Letter Citation L1 supports commentary and historical-world facts:
+  SC1 -- remark --> "birth certificate is fake"
+  # or, when the document is trusted but a fact is disputed:
+  SC1 -- remark --> "date of birth on certificate mistyped"
+  P1  -- birth_date --> DateValue(2 JAN 1800)          # polarity positive
+  P1  -- birth_date --> DateValue(1 JAN 1800)          # polarity negative
+```
+
+`mentions` is a Node-valued edge and need not say anything further about the referenced Source. `remark` is ordinary text-valued Interpretation of what a citing Source appears to say about another Source. Neither is a Source-layer column or a closed authenticity taxonomy. Historical-world Observations remain separate and independently citable.
+
 ## 4.5 `observations`
 
 An Observation is the atomic unit of interpreted evidence. Every Observation is independently addressable and is supported by one Citation.
@@ -739,6 +807,7 @@ Observation {
     citation
     subject Node
     Property
+    polarity          -- positive | negative
     typed value
 }
 ```
@@ -750,8 +819,22 @@ Citation.transcription
     "Age: 42"
 
 Observation
+    polarity = positive
     Person P1 -- birth_date --> DateValue(...)
 ```
+
+A Source may also appear to deny a proposition. That is still Interpretation, not a Conclusion-layer judgment:
+
+```text
+Citation.transcription
+    "not Jake"
+
+Observation
+    polarity = negative
+    Person P1 -- name --> "Jake"
+```
+
+Absence of any name Observation means the name is unknown from that evidence. It does not mean the name is not Jake.
 
 This distinction lets Observation values remain strongly typed without attempting to reproduce every possible source representation.
 
@@ -773,7 +856,8 @@ CREATE TABLE observations (
     id              BLOB PRIMARY KEY,
     citation_id     BLOB NOT NULL REFERENCES citations(id),
     subject_node_id BLOB NOT NULL REFERENCES nodes(id),
-    property_id     BLOB NOT NULL REFERENCES properties(id),
+    property_key    TEXT NOT NULL REFERENCES properties(key),
+    polarity        TEXT NOT NULL DEFAULT 'positive',
 
     value_text      TEXT,
     value_integer   INTEGER,
@@ -782,16 +866,26 @@ CREATE TABLE observations (
     value_date_id   BLOB REFERENCES date_values(id),
     value_node_id   BLOB REFERENCES nodes(id),
 
-    confidence      REAL,
-    notes           TEXT,
-
+    CHECK (polarity IN ('positive', 'negative')),
     CHECK (value_boolean IS NULL OR value_boolean IN (0, 1))
 ) STRICT;
 ```
 
 Exactly one value representation must be populated, and it must match `properties.value_type`. The final database-level enforcement mechanism for that cross-table constraint is still open; likely options include composite foreign-key structure plus a small validation trigger.
 
-For Node-valued Observations, the object Node must exist and should satisfy any target Node Type constraint defined by the vocabulary.
+Reading uncertainty belongs in Citation transcription or description when needed. Alternative or competing interpretations are modeled as separate Observations rather than a numeric confidence score on a single row. Researcher commentary about a particular Observation belongs in `observation_notes`.
+
+```sql
+CREATE TABLE observation_notes (
+    id              BLOB PRIMARY KEY,
+    observation_id  BLOB NOT NULL REFERENCES observations(id) ON DELETE CASCADE,
+    body            TEXT NOT NULL
+) STRICT;
+```
+
+Notes use a typed table with a real foreign key rather than a polymorphic notes table. Creation, edit, and deletion attribution belong to audit history.
+
+For Node-valued Observations, the object Node must exist and should satisfy any target Node Type constraint defined by the vocabulary. Polarity applies to Node-valued Observations as well: a negative Observation denies that particular edge rather than deleting or omitting it.
 
 A single Citation may support many atomic Observations:
 
@@ -809,18 +903,23 @@ Multiple Observations may also make different assertions about the same Property
 The current design aims to preserve these invariants:
 
 1. Every Node has exactly one Node Type.
-2. Node Types and Properties are extensible persisted vocabulary, not closed application enums.
-3. Every Observation has its own stable identity.
-4. Every Observation is supported by exactly one Citation.
-5. Every Observation has exactly one subject Node and one Property.
-6. Every Observation has exactly one typed value.
-7. The Observation value must match the Property's declared `value_type`.
-8. A Property used on a Node must be allowed for that Node's Node Type.
-9. A Node-valued Observation forms a graph edge and its object Node must exist.
-10. Application vocabulary may constrain the target Node Type of Node-valued Properties.
-11. Citation text/description preserves the evidence representation; Observations contain normalized interpretation.
-12. Derived genealogical semantics are not duplicated into the Interpretation graph merely for convenience.
-13. Unknown/custom Node Types and Properties remain preservable and generically usable without first-class application support.
+2. Every Node has a home `source_id`; that home Source does not confine which Observations may target the Node.
+3. A Node of type `source` reifies the Source identified by its `source_id`; the application should keep at most one such Node per Source.
+4. Node Types and Properties are extensible persisted vocabulary, not closed application enums.
+5. Every Observation has its own stable identity.
+6. Every Observation is supported by exactly one Citation.
+7. Every Observation has exactly one subject Node and one Property.
+8. Every Observation has exactly one typed value.
+9. Every Observation has an explicit polarity of `positive` or `negative`; absence of an Observation is not negation.
+10. The Observation value must match the Property's declared `value_type`.
+11. Date-valued Observations reference a structured DateValue; they do not store SQL dates or free-text dates as the typed value.
+12. A Property used on a Node must be allowed for that Node's Node Type.
+13. A Node-valued Observation forms a graph edge and its object Node must exist.
+14. Application vocabulary may constrain the target Node Type of Node-valued Properties.
+15. Citation text/description preserves the evidence representation; Observations contain normalized interpretation.
+16. Derived genealogical semantics are not duplicated into the Interpretation graph merely for convenience.
+17. Unknown/custom Node Types, Properties, and open vocabulary values (such as event types and roles) remain preservable and generically usable without first-class application support.
+18. First-class application behavior may recognize seeded keys and values; it must not require the schema to close those vocabularies or encode every genealogical edge case.
 
 ---
 
@@ -938,6 +1037,7 @@ CREATE TABLE claims (
 ) STRICT;
 ```
 
+Claim `polarity` is the researcher's concluded affirmation or denial. It is distinct from Observation `polarity`, which records what a particular source appears to assert or deny.
 ## 6.2 Typed Record-resolution Claims
 
 ```sql
@@ -1054,8 +1154,8 @@ PersonRecord:
 2. **Node-valued Property target constraints**
    - Define how the vocabulary expresses allowed target Node Types without hard-coding genealogy-specific edges into SQL tables.
 
-3. **Built-in vocabulary**
-   - Define the initial Node Types and Properties shipped with new projects while keeping both researcher-extensible.
+3. **Seeded vocabulary**
+   - Define the initial Node Types, Properties, and common open values (event types, participation roles, and similar) shipped with new projects while keeping all of them researcher-extensible. Keep `source`-Node commentary as lightweight free text unless a concrete workflow requires structured source-quality Properties.
 
 4. **Generic Claims vs typed Claim tables**
    - Domain model benefits from generic Claims; SQLite foreign-key integrity favors typed tables.

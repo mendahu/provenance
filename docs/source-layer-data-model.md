@@ -68,6 +68,8 @@ source_types
     |
     +--< sources
             |
+            +--< source_notes
+            |
             +--< source_metadata >-- source_metadata_fields
             |                           ^
             |                           |
@@ -138,7 +140,23 @@ CREATE TABLE sources (
 
 `source_type_id` provides the broad user-facing classification. More variable catalog information belongs in Source metadata.
 
+`description` is catalog text about the Source itself. Researcher commentary that may accumulate over time belongs in `source_notes` rather than a single inline notes field.
+
 External provenance such as an originating URL belongs conceptually to the Source rather than the Artifact. The exact Source-level acquisition/provenance representation can be refined separately when its use cases require more structure.
+
+## 4.1 `source_notes`
+
+Research notes attached to a Source. Multiple notes are allowed so commentary can accumulate without overwriting earlier remarks.
+
+```sql
+CREATE TABLE source_notes (
+    id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
+    source_id       BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    body            TEXT NOT NULL
+) STRICT;
+```
+
+Notes use a typed table with a real foreign key rather than a polymorphic notes table. Creation, edit, and deletion attribution belong to audit history.
 
 ---
 
@@ -409,6 +427,7 @@ The Source layer currently consists of:
 ```text
 source_types
 sources
+source_notes
 source_metadata_fields
 source_type_metadata_fields
 source_metadata
@@ -449,6 +468,7 @@ The audit tables are cross-cutting infrastructure and are defined separately in 
 17. Thumbnails and other generated assets are File derivatives, not Artifacts.
 18. File derivatives are reproducible and disposable.
 19. Generic creation/update timestamps and user attribution belong to audit history rather than Source-layer rows.
-20. All tables use SQLite `STRICT` typing.
+20. Research notes for Sources use a typed `source_notes` table with a real foreign key, not a polymorphic notes table.
+21. All tables use SQLite `STRICT` typing.
 
 This schema keeps evidence description, digital representation, storage infrastructure, generated UI assets, and later genealogical interpretation as distinct concerns.
