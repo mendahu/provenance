@@ -10,7 +10,7 @@ The Interpretation layer answers:
 
 Cross-layer philosophy and the relationship among Source, Interpretation, and Conclusion are summarized in [`data-model-source-interpretation-conclusion.md`](data-model-source-interpretation-conclusion.md).
 
-The authoritative Source-layer schema is [`source-layer-data-model.md`](source-layer-data-model.md). Conclusion-layer schema is [`conclusion-layer-data-model.md`](conclusion-layer-data-model.md). Shared date and name value models are [`structured-date-model.md`](structured-date-model.md) and [`structured-name-model.md`](structured-name-model.md). Audit history is [`audit-revision-history.md`](audit-revision-history.md).
+The authoritative Source-layer schema is [`source-layer-data-model.md`](source-layer-data-model.md). Conclusion-layer schema is [`conclusion-layer-data-model.md`](conclusion-layer-data-model.md). Shared date and name value models are [`structured-date-model.md`](structured-date-model.md) and [`structured-name-model.md`](structured-name-model.md). Seeded keys and open-vocabulary starters are [`seeded-vocabulary.md`](seeded-vocabulary.md). Audit history is [`audit-revision-history.md`](audit-revision-history.md).
 
 ---
 
@@ -69,7 +69,7 @@ Structured genealogical dates use [`structured-date-model.md`](structured-date-m
 
 Generic `created_at` / `updated_at` / user bookkeeping does not belong on these domain tables; see [`audit-revision-history.md`](audit-revision-history.md).
 
-Selected user-facing entities may receive short human-readable references (`ref`), unique within the project. This draft includes `ref` on Citations, Nodes, and Observations.
+Selected user-facing entities receive a required short human-readable `ref`, unique within the project. This layer uses `CIT`, `OBS`, and Node refs of the form `{type_prefix}-C-{token}` (candidate). Shared rules are in [`data-model-source-interpretation-conclusion.md`](data-model-source-interpretation-conclusion.md).
 
 ---
 
@@ -101,7 +101,7 @@ Each Citation is independently resolvable from its `artifact_id` and locator. Ci
 ```sql
 CREATE TABLE citations (
     id              BLOB PRIMARY KEY,
-    ref             TEXT UNIQUE,               -- e.g. CIT-3K9M2
+    ref             TEXT UNIQUE NOT NULL,      -- e.g. CIT-3K9M2
     artifact_id     BLOB NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
     locator_json    TEXT NOT NULL,
     transcription   TEXT,
@@ -109,7 +109,7 @@ CREATE TABLE citations (
 ) STRICT;
 ```
 
-`ref` is an optional short human-readable reference for UI and discussion, parallel to Source refs.
+`ref` is a required short human-readable reference for UI and discussion (prefix `CIT`).
 `transcription` preserves the researcher's reading of textual or spoken content within the cited evidence. It is intended to remain faithful to the evidence, including uncertainty where appropriate, rather than silently normalizing abbreviations, names, places, or other values. For example, `Wm Robins` may be transcribed as written and normalized to `William Robins` later through an Observation.
 
 `description` records what the researcher observes in the cited evidence. It is media-neutral and may describe visual, textual, audio, or other characteristics. It is not specifically an accessibility `alt_text` field.
@@ -454,37 +454,16 @@ Node Types define the semantic category of a Node. They are data rather than a d
 CREATE TABLE node_types (
     key             TEXT PRIMARY KEY,
     label           TEXT NOT NULL,
-    description     TEXT
+    description     TEXT,
+    ref_prefix      TEXT NOT NULL UNIQUE
 ) STRICT;
 ```
 
-Application semantics attach to stable `key` values rather than a persisted built-in flag. The initial seeded vocabulary is expected to include at least:
+`ref_prefix` is the type token in human-readable refs for Nodes and canonical entities of this kind, for example `PER` for `person` → Person `PER-7KD45`, candidate Node `PER-C-7KD45`. It is required when defining a Node Type, including researcher-defined types. Prefixes are uppercase ASCII letters, unique among Node Types, and must not use the reserved prefixes `SRC`, `ART`, `CIT`, `OBS`, or the candidate layer code `C`.
 
-```text
-person
-    A person represented by interpreted evidence.
+The Node Type `source` (reification of a Source row) must not use `SRC`; a distinct prefix such as `SRN` keeps Source catalog refs (`SRC-…`) distinguishable from source-Nodes in speech.
 
-event
-    An occurrence represented by interpreted evidence.
-
-place
-    A geographic or named place represented by interpreted evidence.
-
-relationship
-    A general association that is useful when the evidence cannot be faithfully
-    represented through a more specific event/context structure.
-
-participation
-    An association between a person and an event, including the person's role
-    in that event.
-
-location
-    An association between an event and a place.
-
-source
-    A Source reified as an Interpretation subject so other evidence can
-    refer to it or comment on it.
-```
+Application semantics attach to stable `key` values rather than a persisted built-in flag. Horizon Node Types and their prefixes are catalogued in [`seeded-vocabulary.md`](seeded-vocabulary.md). That set is expected to include at least `person`, `event`, `place`, `relationship`, `participation`, `location`, and `source`.
 
 These names describe application semantics, not different SQL structures. Every instance is stored in the same `nodes` table.
 
@@ -497,15 +476,22 @@ A Node gives stable identity to a source-local thing or association encountered 
 ```sql
 CREATE TABLE nodes (
     id              BLOB PRIMARY KEY,
-    ref             TEXT UNIQUE,               -- e.g. NOD-7KD45
+    ref             TEXT UNIQUE NOT NULL,      -- e.g. PER-C-7KD45
     source_id       BLOB NOT NULL REFERENCES sources(id),
     node_type_key   TEXT NOT NULL REFERENCES node_types(key),
     label           TEXT,
-    description     TEXT
+    description     TEXT,
+
+    UNIQUE (id, node_type_key)
 ) STRICT;
 ```
 
-`ref` is an optional short human-readable reference for UI and discussion.
+`ref` is required. It is assembled as `{ref_prefix}-C-{token}` (`C` = candidate). Users talk about a person Node as a candidate person (`PER-C-…`), distinct from the canonical Person (`PER-…`).
+
+`UNIQUE (id, node_type_key)` exists so Sameness Claims can use a composite foreign key that pins both endpoints to the same type. It is redundant with the primary key for uniqueness of `id`; it does not allow two types per Node.
+
+`node_type_key` is immutable after insert. Correcting a wrong type means a new Node (and new `ref`), not an UPDATE of the type. The UUID remains the machine identity; the type is part of the public identity encoded in `ref`.
+
 `source_id` is the Node's home Source — typically the Source being interpreted when the Node was created. It exists so the application can efficiently surface Nodes that belong with a given Source during common same-source workflows. It does not restrict which Citations or Observations may reference the Node; cross-source Observations remain valid.
 
 For Nodes of type `source`, `source_id` has a stronger meaning: it identifies the Source this Node reifies. The application should maintain at most one `source` Node per Source row. Other Sources may then make cited Observations about that Node—bare references such as “this book mentions that marriage certificate,” free-text remarks about authenticity or errors, or both—without collapsing that material into Observations about historical persons alone, and without requiring structured Source-quality columns.
@@ -543,20 +529,7 @@ CREATE TABLE properties (
 ) STRICT;
 ```
 
-A Property's `value_type` is intrinsic to the Property. For example:
-
-```text
-name          -> name
-name_format   -> text    # name_format_profiles.key; primarily Conclusion reconciliation
-birth_date    -> date
-age_at_event  -> integer
-place         -> node
-person        -> node
-role          -> text
-event_type    -> text
-remark        -> text
-mentions      -> node
-```
+A Property's `value_type` is intrinsic to the Property. Seeded Properties (for example `name`, `birth_date`, `event_type`, `role`, `person`, `mentions`, `remark`) and their `node_type_properties` bindings are listed in [`seeded-vocabulary.md`](seeded-vocabulary.md).
 
 The semantic vocabulary is open, but the primitive value system is intentionally constrained. A researcher may define a new Property without introducing a new storage type.
 
@@ -568,7 +541,7 @@ The semantic vocabulary is open, but the primitive value system is intentionally
 
 Application semantics attach to stable `key` values, matching `node_types`. Seeded Properties may receive first-class application behavior. User-defined Properties remain first-class persisted data and can be generically displayed, searched, audited, synced, and referenced. Plugins may add specialized semantics for additional Properties later.
 
-Open text values such as `event_type` and `role` are seeded with common defaults (for example `birth`, `death`, `marriage`, and participation roles such as `subject`, `father`, `mother`, `witness`) but remain researcher-extensible. The schema does not close those sets or require particular roles for particular event types; first-class workflows recognize well-known values in application logic.
+Open text values such as `event_type` and `role` are seeded with common defaults for pickers but remain researcher-extensible; see [`seeded-vocabulary.md`](seeded-vocabulary.md). The schema does not close those sets or require particular roles for particular event types; first-class workflows recognize well-known values in application logic.
 
 Interactions between `source` Nodes should stay deliberately lightweight. Provenance does not seed a structured source-quality ontology (`is_authentic`, defect codes, and similar).
 
@@ -594,7 +567,7 @@ CREATE TABLE node_type_properties (
 ) STRICT;
 ```
 
-For example:
+For example (full matrix in [`seeded-vocabulary.md`](seeded-vocabulary.md)):
 
 ```text
 person        -> name
@@ -618,7 +591,9 @@ This is a vocabulary/schema relationship, not historical research data. It says 
 
 The vocabulary should be seeded with common definitions but remain researcher-extensible.
 
-For Node-valued Properties, the application vocabulary may additionally constrain allowed target Node Types (for example, `participation.person` should target a `person` Node). The exact persistence mechanism for those target constraints remains to be finalized; it should not force the core graph into genealogy-specific SQL tables.
+For Node-valued Properties, allowed **target** Node Types (for example, `participation.person` should target a `person` Node) are an **application invariant** for now — the same posture as Observation value population. Seeded Properties get first-class UI/validation behavior; user-defined node Properties may remain unconstrained or warn-only. Provenance does not persist target-type allow-lists in SQL yet (no `target_node_type_key` on `properties`, and no target join table). That can be added later if pickers and importers need a shared declarative vocabulary.
+
+Malformed edges (wrong target type) may be warned about or ignored by typed workflows; the generic graph still stores the Observation.
 
 ---
 
@@ -733,7 +708,7 @@ A provisional SQL shape is:
 ```sql
 CREATE TABLE observations (
     id              BLOB PRIMARY KEY,
-    ref             TEXT UNIQUE,               -- e.g. OBS-2F8Q1
+    ref             TEXT UNIQUE NOT NULL,      -- e.g. OBS-2F8Q1
     citation_id     BLOB NOT NULL REFERENCES citations(id),
     subject_node_id BLOB NOT NULL REFERENCES nodes(id),
     property_key    TEXT NOT NULL REFERENCES properties(key),
@@ -752,8 +727,11 @@ CREATE TABLE observations (
 ) STRICT;
 ```
 
-`ref` is an optional short human-readable reference for UI and discussion.
-Exactly one value representation must be populated, and it must match `properties.value_type`. The final database-level enforcement mechanism for that cross-table constraint is still open; likely options include composite foreign-key structure plus a small validation trigger.
+`ref` is a required short human-readable reference for UI and discussion (prefix `OBS`).
+
+**Value population (application invariant):** exactly one value representation must be populated, and it must match `properties.value_type`. Provenance does **not** enforce that cross-table rule in SQLite for now (no XOR/`value_type` trigger or typed bridge tables). Writers — repository code, importers, sync — are responsible for correct population.
+
+**Read-side tolerance:** if a row is malformed, readers should prefer the column that matches the Property's `value_type` and ignore any other non-null value columns. A row with *no* usable value for that `value_type` is invalid and should be surfaced as an error or omitted rather than guessed. The same sparse-column pattern and rules apply later to Reconciliation Claims.
 
 Reading uncertainty belongs in Citation transcription or description when needed. Alternative or competing interpretations are modeled as separate Observations rather than a numeric confidence score on a single row. Researcher commentary about a particular Observation belongs in `observation_notes`.
 
@@ -786,52 +764,37 @@ Multiple Observations may also make different assertions about the same Property
 
 The current design aims to preserve these invariants:
 
-1. Every Node has exactly one Node Type.
-2. Every Node has a home `source_id`; that home Source does not confine which Observations may target the Node.
-3. A Node of type `source` reifies the Source identified by its `source_id`; the application should keep at most one such Node per Source.
-4. Node Types and Properties are extensible persisted vocabulary, not closed application enums.
-5. Every Observation has its own stable identity.
-6. Every Observation is supported by exactly one Citation.
-7. Every Observation has exactly one subject Node and one Property.
-8. Every Observation has exactly one typed value.
-9. Every Observation has an explicit polarity of `positive` or `negative`; absence of an Observation is not negation.
-10. The Observation value must match the Property's declared `value_type`.
-11. Date-valued Observations reference a structured DateValue; they do not store SQL dates or free-text dates as the typed value.
-12. Name-valued Observations reference a structured NameValue; they do not store an undifferentiated name string as the typed value.
-13. A Property used on a Node must be allowed for that Node's Node Type.
-14. A Node-valued Observation forms a graph edge and its object Node must exist.
-15. Application vocabulary may constrain the target Node Type of Node-valued Properties.
-16. Citation text/description preserves the evidence representation; Observations contain normalized interpretation.
-17. Derived genealogical semantics are not duplicated into the Interpretation graph merely for convenience.
-18. Unknown/custom Node Types, Properties, and open vocabulary values (such as event types and roles) remain preservable and generically usable without first-class application support.
-19. First-class application behavior may recognize seeded keys and values; it must not require the schema to close those vocabularies or encode every genealogical edge case.
+1. Every Node has exactly one Node Type. `node_type_key` is immutable after insert.
+2. Every Node has a required `ref` of the form `{ref_prefix}-C-{token}` (candidate).
+3. Every Node has a home `source_id`; that home Source does not confine which Observations may target the Node.
+4. A Node of type `source` reifies the Source identified by its `source_id`; the application should keep at most one such Node per Source.
+5. Node Types and Properties are extensible persisted vocabulary, not closed application enums. A new Node Type includes a unique `ref_prefix` that is not a reserved catalog prefix or layer code.
+6. Every Observation has its own stable identity and a required `OBS-…` `ref`.
+7. Every Observation is supported by exactly one Citation.
+8. Every Citation has a required `CIT-…` `ref`.
+9. Every Observation has exactly one subject Node and one Property.
+10. Every Observation has exactly one typed value.
+11. Every Observation has an explicit polarity of `positive` or `negative`; absence of an Observation is not negation.
+12. The Observation value must match the Property's declared `value_type` (application write rule). Readers prefer the matching column if multiple value columns are set.
+13. Date-valued Observations reference a structured DateValue; they do not store SQL dates or free-text dates as the typed value.
+14. Name-valued Observations reference a structured NameValue; they do not store an undifferentiated name string as the typed value.
+15. A Property used on a Node must be allowed for that Node's Node Type.
+16. A Node-valued Observation forms a graph edge and its object Node must exist.
+17. Application logic may constrain the target Node Type of Node-valued Properties for seeded vocabulary; that is not enforced as SQL allow-lists in this draft.
+18. Citation text/description preserves the evidence representation; Observations contain normalized interpretation.
+19. Derived genealogical semantics are not duplicated into the Interpretation graph merely for convenience.
+20. Unknown/custom Node Types, Properties, and open vocabulary values (such as event types and roles) remain preservable and generically usable without first-class application support.
+21. First-class application behavior may recognize seeded keys and values; it must not require the schema to close those vocabularies or encode every genealogical edge case.
 
 ---
 
----
-
-# 9. Open schema questions
-
-1. **Observation value enforcement**
-   - Finalize database-level enforcement that an Observation has exactly one value and that its storage column matches the referenced Property's `value_type`.
-
-2. **Node-valued Property target constraints**
-   - Define how the vocabulary expresses allowed target Node Types without hard-coding genealogy-specific edges into SQL tables.
-
-3. **Seeded vocabulary**
-   - Define the initial Node Types, Properties, and common open values (event types, participation roles, and similar) shipped with new projects while keeping all of them researcher-extensible. Keep `source`-Node commentary as lightweight free text unless a concrete workflow requires structured source-quality Properties.
-
-4. **Human-readable refs**
-   - Confirm ref assignment/format across Citations, Nodes, and Observations (nullable vs required, prefix conventions).
-
----
-
-# 10. Documentation ownership
+# 9. Documentation ownership
 
 To avoid competing schema definitions:
 
 - [`source-layer-data-model.md`](source-layer-data-model.md) is authoritative for Source-layer tables and Artifact/File storage.
-- This document is authoritative for Interpretation-layer tables and vocabulary.
+- This document is authoritative for Interpretation-layer tables and vocabulary schema.
+- [`seeded-vocabulary.md`](seeded-vocabulary.md) is the horizon catalog for intended Node Types, Properties, bindings, and open-value starters (not a v1 ship list).
 - [`conclusion-layer-data-model.md`](conclusion-layer-data-model.md) is authoritative for Conclusion-layer tables and Claims.
 - [`structured-date-model.md`](structured-date-model.md) is authoritative for shared DateValue persistence.
 - [`structured-name-model.md`](structured-name-model.md) is authoritative for shared NameValue persistence.

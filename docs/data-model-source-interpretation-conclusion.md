@@ -15,6 +15,8 @@ Shared value models:
 - Dates: [`structured-date-model.md`](structured-date-model.md)
 - Names: [`structured-name-model.md`](structured-name-model.md)
 
+Seed catalog for new projects: [`seeded-vocabulary.md`](seeded-vocabulary.md).
+
 Cross-cutting audit/revision: [`audit-revision-history.md`](audit-revision-history.md).
 
 ---
@@ -150,7 +152,37 @@ Structured genealogical dates use the shared model in [`structured-date-model.md
 
 Structured personal names use the shared model in [`structured-name-model.md`](structured-name-model.md).
 
-Selected user-facing entities may additionally receive short human-readable references (`ref`), unique within the project. Current drafts include `ref` on Sources, Citations, Nodes, Observations, and `canonical_entities`.
+Selected user-facing rows receive a required short human-readable `ref`, unique within the project (application: unique across all ref-bearing tables).
+
+Catalog and Interpretation rows that are not typed Nodes use `{PREFIX}-{token}`:
+
+```text
+SRC   sources          e.g. SRC-F4N2P
+ART   artifacts        e.g. ART-3K9M2
+CIT   citations        e.g. CIT-3K9M2
+OBS   observations     e.g. OBS-2F8Q1
+```
+
+Nodes and canonical entities share a **type prefix** from `node_types.ref_prefix`. The concluded working subject uses the short form; Interpretation Nodes are marked as **candidates** so they do not read as “final”:
+
+```text
+PER-7KD45      Person (canonical entity)
+PER-C-7KD45    person candidate Node (Interpretation)
+```
+
+```text
+canonical    {type_prefix}-{token}
+node         {type_prefix}-C-{token}
+```
+
+`C` means candidate (source-local, not the concluded Person/Event/…). It is not “canonical.” **Hypothetical (`H`) is not used:** a census person Node is cited evidence, not a guess.
+
+`C` is a fixed application layer code, not a column and not user-extensible. Do not use `C` as a `ref_prefix`. Catalog prefixes `SRC`, `ART`, `CIT`, `OBS` stay reserved.
+
+Creating a Node Type includes a `ref_prefix` that is unique and not in that reserved set. The Node Type / canonical `kind` is immutable; a mistaken type is a new row, not an in-place change.
+
+Machine identity remains the UUID. `ref` is assigned by the application on insert, stable, and not recycled. After canonical merge, old refs keep resolving to the surviving entity.
+
 
 Generic persistence bookkeeping such as `created_at`, `updated_at`, and user attribution does not belong on core domain tables. Creation, modification, deletion, user attribution, and revision ordering are recorded by the append-only audit/revision model in [`audit-revision-history.md`](audit-revision-history.md).
 
@@ -230,5 +262,6 @@ To avoid competing schema definitions:
 - [`conclusion-layer-data-model.md`](conclusion-layer-data-model.md) is authoritative for Conclusion-layer tables and Claims.
 - [`structured-date-model.md`](structured-date-model.md) is authoritative for shared DateValue persistence.
 - [`structured-name-model.md`](structured-name-model.md) is authoritative for shared NameValue persistence.
+- [`seeded-vocabulary.md`](seeded-vocabulary.md) is the horizon catalog for intended keys and starter open-vocabulary lists (not a v1 ship list).
 - [`audit-revision-history.md`](audit-revision-history.md) is authoritative for audit and revision history.
 - This document summarizes three-layer philosophy and cross-layer examples; it does not own layer schemas.

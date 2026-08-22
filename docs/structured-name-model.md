@@ -63,20 +63,9 @@ CREATE TABLE name_value_parts (
 ) STRICT;
 ```
 
-Parts are ordered by `idx` within a NameValue. `type` is an open vocabulary rather than a database enum. A GEDCOM-aligned starter set may include:
+Parts are ordered by `idx` within a NameValue. `type` is an open vocabulary rather than a database enum. The GEDCOM-aligned starter set (`prefix`, `given`, `surname`, and similar) is catalogued in [`seeded-vocabulary.md`](seeded-vocabulary.md).
 
-```text
-prefix            -- NPFX (Dr, Rev, …)
-given             -- GIVN
-initial
-nick              -- NICK
-surname_prefix    -- SPFX / particle (von, de la, …)
-surname           -- SURN
-suffix            -- NSFX (Jr, III, …)
-undetermined
-```
-
-Applications may recognize well-known types for search and reconciliation (for example filtering `type = 'surname'`) while still accepting project-specific or undetermined types. Absence of parts is valid. Presence of parts without types is also valid when order alone is useful. Broader cultural part types can be added later as open vocabulary without schema changes; culture-specific *display order* is handled by name format profiles below rather than by closing this type list.
+Applications may recognize well-known part types for search and reconciliation while still accepting project-specific or undetermined types. Absence of parts is valid. Culture-specific *display order* is handled by name format profiles rather than by closing the part-type list.
 
 Example:
 
@@ -124,23 +113,7 @@ CREATE TABLE name_format_profile_parts (
 
 ### Seeded Western profile
 
-New projects should include at least:
-
-```text
-name_format_profiles
-  key = western
-  label = Western
-  description = GEDCOM-aligned spoken/display order
-
-name_format_profile_parts (western)
-  0 prefix
-  1 given
-  2 initial
-  3 nick
-  4 surname_prefix
-  5 surname
-  6 suffix
-```
+New projects should include at least the `western` profile. The authoritative profile key, labels, and part order are in [`seeded-vocabulary.md`](seeded-vocabulary.md).
 
 This is a display/entry convention, not a claim that every Person uses every part type.
 
@@ -155,7 +128,7 @@ CREATE TABLE project_settings (
 ) STRICT;
 ```
 
-Known setting for name formats:
+Known setting for name formats (also listed in [`seeded-vocabulary.md`](seeded-vocabulary.md)):
 
 ```text
 default_name_format_key = western

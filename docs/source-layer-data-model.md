@@ -104,19 +104,7 @@ CREATE TABLE source_types (
 ) STRICT;
 ```
 
-New projects should be seeded with common types such as:
-
-```text
-birth_certificate
-census
-photograph
-oral_testimony
-dna_match_report
-book
-website_capture
-gedcom_file
-family_tree_export
-```
+New projects may be seeded with a small set of common types such as `birth_certificate`, `census`, `photograph`, and similar, growing as real cataloging needs appear. The horizon catalog (and suggested metadata fields) lives in [`seeded-vocabulary.md`](seeded-vocabulary.md).
 
 Users may add project-specific types without schema changes. Built-in types are defaults, not an enum and not structurally privileged subclasses.
 
@@ -131,14 +119,14 @@ A Source is the canonical evidentiary object.
 ```sql
 CREATE TABLE sources (
     id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
-    ref             TEXT UNIQUE,               -- e.g. SRC-F4N2P
+    ref             TEXT UNIQUE NOT NULL,      -- e.g. SRC-F4N2P
     source_type_id  BLOB NOT NULL REFERENCES source_types(id),
     title           TEXT,
     description     TEXT
 ) STRICT;
 ```
 
-`source_type_id` provides the broad user-facing classification. More variable catalog information belongs in Source metadata.
+`source_type_id` provides the broad user-facing classification. More variable catalog information belongs in Source metadata. All Sources have a `ref` with prefix `SRC`; Source *type* (`birth_certificate`, `census`, …) does not change the prefix.
 
 `description` is catalog text about the Source itself. Researcher commentary that may accumulate over time belongs in `source_notes` rather than a single inline notes field.
 
@@ -182,21 +170,7 @@ CREATE TABLE source_metadata_fields (
 ) STRICT;
 ```
 
-Possible seeded fields include:
-
-```text
-author                  text
-publisher               text
-edition                 text
-isbn                    text
-repository              text
-call_number             text
-jurisdiction            text
-registration_number     text
-publication_date        date
-issue_date              date
-interview_date          date
-```
+Possible seeded fields include `author`, `publisher`, `publication_date`, and similar. The authoritative list is in [`seeded-vocabulary.md`](seeded-vocabulary.md).
 
 The goal is not to create a general typed EAV system. New structured types should only be introduced for concrete use cases.
 
@@ -320,11 +294,14 @@ An Artifact is a concrete evidentiary representation of a Source.
 ```sql
 CREATE TABLE artifacts (
     id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
+    ref             TEXT UNIQUE NOT NULL,      -- e.g. ART-3K9M2
     source_id       BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
     file_id         BLOB REFERENCES files(id),
     description     TEXT
 ) STRICT;
 ```
+
+`ref` is required so Artifacts can be named in discussion independently of their Source (`ART-3K9M2` under `SRC-F4N2P`).
 
 An Artifact has zero or one primary File.
 
@@ -469,6 +446,7 @@ The audit tables are cross-cutting infrastructure and are defined separately in 
 18. File derivatives are reproducible and disposable.
 19. Generic creation/update timestamps and user attribution belong to audit history rather than Source-layer rows.
 20. Research notes for Sources use a typed `source_notes` table with a real foreign key, not a polymorphic notes table.
-21. All tables use SQLite `STRICT` typing.
+21. Sources and Artifacts have required human-readable `ref` values (`SRC-…`, `ART-…`).
+22. All tables use SQLite `STRICT` typing.
 
 This schema keeps evidence description, digital representation, storage infrastructure, generated UI assets, and later genealogical interpretation as distinct concerns.
