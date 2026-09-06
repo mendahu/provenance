@@ -9,6 +9,7 @@ import (
 	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/project"
+	"github.com/mendahu/provenencia/core/database/sourcevocab"
 	"github.com/mendahu/provenencia/core/database/users"
 	"github.com/mendahu/provenencia/core/identity"
 )
@@ -27,6 +28,9 @@ func ListContributors(projectDir string) ([]users.User, error) {
 	}
 	defer proj.Close()
 	if err := users.EnsureRefs(proj); err != nil {
+		return nil, err
+	}
+	if err := sourcevocab.Ensure(proj); err != nil {
 		return nil, err
 	}
 	return users.List(proj)
@@ -64,6 +68,10 @@ func adopt(identityDir, projectDir, adoptUserID string) (Result, error) {
 		return Result{}, err
 	}
 	if err := users.EnsureRefs(proj); err != nil {
+		_ = proj.Close()
+		return Result{}, err
+	}
+	if err := sourcevocab.Ensure(proj); err != nil {
 		_ = proj.Close()
 		return Result{}, err
 	}
@@ -106,6 +114,10 @@ func openMint(identityDir, projectDir, displayName string) (Result, error) {
 		return Result{}, err
 	}
 	if err := users.EnsureRefs(proj); err != nil {
+		_ = proj.Close()
+		return Result{}, err
+	}
+	if err := sourcevocab.Ensure(proj); err != nil {
 		_ = proj.Close()
 		return Result{}, err
 	}
@@ -186,6 +198,9 @@ func ProjectInfo(projectDir string) (ResolvedInfo, error) {
 	}
 	defer proj.Close()
 	if err := users.EnsureRefs(proj); err != nil {
+		return ResolvedInfo{}, err
+	}
+	if err := sourcevocab.Ensure(proj); err != nil {
 		return ResolvedInfo{}, err
 	}
 	info, err := project.Get(proj)

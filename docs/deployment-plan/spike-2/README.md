@@ -123,7 +123,7 @@ S2-04 Design — Types / metadata extension
         ▼
 S2-05 PR — Audit tables + write helper (done)   ◄── gate for research mutations
 S2-06 PR — date_values schema + helpers (done)
-S2-07 PR — Source vocabulary tables + small seed
+S2-07 PR — Source vocabulary tables + small seed (done)
 S2-08 PR — sources + source_notes CRUD (+ audit)
 S2-09 PR — files store + ingest (+ audit on File create)
 S2-10 PR — artifacts CRUD + attach/replace File (+ audit)
@@ -233,8 +233,8 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-04 seed decision (or interim seed with note “Design may trim”) |
-| **Deliverables** | Migration: `source_types`, `source_metadata_fields`, `source_type_metadata_fields`. Seed on **Create** (and document behavior for Open of older DBs: migrate schema; seed only if empty — pin the rule in the PR). Go list/upsert for types and fields (project-local `origin = 'user'` rows). Tests for `UNIQUE (key, origin)` and suggestion join rows. |
-| **Context** | Source doc §§3, 5.1–5.2; vocabulary doc §1.1 / §2. Stable UUIDs for `provenencia`-origin rows are nice-to-have for tests; if used, document how they are minted. |
+| **Deliverables** | Done. Migration `000005` + `sourcetypes`/`sourcefields`/`sourcevocab`; origin namespaces; `Ensure` reconciles provenencia seed (photograph/book/passport/birth_record/marriage_record) on Create/Open. |
+| **Context** | Source doc §§3, 5.1–5.2; vocabulary doc §1.1 / §2. Interim seed broader than S2-04 V-19; Design may still trim without a schema change. |
 | **Out** | No `sources` rows yet. |
 
 ---
