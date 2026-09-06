@@ -15,20 +15,17 @@ import (
 
 var ErrUnknownUser = apperr.New(apperr.CodeOnboardingUnknownUser, apperr.KindNotFound)
 
-// ListContributors opens the catalog (migrates if needed), ensures user refs, and lists contributors.
+// ListContributors opens the catalog (migrates + reconciles) and lists contributors.
 func ListContributors(projectDir string) ([]users.User, error) {
 	projectDir = strings.TrimSpace(projectDir)
 	if projectDir == "" {
 		return nil, database.ErrNotAProject
 	}
-	proj, err := database.Open(projectDir)
+	proj, err := openCatalog(projectDir)
 	if err != nil {
 		return nil, err
 	}
 	defer proj.Close()
-	if err := users.EnsureRefs(proj); err != nil {
-		return nil, err
-	}
 	return users.List(proj)
 }
 
@@ -59,12 +56,8 @@ func adopt(identityDir, projectDir, adoptUserID string) (Result, error) {
 		return Result{}, err
 	}
 
-	proj, err := database.Open(projectDir)
+	proj, err := openCatalog(projectDir)
 	if err != nil {
-		return Result{}, err
-	}
-	if err := users.EnsureRefs(proj); err != nil {
-		_ = proj.Close()
 		return Result{}, err
 	}
 	u, err := users.Lookup(proj, uid[:])
@@ -101,12 +94,8 @@ func openMint(identityDir, projectDir, displayName string) (Result, error) {
 		return Result{}, err
 	}
 
-	proj, err := database.Open(projectDir)
+	proj, err := openCatalog(projectDir)
 	if err != nil {
-		return Result{}, err
-	}
-	if err := users.EnsureRefs(proj); err != nil {
-		_ = proj.Close()
 		return Result{}, err
 	}
 	uid := id.UserID
@@ -173,21 +162,18 @@ func resolveUpdatedBy(proj *database.Catalog, info project.Info) (ResolvedInfo, 
 	return out, nil
 }
 
-// ProjectInfo loads project bookkeeping from an existing catalog (migrates if needed)
+// ProjectInfo loads project bookkeeping from an existing catalog (migrates + reconciles)
 // and resolves updated-by display fields in the same open.
 func ProjectInfo(projectDir string) (ResolvedInfo, error) {
 	projectDir = strings.TrimSpace(projectDir)
 	if projectDir == "" {
 		return ResolvedInfo{}, database.ErrNotAProject
 	}
-	proj, err := database.Open(projectDir)
+	proj, err := openCatalog(projectDir)
 	if err != nil {
 		return ResolvedInfo{}, err
 	}
 	defer proj.Close()
-	if err := users.EnsureRefs(proj); err != nil {
-		return ResolvedInfo{}, err
-	}
 	info, err := project.Get(proj)
 	if errors.Is(err, project.ErrMissing) {
 		rows, listErr := users.List(proj)

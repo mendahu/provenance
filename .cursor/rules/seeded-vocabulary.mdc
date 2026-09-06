@@ -1,0 +1,13 @@
+---
+description: Product-seeded vocabulary uses registries + Ensure via onboarding reconcile
+globs: core/database/sourcevocab/**,core/database/sourcetypes/**,core/database/sourcefields/**,core/onboarding/ready.go,docs/seeded-vocabulary.md
+alwaysApply: false
+---
+
+# Seeded vocabulary
+
+Follow the project skill `.cursor/skills/add-seeded-vocabulary/SKILL.md`. Origin rules: `docs/seeded-vocabulary.md` §1.1.
+
+- Edit `sourcevocab/registry.go` for Source types/fields/suggestions; no SQL seed INSERTs.
+- Reconcile only in `onboarding.reconcile` (`createCatalog` / `openCatalog`). Add future domain `Ensure`s there.
+- `UNIQUE (key, origin)`; Lookup `(key, origin)`; FKs use vocabulary `id`.

@@ -27,6 +27,8 @@ Package name is the folder name (`users`, `datevalues`, later `sources`, …). C
 
 Shared genealogical dates: follow `.cursor/skills/add-date-value/SKILL.md` (`core/database/datevalues`), not a new ad-hoc date package.
 
+Product-seeded vocabulary (`origin=provenencia` registries + `Ensure`): follow `.cursor/skills/add-seeded-vocabulary/SKILL.md`.
+
 ## Functions
 
 - Take `*database.Catalog`. Get the handle with `c.DB()`; return that error (`database.ErrClosed`).

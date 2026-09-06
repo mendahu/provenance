@@ -9,6 +9,7 @@ import (
 
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/project"
+	"github.com/mendahu/provenencia/core/database/sourcetypes"
 	"github.com/mendahu/provenencia/core/database/users"
 	"github.com/mendahu/provenencia/core/identity"
 	"github.com/mendahu/provenencia/core/ref"
@@ -102,6 +103,16 @@ func TestComplete(t *testing.T) {
 				}
 				if info.Label != "Robins Family" {
 					t.Fatalf("label %q", info.Label)
+				}
+				types, err := sourcetypes.List(p)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(types) != 5 {
+					t.Fatalf("seeded source types %d", len(types))
+				}
+				if _, err := sourcetypes.Lookup(p, "photograph", sourcetypes.OriginProvenencia); err != nil {
+					t.Fatal(err)
 				}
 				if filepath.Base(res.ProjectDir) != "robins-family"+database.Suffix {
 					t.Fatalf("dir %s", res.ProjectDir)
