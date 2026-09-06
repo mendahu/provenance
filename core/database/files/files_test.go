@@ -69,4 +69,19 @@ func TestLookupInsert(t *testing.T) {
 	if !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("missing %v", err)
 	}
+
+	tx2, err := db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := UpdateOriginalFilename(tx2, id, "renamed.jpg"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx2.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	got2, err := Lookup(c, id)
+	if err != nil || got2.OriginalFilename != "renamed.jpg" {
+		t.Fatalf("%v %+v", err, got2)
+	}
 }

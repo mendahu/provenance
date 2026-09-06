@@ -6,8 +6,10 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/files"
 	"github.com/mendahu/provenencia/core/database/users"
@@ -35,14 +37,14 @@ func TestFile(t *testing.T) {
 		}
 		return path
 	}
-	auditCount := func(t *testing.T, c *database.Catalog) int {
+	auditCount := func(t *testing.T, c *database.Catalog, actionType string) int {
 		t.Helper()
 		db, err := c.DB()
 		if err != nil {
 			t.Fatal(err)
 		}
 		var n int
-		if err := db.QueryRow(`SELECT COUNT(*) FROM audit_transactions WHERE action_type = 'create_file'`).Scan(&n); err != nil {
+		if err := db.QueryRow(`SELECT COUNT(*) FROM audit_transactions WHERE action_type = ?`, actionType).Scan(&n); err != nil {
 			t.Fatal(err)
 		}
 		return n
@@ -68,6 +70,9 @@ func TestFile(t *testing.T) {
 		if res.File.ChecksumSHA256 != wantSum || res.File.OriginalFilename != "scan.jpg" {
 			t.Fatalf("%+v", res.File)
 		}
+		if res.Reused || res.IngestedAs != "scan.jpg" {
+			t.Fatalf("result %+v", res)
+		}
 		wantRel, err := files.StorageRelPath(wantSum)
 		if err != nil || res.RelPath != wantRel {
 			t.Fatalf("rel %q want %q err %v", res.RelPath, wantRel, err)
@@ -80,12 +85,12 @@ func TestFile(t *testing.T) {
 		if filepath.Base(obj) == "scan.jpg" {
 			t.Fatal("object path must not use original filename")
 		}
-		if auditCount(t, c) != 1 {
-			t.Fatalf("audit %d", auditCount(t, c))
+		if auditCount(t, c, "create_file") != 1 {
+			t.Fatalf("create_file audit %d", auditCount(t, c, "create_file"))
 		}
 	})
 
-	t.Run("dedup same bytes no second audit", func(t *testing.T) {
+	t.Run("dedup same bytes records reuse_file", func(t *testing.T) {
 		c, err := database.Create(t.TempDir(), "t.provenencia")
 		if err != nil {
 			t.Fatal(err)
@@ -107,8 +112,68 @@ func TestFile(t *testing.T) {
 		if string(first.File.ID) != string(second.File.ID) {
 			t.Fatal("expected same file id")
 		}
-		if auditCount(t, c) != 1 {
-			t.Fatalf("audit %d", auditCount(t, c))
+		if !second.Reused || second.IngestedAs != "b.bin" {
+			t.Fatalf("second %+v", second)
+		}
+		if second.File.OriginalFilename != "a.bin" {
+			t.Fatalf("stored name %q", second.File.OriginalFilename)
+		}
+		if auditCount(t, c, "create_file") != 1 {
+			t.Fatalf("create_file %d", auditCount(t, c, "create_file"))
+		}
+		if auditCount(t, c, "reuse_file") != 1 {
+			t.Fatalf("reuse_file %d", auditCount(t, c, "reuse_file"))
+		}
+	})
+
+	t.Run("SetFilename overwrites and audits", func(t *testing.T) {
+		c, err := database.Create(t.TempDir(), "t.provenencia")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer c.Close()
+		mustUser(t, c)
+		path := writeTemp(t, t.TempDir(), "old.pdf", []byte("doc"))
+		res, err := File(c, path, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := SetFilename(c, res.File.ID, "grandpas_will.pdf", userID); err != nil {
+			t.Fatal(err)
+		}
+		got, err := files.Lookup(c, res.File.ID)
+		if err != nil || got.OriginalFilename != "grandpas_will.pdf" {
+			t.Fatalf("%v %+v", err, got)
+		}
+		if auditCount(t, c, "update_file") != 1 {
+			t.Fatalf("update_file %d", auditCount(t, c, "update_file"))
+		}
+	})
+
+	t.Run("rewrites corrupted object on re-ingest", func(t *testing.T) {
+		c, err := database.Create(t.TempDir(), "t.provenencia")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer c.Close()
+		mustUser(t, c)
+		data := []byte("repair me")
+		path := writeTemp(t, t.TempDir(), "x.bin", data)
+		res, err := File(c, path, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		obj := filepath.Join(c.Dir(), filepath.FromSlash(res.RelPath))
+		if err := os.WriteFile(obj, []byte("CORRUPT"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		again := writeTemp(t, t.TempDir(), "y.bin", data)
+		if _, err := File(c, again, userID); err != nil {
+			t.Fatal(err)
+		}
+		got, err := os.ReadFile(obj)
+		if err != nil || string(got) != string(data) {
+			t.Fatalf("object %v %q", err, got)
 		}
 	})
 
@@ -124,7 +189,7 @@ func TestFile(t *testing.T) {
 		if err := os.Symlink(target, link); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := File(c, link, nil); !errors.Is(err, ErrInvalid) {
+		if _, err := File(c, link, userID); !errors.Is(err, ErrInvalid) {
 			t.Fatalf("got %v", err)
 		}
 	})
@@ -135,7 +200,7 @@ func TestFile(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer c.Close()
-		if _, err := File(c, t.TempDir(), nil); !errors.Is(err, ErrInvalid) {
+		if _, err := File(c, t.TempDir(), userID); !errors.Is(err, ErrInvalid) {
 			t.Fatalf("got %v", err)
 		}
 	})
@@ -150,6 +215,29 @@ func TestFile(t *testing.T) {
 		maxBytes = 4
 		defer func() { maxBytes = prev }()
 		path := writeTemp(t, t.TempDir(), "big.bin", []byte("12345"))
+		if _, err := File(c, path, userID); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("got %v", err)
+		}
+	})
+
+	t.Run("rejects relative path", func(t *testing.T) {
+		c, err := database.Create(t.TempDir(), "t.provenencia")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer c.Close()
+		if _, err := File(c, "relative.bin", userID); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("got %v", err)
+		}
+	})
+
+	t.Run("rejects nil userID", func(t *testing.T) {
+		c, err := database.Create(t.TempDir(), "t.provenencia")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer c.Close()
+		path := writeTemp(t, t.TempDir(), "x.bin", []byte("x"))
 		if _, err := File(c, path, nil); !errors.Is(err, ErrInvalid) {
 			t.Fatalf("got %v", err)
 		}
@@ -162,7 +250,7 @@ func TestFile(t *testing.T) {
 		}
 		path := writeTemp(t, t.TempDir(), "x.bin", []byte("x"))
 		_ = c.Close()
-		if _, err := File(c, path, nil); !errors.Is(err, database.ErrClosed) {
+		if _, err := File(c, path, userID); !errors.Is(err, database.ErrClosed) {
 			t.Fatalf("got %v", err)
 		}
 	})
@@ -173,8 +261,68 @@ func TestFile(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer c.Close()
-		if _, err := File(c, filepath.Join(t.TempDir(), "nope"), nil); !errors.Is(err, ErrInvalid) {
+		if _, err := File(c, filepath.Join(t.TempDir(), "nope"), userID); !errors.Is(err, ErrInvalid) {
 			t.Fatalf("got %v", err)
 		}
 	})
+}
+
+func TestSanitizeFilename(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "plain", in: "scan.jpg", want: "scan.jpg"},
+		{name: "strips control", in: "a\x00b\nc", want: "abc"},
+		{name: "strips bidi override", in: "gpj.\u202Eexe", want: "gpj.exe"},
+		{name: "caps length", in: strings.Repeat("a", 300), want: strings.Repeat("a", 255)},
+		{name: "base only", in: "/tmp/foo/bar.txt", want: "bar.txt"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := sanitizeFilename(tt.in); got != tt.want {
+				t.Fatalf("got %q want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMapOpenErr(t *testing.T) {
+	tests := []struct {
+		name    string
+		err     error
+		want    error
+		wantNil bool
+	}{
+		{name: "nil", err: nil, wantNil: true},
+		{name: "not exist", err: os.ErrNotExist, want: ErrInvalid},
+		{name: "permission", err: os.ErrPermission, want: ErrPermissionDenied},
+		{name: "other", err: errors.New("boom"), want: errors.New("boom")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapOpenErr(tt.err)
+			if tt.wantNil {
+				if got != nil {
+					t.Fatalf("got %v", got)
+				}
+				return
+			}
+			if tt.name == "other" {
+				if got.Error() != "boom" {
+					t.Fatalf("got %v", got)
+				}
+				return
+			}
+			if !errors.Is(got, tt.want) {
+				t.Fatalf("got %v want %v", got, tt.want)
+			}
+			if tt.want == ErrPermissionDenied {
+				if ae := apperr.From(got); ae.Code() != apperr.CodeIngestPermissionDenied {
+					t.Fatalf("code %s", ae.Code())
+				}
+			}
+		})
+	}
 }

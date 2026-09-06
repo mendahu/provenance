@@ -1,6 +1,7 @@
 // Package ingest copies opaque local files into a project’s content-addressed
-// object store. Checksum reuse returns the existing File and is not a research
-// event (no create_file audit). Ingest does not decode or execute file content.
+// object store. Checksum reuse returns the existing File, records a reuse_file
+// audit revision, and surfaces IngestedAs so the UI can offer keep/overwrite
+// when the picked name differs. Ingest does not decode or execute file content.
 package ingest
 
 import (
@@ -22,7 +23,10 @@ import (
 	"github.com/mendahu/provenencia/core/database/project"
 )
 
-var ErrInvalid = apperr.New(apperr.CodeIngestInvalid, apperr.KindUser)
+var (
+	ErrInvalid          = apperr.New(apperr.CodeIngestInvalid, apperr.KindUser)
+	ErrPermissionDenied = apperr.New(apperr.CodeIngestPermissionDenied, apperr.KindUser)
+)
 
 // MaxBytes is the largest source file ingest accepts (512 MiB).
 const MaxBytes int64 = 512 << 20
@@ -32,18 +36,20 @@ var maxBytes = MaxBytes
 
 // Result is an ingested or reused File plus its project-relative object path.
 type Result struct {
-	File    files.File
-	RelPath string
+	File       files.File
+	RelPath    string
+	Reused     bool   // checksum matched an existing File
+	IngestedAs string // sanitized base name of the path the user picked
 }
 
 // File reads absPath into the catalog object store. Same bytes reuse the existing
-// File row without rewriting the object or recording audit.
+// File row, verify or repair the object, and record a reuse_file audit event.
 func File(c *database.Catalog, absPath string, userID []byte) (Result, error) {
 	if _, err := c.DB(); err != nil {
 		return Result{}, err
 	}
 	absPath = strings.TrimSpace(absPath)
-	if absPath == "" {
+	if absPath == "" || !filepath.IsAbs(absPath) {
 		return Result{}, ErrInvalid
 	}
 	if err := requireUserID(userID); err != nil {
@@ -55,7 +61,7 @@ func File(c *database.Catalog, absPath string, userID []byte) (Result, error) {
 		if os.IsNotExist(err) {
 			return Result{}, ErrInvalid
 		}
-		return Result{}, err
+		return Result{}, mapOpenErr(err)
 	}
 	if info.Mode()&os.ModeSymlink != 0 {
 		return Result{}, ErrInvalid
@@ -73,42 +79,51 @@ func File(c *database.Catalog, absPath string, userID []byte) (Result, error) {
 	}
 	defer src.Close()
 
-	// Re-check after open: reject if size grew past the limit while reading.
-	limited := io.LimitReader(src, maxBytes+1)
-	data, err := io.ReadAll(limited)
+	st, err := src.Stat()
 	if err != nil {
 		return Result{}, err
 	}
-	if int64(len(data)) > maxBytes {
+	if !st.Mode().IsRegular() {
+		return Result{}, ErrInvalid
+	}
+	if st.Size() > maxBytes {
 		return Result{}, ErrInvalid
 	}
 
-	sum := sha256.Sum256(data)
-	checksum := hex.EncodeToString(sum[:])
-	relPath, err := files.StorageRelPath(checksum)
+	objectsDir := filepath.Join(c.Dir(), "objects")
+	tmpPath, checksum, byteSize, mediaType, err := streamSource(src, objectsDir)
 	if err != nil {
 		return Result{}, err
 	}
 
-	if existing, err := files.LookupByChecksum(c, checksum); err == nil {
-		return Result{File: existing, RelPath: relPath}, nil
-	} else if !errors.Is(err, sql.ErrNoRows) {
+	relPath, err := files.StorageRelPath(checksum)
+	if err != nil {
+		_ = os.Remove(tmpPath)
 		return Result{}, err
 	}
-
 	objPath := filepath.Join(c.Dir(), filepath.FromSlash(relPath))
-	if err := writeObjectIfAbsent(objPath, data); err != nil {
+	filename := sanitizeFilename(filepath.Base(absPath))
+
+	if existing, err := files.LookupByChecksum(c, checksum); err == nil {
+		if _, err := installObject(tmpPath, objPath, checksum); err != nil {
+			return Result{}, err
+		}
+		return recordReuse(c, existing, relPath, filename, userID)
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		_ = os.Remove(tmpPath)
 		return Result{}, err
 	}
 
-	filename := filepath.Base(absPath)
-	mediaType := http.DetectContentType(data)
-	if mediaType == "" {
-		mediaType = "application/octet-stream"
+	wrote, err := installObject(tmpPath, objPath, checksum)
+	if err != nil {
+		return Result{}, err
 	}
 
 	id, err := files.NewID()
 	if err != nil {
+		if wrote {
+			_ = os.Remove(objPath)
+		}
 		return Result{}, err
 	}
 	row := files.File{
@@ -116,15 +131,21 @@ func File(c *database.Catalog, absPath string, userID []byte) (Result, error) {
 		ChecksumSHA256:   checksum,
 		OriginalFilename: filename,
 		MediaType:        mediaType,
-		ByteSize:         int64(len(data)),
+		ByteSize:         byteSize,
 	}
 
 	db, err := c.DB()
 	if err != nil {
+		if wrote {
+			_ = os.Remove(objPath)
+		}
 		return Result{}, err
 	}
 	tx, err := db.Begin()
 	if err != nil {
+		if wrote {
+			_ = os.Remove(objPath)
+		}
 		return Result{}, err
 	}
 	defer func() { _ = tx.Rollback() }()
@@ -136,13 +157,19 @@ func File(c *database.Catalog, absPath string, userID []byte) (Result, error) {
 			if lookupErr != nil {
 				return Result{}, lookupErr
 			}
-			return Result{File: existing, RelPath: relPath}, nil
+			return recordReuse(c, existing, relPath, filename, userID)
+		}
+		if wrote {
+			_ = os.Remove(objPath)
 		}
 		return Result{}, err
 	}
 
 	uid, err := uuid.FromBytes(id)
 	if err != nil {
+		if wrote {
+			_ = os.Remove(objPath)
+		}
 		return Result{}, err
 	}
 	fields := map[string]audit.FieldDiff{
@@ -167,58 +194,208 @@ func File(c *database.Catalog, absPath string, userID []byte) (Result, error) {
 			Fields:     fields,
 		}},
 	}); err != nil {
+		if wrote {
+			_ = os.Remove(objPath)
+		}
+		return Result{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		if wrote {
+			_ = os.Remove(objPath)
+		}
+		return Result{}, err
+	}
+	return Result{File: row, RelPath: relPath, Reused: false, IngestedAs: filename}, nil
+}
+
+// SetFilename updates a File’s original_filename after a reuse keep/overwrite choice.
+func SetFilename(c *database.Catalog, fileID []byte, name string, userID []byte) error {
+	if err := requireUserID(userID); err != nil {
+		return err
+	}
+	name = sanitizeFilename(name)
+	existing, err := files.Lookup(c, fileID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrInvalid
+		}
+		return err
+	}
+	if existing.OriginalFilename == name {
+		return nil
+	}
+
+	db, err := c.DB()
+	if err != nil {
+		return err
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if err := files.UpdateOriginalFilename(tx, fileID, name); err != nil {
+		return err
+	}
+	if _, err := audit.Record(tx, audit.Revision{
+		UserID:     userID,
+		ActionType: "update_file",
+		CreatedAt:  project.NowUTC(),
+		Changes: []audit.Change{{
+			EntityType: "file",
+			EntityID:   fileID,
+			Action:     audit.ActionUpdate,
+			Fields: map[string]audit.FieldDiff{
+				"original_filename": {Old: existing.OriginalFilename, New: name},
+			},
+		}},
+	}); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func recordReuse(c *database.Catalog, existing files.File, relPath, filename string, userID []byte) (Result, error) {
+	db, err := c.DB()
+	if err != nil {
+		return Result{}, err
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return Result{}, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := audit.Record(tx, audit.Revision{
+		UserID:     userID,
+		ActionType: "reuse_file",
+		CreatedAt:  project.NowUTC(),
+		Changes: []audit.Change{{
+			EntityType: "file",
+			EntityID:   existing.ID,
+			Action:     audit.ActionUpdate,
+			Fields: map[string]audit.FieldDiff{
+				"ingested_as": {Old: existing.OriginalFilename, New: filename},
+			},
+		}},
+	}); err != nil {
 		return Result{}, err
 	}
 	if err := tx.Commit(); err != nil {
 		return Result{}, err
 	}
-	return Result{File: row, RelPath: relPath}, nil
+	return Result{File: existing, RelPath: relPath, Reused: true, IngestedAs: filename}, nil
 }
 
-func writeObjectIfAbsent(objPath string, data []byte) error {
-	if _, err := os.Lstat(objPath); err == nil {
-		return nil
-	} else if !os.IsNotExist(err) {
-		return err
-	}
-	if err := os.MkdirAll(filepath.Dir(objPath), 0o755); err != nil {
-		return err
-	}
-	tmp, err := os.CreateTemp(filepath.Dir(objPath), ".ingest-*")
-	if err != nil {
-		return err
-	}
-	tmpName := tmp.Name()
-	ok := false
-	defer func() {
-		if !ok {
-			_ = os.Remove(tmpName)
+type sniffBuf struct {
+	buf []byte
+}
+
+func (s *sniffBuf) Write(p []byte) (int, error) {
+	if len(s.buf) < 512 {
+		need := 512 - len(s.buf)
+		if need > len(p) {
+			need = len(p)
 		}
-	}()
-	if _, err := tmp.Write(data); err != nil {
+		s.buf = append(s.buf, p[:need]...)
+	}
+	return len(p), nil
+}
+
+func streamSource(src *os.File, objectsDir string) (tmpPath, checksum string, byteSize int64, mediaType string, err error) {
+	if err := os.MkdirAll(objectsDir, 0o755); err != nil {
+		return "", "", 0, "", err
+	}
+	tmp, err := os.CreateTemp(objectsDir, ".ingest-*")
+	if err != nil {
+		return "", "", 0, "", err
+	}
+	tmpPath = tmp.Name()
+	fail := func(e error) (string, string, int64, string, error) {
 		_ = tmp.Close()
-		return err
+		_ = os.Remove(tmpPath)
+		return "", "", 0, "", e
+	}
+
+	h := sha256.New()
+	sniff := &sniffBuf{}
+	mw := io.MultiWriter(tmp, h, sniff)
+	n, err := io.Copy(mw, io.LimitReader(src, maxBytes+1))
+	if err != nil {
+		return fail(err)
+	}
+	if n > maxBytes {
+		return fail(ErrInvalid)
+	}
+	if err := tmp.Sync(); err != nil {
+		return fail(err)
 	}
 	if err := tmp.Close(); err != nil {
-		return err
+		_ = os.Remove(tmpPath)
+		return "", "", 0, "", err
 	}
-	if err := os.Rename(tmpName, objPath); err != nil {
-		// Another writer may have won the race.
-		if _, statErr := os.Lstat(objPath); statErr == nil {
-			_ = os.Remove(tmpName)
-			ok = true
-			return nil
+	mediaType = http.DetectContentType(sniff.buf)
+	checksum = hex.EncodeToString(h.Sum(nil))
+	return tmpPath, checksum, n, mediaType, nil
+}
+
+// installObject places tmpPath at objPath when missing or content mismatches.
+// Always consumes/removes tmpPath. wrote is true when this call left new bytes at objPath.
+func installObject(tmpPath, objPath, checksum string) (wrote bool, err error) {
+	defer func() { _ = os.Remove(tmpPath) }()
+
+	match, err := objectMatches(objPath, checksum)
+	if err != nil {
+		return false, err
+	}
+	if match {
+		return false, nil
+	}
+	if err := os.MkdirAll(filepath.Dir(objPath), 0o755); err != nil {
+		return false, err
+	}
+	_ = os.Remove(objPath)
+	if err := os.Rename(tmpPath, objPath); err != nil {
+		match, matchErr := objectMatches(objPath, checksum)
+		if matchErr != nil {
+			return false, matchErr
 		}
-		return err
+		if match {
+			return false, nil
+		}
+		return false, err
 	}
-	ok = true
-	return nil
+	if err := syncDir(filepath.Dir(objPath)); err != nil {
+		return true, err
+	}
+	return true, nil
+}
+
+func objectMatches(objPath, wantChecksum string) (bool, error) {
+	f, err := os.Open(objPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	defer f.Close()
+	st, err := f.Stat()
+	if err != nil {
+		return false, err
+	}
+	if !st.Mode().IsRegular() {
+		return false, nil
+	}
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return false, err
+	}
+	return hex.EncodeToString(h.Sum(nil)) == wantChecksum, nil
 }
 
 func requireUserID(userID []byte) error {
-	if len(userID) == 0 {
-		return nil
-	}
 	if len(userID) != 16 {
 		return ErrInvalid
 	}
@@ -226,12 +403,16 @@ func requireUserID(userID []byte) error {
 }
 
 func mapOpenErr(err error) error {
+	if err == nil {
+		return nil
+	}
 	if errors.Is(err, os.ErrNotExist) {
 		return ErrInvalid
 	}
-	// Symlink replaced between Lstat and open (O_NOFOLLOW).
-	var pathErr *os.PathError
-	if errors.As(err, &pathErr) {
+	if errors.Is(err, os.ErrPermission) || isAccessDenied(err) {
+		return ErrPermissionDenied
+	}
+	if isSymlinkLoop(err) {
 		return ErrInvalid
 	}
 	return err

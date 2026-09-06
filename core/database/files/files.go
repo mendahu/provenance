@@ -3,11 +3,9 @@ package files
 
 import (
 	"database/sql"
-	"errors"
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/mattn/go-sqlite3"
 	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
 )
@@ -21,6 +19,7 @@ const (
 		FROM files WHERE id = ?`
 	sqlLookupChecksum = `SELECT id, checksum_sha256, COALESCE(original_filename, ''), COALESCE(media_type, ''), byte_size
 		FROM files WHERE checksum_sha256 = ?`
+	sqlUpdateFilename = `UPDATE files SET original_filename = ? WHERE id = ?`
 )
 
 // File is one files row. Storage path is derived from ChecksumSHA256, not stored.
@@ -28,8 +27,9 @@ type File struct {
 	ID               []byte
 	ChecksumSHA256   string
 	OriginalFilename string
-	MediaType        string
-	ByteSize         int64
+	// MediaType is advisory content sniffing (http.DetectContentType), not a trust boundary for rendering.
+	MediaType string
+	ByteSize  int64
 }
 
 // StorageRelPath returns objects/{hh}/{hh}/{fullhex} for a 64-char lowercase hex checksum.
@@ -91,6 +91,26 @@ func Insert(tx *sql.Tx, f File) error {
 	return nil
 }
 
+// UpdateOriginalFilename sets original_filename for id on tx.
+func UpdateOriginalFilename(tx *sql.Tx, id []byte, name string) error {
+	if tx == nil || len(id) != 16 {
+		return ErrInvalid
+	}
+	name = strings.TrimSpace(name)
+	res, err := tx.Exec(sqlUpdateFilename, nullStr(name), id)
+	if err != nil {
+		return mapConstraint(err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 // NewID mints a UUIDv7 id for a new File row.
 func NewID() ([]byte, error) {
 	id, err := uuid.NewV7()
@@ -127,16 +147,14 @@ func isLowerHex(s string) bool {
 }
 
 func IsUniqueConflict(err error) bool {
-	var se sqlite3.Error
-	return errors.As(err, &se) && se.ExtendedCode == sqlite3.ErrConstraintUnique
+	return database.IsUniqueConflict(err)
 }
 
 func mapConstraint(err error) error {
 	if IsUniqueConflict(err) {
 		return err
 	}
-	var se sqlite3.Error
-	if errors.As(err, &se) && se.Code == sqlite3.ErrConstraint {
+	if database.IsConstraint(err) {
 		return ErrInvalid
 	}
 	return err
