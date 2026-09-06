@@ -1,0 +1,334 @@
+// Package sources accesses the sources catalog table with audited mutations.
+package sources
+
+import (
+	"database/sql"
+	"errors"
+	"strings"
+
+	"github.com/google/uuid"
+	"github.com/mattn/go-sqlite3"
+	"github.com/mendahu/provenencia/core/apperr"
+	"github.com/mendahu/provenencia/core/database"
+	"github.com/mendahu/provenencia/core/database/audit"
+	"github.com/mendahu/provenencia/core/database/project"
+	"github.com/mendahu/provenencia/core/ref"
+)
+
+var ErrInvalid = apperr.New(apperr.CodeSourcesInvalid, apperr.KindUser)
+
+const (
+	sqlInsert = `INSERT INTO sources (id, ref, source_type_id, title, description)
+		VALUES (?, ?, ?, ?, ?)`
+	sqlUpdate = `UPDATE sources SET source_type_id = ?, title = ?, description = ?
+		WHERE id = ?`
+	sqlGet = `SELECT id, ref, source_type_id, COALESCE(title, ''), COALESCE(description, '')
+		FROM sources WHERE id = ?`
+	sqlGetByRef = `SELECT id, ref, source_type_id, COALESCE(title, ''), COALESCE(description, '')
+		FROM sources WHERE ref = ?`
+	sqlList = `SELECT id, ref, source_type_id, COALESCE(title, ''), COALESCE(description, '')
+		FROM sources
+		ORDER BY title COLLATE NOCASE, ref COLLATE NOCASE`
+	sqlTypeExists = `SELECT 1 FROM source_types WHERE id = ?`
+	maxRefRetries = 8
+)
+
+// Source is one sources row.
+type Source struct {
+	ID           []byte
+	Ref          string
+	SourceTypeID []byte
+	Title        string
+	Description  string
+}
+
+// CreateInput is the mutable fields for a new Source.
+type CreateInput struct {
+	SourceTypeID []byte
+	Title        string
+	Description  string
+}
+
+// Create inserts a Source, mints SRC-…, and records create_source.
+func Create(c *database.Catalog, userID []byte, in CreateInput) (Source, error) {
+	db, err := c.DB()
+	if err != nil {
+		return Source{}, err
+	}
+	in.Title = strings.TrimSpace(in.Title)
+	in.Description = strings.TrimSpace(in.Description)
+	if len(in.SourceTypeID) != 16 {
+		return Source{}, ErrInvalid
+	}
+	if err := requireUserID(userID); err != nil {
+		return Source{}, err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return Source{}, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if err := requireType(tx, in.SourceTypeID); err != nil {
+		return Source{}, err
+	}
+
+	id, err := uuid.NewV7()
+	if err != nil {
+		return Source{}, err
+	}
+	idBytes := id[:]
+
+	var sourceRef string
+	for attempt := 0; attempt < maxRefRetries; attempt++ {
+		sourceRef, err = ref.Mint(ref.PrefixSource)
+		if err != nil {
+			return Source{}, err
+		}
+		_, err = tx.Exec(sqlInsert, idBytes, sourceRef, in.SourceTypeID, nullStr(in.Title), nullStr(in.Description))
+		if err == nil {
+			break
+		}
+		if !isUniqueConflict(err) {
+			return Source{}, mapConstraint(err)
+		}
+	}
+	if err != nil {
+		return Source{}, ErrInvalid
+	}
+
+	fields := map[string]audit.FieldDiff{
+		"id":             {Old: nil, New: id.String()},
+		"ref":            {Old: nil, New: sourceRef},
+		"source_type_id": {Old: nil, New: uuidString(in.SourceTypeID)},
+	}
+	if in.Title != "" {
+		fields["title"] = audit.FieldDiff{Old: nil, New: in.Title}
+	}
+	if in.Description != "" {
+		fields["description"] = audit.FieldDiff{Old: nil, New: in.Description}
+	}
+	if _, err := audit.Record(tx, audit.Revision{
+		UserID:     userID,
+		ActionType: "create_source",
+		CreatedAt:  project.NowUTC(),
+		Changes: []audit.Change{{
+			EntityType: "source",
+			EntityID:   idBytes,
+			Action:     audit.ActionCreate,
+			Fields:     fields,
+		}},
+	}); err != nil {
+		return Source{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return Source{}, err
+	}
+	return Source{
+		ID:           append([]byte(nil), idBytes...),
+		Ref:          sourceRef,
+		SourceTypeID: append([]byte(nil), in.SourceTypeID...),
+		Title:        in.Title,
+		Description:  in.Description,
+	}, nil
+}
+
+// Update patches title, description, and source_type_id; records update_source for changed fields.
+func Update(c *database.Catalog, userID []byte, s Source) error {
+	db, err := c.DB()
+	if err != nil {
+		return err
+	}
+	s.Title = strings.TrimSpace(s.Title)
+	s.Description = strings.TrimSpace(s.Description)
+	if len(s.ID) != 16 || len(s.SourceTypeID) != 16 {
+		return ErrInvalid
+	}
+	if err := requireUserID(userID); err != nil {
+		return err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	prev, err := getTx(tx, s.ID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrInvalid
+	}
+	if err != nil {
+		return err
+	}
+	if err := requireType(tx, s.SourceTypeID); err != nil {
+		return err
+	}
+
+	fields := map[string]audit.FieldDiff{}
+	if !bytesEqual(prev.SourceTypeID, s.SourceTypeID) {
+		fields["source_type_id"] = audit.FieldDiff{
+			Old: uuidString(prev.SourceTypeID),
+			New: uuidString(s.SourceTypeID),
+		}
+	}
+	if prev.Title != s.Title {
+		fields["title"] = audit.FieldDiff{Old: nullJSON(prev.Title), New: nullJSON(s.Title)}
+	}
+	if prev.Description != s.Description {
+		fields["description"] = audit.FieldDiff{Old: nullJSON(prev.Description), New: nullJSON(s.Description)}
+	}
+	if len(fields) == 0 {
+		return tx.Commit()
+	}
+
+	if _, err := tx.Exec(sqlUpdate, s.SourceTypeID, nullStr(s.Title), nullStr(s.Description), s.ID); err != nil {
+		return mapConstraint(err)
+	}
+	if _, err := audit.Record(tx, audit.Revision{
+		UserID:     userID,
+		ActionType: "update_source",
+		CreatedAt:  project.NowUTC(),
+		Changes: []audit.Change{{
+			EntityType: "source",
+			EntityID:   s.ID,
+			Action:     audit.ActionUpdate,
+			Fields:     fields,
+		}},
+	}); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// Get returns a Source by id, or sql.ErrNoRows.
+func Get(c *database.Catalog, id []byte) (Source, error) {
+	db, err := c.DB()
+	if err != nil {
+		return Source{}, err
+	}
+	if len(id) != 16 {
+		return Source{}, ErrInvalid
+	}
+	return scanSource(db.QueryRow(sqlGet, id))
+}
+
+// GetByRef returns a Source by SRC-… ref, or sql.ErrNoRows.
+func GetByRef(c *database.Catalog, sourceRef string) (Source, error) {
+	db, err := c.DB()
+	if err != nil {
+		return Source{}, err
+	}
+	sourceRef = strings.TrimSpace(sourceRef)
+	if ref.Validate(sourceRef) != nil {
+		return Source{}, ErrInvalid
+	}
+	return scanSource(db.QueryRow(sqlGetByRef, sourceRef))
+}
+
+// List returns Sources ordered for a catalog list.
+func List(c *database.Catalog) ([]Source, error) {
+	db, err := c.DB()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := db.Query(sqlList)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Source
+	for rows.Next() {
+		s, err := scanSource(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+type rowScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanSource(row rowScanner) (Source, error) {
+	var s Source
+	if err := row.Scan(&s.ID, &s.Ref, &s.SourceTypeID, &s.Title, &s.Description); err != nil {
+		return Source{}, err
+	}
+	return s, nil
+}
+
+func getTx(tx *sql.Tx, id []byte) (Source, error) {
+	return scanSource(tx.QueryRow(sqlGet, id))
+}
+
+func requireType(tx *sql.Tx, typeID []byte) error {
+	var one int
+	err := tx.QueryRow(sqlTypeExists, typeID).Scan(&one)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrInvalid
+	}
+	return err
+}
+
+func requireUserID(userID []byte) error {
+	if len(userID) == 0 {
+		return nil
+	}
+	if len(userID) != 16 {
+		return ErrInvalid
+	}
+	return nil
+}
+
+func nullStr(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+func nullJSON(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+func uuidString(id []byte) string {
+	u, err := uuid.FromBytes(id)
+	if err != nil {
+		return ""
+	}
+	return u.String()
+}
+
+func bytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func isUniqueConflict(err error) bool {
+	var se sqlite3.Error
+	return errors.As(err, &se) && se.ExtendedCode == sqlite3.ErrConstraintUnique
+}
+
+func mapConstraint(err error) error {
+	var se sqlite3.Error
+	if errors.As(err, &se) && (se.ExtendedCode == sqlite3.ErrConstraintForeignKey ||
+		se.ExtendedCode == sqlite3.ErrConstraintUnique ||
+		se.Code == sqlite3.ErrConstraint) {
+		return ErrInvalid
+	}
+	return err
+}

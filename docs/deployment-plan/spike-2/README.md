@@ -124,7 +124,7 @@ S2-04 Design — Types / metadata extension
 S2-05 PR — Audit tables + write helper (done)   ◄── gate for research mutations
 S2-06 PR — date_values schema + helpers (done)
 S2-07 PR — Source vocabulary tables + small seed (done)
-S2-08 PR — sources + source_notes CRUD (+ audit)
+S2-08 PR — sources + source_notes CRUD (+ audit) (done)
 S2-09 PR — files store + ingest (+ audit on File create)
 S2-10 PR — artifacts CRUD + attach/replace File (+ audit)
 S2-11 PR — source_metadata (+ type field suggestions)
@@ -245,7 +245,7 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-05, S2-07 |
-| **Deliverables** | Migration: `sources`, `source_notes`. Mint `SRC-…` on create. Domain ops: create/update Source; add/update/delete note; list Sources (enough for catalog); get Source by id/ref. Every mutation goes through audit (`action_type` e.g. `create_source`, `update_source`, …). Go tests with Fake/real catalog. |
+| **Deliverables** | Done. Migration `000006` + `sources` package; SRC refs; audited create/update Source and note add/update/delete; list/get by id/ref. |
 | **Context** | Source doc §4; [`catalog-refs.md`](../../catalog-refs.md); `ref.PrefixSource`. |
 | **Out** | FFI/UI; metadata; artifacts. |
 
