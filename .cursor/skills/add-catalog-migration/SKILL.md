@@ -17,8 +17,8 @@ Product SemVer (`VERSION`) is a separate bump. Do not bump it for a format chang
 1. List `core/database/migrations/*.sql`. Next file is the next integer, **six digits**: `000002.sql` after `000001.sql`.
 2. Create **only** that new file. Do **not** edit a shipped `NNNNNN.sql` (rewrite history of existing folders). Unreleased steps on this branch may still be amended.
 3. Put additive DDL in the new file (`CREATE TABLE` / `STRICT`). No Source tables unless the spike/PR explicitly includes them.
-4. Add a table-driven test: create or open a catalog at the previous version, `Open` it, assert the new table / `user_version`.
-5. Run `CGO_ENABLED=1 go test ./core/database/`. Init panics (and tests fail) on gaps, `1.sql` names, empty SQL, or missing files.
+4. Add a table-driven test in the **domain package** that owns the new table: `database.Create` a temp catalog, assert `user_version` / table presence / helpers. Do **not** grep shipped `.sql` contents in `migrate_test.go` (that file only tests `parseMigrations` rules with fake FS).
+5. Run `CGO_ENABLED=1 go test ./core/database/...`. Init panics (and tests fail) on gaps, `1.sql` names, empty SQL, or missing files.
 6. Do not add embed vars, `formatVersion` constants, or timestamp filenames. The glob in `migrate.go` is the registry.
 
 ## Do not
