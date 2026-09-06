@@ -9,14 +9,13 @@ import (
 	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/project"
-	"github.com/mendahu/provenencia/core/database/sourcevocab"
 	"github.com/mendahu/provenencia/core/database/users"
 	"github.com/mendahu/provenencia/core/identity"
 )
 
 var ErrUnknownUser = apperr.New(apperr.CodeOnboardingUnknownUser, apperr.KindNotFound)
 
-// ListContributors opens the catalog (migrates if needed), ensures user refs, and lists contributors.
+// ListContributors opens the catalog (migrates if needed), runs readyCatalog, and lists contributors.
 func ListContributors(projectDir string) ([]users.User, error) {
 	projectDir = strings.TrimSpace(projectDir)
 	if projectDir == "" {
@@ -27,10 +26,7 @@ func ListContributors(projectDir string) ([]users.User, error) {
 		return nil, err
 	}
 	defer proj.Close()
-	if err := users.EnsureRefs(proj); err != nil {
-		return nil, err
-	}
-	if err := sourcevocab.Ensure(proj); err != nil {
+	if err := readyCatalog(proj); err != nil {
 		return nil, err
 	}
 	return users.List(proj)
@@ -67,11 +63,7 @@ func adopt(identityDir, projectDir, adoptUserID string) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	if err := users.EnsureRefs(proj); err != nil {
-		_ = proj.Close()
-		return Result{}, err
-	}
-	if err := sourcevocab.Ensure(proj); err != nil {
+	if err := readyCatalog(proj); err != nil {
 		_ = proj.Close()
 		return Result{}, err
 	}
@@ -113,11 +105,7 @@ func openMint(identityDir, projectDir, displayName string) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	if err := users.EnsureRefs(proj); err != nil {
-		_ = proj.Close()
-		return Result{}, err
-	}
-	if err := sourcevocab.Ensure(proj); err != nil {
+	if err := readyCatalog(proj); err != nil {
 		_ = proj.Close()
 		return Result{}, err
 	}
@@ -197,10 +185,7 @@ func ProjectInfo(projectDir string) (ResolvedInfo, error) {
 		return ResolvedInfo{}, err
 	}
 	defer proj.Close()
-	if err := users.EnsureRefs(proj); err != nil {
-		return ResolvedInfo{}, err
-	}
-	if err := sourcevocab.Ensure(proj); err != nil {
+	if err := readyCatalog(proj); err != nil {
 		return ResolvedInfo{}, err
 	}
 	info, err := project.Get(proj)

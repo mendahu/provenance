@@ -7,7 +7,6 @@ import (
 	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/project"
-	"github.com/mendahu/provenencia/core/database/sourcevocab"
 	"github.com/mendahu/provenencia/core/database/users"
 	"github.com/mendahu/provenencia/core/identity"
 )
@@ -53,7 +52,7 @@ func Complete(identityDir, parent, displayName, familyName string) (Result, erro
 	if err != nil {
 		return Result{}, err
 	}
-	if err := sourcevocab.Ensure(proj); err != nil {
+	if err := readyCatalog(proj); err != nil {
 		_ = proj.Close()
 		return Result{}, err
 	}
