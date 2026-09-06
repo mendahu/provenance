@@ -24,17 +24,18 @@ AFT 1872
 BET 1880 AND 1885
 FROM 1880 TO 1885
 14 MAY 1985 15:30
+14 MAY 1985 15:30 Eastern Standard Time
 ```
 
-A date may therefore be exact, partial, approximate, bounded, ranged, period-based, calendar-specific, clock-precise, or expressed as a phrase.
+A date may therefore be exact, partial, approximate, bounded, ranged, period-based, calendar-specific, clock-precise, zone-labeled, or expressed as a phrase.
 
 The structured date model preserves those semantics while providing enough structure for useful operations such as sorting, filtering, comparison, and timeline display.
 
 Precision is cascading and optional: a value may assert only a year, a calendar day, or a full timestamp through milliseconds. Absent finer fields mean **unknown / not asserted**, not midnight or zero.
 
-A DateValue is conceptually a value object. Its database UUID provides persistence identity and referential convenience; it does not mean the date itself has independent genealogical identity.
+Timezone is optional free text (`start_tz` / `end_tz`): whatever the source or researcher recorded — an IANA id, a numeric offset, a historical label, or “local time”. Empty means unspecified. These strings are **not** guaranteed machine zone ids and are not converted to UTC by the storage layer. A later Interpretation or Conclusion may attach a more precise zone on a different DateValue without rewriting source wording.
 
-Timezone / offset is not modeled in the first schema; local or unspecified clock times are stored as civil components only.
+A DateValue is conceptually a value object. Its database UUID provides persistence identity and referential convenience; it does not mean the date itself has independent genealogical identity.
 
 ---
 
@@ -54,6 +55,7 @@ CREATE TABLE date_values (
     start_minute    INTEGER,
     start_second    INTEGER,
     start_millisecond INTEGER,
+    start_tz        TEXT,
 
     end_year        INTEGER,
     end_month       INTEGER,
@@ -62,6 +64,7 @@ CREATE TABLE date_values (
     end_minute      INTEGER,
     end_second      INTEGER,
     end_millisecond INTEGER,
+    end_tz          TEXT,
 
     phrase          TEXT,
 
@@ -81,6 +84,8 @@ CREATE TABLE date_values (
 ```
 
 Components cascade on each side (`start_*` / `end_*`): year → month → day → hour → minute → second → millisecond. A finer field must not be set unless all coarser fields on that side are set.
+
+`start_tz` / `end_tz` are independent of that cascade: free-text zone labels, nullable when unspecified. Point kinds use only `start_tz`; ranges may set either or both.
 
 The exact vocabulary and validation rules for `kind`, `qualifier`, and `calendar` should be refined as the date parser and domain behavior are implemented. The schema deliberately leaves room for the date semantics already identified without reducing genealogical dates to a single normalized timestamp.
 
@@ -113,10 +118,11 @@ Later layers may use the same DateValue model for interpreted or concluded dates
 1. `date_values` is shared cross-layer infrastructure, not part of the Source layer.
 2. Genealogical dates are not reduced to SQL `DATE` / `DATETIME` values.
 3. Partial and qualified dates are first-class values; precision is cascading.
-4. Ranges and periods can preserve distinct start and end components (including optional clock time).
+4. Ranges and periods can preserve distinct start and end components (including optional clock time and optional zone text).
 5. Original textual wording may be retained by the referencing domain object when fidelity requires it.
 6. The DateValue persistence UUID does not imply genealogical entity identity.
 7. All tables use SQLite `STRICT` typing.
-8. Missing time components are unknown, not midnight; timezone is deferred.
+8. Missing time components are unknown, not midnight.
+9. Timezone labels are optional free text (not a forced IANA/offset enum); empty means unspecified; do not treat them as UTC converters at the storage layer.
 
 This shared model gives Source, Interpretation, and Conclusion data one consistent representation for genealogical dates while allowing each layer to preserve its own evidentiary or interpretive context.

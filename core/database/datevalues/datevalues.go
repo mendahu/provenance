@@ -3,13 +3,18 @@
 // Dogfood kinds validated by Insert (DDL stays flexible for later kinds):
 //
 //   - kind "exact": calendar day required (Y/M/D); optional cascading time
-//     (hour→minute→second→millisecond); qualifier "" or "ABT"; no end_*
-//   - kind "year":  start_year only; qualifier "" or "ABT"
+//     (hour→minute→second→millisecond); optional start_tz; qualifier "" or "ABT";
+//     no end_* (including end_tz)
+//   - kind "year":  start_year only; optional start_tz; qualifier "" or "ABT"
 //   - kind "range": start and end each cascading from year through optional
-//     time; start <= end; qualifier empty only
+//     time; optional start_tz / end_tz; start <= end; qualifier empty only
 //
 // Finer components require all coarser ones (no gaps). Missing time means
-// unknown/not asserted, not midnight. Timezone is not modeled yet.
+// unknown/not asserted, not midnight.
+//
+// start_tz / end_tz are free-text zone labels as stated (IANA id, offset,
+// historical name, or "local time"). Empty means unspecified. They are not
+// parsed into UTC offsets in this package.
 package datevalues
 
 import (
@@ -33,17 +38,17 @@ const (
 	sqlInsert = `INSERT INTO date_values (
 		id, kind, qualifier, calendar,
 		start_year, start_month, start_day,
-		start_hour, start_minute, start_second, start_millisecond,
+		start_hour, start_minute, start_second, start_millisecond, start_tz,
 		end_year, end_month, end_day,
-		end_hour, end_minute, end_second, end_millisecond,
+		end_hour, end_minute, end_second, end_millisecond, end_tz,
 		phrase
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	sqlLookup = `SELECT kind, qualifier, calendar,
 		start_year, start_month, start_day,
-		start_hour, start_minute, start_second, start_millisecond,
+		start_hour, start_minute, start_second, start_millisecond, start_tz,
 		end_year, end_month, end_day,
-		end_hour, end_minute, end_second, end_millisecond,
+		end_hour, end_minute, end_second, end_millisecond, end_tz,
 		phrase
 		FROM date_values WHERE id = ?`
 )
@@ -61,6 +66,7 @@ type Value struct {
 	StartMinute      *int
 	StartSecond      *int
 	StartMillisecond *int
+	StartTZ          string // free-text zone; empty = unspecified
 	EndYear          *int
 	EndMonth         *int
 	EndDay           *int
@@ -68,6 +74,7 @@ type Value struct {
 	EndMinute        *int
 	EndSecond        *int
 	EndMillisecond   *int
+	EndTZ            string // free-text zone; empty = unspecified
 	Phrase           string
 }
 
@@ -87,6 +94,8 @@ func Insert(c *database.Catalog, v Value) ([]byte, error) {
 	v.Qualifier = strings.TrimSpace(v.Qualifier)
 	v.Calendar = strings.TrimSpace(v.Calendar)
 	v.Phrase = strings.TrimSpace(v.Phrase)
+	v.StartTZ = strings.TrimSpace(v.StartTZ)
+	v.EndTZ = strings.TrimSpace(v.EndTZ)
 	if err := validate(v); err != nil {
 		return nil, err
 	}
@@ -107,6 +116,7 @@ func Insert(c *database.Catalog, v Value) ([]byte, error) {
 		nullInt(v.StartMinute),
 		nullInt(v.StartSecond),
 		nullInt(v.StartMillisecond),
+		nullIfEmpty(v.StartTZ),
 		nullInt(v.EndYear),
 		nullInt(v.EndMonth),
 		nullInt(v.EndDay),
@@ -114,6 +124,7 @@ func Insert(c *database.Catalog, v Value) ([]byte, error) {
 		nullInt(v.EndMinute),
 		nullInt(v.EndSecond),
 		nullInt(v.EndMillisecond),
+		nullIfEmpty(v.EndTZ),
 		nullIfEmpty(v.Phrase),
 	)
 	if err != nil {
@@ -133,7 +144,7 @@ func Lookup(c *database.Catalog, id []byte) (Value, error) {
 	}
 	var (
 		v                                                         Value
-		qual, cal, phrase                                         sql.NullString
+		qual, cal, phrase, startTZ, endTZ                         sql.NullString
 		startY, startM, startD, startH, startMin, startS, startMs sql.NullInt64
 		endY, endM, endD, endH, endMin, endS, endMs               sql.NullInt64
 	)
@@ -143,9 +154,9 @@ func Lookup(c *database.Catalog, id []byte) (Value, error) {
 		&qual,
 		&cal,
 		&startY, &startM, &startD,
-		&startH, &startMin, &startS, &startMs,
+		&startH, &startMin, &startS, &startMs, &startTZ,
 		&endY, &endM, &endD,
-		&endH, &endMin, &endS, &endMs,
+		&endH, &endMin, &endS, &endMs, &endTZ,
 		&phrase,
 	)
 	if err != nil {
@@ -154,6 +165,8 @@ func Lookup(c *database.Catalog, id []byte) (Value, error) {
 	v.Qualifier = qual.String
 	v.Calendar = cal.String
 	v.Phrase = phrase.String
+	v.StartTZ = startTZ.String
+	v.EndTZ = endTZ.String
 	v.StartYear = intPtr(startY)
 	v.StartMonth = intPtr(startM)
 	v.StartDay = intPtr(startD)
@@ -189,10 +202,9 @@ func validate(v Value) error {
 		if qual != "" && qual != QualifierABT {
 			return ErrInvalid
 		}
-		if !end.empty() {
+		if !end.empty() || v.EndTZ != "" {
 			return ErrInvalid
 		}
-		// Calendar day required; optional cascading time.
 		if err := validateCascade(start, true); err != nil {
 			return err
 		}
@@ -200,7 +212,7 @@ func validate(v Value) error {
 		if qual != "" && qual != QualifierABT {
 			return ErrInvalid
 		}
-		if !end.empty() {
+		if !end.empty() || v.EndTZ != "" {
 			return ErrInvalid
 		}
 		if start.year == nil || start.month != nil || start.day != nil ||

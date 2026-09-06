@@ -222,7 +222,7 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | — (can parallel S2-05; must merge before date metadata writes in S2-11) |
-| **Deliverables** | Done. Migration `000004` + `core/database/datevalues` Insert/Lookup for exact (optional time through ms), year, ABT, and cascading ranges; tests. |
+| **Deliverables** | Done. Migration `000004` + `core/database/datevalues` Insert/Lookup for exact (optional time through ms + free-text tz), year, ABT, and cascading ranges with optional start/end tz; tests. |
 | **Context** | Shared infrastructure, not Source-owned. Keep vocabulary flexible; do not freeze a full GEDCOM date language in this PR. |
 
 ---

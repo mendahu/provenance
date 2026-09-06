@@ -11,6 +11,7 @@ CREATE TABLE date_values (
 	start_minute    INTEGER,
 	start_second    INTEGER,
 	start_millisecond INTEGER,
+	start_tz        TEXT,
 
 	end_year        INTEGER,
 	end_month       INTEGER,
@@ -19,6 +20,7 @@ CREATE TABLE date_values (
 	end_minute      INTEGER,
 	end_second      INTEGER,
 	end_millisecond INTEGER,
+	end_tz          TEXT,
 
 	phrase          TEXT,
 

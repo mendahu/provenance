@@ -95,6 +95,73 @@ func TestInsertLookup(t *testing.T) {
 			},
 		},
 		{
+			name: "exact with free-text timezone",
+			run: func(t *testing.T, c *database.Catalog) {
+				id, err := Insert(c, Value{
+					Kind:        KindExact,
+					StartYear:   intVal(1985),
+					StartMonth:  intVal(5),
+					StartDay:    intVal(14),
+					StartHour:   intVal(15),
+					StartMinute: intVal(30),
+					StartTZ:     "Eastern Standard Time",
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				got, err := Lookup(c, id)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got.StartTZ != "Eastern Standard Time" || got.EndTZ != "" {
+					t.Fatalf("tz start=%q end=%q", got.StartTZ, got.EndTZ)
+				}
+			},
+		},
+		{
+			name: "range with distinct free-text timezones",
+			run: func(t *testing.T, c *database.Catalog) {
+				id, err := Insert(c, Value{
+					Kind:       KindRange,
+					StartYear:  intVal(2020),
+					StartMonth: intVal(1),
+					StartDay:   intVal(1),
+					StartHour:  intVal(10),
+					StartTZ:    "America/New_York",
+					EndYear:    intVal(2020),
+					EndMonth:   intVal(1),
+					EndDay:     intVal(1),
+					EndHour:    intVal(11),
+					EndTZ:      "local mean time at York",
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				got, err := Lookup(c, id)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got.StartTZ != "America/New_York" || got.EndTZ != "local mean time at York" {
+					t.Fatalf("tz start=%q end=%q", got.StartTZ, got.EndTZ)
+				}
+			},
+		},
+		{
+			name: "rejects end_tz on exact",
+			run: func(t *testing.T, c *database.Catalog) {
+				_, err := Insert(c, Value{
+					Kind:       KindExact,
+					StartYear:  intVal(1985),
+					StartMonth: intVal(5),
+					StartDay:   intVal(14),
+					EndTZ:      "UTC",
+				})
+				if !errors.Is(err, ErrInvalid) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+		{
 			name: "year round trip",
 			run: func(t *testing.T, c *database.Catalog) {
 				id, err := Insert(c, Value{
