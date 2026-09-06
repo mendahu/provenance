@@ -23,7 +23,9 @@ core/database/<domain>/
   <domain>_test.go  # table-driven tests
 ```
 
-Package name is the folder name (`users`, later `sources`, …). Call sites use `users.Upsert(c, …)`, not `Catalog` methods.
+Package name is the folder name (`users`, `datevalues`, later `sources`, …). Call sites use `users.Upsert(c, …)`, not `Catalog` methods.
+
+Shared genealogical dates: follow `.cursor/skills/add-date-value/SKILL.md` (`core/database/datevalues`), not a new ad-hoc date package.
 
 ## Functions
 

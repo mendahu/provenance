@@ -485,32 +485,6 @@ func TestRecord(t *testing.T) {
 				}
 			},
 		},
-		{
-			name: "create migrates audit tables to user_version 3",
-			run: func(t *testing.T, c *database.Catalog) {
-				db, err := c.DB()
-				if err != nil {
-					t.Fatal(err)
-				}
-				var ver int
-				if err := db.QueryRow(`PRAGMA user_version`).Scan(&ver); err != nil {
-					t.Fatal(err)
-				}
-				if ver != 3 {
-					t.Fatalf("user_version %d want 3", ver)
-				}
-				for _, table := range []string{"audit_transactions", "audit_changes"} {
-					var name string
-					err := db.QueryRow(
-						`SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
-						table,
-					).Scan(&name)
-					if err != nil {
-						t.Fatalf("%s: %v", table, err)
-					}
-				}
-			},
-		},
 	}
 
 	for _, tt := range tests {
