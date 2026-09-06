@@ -150,6 +150,77 @@ func TestFile(t *testing.T) {
 		}
 	})
 
+	t.Run("SetFilename no-op same name", func(t *testing.T) {
+		c, err := database.Create(t.TempDir(), "t.provenencia")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer c.Close()
+		mustUser(t, c)
+		path := writeTemp(t, t.TempDir(), "keep.pdf", []byte("same"))
+		res, err := File(c, path, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := SetFilename(c, res.File.ID, "keep.pdf", userID); err != nil {
+			t.Fatal(err)
+		}
+		if auditCount(t, c, "update_file") != 0 {
+			t.Fatalf("update_file %d", auditCount(t, c, "update_file"))
+		}
+	})
+
+	t.Run("SetFilename rejects bad userID", func(t *testing.T) {
+		c, err := database.Create(t.TempDir(), "t.provenencia")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer c.Close()
+		mustUser(t, c)
+		path := writeTemp(t, t.TempDir(), "x.pdf", []byte("x"))
+		res, err := File(c, path, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := SetFilename(c, res.File.ID, "y.pdf", nil); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("got %v", err)
+		}
+		if err := SetFilename(c, res.File.ID, "y.pdf", []byte{1, 2, 3}); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("got %v", err)
+		}
+	})
+
+	t.Run("SetFilename rejects missing file", func(t *testing.T) {
+		c, err := database.Create(t.TempDir(), "t.provenencia")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer c.Close()
+		mustUser(t, c)
+		missing := make([]byte, 16)
+		missing[15] = 1
+		if err := SetFilename(c, missing, "nope.pdf", userID); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("got %v", err)
+		}
+	})
+
+	t.Run("SetFilename rejects closed catalog", func(t *testing.T) {
+		c, err := database.Create(t.TempDir(), "t.provenencia")
+		if err != nil {
+			t.Fatal(err)
+		}
+		mustUser(t, c)
+		path := writeTemp(t, t.TempDir(), "z.pdf", []byte("z"))
+		res, err := File(c, path, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = c.Close()
+		if err := SetFilename(c, res.File.ID, "renamed.pdf", userID); !errors.Is(err, database.ErrClosed) {
+			t.Fatalf("got %v", err)
+		}
+	})
+
 	t.Run("rewrites corrupted object on re-ingest", func(t *testing.T) {
 		c, err := database.Create(t.TempDir(), "t.provenencia")
 		if err != nil {
@@ -275,9 +346,14 @@ func TestSanitizeFilename(t *testing.T) {
 	}{
 		{name: "plain", in: "scan.jpg", want: "scan.jpg"},
 		{name: "strips control", in: "a\x00b\nc", want: "abc"},
+		{name: "strips c1", in: "a\u007fb\u009fc", want: "abc"},
 		{name: "strips bidi override", in: "gpj.\u202Eexe", want: "gpj.exe"},
+		{name: "strips bidi isolate", in: "a\u2066b\u2069c", want: "abc"},
 		{name: "caps length", in: strings.Repeat("a", 300), want: strings.Repeat("a", 255)},
+		{name: "caps on rune boundary", in: strings.Repeat("a", 254) + "é", want: strings.Repeat("a", 254)},
 		{name: "base only", in: "/tmp/foo/bar.txt", want: "bar.txt"},
+		{name: "dot only", in: ".", want: ""},
+		{name: "slash only", in: "/", want: ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
