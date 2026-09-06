@@ -6,10 +6,34 @@ import (
 	"github.com/mendahu/provenencia/core/database/users"
 )
 
-// readyCatalog is the single post-migrate gate before a catalog is handed to
-// research/UI code. database.Create/Open stay migrate-only; every onboarding
-// entry point that opens a researcher-facing catalog must call this once.
-func readyCatalog(c *database.Catalog) error {
+// createCatalog and openCatalog are the only researcher-facing catalog entry
+// points in onboarding. database.Create/Open stay migrate-only for tests and
+// low-level use; reconcile (refs + provenencia vocabulary) runs here once.
+func createCatalog(parent, folder string) (*database.Catalog, error) {
+	c, err := database.Create(parent, folder)
+	if err != nil {
+		return nil, err
+	}
+	if err := reconcile(c); err != nil {
+		_ = c.Close()
+		return nil, err
+	}
+	return c, nil
+}
+
+func openCatalog(projectDir string) (*database.Catalog, error) {
+	c, err := database.Open(projectDir)
+	if err != nil {
+		return nil, err
+	}
+	if err := reconcile(c); err != nil {
+		_ = c.Close()
+		return nil, err
+	}
+	return c, nil
+}
+
+func reconcile(c *database.Catalog) error {
 	if err := users.EnsureRefs(c); err != nil {
 		return err
 	}

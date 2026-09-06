@@ -48,12 +48,8 @@ func Complete(identityDir, parent, displayName, familyName string) (Result, erro
 		return Result{}, err
 	}
 
-	proj, err := database.Create(parent, folder)
+	proj, err := createCatalog(parent, folder)
 	if err != nil {
-		return Result{}, err
-	}
-	if err := readyCatalog(proj); err != nil {
-		_ = proj.Close()
 		return Result{}, err
 	}
 	uid := id.UserID
