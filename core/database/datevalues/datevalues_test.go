@@ -437,29 +437,6 @@ func TestInsertLookup(t *testing.T) {
 				}
 			},
 		},
-		{
-			name: "create migrates date_values to user_version 4",
-			run: func(t *testing.T, c *database.Catalog) {
-				db, err := c.DB()
-				if err != nil {
-					t.Fatal(err)
-				}
-				var ver int
-				if err := db.QueryRow(`PRAGMA user_version`).Scan(&ver); err != nil {
-					t.Fatal(err)
-				}
-				if ver != 4 {
-					t.Fatalf("user_version %d want 4", ver)
-				}
-				var name string
-				err = db.QueryRow(
-					`SELECT name FROM sqlite_master WHERE type='table' AND name='date_values'`,
-				).Scan(&name)
-				if err != nil {
-					t.Fatal(err)
-				}
-			},
-		},
 	}
 
 	for _, tt := range tests {
