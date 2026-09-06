@@ -34,6 +34,8 @@ const (
 	CodeSourceFieldsInvalid         = "sourcefields.invalid"
 	CodeSourceVocabInvalid          = "sourcevocab.invalid"
 	CodeSourcesInvalid              = "sources.invalid"
+	CodeFilesInvalid                = "files.invalid"
+	CodeIngestInvalid               = "ingest.invalid"
 	CodeIdentityNotFound            = "identity.not_found"
 	CodeIdentityInvalidName         = "identity.invalid_name"
 	CodeIdentityInvalidID           = "identity.invalid_id"
