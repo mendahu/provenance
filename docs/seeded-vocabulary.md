@@ -67,6 +67,12 @@ plugin:<plugin_id>   -- reserved prefix for future plugin-contributed vocabulary
 
 There is no separate `builtin` boolean; `origin = 'provenencia'` replaces that flag.
 
+### Implementation (Source seed today)
+
+Product-seeded Source types/fields/suggestions live in a **code registry** (`core/database/sourcevocab/registry.go`) and are reconciled by `sourcevocab.Ensure` on every researcher-facing catalog create/open via `onboarding.createCatalog` / `openCatalog` (see `core/onboarding/ready.go`). Do not put seed rows in SQL migrations.
+
+When extending or adding another vocabulary domain’s seed, follow the project skill [`.cursor/skills/add-seeded-vocabulary/SKILL.md`](../.cursor/skills/add-seeded-vocabulary/SKILL.md).
+
 ---
 
 # 2. Source layer
