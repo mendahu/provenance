@@ -95,18 +95,20 @@ Source types are a controlled but extensible vocabulary used primarily for searc
 ```sql
 CREATE TABLE source_types (
     id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
-    key             TEXT UNIQUE NOT NULL,
+    key             TEXT NOT NULL,
+    origin          TEXT NOT NULL,             -- provenencia | user | plugin:<id>
     label           TEXT NOT NULL,
     description     TEXT,
-    builtin         INTEGER NOT NULL DEFAULT 0,
 
-    CHECK (builtin IN (0, 1))
+    UNIQUE (key, origin)
 ) STRICT;
 ```
 
-New projects may be seeded with a small set of common types such as `birth_certificate`, `census`, `photograph`, and similar, growing as real cataloging needs appear. The horizon catalog (and suggested metadata fields) lives in [`seeded-vocabulary.md`](seeded-vocabulary.md).
+`origin` is the vocabulary namespace (product seed, researcher, or future plugin). Rules and reserved values: [`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1. Uniqueness is `(key, origin)` so a later product seed can share a `key` with an existing user or plugin term without colliding. Domain rows (`sources.source_type_id`) reference the UUID `id`, not bare `key`.
 
-Users may add project-specific types without schema changes. Built-in types are defaults, not an enum and not structurally privileged subclasses.
+New projects may be seeded with a small set of common types such as `birth_certificate`, `census`, `photograph`, and similar (`origin = 'provenencia'`), growing as real cataloging needs appear. The horizon catalog (and suggested metadata fields) lives in [`seeded-vocabulary.md`](seeded-vocabulary.md).
+
+Users may add project-specific types (`origin = 'user'`) without schema changes. Product-seeded types are defaults, not an enum and not structurally privileged subclasses beyond non-deletability and first-class UX for well-known keys.
 
 A source type does not imply a specialized table or interpretation behavior.
 
@@ -159,16 +161,18 @@ Most fields are text. Structured dates are the deliberate exception.
 ```sql
 CREATE TABLE source_metadata_fields (
     id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
-    key             TEXT UNIQUE NOT NULL,
+    key             TEXT NOT NULL,
+    origin          TEXT NOT NULL,             -- provenencia | user | plugin:<id>
     label           TEXT NOT NULL,
     data_type       TEXT NOT NULL DEFAULT 'text',
     description     TEXT,
-    builtin         INTEGER NOT NULL DEFAULT 0,
 
-    CHECK (data_type IN ('text', 'date')),
-    CHECK (builtin IN (0, 1))
+    UNIQUE (key, origin),
+    CHECK (data_type IN ('text', 'date'))
 ) STRICT;
 ```
+
+Same `origin` / `UNIQUE (key, origin)` rules as `source_types` ([`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1). `source_metadata.field_id` and `source_type_metadata_fields.field_id` reference the UUID `id`.
 
 Possible seeded fields include `author`, `publisher`, `publication_date`, and similar. The authoritative list is in [`seeded-vocabulary.md`](seeded-vocabulary.md).
 
@@ -176,7 +180,7 @@ The goal is not to create a general typed EAV system. New structured types shoul
 
 ## 5.2 `source_type_metadata_fields`
 
-A Source type may suggest metadata fields useful for that type.
+A Source type may suggest metadata fields useful for that type. This is a join table, not a vocabulary-definition table: it has no `origin` of its own; both ends already carry `origin`.
 
 ```sql
 CREATE TABLE source_type_metadata_fields (
@@ -187,6 +191,7 @@ CREATE TABLE source_type_metadata_fields (
     PRIMARY KEY (source_type_id, field_id)
 ) STRICT;
 ```
+
 
 For example, `book` might suggest:
 
@@ -429,7 +434,7 @@ The audit tables are cross-cutting infrastructure and are defined separately in 
 # 11. Current architectural rules
 
 1. Sources are evidentiary objects and remain free of genealogical interpretation. Structured Source **credibility** is an Interpretation assessment entity, not a column on `sources`; see [`research-judgment-model.md`](research-judgment-model.md).
-2. Source types use a seeded, controlled, user-extensible vocabulary rather than an enum.
+2. Source types and metadata fields use a seeded, controlled, origin-namespaced vocabulary (`UNIQUE (key, origin)`) rather than an enum; see [`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1.
 3. Source metadata is descriptive and minimally structured.
 4. Metadata values are text by default; shared structured genealogical dates are the intentional exception.
 5. Source types may suggest metadata fields but do not require them.

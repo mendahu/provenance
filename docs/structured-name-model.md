@@ -88,23 +88,27 @@ Part types alone do not define how a name should be entered or displayed. A tree
 
 ```sql
 CREATE TABLE name_format_profiles (
-    key             TEXT PRIMARY KEY,
+    id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
+    key             TEXT NOT NULL,
+    origin          TEXT NOT NULL,             -- provenencia | user | plugin:<id>
     label           TEXT NOT NULL,
-    description     TEXT
+    description     TEXT,
+
+    UNIQUE (key, origin)
 ) STRICT;
 ```
 
-A profile is a named cultural/display convention such as Western / GEDCOM-style ordering. Profiles are seeded data, not schema enums. Projects may add more profiles later (for example Latin American dual-surname ordering) without migrations.
+A profile is a named cultural/display convention such as Western / GEDCOM-style ordering. Profiles are seeded data (`origin = 'provenencia'`), not schema enums. Projects may add more profiles later (for example Latin American dual-surname ordering) without migrations. Vocabulary origin: [`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1.
 
 ## 4.2 `name_format_profile_parts`
 
 ```sql
 CREATE TABLE name_format_profile_parts (
-    profile_key     TEXT NOT NULL REFERENCES name_format_profiles(key) ON DELETE CASCADE,
+    profile_id      BLOB NOT NULL REFERENCES name_format_profiles(id) ON DELETE CASCADE,
     idx             INTEGER NOT NULL,
     part_type       TEXT NOT NULL,
 
-    PRIMARY KEY (profile_key, idx),
+    PRIMARY KEY (profile_id, idx),
     CHECK (idx >= 0)
 ) STRICT;
 ```
@@ -113,7 +117,7 @@ CREATE TABLE name_format_profile_parts (
 
 ### Seeded Western profile
 
-New projects should include at least the `western` profile. The authoritative profile key, labels, and part order are in [`seeded-vocabulary.md`](seeded-vocabulary.md).
+New projects should include at least the `western` profile (`origin = 'provenencia'`). The authoritative profile key, labels, and part order are in [`seeded-vocabulary.md`](seeded-vocabulary.md).
 
 This is a display/entry convention, not a claim that every Person uses every part type.
 
@@ -131,10 +135,10 @@ CREATE TABLE project_settings (
 Known setting for name formats (also listed in [`seeded-vocabulary.md`](seeded-vocabulary.md)):
 
 ```text
-default_name_format_key = western
+default_name_format_id = <uuid of western profile>
 ```
 
-`value_text` holds the `name_format_profiles.key`. Additional project settings may reuse this table later.
+`value_text` holds the `name_format_profiles.id` (hex UUID text). Additional project settings may reuse this table later. Do not store bare `key` alone — keys are unique only within an `origin`.
 
 ## 4.4 Person preference via Reconciliation Claim
 
@@ -143,14 +147,14 @@ Per-person format is not a column on `canonical_entities`. It is concluded like 
 ```text
 Property name_format -> text
 Reconciliation Claim on person entity E:
-  property_key = name_format
-  value_text   = western   # or another name_format_profiles.key
+  property = name_format
+  value_text = <name_format_profiles.id>   # not bare key
 ```
 
 Resolution order for UI display/entry:
 
 1. Accepted Reconciliation Claim for `name_format` on that person entity, if any.
-2. Otherwise `project_settings.default_name_format_key`.
+2. Otherwise `project_settings.default_name_format_id`.
 
 Evidence pins on a `name_format` claim are optional (the choice is often a researcher preference rather than source-derived). `argument` may still record why that profile was chosen. Concluded genealogical names remain separate claims on Property `name` (NameValue).
 
@@ -190,7 +194,7 @@ Canonical entity `label` is a researcher working identifier, not a genealogical 
 2. Personal names are not reduced to a single undifferentiated string when structure is known and useful.
 3. A full-form `form` is always required; parts are optional.
 4. Part `type` is an open vocabulary, not a closed cultural schema.
-5. Name format profiles define cultural display/entry ordering; they are seeded rows, not enums.
+5. Name format profiles define cultural display/entry ordering; they are seeded rows with `origin` namespaces, not enums.
 6. Projects have a default name format; each Person may override it via a `name_format` Reconciliation Claim.
 7. One cited name assertion is one NameValue, not one Observation per token.
 8. Multiple name Observations on the same person Node remain valid (alternate forms, nicknames asserted separately, name changes over time, and so on).

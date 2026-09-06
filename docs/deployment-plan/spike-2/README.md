@@ -233,8 +233,8 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-04 seed decision (or interim seed with note “Design may trim”) |
-| **Deliverables** | Migration: `source_types`, `source_metadata_fields`, `source_type_metadata_fields`. Seed on **Create** (and document behavior for Open of older DBs: migrate schema; seed only if empty — pin the rule in the PR). Go list/upsert for types and fields (project-local `builtin=0` rows). Tests for uniqueness of `key` and suggestion join rows. |
-| **Context** | Source doc §§3, 5.1–5.2; vocabulary doc §2. Stable UUIDs for builtin rows are nice-to-have for tests; if used, document how they are minted. |
+| **Deliverables** | Migration: `source_types`, `source_metadata_fields`, `source_type_metadata_fields`. Seed on **Create** (and document behavior for Open of older DBs: migrate schema; seed only if empty — pin the rule in the PR). Go list/upsert for types and fields (project-local `origin = 'user'` rows). Tests for `UNIQUE (key, origin)` and suggestion join rows. |
+| **Context** | Source doc §§3, 5.1–5.2; vocabulary doc §1.1 / §2. Stable UUIDs for `provenencia`-origin rows are nice-to-have for tests; if used, document how they are minted. |
 | **Out** | No `sources` rows yet. |
 
 ---
