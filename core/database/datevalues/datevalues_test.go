@@ -226,6 +226,48 @@ func TestInsertLookup(t *testing.T) {
 			},
 		},
 		{
+			name: "year with BEF",
+			run: func(t *testing.T, c *database.Catalog) {
+				id, err := Insert(c, Value{
+					Kind:      KindYear,
+					Qualifier: QualifierBEF,
+					StartYear: intVal(1900),
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				got, err := Lookup(c, id)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got.Qualifier != QualifierBEF {
+					t.Fatalf("qual %q", got.Qualifier)
+				}
+			},
+		},
+		{
+			name: "exact with AFT",
+			run: func(t *testing.T, c *database.Catalog) {
+				id, err := Insert(c, Value{
+					Kind:       KindExact,
+					Qualifier:  QualifierAFT,
+					StartYear:  intVal(1872),
+					StartMonth: intVal(3),
+					StartDay:   intVal(1),
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				got, err := Lookup(c, id)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got.Qualifier != QualifierAFT {
+					t.Fatalf("qual %q", got.Qualifier)
+				}
+			},
+		},
+		{
 			name: "year range round trip",
 			run: func(t *testing.T, c *database.Catalog) {
 				id, err := Insert(c, Value{
@@ -316,6 +358,33 @@ func TestInsertLookup(t *testing.T) {
 					Qualifier: QualifierABT,
 					StartYear: intVal(1880),
 					EndYear:   intVal(1885),
+				})
+				if !errors.Is(err, ErrInvalid) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+		{
+			name: "rejects BEF on range",
+			run: func(t *testing.T, c *database.Catalog) {
+				_, err := Insert(c, Value{
+					Kind:      KindRange,
+					Qualifier: QualifierBEF,
+					StartYear: intVal(1880),
+					EndYear:   intVal(1885),
+				})
+				if !errors.Is(err, ErrInvalid) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+		{
+			name: "rejects unknown qualifier",
+			run: func(t *testing.T, c *database.Catalog) {
+				_, err := Insert(c, Value{
+					Kind:      KindYear,
+					Qualifier: "CIR",
+					StartYear: intVal(1900),
 				})
 				if !errors.Is(err, ErrInvalid) {
 					t.Fatalf("got %v", err)

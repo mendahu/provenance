@@ -87,7 +87,14 @@ Components cascade on each side (`start_*` / `end_*`): year → month → day �
 
 `start_tz` / `end_tz` are independent of that cascade: free-text zone labels, nullable when unspecified. Point kinds use only `start_tz`; ranges may set either or both.
 
-The exact vocabulary and validation rules for `kind`, `qualifier`, and `calendar` should be refined as the date parser and domain behavior are implemented. The schema deliberately leaves room for the date semantics already identified without reducing genealogical dates to a single normalized timestamp.
+The exact vocabulary and validation rules for `kind`, `qualifier`, and `calendar` should be refined as the date parser and domain behavior are implemented. The first helper vocabulary for point kinds is:
+
+- (empty) — as stated
+- `ABT` — about / approximately
+- `BEF` — before / no later than the start components
+- `AFT` — after / no earlier than the start components
+
+Closed ranges use `kind = range` with start and end components (no qualifier). The schema deliberately leaves room for further date semantics without reducing genealogical dates to a single normalized timestamp.
 
 ---
 

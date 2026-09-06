@@ -3,14 +3,18 @@
 // Dogfood kinds validated by Insert (DDL stays flexible for later kinds):
 //
 //   - kind "exact": calendar day required (Y/M/D); optional cascading time
-//     (hour→minute→second→millisecond); optional start_tz; qualifier "" or "ABT";
-//     no end_* (including end_tz)
-//   - kind "year":  start_year only; optional start_tz; qualifier "" or "ABT"
+//     (hour→minute→second→millisecond); optional start_tz; qualifier "" /
+//     "ABT" / "BEF" / "AFT"; no end_* (including end_tz)
+//   - kind "year":  start_year only; optional start_tz; qualifier "" /
+//     "ABT" / "BEF" / "AFT"
 //   - kind "range": start and end each cascading from year through optional
 //     time; optional start_tz / end_tz; start <= end; qualifier empty only
 //
 // Finer components require all coarser ones (no gaps). Missing time means
 // unknown/not asserted, not midnight.
+//
+// Qualifiers on point kinds: ABT ≈ about; BEF = before / no later than;
+// AFT = after / no earlier than. The bound is the start_* civil components.
 //
 // start_tz / end_tz are free-text zone labels as stated (IANA id, offset,
 // historical name, or "local time"). Empty means unspecified. They are not
@@ -33,7 +37,9 @@ const (
 	KindYear  = "year"
 	KindRange = "range"
 
-	QualifierABT = "ABT"
+	QualifierABT = "ABT" // about / approximately
+	QualifierBEF = "BEF" // before / no later than start_*
+	QualifierAFT = "AFT" // after / no earlier than start_*
 
 	sqlInsert = `INSERT INTO date_values (
 		id, kind, qualifier, calendar,
@@ -57,7 +63,7 @@ const (
 type Value struct {
 	ID               []byte
 	Kind             string
-	Qualifier        string // "" or QualifierABT for dogfood kinds
+	Qualifier        string // "" | ABT | BEF | AFT on point kinds
 	Calendar         string
 	StartYear        *int
 	StartMonth       *int
@@ -199,7 +205,7 @@ func validate(v Value) error {
 
 	switch v.Kind {
 	case KindExact:
-		if qual != "" && qual != QualifierABT {
+		if !pointQualifierOK(qual) {
 			return ErrInvalid
 		}
 		if !end.empty() || v.EndTZ != "" {
@@ -209,7 +215,7 @@ func validate(v Value) error {
 			return err
 		}
 	case KindYear:
-		if qual != "" && qual != QualifierABT {
+		if !pointQualifierOK(qual) {
 			return ErrInvalid
 		}
 		if !end.empty() || v.EndTZ != "" {
@@ -236,6 +242,15 @@ func validate(v Value) error {
 		return ErrInvalid
 	}
 	return nil
+}
+
+func pointQualifierOK(qual string) bool {
+	switch qual {
+	case "", QualifierABT, QualifierBEF, QualifierAFT:
+		return true
+	default:
+		return false
+	}
 }
 
 // validateCascade requires year, optional finer fields with no gaps, and
