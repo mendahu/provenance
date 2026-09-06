@@ -12,9 +12,9 @@ Paste this entire document into Claude Design as the requirements for one board/
 
 ## 1. Objective
 
-Design how researchers **extend the project’s catalog vocabulary**: add Source types, add metadata fields (`text` / `date`), attach suggested fields to a type, and use custom vocabulary while creating/editing Sources. Builtins are convenient defaults, **not** privileged subclasses.
+Design how researchers **extend the project’s catalog vocabulary**: add Source types, add metadata fields (`text` / `date`), attach suggested fields to a type, and use custom vocabulary while creating/editing Sources. App-seeded terms (`origin = 'provenencia'`) are convenient defaults, **not** privileged subclasses beyond non-deletability and UI origin badges.
 
-Also **lock the dogfood seed set** (which builtin types/fields appear in mocks and first engineering seed).
+Also **lock the dogfood seed set** (which `provenencia`-origin types/fields appear in mocks and first engineering seed).
 
 ---
 
@@ -27,7 +27,8 @@ Also **lock the dogfood seed set** (which builtin types/fields appear in mocks a
 | `key` | Stable machine id (`photograph`); show rarely (advanced); **label** is primary. |
 | `label` | What pickers and chips show. |
 | `description` | Optional help text in admin UI. |
-| `builtin` | Builtin vs project-custom **affordance only** (badge/caption). Same edit rules for using them on Sources; builtins should not be deletable (or delete is refused). |
+| `origin` | Vocabulary namespace: `provenencia` (app-seeded), `user` (custom), or future `plugin:<id>`. Badge/caption in lists. Same edit rules for *using* them on Sources; `provenencia` rows should not be deletable (or delete is refused). |
+| `UNIQUE (key, origin)` | Two types may share a label/`key` if they come from different origins — UI must not assume global uniqueness of label alone. |
 | Not an enum | Users can add types without engineering. |
 
 ### 2.2 `source_metadata_fields`
@@ -36,7 +37,8 @@ Also **lock the dogfood seed set** (which builtin types/fields appear in mocks a
 | --- | --- |
 | `key` / `label` | Same as types — label in forms; key secondary. |
 | `data_type` | Closed for Spike 2: **`text`** or **`date`** only. Choosing type is part of create-field UX. |
-| `builtin` | Same affordance rules as types. |
+| `origin` | Same affordance rules as types (`provenencia` / `user` / reserved `plugin:<id>`). |
+| `UNIQUE (key, origin)` | Same collision rule as types. |
 | Not a general EAV playground | Do not design arbitrary “number / boolean / person-link” field types. |
 
 ### 2.3 `source_type_metadata_fields`
@@ -46,12 +48,14 @@ Also **lock the dogfood seed set** (which builtin types/fields appear in mocks a
 | Type **suggests** fields with optional `sort_order` | Admin UI: attach/reorder suggested fields for a type. |
 | Suggestions are not validation | Source forms never block save because a suggested field is empty. |
 | Source may use non-suggested fields | Editing a Source can include values outside the suggestion list (S2-02 “more fields”). |
+| No `origin` on the join | Origin lives on the type and field rows being linked. |
 
 ### 2.4 Product principles (vocabulary doc)
 
 1. **Implement small; grow from use** — do not dump the entire horizon catalog into the first seed.
 2. Seeds are data, not SQL enums.
-3. Do not invent Source-quality defect ontologies or credibility grades in this UI.
+3. Vocabulary origin namespaces ([`seeded-vocabulary.md`](../../../seeded-vocabulary.md) §1.1) — UI shows where a term came from; uniqueness is per `(key, origin)`.
+4. Do not invent Source-quality defect ontologies or credibility grades in this UI.
 
 ---
 
@@ -68,19 +72,19 @@ Also **lock the dogfood seed set** (which builtin types/fields appear in mocks a
 
 | ID | Requirement |
 | --- | --- |
-| V-4 | List existing types with **label**, builtin vs custom affordance, and optional description. |
-| V-5 | Create type: require **label**; `key` may be auto-derived from label (show advanced override only if needed). |
-| V-6 | Builtin types: visible; **not deletable** (disable delete or explain refusal). |
-| V-7 | Custom types: editable label/description; delete only if safe — if delete rules are unclear, hide delete in Spike 2 and note “omit delete.” |
+| V-4 | List existing types with **label**, origin affordance (`provenencia` vs `user`; reserve room for plugin), and optional description. |
+| V-5 | Create type: require **label**; `key` may be auto-derived from label (show advanced override only if needed); new rows use `origin = 'user'`. |
+| V-6 | App-seeded (`provenencia`) types: visible; **not deletable** (disable delete or explain refusal). |
+| V-7 | Custom (`user`) types: editable label/description; delete only if safe — if delete rules are unclear, hide delete in Spike 2 and note “omit delete.” |
 | V-8 | Newly created types appear in the Source type picker (show a frame proving round-trip). |
 
 ### 3.3 Manage metadata fields
 
 | ID | Requirement |
 | --- | --- |
-| V-9 | List fields with label, **text/date** type, builtin vs custom. |
-| V-10 | Create field: label + data type (`text` \| `date`). |
-| V-11 | Builtin fields not deletable (same as types). |
+| V-9 | List fields with label, **text/date** type, origin affordance (`provenencia` vs `user`). |
+| V-10 | Create field: label + data type (`text` \| `date`); `origin = 'user'`. |
+| V-11 | App-seeded fields not deletable (same as types). |
 | V-12 | Do not offer field data types beyond text/date. |
 
 ### 3.4 Suggest fields for a type
@@ -134,13 +138,14 @@ Also **lock the dogfood seed set** (which builtin types/fields appear in mocks a
 
 ## 4. Screen / frame inventory (minimum)
 
-1. **Source types** destination — types list (builtin + one custom).
+1. **Source types** destination — types list (app-seeded + one custom).
 2. Create custom type (within Source types).
 3. **Source fields** destination — fields list + create field (`text` and `date` examples).
 4. Type → suggested fields editor (reorder/add) — may live on the type detail within Source types.
 5. Source create/edit using a **custom** type and a **custom** field (S2-02 surface).
 6. Source edit adding a **non-suggested** existing field.
 7. Seed set callout (table or notes panel) for engineering handoff.
+8. Optional: two types sharing a label/`key` from different origins (conflict-safety story).
 
 ---
 
@@ -157,7 +162,7 @@ Also **lock the dogfood seed set** (which builtin types/fields appear in mocks a
 ## 6. Acceptance checklist
 
 - [ ] Source types and Source fields are designed as top-level workspace destinations (per S2-01).
-- [ ] Builtin vs custom is visible but not a second class of behavior for *using* vocabulary.
+- [ ] Origin (app-seeded vs custom) is visible but not a second class of behavior for *using* vocabulary.
 - [ ] Create type + create field + suggest fields covered.
 - [ ] Only `text` and `date` field types.
 - [ ] Round-trip: custom vocabulary appears on Source forms.

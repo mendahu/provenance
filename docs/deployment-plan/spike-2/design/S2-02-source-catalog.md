@@ -40,7 +40,7 @@ A **Source** is the evidentiary object (“what evidence do we possess?”), not
 
 | Rule | UI implication |
 | --- | --- |
-| Seeded builtins (`photograph`, `book`, `birth_certificate`, …) | Show **labels**, not raw keys, in pickers. |
+| Seeded app vocabulary (`photograph`, `book`, `birth_certificate`, …; `origin = 'provenencia'`) | Show **labels**, not raw keys, in pickers. Origin badge optional in pickers; required in vocabulary admin. |
 | User-extensible | Type picker must allow choosing existing types; adding types is S2-04 (link/entry point OK). |
 | Type does not change `SRC-` prefix | Never invent type-specific id formats. |
 | Type does not imply specialized forms beyond suggested metadata | One Source detail layout; metadata suggestions change with type. |

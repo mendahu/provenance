@@ -25,11 +25,47 @@ Items marked **TBD** are expected seeds whose exact set is still being refined.
 1. **Implement small; grow from use.** Early project databases should seed only what a concrete workflow requires. Prefer adding a field when cataloging a real Source over shipping this entire list on day one.
 2. This file may stay ahead of the product. Keeping a larger catalog here is documentation, not a commitment to pre-make unused pickers, metadata fields, or event types.
 3. Seeds are data inserted into a project database, not SQL enums.
-4. Built-in / shipped keys are not structurally privileged subclasses; they are convenient defaults with optional first-class UX.
-5. Open text vocabularies (`event_type`, `role`, name part `type`, and similar) stay extensible even when a starter list exists for pickers.
+4. Shipped keys are not structurally privileged subclasses; they are convenient defaults with optional first-class UX. Their privilege is **origin**, not a separate table or enum.
+5. Open text vocabularies (`event_type`, `role`, name part `type`, and similar) stay extensible even when a starter list exists for pickers. Those free-text value sets are **not** vocabulary-definition tables and do not carry an `origin` column; see §1.1 for tables that do.
 6. Do not seed a fine-grained source-quality ontology (`is_authentic`, defect codes, and similar) on Source catalog rows or as Observation defect codes unless a concrete workflow requires it. First-class **Source credibility** uses the three-point assessment vocabulary in §3.0 and [`research-judgment-model.md`](research-judgment-model.md), not ad hoc Source metadata.
 7. Expanding this catalog does not require a schema migration when the underlying tables already use open keys.
 8. Source credibility grades and Claim confidence grades share a three-point *shape* but **must not share keys or labels** — they answer different questions.
+
+## 1.1 Vocabulary origin (namespace)
+
+Vocabulary-definition tables — rows the UI lists as managed taxonomy, not instance data — carry an **`origin`** column. This is the reserved namespace for who contributed the term. It is **not** an evidentiary Source (`sources`).
+
+Applies to (authoritative schemas in the linked docs):
+
+| Table | Doc |
+| --- | --- |
+| `source_types`, `source_metadata_fields` | [`source-layer-data-model.md`](source-layer-data-model.md) |
+| `node_types`, `properties`, `source_credibility_grades` | [`interpretation-layer-data-model.md`](interpretation-layer-data-model.md), [`research-judgment-model.md`](research-judgment-model.md) |
+| `claim_confidence_grades` | [`conclusion-layer-data-model.md`](conclusion-layer-data-model.md), [`research-judgment-model.md`](research-judgment-model.md) |
+| `name_format_profiles` | [`structured-name-model.md`](structured-name-model.md) |
+
+Does **not** apply to join/suggestion tables (`source_type_metadata_fields`, `node_type_properties`, `name_format_profile_parts`), domain instance rows, or open free-text picker values.
+
+### Reserved `origin` values
+
+```text
+provenencia          -- product-seeded vocabulary shipped with the app
+user                 -- created by the researcher in this project
+plugin:<plugin_id>   -- reserved prefix for future plugin-contributed vocabulary
+```
+
+`<plugin_id>` is a stable plugin slug (lowercase ASCII letters, digits, hyphens). No other `origin` prefixes are reserved yet; do not invent ad hoc origins outside these three shapes without updating this catalog.
+
+### Uniqueness and foreign keys
+
+- Uniqueness is **`UNIQUE (key, origin)`**, not bare `key`. The same machine `key` (and user-visible label) may exist under different origins so a later product seed never collides with a user- or plugin-created term.
+- Vocabulary rows use a UUID **`id`** primary key. Domain tables reference vocabulary **by `id`**, never by bare `key`, so colliding keys across origins stay unambiguous.
+- Application recognition of well-known shipped terms looks up `(key, origin = 'provenencia')` (optional first-class UX). Using a term on a Source, Node, or Claim always stores the vocabulary row’s `id`.
+- UI should surface origin (badge/caption: app / custom / plugin) without treating non-`provenencia` rows as second-class when *using* them.
+- `provenencia` rows are not deletable (or delete is refused). `user` rows follow ordinary unused-delete rules. Plugin rows follow plugin lifecycle rules when plugins exist.
+- Node Type `ref_prefix` remains **globally** unique across origins (refs must not collide in speech).
+
+There is no separate `builtin` boolean; `origin = 'provenencia'` replaces that flag.
 
 ---
 
@@ -228,7 +264,7 @@ Schema: [`interpretation-layer-data-model.md`](interpretation-layer-data-model.m
 
 ## 3.0 Source credibility grades
 
-Open vocabulary for `source_credibility_assessments.credibility_key`. Three-point scale with a baseline middle. **Do not** reuse Claim confidence keys.
+Open vocabulary for `source_credibility_assessments.credibility_grade_id` (via `source_credibility_grades`). Three-point scale with a baseline middle. **Do not** reuse Claim confidence keys.
 
 ```text
 key             sort_order    label (draft product copy)
@@ -393,7 +429,7 @@ idx   part_type
 ## 4.4 `project_settings`
 
 ```text
-default_name_format_key = western
+default_name_format_id = <uuid of western profile>
 ```
 
 Additional cultural profiles (for example dual-surname ordering) are **TBD**.
@@ -440,7 +476,7 @@ Handle provenencia badges (from records / inferred / asserted / unlinked) are co
 
 ## 5.5 Claim confidence grades
 
-Open vocabulary for `sameness_claims.confidence_key` and `reconciliation_claims.confidence_key`. Three-point scale with a baseline middle. **Do not** reuse Source credibility keys — same shape, different semantics ([`research-judgment-model.md`](research-judgment-model.md)).
+Open vocabulary for `sameness_claims.confidence_grade_id` and `reconciliation_claims.confidence_grade_id` (via `claim_confidence_grades`). Three-point scale with a baseline middle. **Do not** reuse Source credibility keys — same shape, different semantics ([`research-judgment-model.md`](research-judgment-model.md)).
 
 ```text
 key                 sort_order    label (draft product copy)
@@ -449,13 +485,13 @@ moderate            2             Moderate
 high_confidence     3             High confidence
 ```
 
-`confidence_key` is nullable. Claim `status` remains the separate workflow vocabulary in §5.1–5.2.
+`confidence_grade_id` is nullable. Claim `status` remains the separate workflow vocabulary in §5.1–5.2.
 
 ---
 
 # 6. Documentation ownership
 
-- This document is the horizon catalog for intended keys, starter open-vocabulary lists, and project-default settings. It does not require every listed row to ship in the first app version.
+- This document is the horizon catalog for intended keys, starter open-vocabulary lists, project-default settings, and vocabulary **origin** namespaces (§1.1). It does not require every listed row to ship in the first app version.
 - Layer and shared-value documents remain authoritative for table schemas and invariants.
 - [`research-judgment-model.md`](research-judgment-model.md) is authoritative for judgment semantics (Source credibility, Citation transcription certainty, Claim confidence).
 - When a key is actually seeded in product, update this catalog if needed; do not fork competing lists into layer docs.

@@ -32,13 +32,13 @@ The database should enforce generic graph integrity and primitive typing. It sho
 
 ## 1.3 Interpretation vocabulary is extensible
 
-Node Types and Properties are first-class data. Provenencia ships with a useful seeded vocabulary, but researchers may add new Node Types and Properties without a database schema migration.
+Node Types and Properties are first-class data. Provenencia ships with a useful seeded vocabulary (`origin = 'provenencia'`), but researchers may add new Node Types and Properties (`origin = 'user'`) without a database schema migration. Future plugins use the reserved `plugin:<plugin_id>` origin namespace. Vocabulary origin rules: [`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1.
 
 All Properties, including user-defined Properties, declare a value type. Unknown or custom vocabulary remains preservable and generically usable even when the core application has no specialized semantics for it.
 
-Predicate _values_ such as `event_type` and participation `role` are likewise open text vocabulary: seeded with useful defaults, researcher-extensible, and not enforced as closed database enums. The Interpretation layer must remain ready for event kinds and roles the product cannot anticipate.
+Predicate _values_ such as `event_type` and participation `role` are likewise open text vocabulary: seeded with useful defaults, researcher-extensible, and not enforced as closed database enums. The Interpretation layer must remain ready for event kinds and roles the product cannot anticipate. Those free-text value sets are not origin-namespaced definition tables.
 
-Core application logic and future plugins may provide first-class behavior for recognized keys and values while leaving storage generic. For example, the application may treat an Event with `event_type = birth` and a Participation with `role = subject` as that person's birth, without requiring the schema to encode birth-specific tables or mandatory role constraints.
+Core application logic and future plugins may provide first-class behavior for recognized `(key, origin)` pairs while leaving storage generic. For example, the application may treat an Event with `event_type = birth` and a Participation with `role = subject` as that person's birth, without requiring the schema to encode birth-specific tables or mandatory role constraints.
 
 ## 1.4 Derived semantics belong to the application layer
 
@@ -460,18 +460,24 @@ Node Types define the semantic category of a Node. They are data rather than a d
 
 ```sql
 CREATE TABLE node_types (
-    key             TEXT PRIMARY KEY,
+    id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
+    key             TEXT NOT NULL,
+    origin          TEXT NOT NULL,             -- provenencia | user | plugin:<id>
     label           TEXT NOT NULL,
     description     TEXT,
-    ref_prefix      TEXT NOT NULL UNIQUE
+    ref_prefix      TEXT NOT NULL UNIQUE,
+
+    UNIQUE (key, origin)
 ) STRICT;
 ```
 
-`ref_prefix` is the type token in human-readable refs for Nodes and canonical entities of this kind, for example `PER` for `person` → Person `PER-7KD45`, candidate Node `PER-C-7KD45`. It is required when defining a Node Type, including researcher-defined types. Prefixes are uppercase ASCII letters, unique among Node Types, and must not use the reserved prefixes `SRC`, `ART`, `CIT`, `OBS`, or the candidate layer code `C`.
+`origin` and `UNIQUE (key, origin)` follow [`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1. Domain rows reference `node_types.id`, not bare `key`, so a later product seed can reuse a `key` already taken by a user or plugin term. Application recognition of shipped types looks up `(key, origin = 'provenencia')`.
+
+`ref_prefix` is the type token in human-readable refs for Nodes and canonical entities of this kind, for example `PER` for `person` → Person `PER-7KD45`, candidate Node `PER-C-7KD45`. It is required when defining a Node Type, including researcher-defined types. Prefixes are uppercase ASCII letters, **globally** unique among Node Types (across origins), and must not use the reserved prefixes `SRC`, `ART`, `CIT`, `OBS`, or the candidate layer code `C`.
 
 The Node Type `source` (reification of a Source row) must not use `SRC`; a distinct prefix such as `SRN` keeps Source catalog refs (`SRC-…`) distinguishable from source-Nodes in speech.
 
-Application semantics attach to stable `key` values rather than a persisted built-in flag. Horizon Node Types and their prefixes are catalogued in [`seeded-vocabulary.md`](seeded-vocabulary.md). That set is expected to include at least `person`, `event`, `place`, `relationship`, `participation`, `location`, and `source`.
+Application semantics attach to stable `key` values within an origin rather than a separate built-in flag. Horizon Node Types and their prefixes are catalogued in [`seeded-vocabulary.md`](seeded-vocabulary.md). That set is expected to include at least `person`, `event`, `place`, `relationship`, `participation`, `location`, and `source`.
 
 These names describe application semantics, not different SQL structures. Every instance is stored in the same `nodes` table.
 
@@ -488,19 +494,19 @@ CREATE TABLE nodes (
     id              BLOB PRIMARY KEY,
     ref             TEXT UNIQUE NOT NULL,      -- e.g. PER-C-7KD45
     source_id       BLOB NOT NULL REFERENCES sources(id),
-    node_type_key   TEXT NOT NULL REFERENCES node_types(key),
+    node_type_id    BLOB NOT NULL REFERENCES node_types(id),
     label           TEXT,
     description     TEXT,
 
-    UNIQUE (id, node_type_key)
+    UNIQUE (id, node_type_id)
 ) STRICT;
 ```
 
 `ref` is required. It is assembled as `{ref_prefix}-C-{token}` (`C` = candidate). Users talk about a person Node as a candidate person (`PER-C-…`), distinct from the canonical Person (`PER-…`).
 
-`UNIQUE (id, node_type_key)` exists so Sameness Claims can use a composite foreign key that pins both endpoints to the same type. It is redundant with the primary key for uniqueness of `id`; it does not allow two types per Node.
+`UNIQUE (id, node_type_id)` exists so Sameness Claims can use a composite foreign key that pins both endpoints to the same type. It is redundant with the primary key for uniqueness of `id`; it does not allow two types per Node.
 
-`node_type_key` is immutable after insert. Correcting a wrong type means a new Node (and new `ref`), not an UPDATE of the type. The UUID remains the machine identity; the type is part of the public identity encoded in `ref`.
+`node_type_id` is immutable after insert. Correcting a wrong type means a new Node (and new `ref`), not an UPDATE of the type. The UUID remains the machine identity; the type (via `ref_prefix`) is part of the public identity encoded in `ref`.
 
 `source_id` is the Node's home Source — typically the Source being interpreted when the Node was created. It exists so the application can efficiently surface Nodes that belong with a given Source during common same-source workflows. It does not restrict which Citations or Observations may reference the Node; cross-source Observations remain valid.
 
@@ -522,11 +528,14 @@ Properties are first-class, user-extensible definitions of predicates that may a
 
 ```sql
 CREATE TABLE properties (
-    key             TEXT PRIMARY KEY,
+    id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
+    key             TEXT NOT NULL,
+    origin          TEXT NOT NULL,             -- provenencia | user | plugin:<id>
     label           TEXT NOT NULL,
     description     TEXT,
     value_type      TEXT NOT NULL,
 
+    UNIQUE (key, origin),
     CHECK (value_type IN (
         'text',
         'integer',
@@ -539,6 +548,8 @@ CREATE TABLE properties (
 ) STRICT;
 ```
 
+`origin` and `UNIQUE (key, origin)` follow [`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1. Observations and Reconciliation Claims reference `properties.id`, not bare `key`.
+
 A Property's `value_type` is intrinsic to the Property. Seeded Properties (for example `name`, `birth_date`, `event_type`, `role`, `person`, `mentions`, `remark`) and their `node_type_properties` bindings are listed in [`seeded-vocabulary.md`](seeded-vocabulary.md).
 
 The semantic vocabulary is open, but the primitive value system is intentionally constrained. A researcher may define a new Property without introducing a new storage type.
@@ -549,7 +560,7 @@ The semantic vocabulary is open, but the primitive value system is intentionally
 
 `name_format` is primarily a Conclusion Property (Reconciliation Claim on a person entity). It need not appear in `node_type_properties` for Interpretation unless a Source itself asserts a naming convention.
 
-Application semantics attach to stable `key` values, matching `node_types`. Seeded Properties may receive first-class application behavior. User-defined Properties remain first-class persisted data and can be generically displayed, searched, audited, synced, and referenced. Plugins may add specialized semantics for additional Properties later.
+Application semantics attach to stable `key` values within an origin, matching `node_types`. Seeded Properties may receive first-class application behavior. User-defined Properties remain first-class persisted data and can be generically displayed, searched, audited, synced, and referenced. Plugins may add specialized semantics for additional Properties later under `plugin:<plugin_id>` origins.
 
 Open text values such as `event_type` and `role` are seeded with common defaults for pickers but remain researcher-extensible; see [`seeded-vocabulary.md`](seeded-vocabulary.md). The schema does not close those sets or require particular roles for particular event types; first-class workflows recognize well-known values in application logic.
 
@@ -566,14 +577,14 @@ A book that merely cites a marriage certificate can record `BookSource -- mentio
 
 ## 5.2 `node_type_properties`
 
-This table defines which Properties are valid for which Node Types.
+This table defines which Properties are valid for which Node Types. It is a join table with no `origin` of its own.
 
 ```sql
 CREATE TABLE node_type_properties (
-    node_type_key   TEXT NOT NULL REFERENCES node_types(key),
-    property_key    TEXT NOT NULL REFERENCES properties(key),
+    node_type_id    BLOB NOT NULL REFERENCES node_types(id),
+    property_id     BLOB NOT NULL REFERENCES properties(id),
 
-    PRIMARY KEY (node_type_key, property_key)
+    PRIMARY KEY (node_type_id, property_id)
 ) STRICT;
 ```
 
@@ -595,6 +606,9 @@ participation -> role
 location      -> event
 location      -> place
 
+relationship  -> participant
+relationship  -> relationship_type
+
 source        -> mentions
 source        -> remark
 ```
@@ -603,7 +617,7 @@ This is a vocabulary/schema relationship, not historical research data. It says 
 
 The vocabulary should be seeded with common definitions but remain researcher-extensible.
 
-For Node-valued Properties, allowed **target** Node Types (for example, `participation.person` should target a `person` Node) are an **application invariant** for now — the same posture as Observation value population. Seeded Properties get first-class UI/validation behavior; user-defined node Properties may remain unconstrained or warn-only. Provenencia does not persist target-type allow-lists in SQL yet (no `target_node_type_key` on `properties`, and no target join table). That can be added later if pickers and importers need a shared declarative vocabulary.
+For Node-valued Properties, allowed **target** Node Types (for example, `participation.person` should target a `person` Node) are an **application invariant** for now — the same posture as Observation value population. Seeded Properties get first-class UI/validation behavior; user-defined node Properties may remain unconstrained or warn-only. Provenencia does not persist target-type allow-lists in SQL yet (no `target_node_type_id` on `properties`, and no target join table). That can be added later if pickers and importers need a shared declarative vocabulary.
 
 Malformed edges (wrong target type) may be warned about or ignored by typed workflows; the generic graph still stores the Observation.
 
@@ -613,24 +627,26 @@ Interpretation-layer entity for the researcher's working credibility grade of a 
 
 ```sql
 CREATE TABLE source_credibility_grades (
-    key         TEXT PRIMARY KEY,
+    id          BLOB PRIMARY KEY,              -- UUIDv7, 16 bytes
+    key         TEXT NOT NULL,
+    origin      TEXT NOT NULL,                 -- provenencia | user | plugin:<id>
     label       TEXT NOT NULL,
     sort_order  INTEGER NOT NULL,
-    builtin     INTEGER NOT NULL DEFAULT 1,
-    CHECK (builtin IN (0, 1))
+
+    UNIQUE (key, origin)
 ) STRICT;
 
 CREATE TABLE source_credibility_assessments (
-    id                  BLOB PRIMARY KEY,
-    source_id           BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
-    credibility_key     TEXT NOT NULL REFERENCES source_credibility_grades(key),
-    argument            TEXT,
+    id                      BLOB PRIMARY KEY,
+    source_id               BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    credibility_grade_id    BLOB NOT NULL REFERENCES source_credibility_grades(id),
+    argument                TEXT,
 
     UNIQUE (source_id)
 ) STRICT;
 ```
 
-At most one working assessment per Source. Updates are audited. Missing assessment may display as baseline (`standard`) without inserting a row.
+At most one working assessment per Source. Updates are audited. Missing assessment may display as baseline (`standard` under `origin = 'provenencia'`) without inserting a row.
 
 ---
 
@@ -748,7 +764,7 @@ CREATE TABLE observations (
     ref             TEXT UNIQUE NOT NULL,      -- e.g. OBS-2F8Q1
     citation_id     BLOB NOT NULL REFERENCES citations(id),
     subject_node_id BLOB NOT NULL REFERENCES nodes(id),
-    property_key    TEXT NOT NULL REFERENCES properties(key),
+    property_id     BLOB NOT NULL REFERENCES properties(id),
     polarity        TEXT NOT NULL DEFAULT 'positive',
 
     value_text      TEXT,
@@ -801,11 +817,11 @@ Multiple Observations may also make different assertions about the same Property
 
 The current design aims to preserve these invariants:
 
-1. Every Node has exactly one Node Type. `node_type_key` is immutable after insert.
+1. Every Node has exactly one Node Type. `node_type_id` is immutable after insert.
 2. Every Node has a required `ref` of the form `{ref_prefix}-C-{token}` (candidate).
 3. Every Node has a home `source_id`; that home Source does not confine which Observations may target the Node.
 4. A Node of type `source` reifies the Source identified by its `source_id`; the application should keep at most one such Node per Source.
-5. Node Types and Properties are extensible persisted vocabulary, not closed application enums. A new Node Type includes a unique `ref_prefix` that is not a reserved catalog prefix or layer code.
+5. Node Types and Properties are extensible persisted vocabulary with `origin` namespaces and `UNIQUE (key, origin)`, not closed application enums. A new Node Type includes a globally unique `ref_prefix` that is not a reserved catalog prefix or layer code. See [`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1.
 6. Every Observation has its own stable identity and a required `OBS-…` `ref`.
 7. Every Observation is supported by exactly one Citation.
 8. Every Citation has a required `CIT-…` `ref`.
@@ -821,7 +837,7 @@ The current design aims to preserve these invariants:
 18. Citation text/description preserves the evidence representation; Observations contain normalized interpretation.
 19. Derived genealogical semantics are not duplicated into the Interpretation graph merely for convenience.
 20. Unknown/custom Node Types, Properties, and open vocabulary values (such as event types and roles) remain preservable and generically usable without first-class application support.
-21. First-class application behavior may recognize seeded keys and values; it must not require the schema to close those vocabularies or encode every genealogical edge case.
+21. First-class application behavior may recognize seeded `(key, origin = 'provenencia')` pairs and open values; it must not require the schema to close those vocabularies or encode every genealogical edge case.
 22. Source credibility assessments are Interpretation entities (`source_credibility_assessments`), not columns on `sources` and not Observation confidence scores.
 23. Citation transcription certainty is the boolean `transcription_uncertain` (+ optional note), media-agnostic; it is not Claim confidence.
 

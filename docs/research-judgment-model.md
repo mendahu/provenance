@@ -63,24 +63,26 @@ Assessments are **Interpretation** data: judgment about evidentiary value, not S
 
 ```sql
 CREATE TABLE source_credibility_grades (
-    key         TEXT PRIMARY KEY,
+    id          BLOB PRIMARY KEY,              -- UUIDv7, 16 bytes
+    key         TEXT NOT NULL,
+    origin      TEXT NOT NULL,                 -- provenencia | user | plugin:<id>
     label       TEXT NOT NULL,
     sort_order  INTEGER NOT NULL,
-    builtin     INTEGER NOT NULL DEFAULT 1,
-    CHECK (builtin IN (0, 1))
+
+    UNIQUE (key, origin)
 ) STRICT;
 
 CREATE TABLE source_credibility_assessments (
-    id                  BLOB PRIMARY KEY,
-    source_id           BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
-    credibility_key     TEXT NOT NULL REFERENCES source_credibility_grades(key),
-    argument            TEXT,
+    id                      BLOB PRIMARY KEY,
+    source_id               BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    credibility_grade_id    BLOB NOT NULL REFERENCES source_credibility_grades(id),
+    argument                TEXT,
 
     UNIQUE (source_id)
 ) STRICT;
 ```
 
-There is **at most one working assessment per Source**. Changing the grade updates that row (and is audited).
+There is **at most one working assessment per Source**. Changing the grade updates that row (and is audited). Grade vocabulary uses `origin` namespaces like other definition tables ([`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1).
 
 Optional later: a nullable link to the reifying `source` Node for graph navigation. Cited commentary about a Source (another Source challenges authenticity, remarks, `mentions`) continues to use Observations on the Source Node as today; that path does not replace this assessment table.
 
@@ -147,7 +149,7 @@ Confidence is claim-relative by design. It is the primary structured epistemic f
 | Field | Values | Answers |
 |---|---|---|
 | `status` | `provisional` \| `accepted` \| `rejected` | Is this in the working graph / committed conclusion? |
-| `confidence_key` | three-point confidence vocabulary | How sure am I of this conclusion? |
+| `confidence_grade_id` | three-point confidence vocabulary | How sure am I of this conclusion? |
 
 They are **not** the same thing. Valid combinations include accepted + low confidence (committed weak best guess) and provisional + high confidence (strong candidate not yet committed). Do not overload `provisional` to mean “I am unsure.”
 
@@ -155,20 +157,22 @@ They are **not** the same thing. Valid combinations include accepted + low confi
 
 ```sql
 -- additions to sameness_claims and reconciliation_claims
-confidence_key  TEXT REFERENCES claim_confidence_grades(key),  -- nullable
+confidence_grade_id  BLOB REFERENCES claim_confidence_grades(id),  -- nullable
 ```
 
 ```sql
 CREATE TABLE claim_confidence_grades (
-    key         TEXT PRIMARY KEY,
+    id          BLOB PRIMARY KEY,              -- UUIDv7, 16 bytes
+    key         TEXT NOT NULL,
+    origin      TEXT NOT NULL,                 -- provenencia | user | plugin:<id>
     label       TEXT NOT NULL,
     sort_order  INTEGER NOT NULL,
-    builtin     INTEGER NOT NULL DEFAULT 1,
-    CHECK (builtin IN (0, 1))
+
+    UNIQUE (key, origin)
 ) STRICT;
 ```
 
-`confidence_key` is **nullable** so casual trees and quick Claims need not set a grade. `argument` remains the free-text reasoning chain; confidence is the structured, filterable stance.
+`confidence_grade_id` is **nullable** so casual trees and quick Claims need not set a grade. `argument` remains the free-text reasoning chain; confidence is the structured, filterable stance. Grade vocabulary uses `origin` namespaces ([`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1).
 
 There remains at most one Sameness Claim per Node pair and one Reconciliation Claim per `(entity, property)`. Changing confidence updates that row (and is audited).
 
@@ -202,7 +206,7 @@ When authoring a Claim, the UI should make it easy to see:
 2. Each pin’s Citation (`transcription_uncertain`, note)
 3. Each Citation’s root Source and any `source_credibility_assessments` row
 
-The researcher then sets `confidence_key` deliberately. Derived subject/fact pills may later combine claim confidence, `status`, exhibit shape, and optional display hints from Source/Citation judgments — without persisting that synthesis.
+The researcher then sets the Claim confidence grade deliberately. Derived subject/fact pills may later combine claim confidence, `status`, exhibit shape, and optional display hints from Source/Citation judgments — without persisting that synthesis.
 
 Handle provenencia badges (from records / inferred / asserted / unlinked) remain a separate computed grounding story; see [`conclusion-layer-data-model.md`](conclusion-layer-data-model.md).
 
@@ -215,11 +219,11 @@ Handle provenencia badges (from records / inferred / asserted / unlinked) remain
 3. Do not put credibility on `sources` or confidence scores on Observations.
 4. Source credibility and Claim confidence use parallel three-point shapes with **separate** vocabularies.
 5. Citation transcription certainty is a boolean (+ optional note), media-agnostic, columns on `citations`.
-6. Claim `status` and Claim `confidence_key` are orthogonal.
+6. Claim `status` and Claim confidence grade are orthogonal.
 7. Observation polarity is not Claim polarity.
 8. Disputed / undocumented display states are derived unless a later explicit flag is justified.
 9. Working state is single-row per slot; history and attribution are audit.
-10. Grade keys are open vocabulary tables (seeded builtins), not SQL enums on every domain CHECK — except Citation’s `0|1` flag.
+10. Grade keys are open vocabulary tables with `origin` namespaces (seeded `provenencia` rows), not SQL enums on every domain CHECK — except Citation’s `0|1` flag.
 
 ---
 
@@ -227,7 +231,7 @@ Handle provenencia badges (from records / inferred / asserted / unlinked) remain
 
 - This document is authoritative for research judgment semantics and the assessment/grade schemas above.
 - [`interpretation-layer-data-model.md`](interpretation-layer-data-model.md) owns Citation columns and hosts the Source credibility assessment tables in the Interpretation schema surface.
-- [`conclusion-layer-data-model.md`](conclusion-layer-data-model.md) owns Claim tables including `confidence_key`.
+- [`conclusion-layer-data-model.md`](conclusion-layer-data-model.md) owns Claim tables including `confidence_grade_id`.
 - [`seeded-vocabulary.md`](seeded-vocabulary.md) lists intended grade keys and labels.
 - [`source-layer-data-model.md`](source-layer-data-model.md) remains free of credibility columns.
 - [`audit-revision-history.md`](audit-revision-history.md) remains authoritative for revision attribution.
