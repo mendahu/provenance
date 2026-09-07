@@ -170,7 +170,7 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done) — mounts in the **Source fields** destination |
-| **Deliverables** | Board for the **Source fields** destination: searchable list/table of `source_metadata_fields` (label + data type; origin visible in one list, not split lists); detail/edit (label, data type, description; description detail-only); add/create flow. No delete. Add chrome (modal/sheet vs nested pane + back) is a Design choice. Lives inside the workspace content host — not a separate window chrome. |
+| **Deliverables** | Board for the **Source fields** destination: searchable list/table of `source_metadata_fields` (label + data type; origin visible in one list, not split lists); detail/edit (label, data type, description; description detail-only); add/create flow with **auto slug key from label** (not user-typed). No delete. Add chrome (modal/sheet vs nested pane + back) is a Design choice. Lives inside the workspace content host — not a separate window chrome. |
 | **Context** | Source doc §5.1; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1.1 (`origin`). Simplest Spike 2 UI; no dependency on Sources catalog or type↔field suggestions. **`provenencia` rows are view-only; `user` rows are editable.** |
 | **Out** | Delete/retire fields; attaching fields to types (S2-03); Source instance metadata values; Source types admin; Citations/credibility. |
 | **Feeds** | S2-15 (and supplies the field pool for S2-03) |
@@ -344,7 +344,7 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-02 (design enough), S2-13, S2-14 |
-| **Deliverables** | **Source fields** destination: searchable list/table (label, data type, origin); detail/edit for user fields (label, data type, description); add/create flow per S2-02 board. No delete. `Features/` model+views mounted in the existing workspace content host. Unit tests with `FakeStore`. L10n via skill. If edit needs an `UpdateMetadataField` (or equivalent) FFI beyond today’s create/list, include that thin engine gap in this PR. |
+| **Deliverables** | **Source fields** destination: searchable list/table (label, data type, origin); detail/edit for user fields (label, data type, description); add/create flow per S2-02 board. No delete. **Auto-generate `key` as a kebab slug of the label** — do not collect key in the UI. Prefer Go as source of truth (e.g. derive in `CreateMetadataField` from label; ignore/omit client-supplied key), with a small shared slug helper if needed (related to onboarding folder slug rules, without the `.provenencia` suffix). If edit needs an `UpdateMetadataField` (or equivalent) FFI beyond today’s create/list, include that thin engine gap in this PR. `Features/` model+views mounted in the existing workspace content host. Unit tests with `FakeStore` (including slug collision / unslugifiable label). L10n via skill. |
 | **Context** | Mount under S2-14 **Source fields** pane — do not reintroduce a separate top-level window chrome. **`provenencia` rows are view-only; `user` rows are editable.** |
 | **Out** | Type↔field suggestions UI; Source catalog; delete/retire. |
 

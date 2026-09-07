@@ -29,7 +29,7 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 | `label` | Primary human name. Show in list and edit form. |
 | `data_type` | `text` or `date` only. Show in list; editable in form (picker). |
 | `description` | Optional help text. **Detail/edit only** — not required on list rows. |
-| `key` | Stable machine id within an origin. Show on detail (mono); create flow may accept or derive it — Design chooses, but do not pretend it is free-form display text. |
+| `key` | Stable machine id within an origin. **Auto-generated on create** as a kebab-case slug of the label (not typed by the user). Show on detail (mono); do not expose as an editable form field. |
 | `origin` | Namespace: `provenencia` (product seed / “system”), `user` (researcher-added), later `plugin:<id>`. **Same list** for all origins — not separate lists. Surface origin as a column, badge, or sortable facet. |
 | Uniqueness | `(key, origin)` — same label/key can exist under different origins; UI should not collapse them. |
 
@@ -72,7 +72,7 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 | ID | Requirement |
 | --- | --- |
 | F-14 | Add flow collects at least **label**, **data type** (`text` \| `date`), optional **description**. New rows use `origin = user`. |
-| F-15 | **Key:** either derived from label or collected explicitly — pick one pattern and keep it calm; avoid exposing UUID. |
+| F-15 | **Key is generated automatically** as a kebab-case **slug** of the label (e.g. “Grandma’s album code” → something like `grandmas-album-code`). Do **not** collect key in the add form. Detail may show the minted key read-only. If the label cannot form a slug, show a calm validation error before save. |
 | F-16 | On save, return to the list (or the new field’s detail) with the new row findable via search. |
 | F-17 | Cancel / dismiss create without orphan chrome. |
 | F-18 | **Chrome pattern is open:** modal/sheet vs push into a nested pane with back/breadcrumb are both acceptable on macOS. Prefer whatever stays consistent with Provenencia density and the S2-01 content host — Design decides; requirements above must hold either way. |
@@ -81,7 +81,7 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 
 | ID | Requirement |
 | --- | --- |
-| F-19 | Validation (duplicate key under user origin, missing label, invalid data type) uses calm inline or toast patterns consistent with onboarding — not modal panic. |
+| F-19 | Validation (unslugifiable label, duplicate key under user origin after slugify, missing label, invalid data type) uses calm inline or toast patterns consistent with onboarding — not modal panic. |
 | F-20 | Busy/saving states should disable duplicate submits. |
 
 ---
@@ -123,5 +123,6 @@ Use seeded-looking rows mixed with a few `user` rows so origin differentiation i
 - [ ] List shows label + data type; description is detail-only.
 - [ ] Single list with visible origin (system vs user); search at top.
 - [ ] Add + edit cover create/update for **user** fields; seeded (`provenencia`) detail is view-only; no delete.
+- [ ] Create flow does not ask for a key; key is a slug of the label (shown read-only on detail).
 - [ ] Add chrome (modal vs nested pane) is intentional and documented on the board.
 - [ ] No type-suggestion or Source-instance UI on this board.
