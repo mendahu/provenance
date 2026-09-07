@@ -3,7 +3,10 @@ package derivatives
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
+	"errors"
+	"hash/crc32"
 	"image"
 	"image/png"
 	"os"
@@ -190,6 +193,141 @@ func TestEnsureThumbnailFromGeneratedPNG(t *testing.T) {
 	}
 }
 
+// bombPNG returns a PNG signature + valid IHDR declaring w×h pixels; enough
+// for DecodeConfig, tiny on disk — a header-declared decompression bomb.
+func bombPNG(t *testing.T, w, h uint32) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	buf.Write([]byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'})
+	data := make([]byte, 13)
+	binary.BigEndian.PutUint32(data[0:], w)
+	binary.BigEndian.PutUint32(data[4:], h)
+	data[8] = 8 // bit depth
+	data[9] = 6 // color type RGBA
+	var length [4]byte
+	binary.BigEndian.PutUint32(length[:], 13)
+	buf.Write(length[:])
+	buf.WriteString("IHDR")
+	buf.Write(data)
+	crc := crc32.NewIEEE()
+	crc.Write([]byte("IHDR"))
+	crc.Write(data)
+	var sum [4]byte
+	binary.BigEndian.PutUint32(sum[:], crc.Sum32())
+	buf.Write(sum[:])
+	return buf.Bytes()
+}
+
+// installFileRow inserts a files row without writing an object, so tests can
+// declare arbitrary ByteSize/checksum metadata.
+func installFileRow(t *testing.T, c *database.Catalog, checksum, mediaType string, byteSize int64) []byte {
+	t.Helper()
+	id, err := files.NewID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	db, err := c.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := files.Insert(tx, files.File{
+		ID: id, ChecksumSHA256: checksum, MediaType: mediaType, ByteSize: byteSize,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	return id
+}
+
+func TestEnsureThumbnailRejectsUnsafeSources(t *testing.T) {
+	c, err := database.Create(t.TempDir(), "t.provenencia")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+
+	tinySum := sha256.Sum256([]byte("placeholder"))
+	tests := []struct {
+		name   string
+		srcID  func(t *testing.T) []byte
+		wantIs error
+	}{
+		{
+			name: "declared ByteSize over source cap",
+			srcID: func(t *testing.T) []byte {
+				return installFileRow(t, c, hex.EncodeToString(tinySum[:]), "image/png", maxSourceBytes+1)
+			},
+			wantIs: ErrUnprocessable,
+		},
+		{
+			name: "object bytes do not match catalog checksum",
+			srcID: func(t *testing.T) []byte {
+				id := installSourceFile(t, c, bombPNG(t, 4, 4), "image/png", "swap.png")
+				sum := sha256.Sum256(bombPNG(t, 4, 4))
+				rel, err := files.StorageRelPath(hex.EncodeToString(sum[:]))
+				if err != nil {
+					t.Fatal(err)
+				}
+				objPath := filepath.Join(c.Dir(), filepath.FromSlash(rel))
+				if err := os.WriteFile(objPath, []byte("tampered bytes"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				return id
+			},
+			wantIs: ErrCorruptObject,
+		},
+		{
+			name: "pixel bomb png over decode budget",
+			srcID: func(t *testing.T) []byte {
+				return installSourceFile(t, c, bombPNG(t, 100000, 100000), "image/png", "bomb.png")
+			},
+			wantIs: ErrUnprocessable,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srcID := tt.srcID(t)
+			res, err := EnsureThumbnail(c, srcID)
+			if err == nil {
+				t.Fatalf("expected error, got %+v", res)
+			}
+			if !errors.Is(err, tt.wantIs) {
+				t.Fatalf("got %v, want %v", err, tt.wantIs)
+			}
+			list, err := filederivatives.ListBySourceFile(c, srcID)
+			if err != nil || len(list) != 0 {
+				t.Fatalf("no link rows expected: %v %+v", err, list)
+			}
+		})
+	}
+}
+
+func TestEnsureRejectsMaxEdgeOverLimit(t *testing.T) {
+	c, err := database.Create(t.TempDir(), "t.provenencia")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	pngBytes, err := os.ReadFile("testdata/tiny.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	srcID := installSourceFile(t, c, pngBytes, "image/png", "tiny.png")
+	_, err = Ensure(c, srcID, Spec{
+		Type:   "huge",
+		Raster: raster.Options{MaxEdge: raster.MaxEdgeLimit + 1},
+	})
+	if !errors.Is(err, ErrInvalid) {
+		t.Fatalf("got %v, want ErrInvalid", err)
+	}
+}
+
 func TestEnsureCustomSpecAlongsideThumbnail(t *testing.T) {
 	c, err := database.Create(t.TempDir(), "t.provenencia")
 	if err != nil {
@@ -208,7 +346,7 @@ func TestEnsureCustomSpecAlongsideThumbnail(t *testing.T) {
 		t.Fatalf("thumb %+v %v", thumb, err)
 	}
 	medium, err := Ensure(c, srcID, Spec{
-		Type: "medium",
+		Type:   "medium",
 		Raster: raster.Options{MaxEdge: 512, Quality: 90},
 	})
 	if err != nil || medium.Skipped {

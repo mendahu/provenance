@@ -291,8 +291,8 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-09 (ideally after S2-03 confirms preview needs) |
-| **Deliverables** | Done. Migration `000010` + `filederivatives` helpers; `derivatives.Ensure`/`EnsureThumbnail` with parameterized `Spec` + encapsulated `raster.Options`/`EncodeJPEG` (jpeg/png/gif/bmp/tiff/webp → JPEG; default thumb ≤256px; transform hook); content-addressed `files`/`objects/`; idempotent; skip other MIME; no research audit; fixture tests. |
-| **Context** | Source doc §8. Skip non-image MIME types cleanly. |
+| **Deliverables** | Done. Migration `000010` + `filederivatives` helpers; `derivatives.Ensure`/`EnsureThumbnail` with parameterized `Spec` + encapsulated `raster.Options`/`EncodeJPEG` (jpeg/png/gif/bmp/tiff/webp → JPEG; default thumb ≤256px; transform hook); content-addressed `files`/`objects/`; idempotent; skip other MIME; no research audit; fixture tests. Hardened: pre-decode pixel budget + format allowlist, 128 MiB source cap, checksum-verified reads (`filederivatives.unprocessable` / `filederivatives.corrupt_object`), `MaxEdge` cap 4096, bounded decode concurrency. |
+| **Context** | Source doc §8. Skip non-image MIME types cleanly. `Ensure` trusts `sourceFileID` — FFI wiring (S2-13+) must authorize File access before calling, and map the two new error codes in L10n. `unprocessable` files are candidates for a future manual thumbnail-attachment flow (ingest a preview image, link via `file_derivatives`). |
 
 ---
 

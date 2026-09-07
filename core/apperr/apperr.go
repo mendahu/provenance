@@ -55,6 +55,12 @@ const (
 	CodeInternalUnknown             = "internal.unknown"
 	CodeInternalUnknownMethod       = "internal.unknown_method"
 	CodeInternalMigrations          = "internal.migrations"
+
+	// Derivative-generation guards: unprocessable = source image too large
+	// (bytes or declared pixels) to decode safely; corrupt_object = object
+	// bytes do not match the checksum recorded in the catalog.
+	CodeFileDerivativesUnprocessable = "filederivatives.unprocessable"
+	CodeFileDerivativesCorruptObject = "filederivatives.corrupt_object"
 )
 
 // Error is a coded application error. Params are ordered L10n format args.

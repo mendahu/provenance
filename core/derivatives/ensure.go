@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/mendahu/provenencia/core/apperr"
@@ -19,6 +20,35 @@ import (
 )
 
 var ErrInvalid = apperr.New(apperr.CodeFileDerivativesInvalid, apperr.KindUser)
+
+// ErrUnprocessable means the source image cannot be decoded safely
+// (byte size or declared pixel dimensions over budget, or bytes that are
+// not an allowlisted raster format). The File itself remains valid.
+var ErrUnprocessable = apperr.New(apperr.CodeFileDerivativesUnprocessable, apperr.KindUser)
+
+// ErrCorruptObject means the object-store bytes do not match the checksum
+// recorded in the catalog, so they were refused before decode.
+var ErrCorruptObject = apperr.New(apperr.CodeFileDerivativesCorruptObject, apperr.KindInternal)
+
+// maxSourceBytes caps how much of a source object Ensure will read and
+// decode. Larger Files are valid catalog content but are refused for
+// derivative generation with ErrUnprocessable.
+const maxSourceBytes = 128 << 20 // 128 MiB
+
+// decodeSem bounds concurrent read+decode+encode work so parallel Ensure
+// calls cannot multiply peak image-decode memory.
+var decodeSem = make(chan struct{}, decodeSlots())
+
+func decodeSlots() int {
+	n := runtime.GOMAXPROCS(0)
+	if n > 4 {
+		n = 4
+	}
+	if n < 1 {
+		n = 1
+	}
+	return n
+}
 
 // Spec describes one derivative to ensure. Type is the file_derivatives.derivative_type key
 // (unique per source). Raster holds encode parameters; add Spec helpers (Medium, …) as needed.
@@ -45,15 +75,21 @@ type Result struct {
 }
 
 // EnsureThumbnail creates or returns the default thumbnail derivative.
+// See Ensure for the authorization contract on sourceFileID.
 func EnsureThumbnail(c *database.Catalog, sourceFileID []byte) (Result, error) {
 	return Ensure(c, sourceFileID, ThumbnailSpec())
 }
 
 // Ensure creates or returns the derivative described by spec.
 // Non-supported media types return Skipped without error. Generation is not audited.
+//
+// Authorization: Ensure trusts sourceFileID. Callers — especially future FFI
+// handlers — must first verify the requester may access that File (e.g. via
+// its artifact/source chain) before invoking derivative generation.
 func Ensure(c *database.Catalog, sourceFileID []byte, spec Spec) (Result, error) {
 	spec.Type = strings.TrimSpace(spec.Type)
-	if len(sourceFileID) != 16 || spec.Type == "" || spec.Raster.MaxEdge < 1 {
+	if len(sourceFileID) != 16 || spec.Type == "" ||
+		spec.Raster.MaxEdge < 1 || spec.Raster.MaxEdge > raster.MaxEdgeLimit {
 		return Result{}, ErrInvalid
 	}
 	src, err := files.Lookup(c, sourceFileID)
@@ -73,16 +109,16 @@ func Ensure(c *database.Catalog, sourceFileID []byte, spec Spec) (Result, error)
 		return Result{}, err
 	}
 
+	if src.ByteSize > maxSourceBytes {
+		return Result{}, ErrUnprocessable
+	}
+
 	rel, err := files.StorageRelPath(src.ChecksumSHA256)
 	if err != nil {
 		return Result{}, err
 	}
 	objPath := filepath.Join(c.Dir(), filepath.FromSlash(rel))
-	raw, err := os.ReadFile(objPath)
-	if err != nil {
-		return Result{}, err
-	}
-	derivedJPEG, err := raster.EncodeJPEG(raw, spec.Raster)
+	derivedJPEG, err := generate(objPath, src.ChecksumSHA256, spec.Raster)
 	if err != nil {
 		return Result{}, err
 	}
@@ -168,6 +204,48 @@ func Ensure(c *database.Catalog, sourceFileID []byte, spec Spec) (Result, error)
 		return Result{}, err
 	}
 	return Result{Link: link}, nil
+}
+
+// generate reads the source object (bounded and checksum-verified) and
+// encodes the derivative JPEG. It holds decodeSem for the whole
+// read+decode+encode section to bound peak memory across goroutines.
+func generate(objPath, wantChecksum string, opts raster.Options) ([]byte, error) {
+	decodeSem <- struct{}{}
+	defer func() { <-decodeSem }()
+
+	raw, err := readSourceObject(objPath, wantChecksum)
+	if err != nil {
+		return nil, err
+	}
+	derivedJPEG, err := raster.EncodeJPEG(raw, opts)
+	if err != nil {
+		if errors.Is(err, raster.ErrTooLarge) || errors.Is(err, raster.ErrUnsupportedFormat) {
+			return nil, ErrUnprocessable
+		}
+		return nil, err
+	}
+	return derivedJPEG, nil
+}
+
+// readSourceObject reads at most maxSourceBytes from objPath and verifies
+// the bytes against the catalog checksum before they reach any decoder.
+func readSourceObject(objPath, wantChecksum string) ([]byte, error) {
+	f, err := os.Open(objPath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	raw, err := io.ReadAll(io.LimitReader(f, maxSourceBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(raw)) > maxSourceBytes {
+		return nil, ErrUnprocessable
+	}
+	if sha256Hex(raw) != wantChecksum {
+		return nil, ErrCorruptObject
+	}
+	return raw, nil
 }
 
 func insertLinkOnly(c *database.Catalog, sourceFileID, derivedID []byte, derivativeType string) (Result, error) {
