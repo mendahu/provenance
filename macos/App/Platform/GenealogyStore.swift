@@ -179,4 +179,8 @@ protocol GenealogyStore: Sendable {
         dataType: String,
         description: String
     ) async throws -> CatalogMetadataField
+    /// Total content-addressed files rows — distinct files, not the
+    /// (larger, per-source) artifact count. No project-wide artifact
+    /// listing exists yet (S2-17).
+    func countFiles(projectDir: String) async throws -> Int
 }

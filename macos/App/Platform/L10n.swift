@@ -283,6 +283,74 @@ enum L10n {
         )
     }
 
+    enum Workspace {
+        static let navGroupLabel = LocalizedStringResource(
+            "workspace.sidebar.navGroupLabel",
+            defaultValue: "Source layer",
+            comment: "Eyebrow label above the workspace sidebar's nav destinations"
+        )
+
+        static let sourcesTitle = LocalizedStringResource(
+            "workspace.section.sources.title",
+            defaultValue: "Sources",
+            comment: "Workspace sidebar destination and page title: Sources"
+        )
+
+        static let sourcesPlaceholderNote = LocalizedStringResource(
+            "workspace.section.sources.placeholderNote",
+            defaultValue: "The Source catalog list and detail arrive in a later update.",
+            comment: "Placeholder note shown in the empty Sources content host"
+        )
+
+        static let sourceTypesTitle = LocalizedStringResource(
+            "workspace.section.sourceTypes.title",
+            defaultValue: "Source types",
+            comment: "Workspace sidebar destination and page title: Source types"
+        )
+
+        static let sourceTypesPlaceholderNote = LocalizedStringResource(
+            "workspace.section.sourceTypes.placeholderNote",
+            defaultValue: "Editing the Source type vocabulary arrives in a later update.",
+            comment: "Placeholder note shown in the empty Source types content host"
+        )
+
+        static let sourceFieldsTitle = LocalizedStringResource(
+            "workspace.section.sourceFields.title",
+            defaultValue: "Source fields",
+            comment: "Workspace sidebar destination and page title: Source fields"
+        )
+
+        static let sourceFieldsPlaceholderNote = LocalizedStringResource(
+            "workspace.section.sourceFields.placeholderNote",
+            defaultValue: "Editing the Source metadata fields arrives in a later update.",
+            comment: "Placeholder note shown in the empty Source fields content host"
+        )
+
+        static let filesTitle = LocalizedStringResource(
+            "workspace.section.files.title",
+            defaultValue: "Files",
+            comment: "Workspace sidebar destination and page title: Files"
+        )
+
+        static let filesPlaceholderNote = LocalizedStringResource(
+            "workspace.section.files.placeholderNote",
+            defaultValue: "Artifact ingest and file preview arrive in a later update.",
+            comment: "Placeholder note shown in the empty Files content host"
+        )
+
+        static let collapseSidebar = LocalizedStringResource(
+            "workspace.sidebar.collapse",
+            defaultValue: "Collapse labels",
+            comment: "Tooltip/accessibility label for the sidebar toggle when expanded"
+        )
+
+        static let expandSidebar = LocalizedStringResource(
+            "workspace.sidebar.expand",
+            defaultValue: "Show labels",
+            comment: "Tooltip/accessibility label for the sidebar toggle when collapsed"
+        )
+    }
+
     /// Maps stable Go/FFI error codes to localized user-facing copy.
     enum Errors {
         static let catalogAlreadyExists = LocalizedStringResource(

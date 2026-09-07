@@ -13,6 +13,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var sourceTypesByProject: [String: [CatalogSourceType]] = [:]
     var fieldsByProject: [String: [CatalogMetadataField]] = [:]
     var metadataBySource: [String: [CatalogMetadataEntry]] = [:]
+    var fileCountByProject: [String: Int] = [:]
     var lastResult = OnboardingResult(
         projectDir: "/tmp/robins-family.provenencia",
         userID: "00000000-0000-7000-8000-000000000001",
@@ -358,6 +359,10 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         )
         fieldsByProject[projectDir, default: []].append(field)
         return field
+    }
+
+    func countFiles(projectDir: String) async throws -> Int {
+        fileCountByProject[projectDir] ?? 0
     }
 }
 

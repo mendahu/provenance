@@ -34,6 +34,7 @@ enum Method {
   METHOD_CREATE_SOURCE_TYPE = 24;
   METHOD_LIST_METADATA_FIELDS = 25;
   METHOD_CREATE_METADATA_FIELD = 26;
+  METHOD_COUNT_FILES = 27;
 }
 
 message PingRequest {
@@ -395,6 +396,17 @@ message CreateMetadataFieldRequest {
 
 message CreateMetadataFieldResponse {
   MetadataField field = 1;
+}
+
+// CountFiles reports the total number of content-addressed files rows in
+// the project — distinct files, not the (larger, per-source) artifact
+// count. No project-wide artifact listing exists yet (S2-17).
+message CountFilesRequest {
+  string project_dir = 1;
+}
+
+message CountFilesResponse {
+  int32 count = 1;
 }
 
 // ErrorKind classifies a failure for client UX (tone, retry hints). Copy still

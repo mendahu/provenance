@@ -368,6 +368,16 @@ struct GoStore: GenealogyStore {
         return Self.mapMetadataField(resp.field)
     }
 
+    func countFiles(projectDir: String) async throws -> Int {
+        var req = Provenencia_Engine_V1_CountFilesRequest()
+        req.projectDir = projectDir
+        let resp: Provenencia_Engine_V1_CountFilesResponse = try await provenenciaCall(
+            method: CoreMethod.countFiles,
+            request: req
+        )
+        return Int(resp.count)
+    }
+
     private static func mapProject(_ p: Provenencia_Engine_V1_ProjectInfo) -> ProjectInfo {
         ProjectInfo(
             label: p.label,

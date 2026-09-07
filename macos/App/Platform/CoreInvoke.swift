@@ -62,6 +62,7 @@ enum CoreMethod {
     static let createSourceType = Int32(Provenencia_Engine_V1_Method.createSourceType.rawValue)
     static let listMetadataFields = Int32(Provenencia_Engine_V1_Method.listMetadataFields.rawValue)
     static let createMetadataField = Int32(Provenencia_Engine_V1_Method.createMetadataField.rawValue)
+    static let countFiles = Int32(Provenencia_Engine_V1_Method.countFiles.rawValue)
 }
 
 func provenenciaInvoke(method: Int32, request: Data) throws -> Data {
