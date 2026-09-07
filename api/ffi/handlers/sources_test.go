@@ -205,7 +205,7 @@ func TestCreateArtifactAndIngest(t *testing.T) {
 	})
 }
 
-func TestVocabulary(t *testing.T) {
+func TestSourceDefs(t *testing.T) {
 	runRPC(t, CreateSourceType, []rpcTest{
 		{
 			name: "create user type and field",
