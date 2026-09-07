@@ -1,5 +1,5 @@
-// Package raster turns image bytes into a thumbnail JPEG.
-// Swap this implementation later without touching EnsureThumbnail / DB / objects.
+// Package raster turns image bytes into derivative JPEGs.
+// Swap this implementation later without touching Ensure / DB / objects.
 package raster
 
 import (
@@ -23,6 +23,9 @@ func init() {
 	_ = gif.Decode
 }
 
+// DefaultQuality is used when Options.Quality is zero.
+const DefaultQuality = 85
+
 var supportedMIME = map[string]struct{}{
 	"image/jpeg": {},
 	"image/jpg":  {},
@@ -32,6 +35,17 @@ var supportedMIME = map[string]struct{}{
 	"image/tiff": {},
 	"image/tif":  {},
 	"image/webp": {},
+}
+
+// Transform mutates or replaces an image in the encode pipeline (after scale).
+// Add grayscale, sharpen, etc. as named Transform funcs later without changing EncodeJPEG.
+type Transform func(image.Image) image.Image
+
+// Options parameterizes raster encoding. Zero Quality means DefaultQuality.
+type Options struct {
+	MaxEdge    int // longest output edge in pixels; must be > 0
+	Quality    int // JPEG quality 1–100; 0 → DefaultQuality
+	Transforms []Transform
 }
 
 // Supported reports whether mediaType is an allowlisted raster format.
@@ -44,18 +58,30 @@ func Supported(mediaType string) bool {
 	return ok
 }
 
-// ThumbnailJPEG decodes src, scales so the longest edge is at most maxEdge, and encodes JPEG.
-func ThumbnailJPEG(src []byte, maxEdge int) ([]byte, error) {
-	if maxEdge < 1 {
-		return nil, fmt.Errorf("raster: maxEdge must be positive")
+// EncodeJPEG decodes src, scales to MaxEdge, applies Transforms, and encodes JPEG.
+func EncodeJPEG(src []byte, opts Options) ([]byte, error) {
+	if opts.MaxEdge < 1 {
+		return nil, fmt.Errorf("raster: MaxEdge must be positive")
+	}
+	quality := opts.Quality
+	if quality == 0 {
+		quality = DefaultQuality
+	}
+	if quality < 1 || quality > 100 {
+		return nil, fmt.Errorf("raster: Quality must be 1–100 or 0 for default")
 	}
 	img, _, err := image.Decode(bytes.NewReader(src))
 	if err != nil {
 		return nil, err
 	}
-	scaled := scaleToMaxEdge(img, maxEdge)
+	img = scaleToMaxEdge(img, opts.MaxEdge)
+	for _, t := range opts.Transforms {
+		if t != nil {
+			img = t(img)
+		}
+	}
 	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, scaled, &jpeg.Options{Quality: 85}); err != nil {
+	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality}); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

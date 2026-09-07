@@ -13,6 +13,7 @@ import (
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/filederivatives"
 	"github.com/mendahu/provenencia/core/database/files"
+	"github.com/mendahu/provenencia/core/derivatives/raster"
 )
 
 func installSourceFile(t *testing.T, c *database.Catalog, data []byte, mediaType, name string) []byte {
@@ -186,5 +187,59 @@ func TestEnsureThumbnailFromGeneratedPNG(t *testing.T) {
 	}
 	if b.Dx() != 256 || b.Dy() != 128 {
 		t.Fatalf("want 256x128, got %dx%d", b.Dx(), b.Dy())
+	}
+}
+
+func TestEnsureCustomSpecAlongsideThumbnail(t *testing.T) {
+	c, err := database.Create(t.TempDir(), "t.provenencia")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	img := image.NewRGBA(image.Rect(0, 0, 800, 400))
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	srcID := installSourceFile(t, c, buf.Bytes(), "image/png", "wide.png")
+
+	thumb, err := EnsureThumbnail(c, srcID)
+	if err != nil || thumb.Skipped {
+		t.Fatalf("thumb %+v %v", thumb, err)
+	}
+	medium, err := Ensure(c, srcID, Spec{
+		Type: "medium",
+		Raster: raster.Options{MaxEdge: 512, Quality: 90},
+	})
+	if err != nil || medium.Skipped {
+		t.Fatalf("medium %+v %v", medium, err)
+	}
+	if medium.Link.DerivativeType != "medium" {
+		t.Fatalf("type %q", medium.Link.DerivativeType)
+	}
+	if string(medium.Link.DerivedFileID) == string(thumb.Link.DerivedFileID) {
+		t.Fatal("medium and thumbnail should be distinct derived files")
+	}
+	list, err := filederivatives.ListBySourceFile(c, srcID)
+	if err != nil || len(list) != 2 {
+		t.Fatalf("%v %+v", err, list)
+	}
+
+	derived, err := files.Lookup(c, medium.Link.DerivedFileID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rel, _ := files.StorageRelPath(derived.ChecksumSHA256)
+	raw, err := os.ReadFile(filepath.Join(c.Dir(), filepath.FromSlash(rel)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, _, err := image.Decode(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := decoded.Bounds()
+	if b.Dx() != 512 || b.Dy() != 256 {
+		t.Fatalf("want 512x256, got %dx%d", b.Dx(), b.Dy())
 	}
 }

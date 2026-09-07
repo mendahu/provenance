@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
@@ -19,18 +20,40 @@ import (
 
 var ErrInvalid = apperr.New(apperr.CodeFileDerivativesInvalid, apperr.KindUser)
 
-const maxThumbEdge = 256
+// Spec describes one derivative to ensure. Type is the file_derivatives.derivative_type key
+// (unique per source). Raster holds encode parameters; add Spec helpers (Medium, …) as needed.
+type Spec struct {
+	Type   string
+	Raster raster.Options
+}
 
-// Result is the outcome of EnsureThumbnail.
+// ThumbnailSpec is the default small preview: JPEG, longest edge ≤ 256.
+func ThumbnailSpec() Spec {
+	return Spec{
+		Type: filederivatives.TypeThumbnail,
+		Raster: raster.Options{
+			MaxEdge: 256,
+			Quality: raster.DefaultQuality,
+		},
+	}
+}
+
+// Result is the outcome of Ensure / EnsureThumbnail.
 type Result struct {
 	Link    filederivatives.Link
 	Skipped bool // true when media type is not a supported raster image
 }
 
-// EnsureThumbnail creates or returns the thumbnail derivative for sourceFileID.
-// Non-supported media types return Skipped without error. Generation is not audited.
+// EnsureThumbnail creates or returns the default thumbnail derivative.
 func EnsureThumbnail(c *database.Catalog, sourceFileID []byte) (Result, error) {
-	if len(sourceFileID) != 16 {
+	return Ensure(c, sourceFileID, ThumbnailSpec())
+}
+
+// Ensure creates or returns the derivative described by spec.
+// Non-supported media types return Skipped without error. Generation is not audited.
+func Ensure(c *database.Catalog, sourceFileID []byte, spec Spec) (Result, error) {
+	spec.Type = strings.TrimSpace(spec.Type)
+	if len(sourceFileID) != 16 || spec.Type == "" || spec.Raster.MaxEdge < 1 {
 		return Result{}, ErrInvalid
 	}
 	src, err := files.Lookup(c, sourceFileID)
@@ -44,7 +67,7 @@ func EnsureThumbnail(c *database.Catalog, sourceFileID []byte) (Result, error) {
 		return Result{Skipped: true}, nil
 	}
 
-	if existing, err := filederivatives.Lookup(c, sourceFileID, filederivatives.TypeThumbnail); err == nil {
+	if existing, err := filederivatives.Lookup(c, sourceFileID, spec.Type); err == nil {
 		return Result{Link: existing}, nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return Result{}, err
@@ -59,19 +82,19 @@ func EnsureThumbnail(c *database.Catalog, sourceFileID []byte) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	thumbJPEG, err := raster.ThumbnailJPEG(raw, maxThumbEdge)
+	derivedJPEG, err := raster.EncodeJPEG(raw, spec.Raster)
 	if err != nil {
 		return Result{}, err
 	}
 
-	sum := sha256.Sum256(thumbJPEG)
+	sum := sha256.Sum256(derivedJPEG)
 	checksum := hex.EncodeToString(sum[:])
-	thumbRel, err := files.StorageRelPath(checksum)
+	derivedRel, err := files.StorageRelPath(checksum)
 	if err != nil {
 		return Result{}, err
 	}
-	thumbPath := filepath.Join(c.Dir(), filepath.FromSlash(thumbRel))
-	if err := writeObjectIfAbsent(thumbPath, thumbJPEG); err != nil {
+	derivedPath := filepath.Join(c.Dir(), filepath.FromSlash(derivedRel))
+	if err := writeObjectIfAbsent(derivedPath, derivedJPEG); err != nil {
 		return Result{}, err
 	}
 
@@ -103,7 +126,7 @@ func EnsureThumbnail(c *database.Catalog, sourceFileID []byte) (Result, error) {
 			ID:             id,
 			ChecksumSHA256: checksum,
 			MediaType:      "image/jpeg",
-			ByteSize:       int64(len(thumbJPEG)),
+			ByteSize:       int64(len(derivedJPEG)),
 		}
 		if err := files.Insert(tx, row); err != nil {
 			if files.IsUniqueConflict(err) {
@@ -113,7 +136,7 @@ func EnsureThumbnail(c *database.Catalog, sourceFileID []byte) (Result, error) {
 					return Result{}, lookupErr
 				}
 				derivedID = append([]byte(nil), existing.ID...)
-				return insertLinkOnly(c, sourceFileID, derivedID)
+				return insertLinkOnly(c, sourceFileID, derivedID, spec.Type)
 			}
 			return Result{}, err
 		}
@@ -128,12 +151,12 @@ func EnsureThumbnail(c *database.Catalog, sourceFileID []byte) (Result, error) {
 		ID:             linkID,
 		SourceFileID:   append([]byte(nil), sourceFileID...),
 		DerivedFileID:  derivedID,
-		DerivativeType: filederivatives.TypeThumbnail,
+		DerivativeType: spec.Type,
 	}
 	if err := filederivatives.Insert(tx, link); err != nil {
 		if filederivatives.IsUniqueConflict(err) {
 			_ = tx.Rollback()
-			existing, lookupErr := filederivatives.Lookup(c, sourceFileID, filederivatives.TypeThumbnail)
+			existing, lookupErr := filederivatives.Lookup(c, sourceFileID, spec.Type)
 			if lookupErr != nil {
 				return Result{}, lookupErr
 			}
@@ -147,8 +170,8 @@ func EnsureThumbnail(c *database.Catalog, sourceFileID []byte) (Result, error) {
 	return Result{Link: link}, nil
 }
 
-func insertLinkOnly(c *database.Catalog, sourceFileID, derivedID []byte) (Result, error) {
-	if existing, err := filederivatives.Lookup(c, sourceFileID, filederivatives.TypeThumbnail); err == nil {
+func insertLinkOnly(c *database.Catalog, sourceFileID, derivedID []byte, derivativeType string) (Result, error) {
+	if existing, err := filederivatives.Lookup(c, sourceFileID, derivativeType); err == nil {
 		return Result{Link: existing}, nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return Result{}, err
@@ -170,12 +193,12 @@ func insertLinkOnly(c *database.Catalog, sourceFileID, derivedID []byte) (Result
 		ID:             linkID,
 		SourceFileID:   append([]byte(nil), sourceFileID...),
 		DerivedFileID:  append([]byte(nil), derivedID...),
-		DerivativeType: filederivatives.TypeThumbnail,
+		DerivativeType: derivativeType,
 	}
 	if err := filederivatives.Insert(tx, link); err != nil {
 		if filederivatives.IsUniqueConflict(err) {
 			_ = tx.Rollback()
-			existing, lookupErr := filederivatives.Lookup(c, sourceFileID, filederivatives.TypeThumbnail)
+			existing, lookupErr := filederivatives.Lookup(c, sourceFileID, derivativeType)
 			if lookupErr != nil {
 				return Result{}, lookupErr
 			}

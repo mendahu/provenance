@@ -291,7 +291,7 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-09 (ideally after S2-03 confirms preview needs) |
-| **Deliverables** | Done. Migration `000010` + `filederivatives` helpers; `derivatives.EnsureThumbnail` + encapsulated `raster` (jpeg/png/gif/bmp/tiff/webp → JPEG ≤256px); content-addressed `files`/`objects/`; idempotent; skip other MIME; no research audit; fixture tests. |
+| **Deliverables** | Done. Migration `000010` + `filederivatives` helpers; `derivatives.Ensure`/`EnsureThumbnail` with parameterized `Spec` + encapsulated `raster.Options`/`EncodeJPEG` (jpeg/png/gif/bmp/tiff/webp → JPEG; default thumb ≤256px; transform hook); content-addressed `files`/`objects/`; idempotent; skip other MIME; no research audit; fixture tests. |
 | **Context** | Source doc §8. Skip non-image MIME types cleanly. |
 
 ---
