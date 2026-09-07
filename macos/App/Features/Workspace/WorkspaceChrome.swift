@@ -31,17 +31,22 @@ enum WorkspaceChrome {
 extension View {
     /// Applies `WorkspaceChrome`'s shared header-row recipe — the fixed
     /// row height, the vertical nudge aligning this row's content with
-    /// `TrafficLights`' stoplights, and the bottom hairline that makes
-    /// the sidebar and content headers read as one continuous row across
-    /// the window (S2-01 Frame 7). `WorkspaceSidebar`'s brand row and
+    /// `TrafficLights`' stoplights, the bottom hairline that makes the
+    /// sidebar and content headers read as one continuous row across the
+    /// window (S2-01 Frame 7), and a full-row window-drag surface so the
+    /// hit box matches that taller visual header under
+    /// `.hiddenTitleBar`. `WorkspaceSidebar`'s brand row and
     /// `WorkspaceContent`'s header both use this instead of re-chaining
-    /// the same three modifiers, so a future header row can't apply them
-    /// out of order or forget one.
+    /// the same modifiers, so a future header row can't apply them out
+    /// of order or forget one.
     func pvWorkspaceHeaderRow() -> some View {
         offset(y: WorkspaceChrome.verticalNudge)
             .frame(height: WorkspaceChrome.headerHeight)
             .overlay(alignment: .bottom) {
                 Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
             }
+            // Outermost so the full visual height — including the
+            // hairline — initiates a window move (see `WindowDragRegion`).
+            .pvWindowDragRegion()
     }
 }

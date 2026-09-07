@@ -25,6 +25,7 @@
 		6F7945720B05D7777BFA79A2 /* WorkspaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03B00F6F0D021AFCDAD2DEB /* WorkspaceModel.swift */; };
 		826574F8CA8D24BE551A88BF /* WorkspaceModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 164584B2DB70D89A55C4178F /* WorkspaceModelTests.swift */; };
 		840A56FF5DC13597C1DFDDF9 /* TrafficLights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C0991FB99984CAEB385DA4 /* TrafficLights.swift */; };
+		B2C3D4E5F60718293A4B5C6D /* WindowDragRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */; };
 		854A784AE802C0EF7A484971 /* PVToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC0B0A893C7248A08303738 /* PVToast.swift */; };
 		8B20E11A26E9E10EF915519C /* TrafficLightsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B567080CA23230E18488F894 /* TrafficLightsTests.swift */; };
 		A790E2993DB9D42163403BA3 /* PreviewFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10C63066463B02E05808F78 /* PreviewFixtures.swift */; };
@@ -102,6 +103,7 @@
 		68425DFE8D1974D7A4AC5BF8 /* PVIconButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVIconButton.swift; sourceTree = "<group>"; };
 		6AAC04817D6F4CCC9CDC9B17 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; path = README.md; sourceTree = "<group>"; };
 		85C0991FB99984CAEB385DA4 /* TrafficLights.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrafficLights.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WindowDragRegion.swift; sourceTree = "<group>"; };
 		8FC0B0A893C7248A08303738 /* PVToast.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVToast.swift; sourceTree = "<group>"; };
 		9A63753F8D90991976A28F13 /* PVElevation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVElevation.swift; sourceTree = "<group>"; };
 		9BEB8D3B3D1A6C08B3733B13 /* PVSpacing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVSpacing.swift; sourceTree = "<group>"; };
@@ -317,6 +319,7 @@
 				AA0000000000000000000044 /* Generated */,
 				F56B617548A3EF65699270F8 /* SignOutCoordinator.swift */,
 				85C0991FB99984CAEB385DA4 /* TrafficLights.swift */,
+				A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */,
 				F10C63066463B02E05808F78 /* PreviewFixtures.swift */,
 			);
 			path = Platform;
@@ -557,6 +560,7 @@
 				14A19539FB0D86BB050EC437 /* WorkspaceView.swift in Sources */,
 				13208FE0B57739DECCA156C7 /* WorkspaceChrome.swift in Sources */,
 				840A56FF5DC13597C1DFDDF9 /* TrafficLights.swift in Sources */,
+				B2C3D4E5F60718293A4B5C6D /* WindowDragRegion.swift in Sources */,
 				563FA9B6FA344585CE32B2A7 /* PVIconButton.swift in Sources */,
 				E3D046BD80595D1F07691D1F /* PVHoverEffect.swift in Sources */,
 				A790E2993DB9D42163403BA3 /* PreviewFixtures.swift in Sources */,
