@@ -126,7 +126,7 @@ S2-06 PR — date_values schema + helpers (done)
 S2-07 PR — Source vocabulary tables + small seed (done)
 S2-08 PR — sources + source_notes CRUD (+ audit) (done)
 S2-09 PR — files store + ingest (+ audit on File create) (done)
-S2-10 PR — artifacts CRUD + attach/replace File (+ audit)
+S2-10 PR — artifacts CRUD + attach/replace File (+ audit) (done)
 S2-11 PR — source_metadata (+ type field suggestions)
 S2-12 PR — file_derivatives + thumbnail pipeline (minimal)
 S2-13 PR — FFI Source use-cases
@@ -269,7 +269,7 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-08, S2-09 |
-| **Deliverables** | Migration: `artifacts`. Mint `ART-…`. Create fileless Artifact; attach File; replace `file_id` (new File, old File retained). List by `source_id`. Audited. Tests for ON DELETE CASCADE from Source and null `file_id`. |
+| **Deliverables** | Done. Migration `000008` + `artifacts` helpers; mint `ART-…`; fileless create; attach/replace `file_id` (old File retained); list by `source_id`; audited `create_artifact` / `update_artifact`; tests for null `file_id` and Source `ON DELETE CASCADE`. |
 | **Context** | Source doc §§7, 9, 11. Primary File deletion still unsupported. |
 
 ---
