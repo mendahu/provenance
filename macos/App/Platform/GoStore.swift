@@ -441,7 +441,7 @@ struct GoStore: GenealogyStore {
             field: Self.mapMetadataField(e.field),
             valueText: e.valueText,
             dateValueID: e.dateValueID,
-            hasValue: e.hasValue,
+            hasValue: e.hasValue_p,
             suggested: e.suggested,
             sortOrder: e.sortOrder
         )
