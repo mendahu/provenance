@@ -27,8 +27,10 @@ struct ProvenenciaApp: App {
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(after: .appInfo) {
-                Button(L10n.Onboarding.signOut) {
+                Button {
                     signOutCoordinator.signOut()
+                } label: {
+                    Text(L10n.Onboarding.signOut)
                 }
                 .disabled(!signOutCoordinator.isAvailable)
             }
