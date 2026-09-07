@@ -127,7 +127,7 @@ S2-07 PR — Source vocabulary tables + small seed (done)
 S2-08 PR — sources + source_notes CRUD (+ audit) (done)
 S2-09 PR — files store + ingest (+ audit on File create) (done)
 S2-10 PR — artifacts CRUD + attach/replace File (+ audit) (done)
-S2-11 PR — source_metadata (+ type field suggestions)
+S2-11 PR — source_metadata (+ type field suggestions) (done)
 S2-12 PR — file_derivatives + thumbnail pipeline (minimal)
 S2-13 PR — FFI Source use-cases
 S2-14 PR — Swift app workspace layout (sidebar shell)   ◄── discrete chrome step
@@ -280,7 +280,7 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-06, S2-07, S2-08 |
-| **Deliverables** | Migration: `source_metadata`. Set/clear metadata values; validate `data_type` vs `date_value_id` / `value_text` in Go. Helpers to load suggested fields for a Source’s type plus any extra values present. Audited (`update_source_metadata` or per-row changes under one revision). Tests. |
+| **Deliverables** | Done. Migration `000009` + `sourcemetadata` helpers; set/clear with `data_type` validation; date fidelity (`value_text` + `date_value_id`); `ListWorkspace` merges type suggestions with extra values; audited `update_source_metadata`. |
 | **Context** | Source doc §5.3. Date fidelity: keep `value_text` even when structured date exists. |
 
 ---
