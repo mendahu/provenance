@@ -35,6 +35,7 @@ const (
 	CodeSourceVocabInvalid          = "sourcevocab.invalid"
 	CodeSourcesInvalid              = "sources.invalid"
 	CodeFilesInvalid                = "files.invalid"
+	CodeArtifactsInvalid            = "artifacts.invalid"
 	CodeIngestInvalid               = "ingest.invalid"
 	CodeIngestPermissionDenied      = "ingest.permission_denied"
 	CodeIdentityNotFound            = "identity.not_found"
