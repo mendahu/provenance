@@ -128,7 +128,7 @@ S2-08 PR — sources + source_notes CRUD (+ audit) (done)
 S2-09 PR — files store + ingest (+ audit on File create) (done)
 S2-10 PR — artifacts CRUD + attach/replace File (+ audit) (done)
 S2-11 PR — source_metadata (+ type field suggestions) (done)
-S2-12 PR — file_derivatives + thumbnail pipeline (minimal)
+S2-12 PR — file_derivatives + thumbnail pipeline (minimal) (done)
 S2-13 PR — FFI Source use-cases
 S2-14 PR — Swift app workspace layout (sidebar shell)   ◄── discrete chrome step
 S2-15 PR — Swift Source catalog (list + navigate into detail)
@@ -291,9 +291,8 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-09 (ideally after S2-03 confirms preview needs) |
-| **Deliverables** | Migration: `file_derivatives`. Generate a small image thumbnail into `derivatives/` (or objects — follow Source doc: derivative Files still live in the `files` store; path convention as documented). Idempotent by `(source_file_id, derivative_type)`. **No** research audit for generation. Tests with a tiny fixture image. |
+| **Deliverables** | Done. Migration `000010` + `filederivatives` helpers; `derivatives.EnsureThumbnail` + encapsulated `raster` (jpeg/png/gif/bmp/tiff/webp → JPEG ≤256px); content-addressed `files`/`objects/`; idempotent; skip other MIME; no research audit; fixture tests. |
 | **Context** | Source doc §8. Skip non-image MIME types cleanly. |
-| **Notes** | If Design S2-03 accepts placeholders-only for v0, this PR may shrink to schema + stub “ensure thumbnail” no-op — say so in the PR rather than inventing preview UI debt. |
 
 ---
 
