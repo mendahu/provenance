@@ -20,6 +20,7 @@ const (
 	sqlLookupChecksum = `SELECT id, checksum_sha256, COALESCE(original_filename, ''), COALESCE(media_type, ''), byte_size
 		FROM files WHERE checksum_sha256 = ?`
 	sqlUpdateFilename = `UPDATE files SET original_filename = ? WHERE id = ?`
+	sqlCount          = `SELECT COUNT(*) FROM files`
 )
 
 // File is one files row. Storage path is derived from ChecksumSHA256, not stored.
@@ -109,6 +110,20 @@ func UpdateOriginalFilename(tx *sql.Tx, id []byte, name string) error {
 		return sql.ErrNoRows
 	}
 	return nil
+}
+
+// Count returns the total number of files rows — content-addressed, so
+// this is distinct files, not the (larger, per-source) artifact count.
+func Count(c *database.Catalog) (int, error) {
+	db, err := c.DB()
+	if err != nil {
+		return 0, err
+	}
+	var n int
+	if err := db.QueryRow(sqlCount).Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 // NewID mints a UUIDv7 id for a new File row.

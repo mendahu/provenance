@@ -29,13 +29,23 @@ final class OnboardingModel {
     var session: InstallIdentity?
     /// Catalog project metadata for the active or selected project.
     var project: ProjectInfo?
+    /// Directory of the truly *active* (opened) project — `nil` until
+    /// `.home`. Distinct from `project`/`selectedProject`, which also
+    /// track the open-picker's in-progress preview before a project is
+    /// actually adopted. Content mounted in the workspace (starting with
+    /// `WorkspaceModel`'s entity counts) needs this to make its own
+    /// `GenealogyStore` calls scoped to the right project.
+    var activeProjectDir: String?
     var mode: Mode = .create
     var availableProjects: [URL] = []
     var selectedProject: URL?
     var catalogUsers: [InstallIdentity] = []
     var selectedContributorID: String = newContributorID
 
-    private let store: any GenealogyStore
+    /// Not `private`: workspace-mounted content (`WorkspaceView`) needs
+    /// its own `GenealogyStore` calls once past onboarding — `activeProjectDir`
+    /// pairs with this to scope them to the right project.
+    let store: any GenealogyStore
     private let folders: OnboardingFolders?
 
     init(store: any GenealogyStore, folders: OnboardingFolders? = nil) {
@@ -80,6 +90,7 @@ final class OnboardingModel {
         selectedProject = nil
         catalogUsers = []
         project = nil
+        activeProjectDir = nil
         do {
             let identityDir = try identityDir()
             if let id = try await store.installIdentity(identityDir: identityDir.path) {
@@ -88,6 +99,7 @@ final class OnboardingModel {
                 if let active = try await store.activeProject(identityDir: identityDir.path) {
                     if InstallPaths.isProjectDirectory(active) {
                         await loadProjectInfo(path: active)
+                        activeProjectDir = active
                         phase = .home
                         return
                     }
@@ -182,6 +194,7 @@ final class OnboardingModel {
             familyName = ""
             session = nil
             project = nil
+            activeProjectDir = nil
             selectedProject = nil
             catalogUsers = []
             selectedContributorID = Self.newContributorID
@@ -267,6 +280,7 @@ final class OnboardingModel {
     private func applyOpened(_ result: OnboardingResult) {
         session = InstallIdentity(userID: result.userID, displayName: result.displayName, ref: result.ref)
         project = normalizedProject(result.project, path: result.projectDir)
+        activeProjectDir = result.projectDir
         displayName = result.displayName
         phase = .home
     }

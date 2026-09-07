@@ -17,6 +17,10 @@ struct PVSidebarNavItem: Identifiable, Equatable {
     let label: LocalizedStringResource
     let icon: PVSymbol
     let accessibilityIdentifier: String
+    /// Trailing entity count (e.g. how many Sources exist). `nil` hides
+    /// the badge entirely — used for a destination with no backing count
+    /// query yet, not to mean zero.
+    var count: Int? = nil
 
     static func == (lhs: PVSidebarNavItem, rhs: PVSidebarNavItem) -> Bool {
         lhs.id == rhs.id
@@ -100,6 +104,11 @@ private struct PVSidebarNavButton: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Spacer(minLength: 0)
+                    if let count = item.count {
+                        Text("\(count)")
+                            .font(PVFont.mono(size: PVTypeScale.micro))
+                            .foregroundStyle(PVColor.textFaint)
+                    }
                 }
             }
         }
@@ -108,6 +117,7 @@ private struct PVSidebarNavButton: View {
         .accessibilityLabel(Text(item.label))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier(item.accessibilityIdentifier)
+        .pvAccessibilityCount(collapsed ? nil : item.count)
     }
 }
 
@@ -148,6 +158,18 @@ private extension View {
     func pvHelp(_ text: LocalizedStringResource, when condition: Bool) -> some View {
         if condition {
             help(Text(text))
+        } else {
+            self
+        }
+    }
+
+    /// Exposes the trailing count badge to VoiceOver as the row's
+    /// accessibility value, not just visual decoration. `nil` (no count,
+    /// or collapsed — the badge isn't shown then either) attaches nothing.
+    @ViewBuilder
+    func pvAccessibilityCount(_ count: Int?) -> some View {
+        if let count {
+            accessibilityValue(Text("\(count)"))
         } else {
             self
         }

@@ -36,7 +36,8 @@ struct WorkspaceSidebar: View {
                 id: section.rawValue,
                 label: section.label,
                 icon: section.icon,
-                accessibilityIdentifier: "workspace.nav.\(section.rawValue)"
+                accessibilityIdentifier: "workspace.nav.\(section.rawValue)",
+                count: workspace.counts[section]
             )
         }
     }
