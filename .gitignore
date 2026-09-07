@@ -17,3 +17,5 @@ playground.xcworkspace
 
 macos/Core/libprovenencia.h
 macos/Core/libprovenencia.dylib
+
+*.profraw
