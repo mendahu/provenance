@@ -4,7 +4,8 @@
 **Spike:** Provenencia Spike 2 (Source layer validation)  
 **Implements later as:** PR S2-14  
 **Depends on:** nothing (start here)  
-**Blocks:** Source list/detail boards (S2-02+) should assume this chrome exists
+**Blocks:** Feature destination boards (S2-02+) should assume this chrome exists  
+**Note:** Implementation order after chrome shifted — **Source fields** is now S2-02 / S2-15; catalog and types briefs are being reconfigured. Requirements below remain the chrome contract.
 
 Paste this entire document into Claude Design as the requirements for one board/flow.
 

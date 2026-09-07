@@ -15,7 +15,7 @@ Authoritative models:
 - [`application-stack.md`](../../application-stack.md) (FFI granularity, `objects/` ingest)
 - [`macos-client-patterns.md`](../../macos-client-patterns.md)
 
-Claude Design handoffs for **S2-01…S2-04** live in [`design/`](design/) — self-contained requirement briefs, not the task list below.
+Claude Design handoffs live in [`design/`](design/) — self-contained requirement briefs, not the task list below. Design sequence: **S2-02** Source fields → **S2-03** Source types → **S2-04** Sources catalog → **S2-20** Files list (**S2-01** chrome done).
 
 Spike 1 left an explicit gate: **the first researched mutation must write audit**, not decorative empty tables without a write path. This spike owns that gate.
 
@@ -42,7 +42,8 @@ Onboarding (Spike 1) → signed in
        │     └── Artifacts
        │           ├── fileless placeholder
        │           └── ingest File → objects/{hh}/{hh}/{sha256} → Artifact.file_id
-       ├── (stub / disabled) later areas — Interpretation, etc.
+       ├── Source types / Source fields (vocabulary admin)
+       ├── Files (project file list → jump to Source)
        └── Project / session (sign out, project label, contributor)
 ```
 
@@ -50,13 +51,13 @@ Onboarding (Spike 1) → signed in
 
 ## In scope
 
-- **App workspace chrome**: side navigation + content host. Spike 2 destinations: **Sources**, **Source types**, **Source fields** (no “coming soon” stubs for later layers).
+- **App workspace chrome**: side navigation + content host. Spike 2 destinations: **Sources**, **Source types**, **Source fields**, **Files** (no “coming soon” stubs for later layers).
 - Audit write path (`audit_transactions` / `audit_changes`) used by every Source-layer mutation.
 - Shared `date_values` table (schema + minimal Go helpers) so date-typed Source metadata can land without a second migration later.
 - Full Source-layer table set from the Source doc: `source_types`, `sources`, `source_notes`, `source_metadata_fields`, `source_type_metadata_fields`, `source_metadata`, `artifacts`, `files`, `file_derivatives`.
 - Small **seed** of types/fields (not the entire [`seeded-vocabulary.md`](../../seeded-vocabulary.md) horizon list). Prefer photograph + book + one vital/census-shaped type unless design picks a different dogfood set.
 - Go domain packages for CRUD + ingest; FFI use-cases (coarse verbs); SwiftUI Source catalog UI inside the workspace, consuming `GenealogyStore`.
-- Claude Design boards for workspace chrome, Source catalog IA, create/edit flows, artifact + ingest, and vocabulary extension.
+- Claude Design boards for workspace chrome, Source fields, Source types, Sources catalog (Source → Artifact → File), and the Files list.
 - Refs: mint `SRC-…` / `ART-…` via `core/ref` on insert ([`catalog-refs.md`](../../catalog-refs.md)).
 
 ## Out of scope (later spikes)
@@ -89,7 +90,7 @@ Onboarding (Spike 1) → signed in
 Jake can, on his MacBook, without a server:
 
 1. Finish Spike 1 onboarding and land in an **app workspace** with a sidebar (not the old single “you’re signed in” home as the permanent shell).
-2. Use the sidebar to open Sources, Source types, and Source fields.
+2. Use the sidebar to open Sources, Source types, Source fields, and Files.
 3. Create a Source of a seeded type, edit title/description, add a note, set text (and at least one date) metadata fields suggested for that type.
 4. Add a custom Source type and/or metadata field (from their nav destinations) and use them on a Source.
 5. Add a fileless Artifact and an Artifact with an ingested image/PDF; confirm `files` row + bytes under `objects/`.
@@ -115,10 +116,11 @@ IDs stay stable even if order of *starting* work shifts; **Depends on** is the m
 ## Dependency sketch
 
 ```text
-S2-01 Design — App workspace chrome (sidebar + content host)
-S2-02 Design — Source catalog IA + create/edit
-S2-03 Design — Artifact + ingest + fileless
-S2-04 Design — Types / metadata extension
+S2-01 Design — App workspace chrome (sidebar + content host) (done)
+S2-02 Design — Source fields (metadata field vocabulary)
+S2-03 Design — Source types (types + suggested field associations)
+S2-04 Design — Sources catalog (list → Source → Artifact → File)
+S2-20 Design — Files list (project file browser)
         │
         ▼
 S2-05 PR — Audit tables + write helper (done)   ◄── gate for research mutations
@@ -130,15 +132,16 @@ S2-10 PR — artifacts CRUD + attach/replace File (+ audit) (done)
 S2-11 PR — source_metadata (+ type field suggestions) (done)
 S2-12 PR — file_derivatives + thumbnail pipeline (minimal) (done)
 S2-13 PR — FFI Source use-cases (done)
-S2-14 PR — Swift app workspace layout (sidebar shell)   ◄── discrete chrome step
-S2-15 PR — Swift Source catalog (list + navigate into detail)
-S2-16 PR — Swift create/edit Source + notes + metadata
-S2-17 PR — Swift Artifacts + file picker ingest
-S2-18 PR — Swift extend types / fields
+S2-14 PR — Swift app workspace layout (sidebar shell) (done)
+S2-15 PR — Swift Source fields (list + create/edit)
+S2-16 PR — Swift Source types (list + associations)
+S2-17 PR — Swift Sources catalog (list + Source detail)
+S2-18 PR — Swift Artifacts + file ingest + list thumbnails
+S2-21 PR — Swift Files list (+ Source link)
 S2-19 PR — Dogfood polish (copy, empty states, errors, tests)
 ```
 
-Design **S2-01…04** can start immediately; **S2-01** should land a reviewable board before **S2-14**. Core PRs **S2-05…07** can run in parallel with design. Do not start feature UI PRs (**S2-15+**) until the relevant Design step has a reviewable board (or an explicit “design enough to code” note). **S2-14** may ship with placeholder destination panes before FFI is ready.
+Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **S2-03** → **S2-04** → **S2-20**. Feature UI: **S2-15** → **S2-16** → **S2-17** → **S2-18** → **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
 
 ---
 
@@ -152,55 +155,70 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | Design (Claude Design) |
 | **Depends on** | — |
-| **Deliverables** | Board for the post-onboarding **app workspace**: left (or leading) sidebar / nav rail with destinations **Sources**, **Source types**, and **Source fields**; main content host; how project label + contributor identity live in the chrome; Sign Out in the app menu only; label expand/collapse toggle; selected vs idle nav states; short-window sidebar scroll. Transition from Spike 1 onboarding into this shell. No “coming soon” nav stubs. |
+| **Deliverables** | Done. Board + brief for the post-onboarding **app workspace**: leading sidebar with **Sources**, **Source types**, and **Source fields**; main content host; project label + contributor identity in chrome; Sign Out in the app menu only; label expand/collapse toggle; selected vs idle nav states; short-window sidebar scroll. No “coming soon” nav stubs. |
 | **Context** | [`application-stack.md`](../../application-stack.md) (Mac owns windows/navigation); design system README lists `SidebarNav` as add-on-demand — this board decides whether to port that component or a bespoke onboarding-aligned rail. Preserve Provenencia visual language (tokens already in `macos/App/DesignSystem/`). One clear composition: sidebar + one primary content column, not a multi-panel dashboard. |
-| **Out** | Source list/detail layouts (S2-02); full type/field editors (S2-04); Settings product; future-layer nav stubs. |
+| **Out** | Feature destination layouts (S2-02+); Settings product; future-layer nav stubs. |
 | **Feeds** | S2-14 (and constrains how S2-15+ mount content) |
 
 ---
 
-### S2-02 — Design: Source catalog IA and create/edit
+### S2-02 — Design: Source fields (metadata field vocabulary)
 
-**Claude Design brief:** [`design/S2-02-source-catalog.md`](design/S2-02-source-catalog.md)
+**Claude Design brief:** [`design/S2-02-source-fields.md`](design/S2-02-source-fields.md)
 
 | | |
 | --- | --- |
 | **Kind** | Design (Claude Design) |
-| **Depends on** | S2-01 (content area of the workspace; can parallelize once chrome frames exist) |
-| **Deliverables** | Board for: Sources destination → Source list → Source detail (identity strip with `SRC-…`, type, title, description, notes list, metadata form). Create-Source flow (type picker → essentials → save). Empty states. Lives **inside** the workspace content host from S2-01 — not a separate window chrome. |
-| **Context** | [`source-layer-data-model.md`](../../source-layer-data-model.md) §§3–5; existing onboarding visual language. |
-| **Out** | No Citations/Observations; no credibility grade UI. |
-| **Feeds** | S2-15, S2-16 |
+| **Depends on** | S2-01 (done) — mounts in the **Source fields** destination |
+| **Deliverables** | Board for the **Source fields** destination: searchable list/table of `source_metadata_fields` (label + data type; origin visible in one list, not split lists); detail/edit (label, data type, description; description detail-only); add/create flow with **auto slug key from label** (not user-typed). No delete. Add chrome (modal/sheet vs nested pane + back) is a Design choice. Lives inside the workspace content host — not a separate window chrome. |
+| **Context** | Source doc §5.1; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1.1 (`origin`). Simplest Spike 2 UI; no dependency on Sources catalog or type↔field suggestions. **`provenencia` rows are view-only; `user` rows are editable.** |
+| **Out** | Delete/retire fields; attaching fields to types (S2-03); Source instance metadata values; Source types admin; Citations/credibility. |
+| **Feeds** | S2-15 (and supplies the field pool for S2-03) |
 
 ---
 
-### S2-03 — Design: Artifacts, ingest, fileless evidence
+### S2-03 — Design: Source types (types + suggested field associations)
 
-**Claude Design brief:** [`design/S2-03-artifacts-ingest.md`](design/S2-03-artifacts-ingest.md)
+**Claude Design brief:** [`design/S2-03-source-types.md`](design/S2-03-source-types.md)
 
 | | |
 | --- | --- |
 | **Kind** | Design (Claude Design) |
-| **Depends on** | S2-02 (same Source detail; can parallelize early frames) |
-| **Deliverables** | Artifact list under a Source; add fileless Artifact; “Add file…” ingest; replace primary File; show original filename / media type / size; preview or placeholder for images/PDFs; physical-only copy. Clarify that multiple scans = multiple Artifacts, not one Artifact with many files. |
-| **Context** | Source doc §§6–8, 11 rules 7–18; stack read/write path for Files. Bytes never staged as base64 in UI models. |
-| **Out** | Derivative management UI beyond “show thumbnail if present”; historical File version browser. |
-| **Feeds** | S2-17 (and informs S2-12 thumbnail needs) |
+| **Depends on** | S2-01 (done); S2-02 (Source fields vocabulary — association picker pool) |
+| **Deliverables** | Board for the **Source types** destination: list (label + key; origin visible); detail/expanded view with description + associated metadata fields from `source_type_metadata_fields`; assign associations from existing Source fields; **remove associations** (not delete types); add/create type flow. No delete Source type. **Open Design question:** in-list expand vs nested detail with breadcrumb/back. |
+| **Context** | Source doc §§3, 5.2; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1.1. One complexity step above S2-02 because suggestions join fields. Prefer `provenencia` type rows view-only for label/description; association edit on seeded types OK for dogfood. |
+| **Out** | Delete Source types; field vocabulary CRUD (S2-02); Source instance UI; Artifacts. |
+| **Feeds** | S2-16 |
 
 ---
 
-### S2-04 — Design: Extensible types and metadata fields
+### S2-04 — Design: Sources catalog (list → Source → Artifact → File)
 
-**Claude Design brief:** [`design/S2-04-extensible-vocabulary.md`](design/S2-04-extensible-vocabulary.md)
+**Claude Design brief:** [`design/S2-04-sources-catalog.md`](design/S2-04-sources-catalog.md)
 
 | | |
 | --- | --- |
 | **Kind** | Design (Claude Design) |
-| **Depends on** | S2-02 |
-| **Deliverables** | UX for the **Source types** and **Source fields** destinations: add a project-local Source type; add a metadata field (`text` / `date`); attach suggested fields to a type; pick suggested fields when editing a Source; use a field not suggested for the type. Builtin vs custom affordance (label only — not a privileged subclass). Top-level nav placement is fixed by S2-01. |
-| **Context** | Source doc §§3, 5; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1–2 (seed small). Agree the **dogfood seed set** (proposed default below) and write it on the board. |
-| **Proposed seed (amend in Design)** | Types: `photograph`, `book`, `birth_certificate`. Fields: enough for those three type suggestion lists to feel real (subset of §2.2–2.3, not the full horizon). |
-| **Feeds** | S2-07 seed content, S2-18 |
+| **Depends on** | S2-01 (done); S2-02 / S2-03 (types + fields vocabulary for classification and metadata) |
+| **Deliverables** | Board for the **Sources** destination: list (title, `SRC-…`, type name, thumbnail slot from child data); Source detail (description + Artifacts sublist with `ART-…`, display fallback, thumbnail; notes + metadata placement); Artifact detail (description + **one** primary File + that File’s derivatives); add flows for Source, Artifact, and ingest/replace File. **Open Design question:** expand-in-list vs breadcrumb/push across three levels. |
+| **Context** | Source doc §§4, 6–8. Artifact has **no label column** — use description / filename / ref fallback. Multiple scans = multiple Artifacts. File association already exists (`IngestArtifactFile`); list thumbnails may need FFI ensure/list wiring in S2-18. |
+| **Out** | Delete Sources/Artifacts/Files; Interpretation; vocabulary admin (S2-02/03). |
+| **Feeds** | S2-17, S2-18 |
+
+---
+
+### S2-20 — Design: Files list (project file browser)
+
+**Claude Design brief:** [`design/S2-20-files-list.md`](design/S2-20-files-list.md)
+
+| | |
+| --- | --- |
+| **Kind** | Design (Claude Design) |
+| **Depends on** | S2-01 (done — **Files** placeholder already in shell); S2-04 (Source link target) |
+| **Deliverables** | Board for the **Files** destination: list rows with **thumbnail**, **media type**, **original filename**; **link to associated Source** (via Artifact). No ingest/delete on this board. Prefer not listing derivative-only Files as peer rows. |
+| **Context** | Source doc §§6–8. Association is indirect (`artifacts.file_id` → Source). Sidebar Files destination already exists; only `CountFiles` is wired today. |
+| **Out** | Ingest/replace (S2-04/S2-18); delete; Interpretation. |
+| **Feeds** | S2-21 |
 
 ---
 
@@ -313,55 +331,70 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-01 (design enough); Spike 1 onboarding “signed in” as the entry point to replace |
-| **Deliverables** | Replace the permanent onboarding home as the post-sign-in shell with an **app workspace**: sidebar (or nav rail) + content host. Destinations: **Sources**, **Source types**, **Source fields** (empty panes OK until later PRs); session/project affordances matching S2-01; **Sign Out** via app menu only. Selection state drives which content view is shown. Unit tests for navigation selection if modeled explicitly. L10n for nav labels. Design-system component only if S2-01 chose to port `SidebarNav`; otherwise keep chrome in `Features/Workspace/` (or similar) without inventing a second design language. |
+| **Deliverables** | Done. Post-sign-in **app workspace** with sidebar + content host; destinations **Sources**, **Source types**, **Source fields** (placeholder panes); session/project chrome per S2-01; **Sign Out** via app menu only; selection-driven content; L10n for nav labels; chrome in `Features/Workspace/`. |
 | **Context** | [`macos-client-patterns.md`](../../macos-client-patterns.md); [`application-stack.md`](../../application-stack.md) (navigation is a Mac concern). This step is **chrome only** — no Source CRUD UI. |
-| **Out** | Source list/detail (S2-15+); full type/field editors (S2-18); interpreting other layers. |
-| **Notes** | May merge **before** S2-13 if placeholders do not call new RPCs. Do not bury this inside the Source catalog PR. |
+| **Out** | Feature destination content (S2-15+); interpreting other layers. |
+| **Notes** | Shipped as discrete chrome (not folded into Source catalog). |
 
 ---
 
-### S2-15 — PR: Swift Source catalog (list + navigate into detail)
+### S2-15 — PR: Swift Source fields (list + create/edit)
 
 | | |
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-02 (design enough), S2-13, S2-14 |
-| **Deliverables** | Sources destination content: list rows (title/type/`SRC-…`), empty state, navigate into a Source detail shell (sections stubbed if needed). New `Features/Sources/` model+views mounted in the workspace content host. Unit tests with `FakeStore`. L10n via skill. |
-| **Context** | Mount under S2-14 — do not reintroduce a separate top-level window chrome. |
-| **Out** | Full edit forms (S2-16). |
+| **Deliverables** | **Source fields** destination: searchable list/table (label, data type, origin); detail/edit for user fields (label, data type, description); add/create flow per S2-02 board. No delete. **Auto-generate `key` as a kebab slug of the label** — do not collect key in the UI. Prefer Go as source of truth (e.g. derive in `CreateMetadataField` from label; ignore/omit client-supplied key), with a small shared slug helper if needed (related to onboarding folder slug rules, without the `.provenencia` suffix). If edit needs an `UpdateMetadataField` (or equivalent) FFI beyond today’s create/list, include that thin engine gap in this PR. `Features/` model+views mounted in the existing workspace content host. Unit tests with `FakeStore` (including slug collision / unslugifiable label). L10n via skill. |
+| **Context** | Mount under S2-14 **Source fields** pane — do not reintroduce a separate top-level window chrome. **`provenencia` rows are view-only; `user` rows are editable.** |
+| **Out** | Type↔field suggestions UI; Source catalog; delete/retire. |
 
 ---
 
-### S2-16 — PR: Swift create/edit Source, notes, metadata
+### S2-16 — PR: Swift Source types (list + associations)
 
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-02, S2-15, S2-13 |
-| **Deliverables** | Create Source; edit title/description/type; notes CRUD UI; metadata editor driven by type suggestions + existing values; basic date field UX (structured subset matching S2-06). Wire errors to toast/L10n. Model tests. |
-| **Context** | Match S2-02 board; prefer `Error?` / existing onboarding patterns. |
+| **Depends on** | S2-03 (design enough), S2-15 (fields exist to assign), S2-13, S2-14 |
+| **Deliverables** | **Source types** destination: list (label + key, origin); detail/expanded per S2-03 (description + suggested fields); assign/remove `source_type_metadata_fields` associations from the Source fields pool; add/create type; no delete type. Unit tests with `FakeStore`. L10n via skill. Include thin FFI for list suggestions + attach/detach (and update type if needed) — Go already has `sourcevocab.EnsureSuggestion` / `DeleteSuggestion` / `ListSuggestions`; wire them if not yet exposed. |
+| **Context** | Mount under S2-14 **Source types** pane. Removing a suggestion must not delete field vocabulary or Source metadata values. |
+| **Out** | Source catalog UI; delete types; field definition CRUD (S2-15). |
 
 ---
 
-### S2-17 — PR: Swift Artifacts + file ingest
+### S2-17 — PR: Swift Sources catalog (list + Source detail)
 
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-03, S2-15, S2-13 (S2-12 if thumbnails shown) |
-| **Deliverables** | Artifact list; add fileless; NSOpenPanel → pass path to ingest RPC; show filename/MIME/size; display thumbnail or placeholder; replace file. Entitlements/docs folder usage already present — confirm any new file-access copy. Tests for model state transitions with FakeStore. |
-| **Context** | Stack: Swift must not write `objects/` itself. |
+| **Depends on** | S2-04 (design enough), S2-16 (types available to pick), S2-13, S2-14 |
+| **Deliverables** | **Sources** destination: list rows (title, `SRC-…`, type name; thumbnail placeholder OK if S2-18 owns real thumbs); navigate into Source detail (description; Artifacts list with `ART-…` + display fallback; notes + metadata editor driven by type suggestions). **Add Source** flow. Unit tests with `FakeStore`. L10n via skill. |
+| **Context** | Mount under S2-14 **Sources** pane. Prefer matching S2-04 navigation pattern. Artifact file ingest can stub “Add file” until S2-18 if needed — prefer wiring create-fileless Artifact here. |
+| **Out** | Full ingest UI; derivative/thumbnail ensure on lists (S2-18). |
 
 ---
 
-### S2-18 — PR: Swift extend types and metadata fields
+### S2-18 — PR: Swift Artifacts + file ingest + list thumbnails
 
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-04, S2-16, S2-13 |
-| **Deliverables** | UI to create custom Source type; create metadata field; attach field to type (sort order); use custom type/field in create/edit. Builtin rows not deletable (or delete refused with clear error). Mounted in the **Source types** / **Source fields** destinations from S2-01. |
-| **Context** | S2-04 board; vocabulary principles. |
+| **Depends on** | S2-04, S2-17, S2-13 (S2-12 done for generation) |
+| **Deliverables** | Artifact detail under a Source: description; primary File identity; derivatives list; **Add / replace file** via NSOpenPanel → `IngestArtifactFile` (path only). Surface thumbnails on Sources/Artifacts list rows (ensure or fetch derivative `rel_path`; Swift reads bytes). Include any thin FFI gap to list/ensure thumbnails for list cells. Tests for model state transitions with `FakeStore`. Confirm file-access usage copy/entitlements. |
+| **Context** | Association mechanism **already exists** (`IngestArtifactFile` / `CreateArtifact`). Do not invent multi-primary-file attach. Stack: Swift must not write `objects/` itself. |
+| **Out** | Vocabulary admin; delete primary Files; project-wide Files browser (S2-21). |
+
+---
+
+### S2-21 — PR: Swift Files list (+ Source link)
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-20 (design enough), S2-17 (Sources navigation target), S2-18 (thumbnail wiring preferred), S2-13, S2-14 |
+| **Deliverables** | **Files** destination: list thumbnail, media type, original filename; Source link navigates into Sources detail. Add `ListFiles` (or equivalent) FFI joining current Artifact→Source when present; exclude derivative-only rows from the peer list. Unit tests with `FakeStore`. L10n via skill. |
+| **Context** | Mount under existing S2-14 **Files** pane. Share thumbnail ensure/list helpers with S2-18 where practical. |
+| **Out** | Ingest UI; File delete/GC. |
 
 ---
 
@@ -370,7 +403,7 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-14, S2-16, S2-17, S2-18 |
+| **Depends on** | S2-14, S2-15, S2-16, S2-17, S2-18, S2-21 |
 | **Deliverables** | Empty/error copy pass; accessibility identifiers for workspace nav + Source flows; Go+Swift test gaps closed for happy paths and one failure each (duplicate type key, ingest missing file, audit present after create). Update [`deployment-plan/README.md`](../README.md) when archiving this spike. Optional: short “how to dogfood Source catalog” note in README or spike retro. |
 | **Out** | Product SemVer bump only if cutting a release ([`versioning.md`](../../versioning.md)). |
 
@@ -390,10 +423,11 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | S2-12 | Generate disposable File thumbnails |
 | S2-13 | Expose Source catalog use-cases over FFI |
 | S2-14 | Replace post-onboarding home with a sidebar workspace shell |
-| S2-15 | Add a Source catalog inside the app workspace |
-| S2-16 | Let researchers create and describe Sources in the UI |
-| S2-17 | Let researchers attach and ingest Artifact files |
-| S2-18 | Let researchers extend Source types and metadata fields |
+| S2-15 | Let researchers browse and define Source metadata fields |
+| S2-16 | Let researchers define Source types and suggested fields |
+| S2-17 | Add a Source catalog inside the app workspace |
+| S2-18 | Let researchers attach Artifacts and ingest Files with thumbnails |
+| S2-21 | Browse project Files and jump to their Source |
 | S2-19 | Harden the Source catalog for first dogfood |
 
 ---
@@ -402,11 +436,11 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 
 | Track | Steps |
 | --- | --- |
-| **Design (Claude Design)** | S2-01 → S2-02 → S2-03 / S2-04 (overlap OK after chrome frames) |
-| **Core schema / Go** | S2-05, S2-06 in parallel; then S2-07 → S2-08; S2-09 parallel to S2-08 after S2-05; S2-10 after both; S2-11 after S2-06/07/08; S2-12 after S2-09 |
-| **FFI + Mac** | S2-13 after domain; **S2-14 workspace chrome** (can precede FFI if placeholders); S2-15…18 follow Design + FFI + workspace |
+| **Design (Claude Design)** | S2-01 (done) → S2-02 (fields) → S2-03 (types) → S2-04 (Sources) → S2-20 (Files) |
+| **Core schema / Go** | S2-05…S2-13 (done) |
+| **FFI + Mac** | S2-14 (done) → S2-15 → S2-16 → S2-17 → S2-18 → S2-21 → S2-19 |
 
-Prefer **many small PRs** over combining schema+UI. Do not fold the workspace shell into the first Source list PR. Do not put ingest into the first vocabulary migration “while we’re there.”
+Prefer **many small PRs**. Vocabulary admin before Sources catalog. Split catalog UI: Source list/detail (S2-17), Artifact ingest + thumbnails (S2-18), then project Files browser (S2-21). Do not fold the workspace shell into feature destination PRs.
 
 ---
 
@@ -425,7 +459,7 @@ Prefer **many small PRs** over combining schema+UI. Do not fold the workspace sh
 
 Likely next spikes (not scheduled here):
 
-1. Fill sidebar destinations beyond Sources / types / fields (Interpretation entry, Settings) when those features exist.
+1. Fill sidebar destinations beyond Sources / types / fields / Files (Interpretation entry, Settings) when those features exist.
 2. Audit history UI / “what changed” for a Source.
 3. Citation → Observation → Node (Interpretation) on top of Artifacts.
 4. Project open/create UX polish beyond Spike 1 onboarding.
