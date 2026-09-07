@@ -118,32 +118,24 @@ private struct PVButtonBody: View {
     let variant: PVButtonVariant
     let size: PVControlSize
 
-    @State private var isHovering = false
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         let palette = PVButtonPalette.palette(for: variant)
-        let showHover = isHovering && isEnabled
 
-        configuration.label
-            .font(size.buttonFont)
-            .foregroundStyle(palette.foreground)
-            .padding(.horizontal, size.horizontalPadding)
-            .frame(height: size.height)
-            .background(
-                RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                    .fill(showHover ? (palette.hoverBackground ?? palette.background) : palette.background)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                    .stroke(showHover ? (palette.hoverBorder ?? palette.border) : palette.border, lineWidth: 1)
-            )
-            .opacity(isEnabled ? 1 : 0.45)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? PVMotion.pressScale : 1)
-            .pvAnimation(PVMotion.fastStandard, value: isHovering)
-            .pvAnimation(PVMotion.instantStandard, value: configuration.isPressed)
-            .onHover { isHovering = $0 }
+        PVHoverEffect(isPressed: configuration.isPressed, hoverAnimation: PVMotion.fastStandard) { showHover in
+            configuration.label
+                .font(size.buttonFont)
+                .foregroundStyle(palette.foreground)
+                .padding(.horizontal, size.horizontalPadding)
+                .frame(height: size.height)
+                .background(
+                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                        .fill(showHover ? (palette.hoverBackground ?? palette.background) : palette.background)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                        .stroke(showHover ? (palette.hoverBorder ?? palette.border) : palette.border, lineWidth: 1)
+                )
+        }
     }
 }
 

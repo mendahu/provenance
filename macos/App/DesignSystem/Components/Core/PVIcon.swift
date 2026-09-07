@@ -11,6 +11,11 @@ enum PVSymbol: String {
     case warning = "exclamationmark.triangle.fill"
     case danger = "exclamationmark.octagon.fill"
     case dismiss = "xmark"
+    case library = "books.vertical"
+    case tag = "tag"
+    case list = "list.bullet"
+    case account = "person.crop.circle"
+    case sidebarToggle = "sidebar.left"
 }
 
 /// Renders a design-system icon via SF Symbols.

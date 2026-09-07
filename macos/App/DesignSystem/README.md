@@ -88,6 +88,8 @@ red `Text`):
 | Select | `Components/Forms/PVSelect.swift` |
 | Toast | `Components/Feedback/PVToast.swift` |
 | LogoMark | `Components/Core/PVLogoMark.swift` |
+| SidebarNav | `Components/Navigation/PVSidebarNav.swift` (added for the S2-01 workspace chrome; ports that board's revised `collapsed`-capable `SidebarNav.jsx`) |
+| IconButton | `Components/Core/PVIconButton.swift` (added for the workspace sidebar's collapse toggle, which needed real hover feedback) |
 
 The other 17 design-system components have **no files yet** — add them on
 demand, following the pattern above, when a screen needs one:
@@ -96,7 +98,6 @@ demand, following the pattern above, when a screen needs one:
 |---|---|---|
 | Badge | Core | Small status/label pill |
 | Card | Core | Bordered content container with optional header/footer |
-| IconButton | Core | Icon-only button (toolbar actions) |
 | Tag | Core | Removable/interactive pill with a color dot |
 | Tooltip | Core | Hover label |
 | Dialog | Feedback | Modal dialog |
@@ -105,7 +106,6 @@ demand, following the pattern above, when a screen needs one:
 | Radio | Forms | Radio control |
 | Switch | Forms | Toggle switch |
 | Breadcrumbs | Navigation | Path trail |
-| SidebarNav | Navigation | Sidebar navigation rail |
 | Tabs | Navigation | Tab strip |
 | EvidenceBadge | Research | The 5-grade confidence marker (proven/probable/possible/disputed/undocumented) |
 | FactRow | Research | One asserted fact: type glyph, date, value, place, grade, conflict note |

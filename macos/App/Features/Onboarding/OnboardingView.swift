@@ -29,7 +29,7 @@ struct OnboardingView: View {
             case .identify:
                 OnboardingIdentifyView(model: model)
             case .home:
-                OnboardingHomeView(model: model)
+                WorkspaceView(model: model)
             }
         }
         .frame(minWidth: PVSpacing.widthWindowMin, minHeight: 460)
@@ -70,20 +70,23 @@ struct OnboardingView: View {
 #if DEBUG
 #Preview("Choose file") {
     OnboardingView(store: FakeStore(), folders: .previewEmpty())
+        .environment(SignOutCoordinator())
 }
 
 #Preview("Identity, no active") {
     OnboardingView(
-        store: FakeStore(identity: InstallIdentity(userID: "1", displayName: "Jane Smith", ref: "USR-A1B2C")),
+        store: FakeStore(identity: PreviewFixture.identity),
         folders: .previewEmpty()
     )
+    .environment(SignOutCoordinator())
 }
 
 #Preview("Open picker") {
     OnboardingView(
-        store: FakeStore(identity: InstallIdentity(userID: "1", displayName: "Jane Smith", ref: "USR-A1B2C")),
+        store: FakeStore(identity: PreviewFixture.identity),
         folders: .previewWithProject()
     )
+    .environment(SignOutCoordinator())
 }
 
 #Preview("Returning") {
@@ -91,10 +94,11 @@ struct OnboardingView: View {
     let project = folders.documentsDirectory.appendingPathComponent("Smith Family.provenencia")
     return OnboardingView(
         store: FakeStore(
-            identity: InstallIdentity(userID: "1", displayName: "Jane Smith", ref: "USR-A1B2C"),
+            identity: PreviewFixture.identity,
             activeProjectDir: project.path
         ),
         folders: folders
     )
+    .environment(SignOutCoordinator())
 }
 #endif
