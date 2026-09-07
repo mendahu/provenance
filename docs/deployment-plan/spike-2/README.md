@@ -129,7 +129,7 @@ S2-09 PR — files store + ingest (+ audit on File create) (done)
 S2-10 PR — artifacts CRUD + attach/replace File (+ audit) (done)
 S2-11 PR — source_metadata (+ type field suggestions) (done)
 S2-12 PR — file_derivatives + thumbnail pipeline (minimal) (done)
-S2-13 PR — FFI Source use-cases
+S2-13 PR — FFI Source use-cases (done)
 S2-14 PR — Swift app workspace layout (sidebar shell)   ◄── discrete chrome step
 S2-15 PR — Swift Source catalog (list + navigate into detail)
 S2-16 PR — Swift create/edit Source + notes + metadata
@@ -302,7 +302,7 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-08…S2-11 (S2-12 optional) |
-| **Deliverables** | Proto methods + handlers for coarse ops, e.g. `ListSources`, `GetSourceWorkspace`, `CreateSource`, `UpdateSource`, `AddSourceNote`, `SetSourceMetadata`, `CreateArtifact`, `IngestArtifactFile` (path in request), `ListSourceTypes` / `CreateSourceType` / `CreateMetadataField` as needed by UI. Map `apperr` codes; add L10n cases for new codes. Handler tests via `runRPC`. **No** file bytes in protobuf. |
+| **Deliverables** | Done. Proto + handlers for Source list/workspace/CRUD, notes, metadata, artifacts, ingest, types/fields; GenealogyStore/FakeStore/GoStore; L10n for new apperr codes; runRPC tests. |
 | **Context** | Skills: [`add-ffi-handler`](../../../.cursor/skills/add-ffi-handler/SKILL.md); stack § FFI granularity. Extend `GenealogyStore` + `FakeStore` in the same PR or with S2-15 — prefer same PR if FakeStore otherwise blocks Swift tests. |
 
 ---

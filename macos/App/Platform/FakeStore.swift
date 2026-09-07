@@ -7,6 +7,12 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var activeProjectDir: String?
     var catalogUsers: [InstallIdentity]
     var projectInfos: [String: ProjectInfo] = [:]
+    var sourcesByProject: [String: [CatalogSource]] = [:]
+    var notesBySource: [String: [CatalogSourceNote]] = [:]
+    var artifactsBySource: [String: [CatalogArtifact]] = [:]
+    var sourceTypesByProject: [String: [CatalogSourceType]] = [:]
+    var fieldsByProject: [String: [CatalogMetadataField]] = [:]
+    var metadataBySource: [String: [CatalogMetadataEntry]] = [:]
     var lastResult = OnboardingResult(
         projectDir: "/tmp/robins-family.provenencia",
         userID: "00000000-0000-7000-8000-000000000001",
@@ -161,5 +167,199 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
             updatedByRef: ""
         )
     }
+
+    func listSources(projectDir: String) async throws -> [CatalogSource] {
+        sourcesByProject[projectDir] ?? []
+    }
+
+    func getSourceWorkspace(projectDir: String, sourceID: String) async throws -> CatalogSourceWorkspace {
+        let source = (sourcesByProject[projectDir] ?? []).first { $0.id == sourceID }
+            ?? CatalogSource(id: sourceID, ref: "SRC-XXXXX", sourceTypeID: "", title: "", description: "")
+        return CatalogSourceWorkspace(
+            source: source,
+            notes: notesBySource[sourceID] ?? [],
+            metadata: metadataBySource[sourceID] ?? [],
+            artifacts: artifactsBySource[sourceID] ?? []
+        )
+    }
+
+    func createSource(
+        projectDir: String,
+        userID _: String,
+        sourceTypeID: String,
+        title: String,
+        description: String
+    ) async throws -> CatalogSource {
+        let source = CatalogSource(
+            id: UUID().uuidString.lowercased(),
+            ref: "SRC-FAKE1",
+            sourceTypeID: sourceTypeID,
+            title: title,
+            description: description
+        )
+        sourcesByProject[projectDir, default: []].append(source)
+        return source
+    }
+
+    func updateSource(
+        projectDir: String,
+        userID _: String,
+        sourceID: String,
+        sourceTypeID: String,
+        title: String,
+        description: String
+    ) async throws -> CatalogSource {
+        var list = sourcesByProject[projectDir] ?? []
+        guard let idx = list.firstIndex(where: { $0.id == sourceID }) else {
+            throw StoreBoom.boom
+        }
+        list[idx].sourceTypeID = sourceTypeID
+        list[idx].title = title
+        list[idx].description = description
+        sourcesByProject[projectDir] = list
+        return list[idx]
+    }
+
+    func addSourceNote(projectDir _: String, userID _: String, sourceID: String, body: String) async throws
+        -> CatalogSourceNote
+    {
+        let note = CatalogSourceNote(id: UUID().uuidString.lowercased(), sourceID: sourceID, body: body)
+        notesBySource[sourceID, default: []].append(note)
+        return note
+    }
+
+    func updateSourceNote(projectDir _: String, userID _: String, noteID: String, body: String) async throws
+        -> CatalogSourceNote
+    {
+        for (sourceID, notes) in notesBySource {
+            if let idx = notes.firstIndex(where: { $0.id == noteID }) {
+                var copy = notes
+                copy[idx].body = body
+                notesBySource[sourceID] = copy
+                return copy[idx]
+            }
+        }
+        throw StoreBoom.boom
+    }
+
+    func deleteSourceNote(projectDir _: String, userID _: String, noteID: String) async throws {
+        for (sourceID, notes) in notesBySource {
+            notesBySource[sourceID] = notes.filter { $0.id != noteID }
+        }
+    }
+
+    func setSourceMetadata(
+        projectDir _: String,
+        userID _: String,
+        sourceID: String,
+        fieldID: String,
+        valueText: String,
+        date _: CatalogDateValueInput?
+    ) async throws -> (valueText: String, dateValueID: String) {
+        let field = CatalogMetadataField(
+            id: fieldID, key: "field", origin: "user", label: "Field", dataType: "text", description: ""
+        )
+        let entry = CatalogMetadataEntry(
+            field: field, valueText: valueText, dateValueID: "", hasValue: true, suggested: false, sortOrder: 0
+        )
+        metadataBySource[sourceID, default: []].append(entry)
+        return (valueText, "")
+    }
+
+    func clearSourceMetadata(projectDir _: String, userID _: String, sourceID: String, fieldID: String) async throws {
+        metadataBySource[sourceID] = (metadataBySource[sourceID] ?? []).filter { $0.field.id != fieldID }
+    }
+
+    func createArtifact(
+        projectDir _: String,
+        userID _: String,
+        sourceID: String,
+        fileID: String,
+        description: String
+    ) async throws -> CatalogArtifact {
+        let art = CatalogArtifact(
+            id: UUID().uuidString.lowercased(),
+            ref: "ART-FAKE1",
+            sourceID: sourceID,
+            fileID: fileID,
+            description: description,
+            file: nil
+        )
+        artifactsBySource[sourceID, default: []].append(art)
+        return art
+    }
+
+    func ingestArtifactFile(
+        projectDir _: String,
+        userID _: String,
+        artifactID: String,
+        path: String
+    ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool) {
+        let file = CatalogFileRef(
+            id: UUID().uuidString.lowercased(),
+            relPath: "objects/aa/bb/aabb",
+            originalFilename: URL(fileURLWithPath: path).lastPathComponent,
+            mediaType: "application/octet-stream",
+            byteSize: 0
+        )
+        for (sourceID, arts) in artifactsBySource {
+            if let idx = arts.firstIndex(where: { $0.id == artifactID }) {
+                var copy = arts
+                copy[idx].fileID = file.id
+                copy[idx].file = file
+                artifactsBySource[sourceID] = copy
+                return (copy[idx], file, false)
+            }
+        }
+        throw StoreBoom.boom
+    }
+
+    func listSourceTypes(projectDir: String) async throws -> [CatalogSourceType] {
+        sourceTypesByProject[projectDir] ?? []
+    }
+
+    func createSourceType(
+        projectDir: String,
+        userID _: String,
+        key: String,
+        label: String,
+        description: String
+    ) async throws -> CatalogSourceType {
+        let type = CatalogSourceType(
+            id: UUID().uuidString.lowercased(),
+            key: key,
+            origin: "user",
+            label: label,
+            description: description
+        )
+        sourceTypesByProject[projectDir, default: []].append(type)
+        return type
+    }
+
+    func listMetadataFields(projectDir: String) async throws -> [CatalogMetadataField] {
+        fieldsByProject[projectDir] ?? []
+    }
+
+    func createMetadataField(
+        projectDir: String,
+        userID _: String,
+        key: String,
+        label: String,
+        dataType: String,
+        description: String
+    ) async throws -> CatalogMetadataField {
+        let field = CatalogMetadataField(
+            id: UUID().uuidString.lowercased(),
+            key: key,
+            origin: "user",
+            label: label,
+            dataType: dataType,
+            description: description
+        )
+        fieldsByProject[projectDir, default: []].append(field)
+        return field
+    }
 }
+
+private enum StoreBoom: Error { case boom }
 #endif

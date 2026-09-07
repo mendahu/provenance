@@ -320,4 +320,70 @@ private struct ThrowingStore: GenealogyStore {
     func removeActiveProject(identityDir _: String) async throws { throw StoreBoom.boom }
     func signOut(identityDir _: String) async throws { throw StoreBoom.boom }
     func projectInfo(projectDir _: String) async throws -> ProjectInfo { throw StoreBoom.boom }
+    func listSources(projectDir _: String) async throws -> [CatalogSource] { throw StoreBoom.boom }
+    func getSourceWorkspace(projectDir _: String, sourceID _: String) async throws -> CatalogSourceWorkspace {
+        throw StoreBoom.boom
+    }
+    func createSource(
+        projectDir _: String,
+        userID _: String,
+        sourceTypeID _: String,
+        title _: String,
+        description _: String
+    ) async throws -> CatalogSource { throw StoreBoom.boom }
+    func updateSource(
+        projectDir _: String,
+        userID _: String,
+        sourceID _: String,
+        sourceTypeID _: String,
+        title _: String,
+        description _: String
+    ) async throws -> CatalogSource { throw StoreBoom.boom }
+    func addSourceNote(projectDir _: String, userID _: String, sourceID _: String, body _: String) async throws
+        -> CatalogSourceNote { throw StoreBoom.boom }
+    func updateSourceNote(projectDir _: String, userID _: String, noteID _: String, body _: String) async throws
+        -> CatalogSourceNote { throw StoreBoom.boom }
+    func deleteSourceNote(projectDir _: String, userID _: String, noteID _: String) async throws {
+        throw StoreBoom.boom
+    }
+    func setSourceMetadata(
+        projectDir _: String,
+        userID _: String,
+        sourceID _: String,
+        fieldID _: String,
+        valueText _: String,
+        date _: CatalogDateValueInput?
+    ) async throws -> (valueText: String, dateValueID: String) { throw StoreBoom.boom }
+    func clearSourceMetadata(projectDir _: String, userID _: String, sourceID _: String, fieldID _: String)
+        async throws { throw StoreBoom.boom }
+    func createArtifact(
+        projectDir _: String,
+        userID _: String,
+        sourceID _: String,
+        fileID _: String,
+        description _: String
+    ) async throws -> CatalogArtifact { throw StoreBoom.boom }
+    func ingestArtifactFile(
+        projectDir _: String,
+        userID _: String,
+        artifactID _: String,
+        path _: String
+    ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool) { throw StoreBoom.boom }
+    func listSourceTypes(projectDir _: String) async throws -> [CatalogSourceType] { throw StoreBoom.boom }
+    func createSourceType(
+        projectDir _: String,
+        userID _: String,
+        key _: String,
+        label _: String,
+        description _: String
+    ) async throws -> CatalogSourceType { throw StoreBoom.boom }
+    func listMetadataFields(projectDir _: String) async throws -> [CatalogMetadataField] { throw StoreBoom.boom }
+    func createMetadataField(
+        projectDir _: String,
+        userID _: String,
+        key _: String,
+        label _: String,
+        dataType _: String,
+        description _: String
+    ) async throws -> CatalogMetadataField { throw StoreBoom.boom }
 }

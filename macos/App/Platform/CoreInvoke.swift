@@ -47,6 +47,21 @@ enum CoreMethod {
     static let listProjectUsers = Int32(Provenencia_Engine_V1_Method.listProjectUsers.rawValue)
     static let signOut = Int32(Provenencia_Engine_V1_Method.signOut.rawValue)
     static let getProjectInfo = Int32(Provenencia_Engine_V1_Method.getProjectInfo.rawValue)
+    static let listSources = Int32(Provenencia_Engine_V1_Method.listSources.rawValue)
+    static let getSourceWorkspace = Int32(Provenencia_Engine_V1_Method.getSourceWorkspace.rawValue)
+    static let createSource = Int32(Provenencia_Engine_V1_Method.createSource.rawValue)
+    static let updateSource = Int32(Provenencia_Engine_V1_Method.updateSource.rawValue)
+    static let addSourceNote = Int32(Provenencia_Engine_V1_Method.addSourceNote.rawValue)
+    static let updateSourceNote = Int32(Provenencia_Engine_V1_Method.updateSourceNote.rawValue)
+    static let deleteSourceNote = Int32(Provenencia_Engine_V1_Method.deleteSourceNote.rawValue)
+    static let setSourceMetadata = Int32(Provenencia_Engine_V1_Method.setSourceMetadata.rawValue)
+    static let clearSourceMetadata = Int32(Provenencia_Engine_V1_Method.clearSourceMetadata.rawValue)
+    static let createArtifact = Int32(Provenencia_Engine_V1_Method.createArtifact.rawValue)
+    static let ingestArtifactFile = Int32(Provenencia_Engine_V1_Method.ingestArtifactFile.rawValue)
+    static let listSourceTypes = Int32(Provenencia_Engine_V1_Method.listSourceTypes.rawValue)
+    static let createSourceType = Int32(Provenencia_Engine_V1_Method.createSourceType.rawValue)
+    static let listMetadataFields = Int32(Provenencia_Engine_V1_Method.listMetadataFields.rawValue)
+    static let createMetadataField = Int32(Provenencia_Engine_V1_Method.createMetadataField.rawValue)
 }
 
 func provenenciaInvoke(method: Int32, request: Data) throws -> Data {

@@ -21,6 +21,12 @@ func createCatalog(parent, folder string) (*database.Catalog, error) {
 	return c, nil
 }
 
+// OpenCatalog opens a project for researcher use (migrate + reconcile).
+// FFI Source handlers and onboarding open paths must use this, not database.Open.
+func OpenCatalog(projectDir string) (*database.Catalog, error) {
+	return openCatalog(projectDir)
+}
+
 func openCatalog(projectDir string) (*database.Catalog, error) {
 	c, err := database.Open(projectDir)
 	if err != nil {

@@ -733,7 +733,163 @@
         }
       }
     },
-    "": {}
+    "": {},
+    "error.artifacts.invalid": {
+      "comment": "FFI error artifacts.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid artifact."
+          }
+        }
+      }
+    },
+    "error.datevalues.invalid": {
+      "comment": "FFI error datevalues.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid date value."
+          }
+        }
+      }
+    },
+    "error.filederivatives.corrupt_object": {
+      "comment": "FFI error filederivatives.corrupt_object",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stored file object is corrupt."
+          }
+        }
+      }
+    },
+    "error.filederivatives.invalid": {
+      "comment": "FFI error filederivatives.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid file derivative."
+          }
+        }
+      }
+    },
+    "error.filederivatives.unprocessable": {
+      "comment": "FFI error filederivatives.unprocessable",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot generate a preview for that file."
+          }
+        }
+      }
+    },
+    "error.files.invalid": {
+      "comment": "FFI error files.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid file."
+          }
+        }
+      }
+    },
+    "error.ingest.invalid": {
+      "comment": "FFI error ingest.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not ingest that file."
+          }
+        }
+      }
+    },
+    "error.ingest.permission_denied": {
+      "comment": "FFI error ingest.permission_denied",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission denied reading that file."
+          }
+        }
+      }
+    },
+    "error.sourcefields.invalid": {
+      "comment": "FFI error sourcefields.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid metadata field."
+          }
+        }
+      }
+    },
+    "error.sourcemetadata.invalid": {
+      "comment": "FFI error sourcemetadata.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid source metadata."
+          }
+        }
+      }
+    },
+    "error.sources.invalid": {
+      "comment": "FFI error sources.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid source."
+          }
+        }
+      }
+    },
+    "error.sourcetypes.invalid": {
+      "comment": "FFI error sourcetypes.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid source type."
+          }
+        }
+      }
+    },
+    "error.sourcevocab.invalid": {
+      "comment": "FFI error sourcevocab.invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid source vocabulary."
+          }
+        }
+      }
+    }
   },
   "version": "1.0"
 }
