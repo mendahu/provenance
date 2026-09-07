@@ -130,17 +130,21 @@ enum PVFont {
 /// `DesignSystem/README.md` for why this is used instead of
 /// `ATSApplicationFontsPath`.
 enum PVFontRegistration {
-    private static var didRegister = false
-
-    static func registerBundledFontsIfNeeded() {
-        guard !didRegister else { return }
-        didRegister = true
-        guard let urls = Bundle.main.urls(forResourcesWithExtension: "ttf", subdirectory: "Fonts") else { return }
+    /// Swift synchronizes `static let` initialization, so concurrent
+    /// callers still register the font files at most once.
+    private static let registered: Void = {
+        guard let urls = Bundle.main.urls(forResourcesWithExtension: "ttf", subdirectory: "Fonts") else {
+            return
+        }
         for url in urls {
             // Ignore per-file errors: "already registered" is common (e.g.
             // repeated calls, or the font also installed system-wide) and
             // isn't actionable here.
             CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
         }
+    }()
+
+    static func registerBundledFontsIfNeeded() {
+        _ = registered
     }
 }
