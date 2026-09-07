@@ -63,7 +63,7 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 | --- | --- |
 | F-9 | Detail shows **label**, **data type**, and **description** (multiline OK). |
 | F-10 | Edit allows changing **label**, **data type**, and **description**. |
-| F-11 | Show **origin** and **key** as identity context (mono for key). Prefer treating `provenencia` rows as **view-only** for mutations (seed is product-owned); `user` rows are editable. If Design allows editing seeded rows, call it out explicitly — default recommendation is read-only for `provenencia`. |
+| F-11 | Show **origin** and **key** as identity context (mono for key). **`provenencia` (seeded) rows are view-only** — no edit/save of label, data type, or description. **`user` (custom) rows are editable** for those fields. Plugin-origin rows, if present, follow the same non-user rule as seeded (view-only) unless a later spike says otherwise. |
 | F-12 | No delete / archive control on this board. |
 | F-13 | No `created_at` / author chrome — attribution is audit, not domain columns. |
 
@@ -102,7 +102,7 @@ Use seeded-looking rows mixed with a few `user` rows so origin differentiation i
 2. List sorted or filtered to show origin affordance clearly.
 3. **Add field** flow (whatever chrome pattern Design chooses).
 4. **Detail/edit** for a user field (label, type, description editable).
-5. **Detail** for a proveniencia field (recommended: read-only mutation).
+5. **Detail** for a proveniencia field (**view-only** — no mutation).
 6. Validation / error example (e.g. duplicate key) optional but useful.
 
 ---
@@ -122,6 +122,6 @@ Use seeded-looking rows mixed with a few `user` rows so origin differentiation i
 - [ ] Lives in **Source fields** content host; no second app chrome.
 - [ ] List shows label + data type; description is detail-only.
 - [ ] Single list with visible origin (system vs user); search at top.
-- [ ] Add + edit cover create/update for user fields; no delete.
+- [ ] Add + edit cover create/update for **user** fields; seeded (`provenencia`) detail is view-only; no delete.
 - [ ] Add chrome (modal vs nested pane) is intentional and documented on the board.
 - [ ] No type-suggestion or Source-instance UI on this board.
