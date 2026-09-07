@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/mattn/go-sqlite3"
 	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/audit"
@@ -319,15 +318,11 @@ func bytesEqual(a, b []byte) bool {
 }
 
 func isUniqueConflict(err error) bool {
-	var se sqlite3.Error
-	return errors.As(err, &se) && se.ExtendedCode == sqlite3.ErrConstraintUnique
+	return database.IsUniqueConflict(err)
 }
 
 func mapConstraint(err error) error {
-	var se sqlite3.Error
-	if errors.As(err, &se) && (se.ExtendedCode == sqlite3.ErrConstraintForeignKey ||
-		se.ExtendedCode == sqlite3.ErrConstraintUnique ||
-		se.Code == sqlite3.ErrConstraint) {
+	if database.IsConstraintViolation(err) {
 		return ErrInvalid
 	}
 	return err

@@ -4,13 +4,10 @@ package database
 
 import (
 	"database/sql"
-	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/mattn/go-sqlite3"
 )
 
 // ApplicationID is the SQLite application_id FourCC 'PROV' (0x50524F56).
@@ -83,8 +80,7 @@ func takeExclusiveLock(db *sql.DB) error {
 }
 
 func mapLockErr(err error) error {
-	var se sqlite3.Error
-	if errors.As(err, &se) && (se.Code == sqlite3.ErrBusy || se.Code == sqlite3.ErrLocked) {
+	if IsBusyOrLocked(err) {
 		return ErrAlreadyOpen
 	}
 	return err

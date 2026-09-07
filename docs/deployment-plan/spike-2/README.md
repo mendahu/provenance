@@ -125,7 +125,7 @@ S2-05 PR — Audit tables + write helper (done)   ◄── gate for research mu
 S2-06 PR — date_values schema + helpers (done)
 S2-07 PR — Source vocabulary tables + small seed (done)
 S2-08 PR — sources + source_notes CRUD (+ audit) (done)
-S2-09 PR — files store + ingest (+ audit on File create)
+S2-09 PR — files store + ingest (+ audit on File create) (done)
 S2-10 PR — artifacts CRUD + attach/replace File (+ audit)
 S2-11 PR — source_metadata (+ type field suggestions)
 S2-12 PR — file_derivatives + thumbnail pipeline (minimal)
@@ -257,7 +257,7 @@ Design **S2-01…04** can start immediately; **S2-01** should land a reviewable 
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-05 |
-| **Deliverables** | Migration: `files`. Go ingest: read path on disk → SHA-256 → write `objects/{hh}/{hh}/{hex}` if absent → upsert `files` by checksum → return `file_id` + relative path. Dedup same bytes = same File row. Audit File **create** when a new row appears (reuse of existing checksum is not a new research event — document). Tests with temp project dirs. |
+| **Deliverables** | Done. Migration `000007` + `files` helpers + `ingest.File`; content-addressed `objects/{hh}/{hh}/{hex}`; regular-file/symlink/size checks; audit `create_file` only on new checksum rows. |
 | **Context** | Source doc §6; stack object naming. No Artifact linkage yet. |
 | **Out** | Derivatives; Swift file UI. |
 
