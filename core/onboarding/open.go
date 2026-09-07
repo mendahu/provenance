@@ -21,7 +21,7 @@ func ListContributors(projectDir string) ([]users.User, error) {
 	if projectDir == "" {
 		return nil, database.ErrNotAProject
 	}
-	proj, err := openCatalog(projectDir)
+	proj, err := OpenCatalog(projectDir)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func adopt(identityDir, projectDir, adoptUserID string) (Result, error) {
 		return Result{}, err
 	}
 
-	proj, err := openCatalog(projectDir)
+	proj, err := OpenCatalog(projectDir)
 	if err != nil {
 		return Result{}, err
 	}
@@ -94,7 +94,7 @@ func openMint(identityDir, projectDir, displayName string) (Result, error) {
 		return Result{}, err
 	}
 
-	proj, err := openCatalog(projectDir)
+	proj, err := OpenCatalog(projectDir)
 	if err != nil {
 		return Result{}, err
 	}
@@ -169,7 +169,7 @@ func ProjectInfo(projectDir string) (ResolvedInfo, error) {
 	if projectDir == "" {
 		return ResolvedInfo{}, database.ErrNotAProject
 	}
-	proj, err := openCatalog(projectDir)
+	proj, err := OpenCatalog(projectDir)
 	if err != nil {
 		return ResolvedInfo{}, err
 	}

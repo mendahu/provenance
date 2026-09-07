@@ -383,6 +383,71 @@ enum L10n {
             defaultValue: "File not found.",
             comment: "FFI error file.not_found"
         )
+        static let sourcesInvalid = LocalizedStringResource(
+            "error.sources.invalid",
+            defaultValue: "Invalid source.",
+            comment: "FFI error sources.invalid"
+        )
+        static let artifactsInvalid = LocalizedStringResource(
+            "error.artifacts.invalid",
+            defaultValue: "Invalid artifact.",
+            comment: "FFI error artifacts.invalid"
+        )
+        static let sourceMetadataInvalid = LocalizedStringResource(
+            "error.sourcemetadata.invalid",
+            defaultValue: "Invalid source metadata.",
+            comment: "FFI error sourcemetadata.invalid"
+        )
+        static let filesInvalid = LocalizedStringResource(
+            "error.files.invalid",
+            defaultValue: "Invalid file.",
+            comment: "FFI error files.invalid"
+        )
+        static let ingestInvalid = LocalizedStringResource(
+            "error.ingest.invalid",
+            defaultValue: "Could not ingest that file.",
+            comment: "FFI error ingest.invalid"
+        )
+        static let ingestPermissionDenied = LocalizedStringResource(
+            "error.ingest.permission_denied",
+            defaultValue: "Permission denied reading that file.",
+            comment: "FFI error ingest.permission_denied"
+        )
+        static let sourceTypesInvalid = LocalizedStringResource(
+            "error.sourcetypes.invalid",
+            defaultValue: "Invalid source type.",
+            comment: "FFI error sourcetypes.invalid"
+        )
+        static let sourceFieldsInvalid = LocalizedStringResource(
+            "error.sourcefields.invalid",
+            defaultValue: "Invalid metadata field.",
+            comment: "FFI error sourcefields.invalid"
+        )
+        static let sourceVocabInvalid = LocalizedStringResource(
+            "error.sourcevocab.invalid",
+            defaultValue: "Invalid source vocabulary.",
+            comment: "FFI error sourcevocab.invalid"
+        )
+        static let dateValuesInvalid = LocalizedStringResource(
+            "error.datevalues.invalid",
+            defaultValue: "Invalid date value.",
+            comment: "FFI error datevalues.invalid"
+        )
+        static let fileDerivativesInvalid = LocalizedStringResource(
+            "error.filederivatives.invalid",
+            defaultValue: "Invalid file derivative.",
+            comment: "FFI error filederivatives.invalid"
+        )
+        static let fileDerivativesUnprocessable = LocalizedStringResource(
+            "error.filederivatives.unprocessable",
+            defaultValue: "Cannot generate a preview for that file.",
+            comment: "FFI error filederivatives.unprocessable"
+        )
+        static let fileDerivativesCorruptObject = LocalizedStringResource(
+            "error.filederivatives.corrupt_object",
+            defaultValue: "Stored file object is corrupt.",
+            comment: "FFI error filederivatives.corrupt_object"
+        )
         static let unknown = LocalizedStringResource(
             "error.internal.unknown",
             defaultValue: "Something went wrong. Please try again.",
@@ -430,6 +495,32 @@ enum L10n {
                 return String(localized: onboardingUnknownUser)
             case "file.not_found":
                 return String(localized: fileNotFound)
+            case "sources.invalid":
+                return String(localized: sourcesInvalid)
+            case "artifacts.invalid":
+                return String(localized: artifactsInvalid)
+            case "sourcemetadata.invalid":
+                return String(localized: sourceMetadataInvalid)
+            case "files.invalid":
+                return String(localized: filesInvalid)
+            case "ingest.invalid":
+                return String(localized: ingestInvalid)
+            case "ingest.permission_denied":
+                return String(localized: ingestPermissionDenied)
+            case "sourcetypes.invalid":
+                return String(localized: sourceTypesInvalid)
+            case "sourcefields.invalid":
+                return String(localized: sourceFieldsInvalid)
+            case "sourcevocab.invalid":
+                return String(localized: sourceVocabInvalid)
+            case "datevalues.invalid":
+                return String(localized: dateValuesInvalid)
+            case "filederivatives.invalid":
+                return String(localized: fileDerivativesInvalid)
+            case "filederivatives.unprocessable":
+                return String(localized: fileDerivativesUnprocessable)
+            case "filederivatives.corrupt_object":
+                return String(localized: fileDerivativesCorruptObject)
             default:
                 return String(localized: unknown)
             }

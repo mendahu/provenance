@@ -19,6 +19,21 @@ enum Method {
   METHOD_LIST_PROJECT_USERS = 9;
   METHOD_SIGN_OUT = 10;
   METHOD_GET_PROJECT_INFO = 11;
+  METHOD_LIST_SOURCES = 12;
+  METHOD_GET_SOURCE_WORKSPACE = 13;
+  METHOD_CREATE_SOURCE = 14;
+  METHOD_UPDATE_SOURCE = 15;
+  METHOD_ADD_SOURCE_NOTE = 16;
+  METHOD_UPDATE_SOURCE_NOTE = 17;
+  METHOD_DELETE_SOURCE_NOTE = 18;
+  METHOD_SET_SOURCE_METADATA = 19;
+  METHOD_CLEAR_SOURCE_METADATA = 20;
+  METHOD_CREATE_ARTIFACT = 21;
+  METHOD_INGEST_ARTIFACT_FILE = 22;
+  METHOD_LIST_SOURCE_TYPES = 23;
+  METHOD_CREATE_SOURCE_TYPE = 24;
+  METHOD_LIST_METADATA_FIELDS = 25;
+  METHOD_CREATE_METADATA_FIELD = 26;
 }
 
 message PingRequest {
@@ -133,6 +148,253 @@ message ProjectInfo {
 
 message GetProjectInfoResponse {
   ProjectInfo project = 1;
+}
+
+// --- Source catalog (S2-13) ---
+
+message Source {
+  string id = 1;
+  string ref = 2;
+  string source_type_id = 3;
+  string title = 4;
+  string description = 5;
+}
+
+message SourceNote {
+  string id = 1;
+  string source_id = 2;
+  string body = 3;
+}
+
+message SourceFileRef {
+  string id = 1;
+  string rel_path = 2;
+  string original_filename = 3;
+  string media_type = 4;
+  int64 byte_size = 5;
+}
+
+message Artifact {
+  string id = 1;
+  string ref = 2;
+  string source_id = 3;
+  string file_id = 4; // empty when fileless
+  string description = 5;
+  SourceFileRef file = 6; // set when file_id present
+}
+
+message SourceType {
+  string id = 1;
+  string key = 2;
+  string origin = 3;
+  string label = 4;
+  string description = 5;
+}
+
+message MetadataField {
+  string id = 1;
+  string key = 2;
+  string origin = 3;
+  string label = 4;
+  string data_type = 5; // text | date
+  string description = 6;
+}
+
+message MetadataWorkspaceEntry {
+  MetadataField field = 1;
+  string value_text = 2;
+  string date_value_id = 3;
+  bool has_value = 4;
+  bool suggested = 5;
+  int32 sort_order = 6;
+}
+
+// DateValueInput is the dogfood subset for SetSourceMetadata (maps to datevalues.Insert).
+message DateValueInput {
+  string kind = 1;
+  string qualifier = 2;
+  string calendar = 3;
+  optional int32 start_year = 4;
+  optional int32 start_month = 5;
+  optional int32 start_day = 6;
+  optional int32 start_hour = 7;
+  optional int32 start_minute = 8;
+  optional int32 start_second = 9;
+  optional int32 start_millisecond = 10;
+  string start_tz = 11;
+  optional int32 end_year = 12;
+  optional int32 end_month = 13;
+  optional int32 end_day = 14;
+  optional int32 end_hour = 15;
+  optional int32 end_minute = 16;
+  optional int32 end_second = 17;
+  optional int32 end_millisecond = 18;
+  string end_tz = 19;
+  string phrase = 20;
+}
+
+message ListSourcesRequest {
+  string project_dir = 1;
+}
+
+message ListSourcesResponse {
+  repeated Source sources = 1;
+}
+
+message GetSourceWorkspaceRequest {
+  string project_dir = 1;
+  string source_id = 2;
+}
+
+message GetSourceWorkspaceResponse {
+  Source source = 1;
+  repeated SourceNote notes = 2;
+  repeated MetadataWorkspaceEntry metadata = 3;
+  repeated Artifact artifacts = 4;
+}
+
+message CreateSourceRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_type_id = 3;
+  string title = 4;
+  string description = 5;
+}
+
+message CreateSourceResponse {
+  Source source = 1;
+}
+
+message UpdateSourceRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  string source_type_id = 4;
+  string title = 5;
+  string description = 6;
+}
+
+message UpdateSourceResponse {
+  Source source = 1;
+}
+
+message AddSourceNoteRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  string body = 4;
+}
+
+message AddSourceNoteResponse {
+  SourceNote note = 1;
+}
+
+message UpdateSourceNoteRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string note_id = 3;
+  string body = 4;
+}
+
+message UpdateSourceNoteResponse {
+  SourceNote note = 1;
+}
+
+message DeleteSourceNoteRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string note_id = 3;
+}
+
+message DeleteSourceNoteResponse {}
+
+message SetSourceMetadataRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  string field_id = 4;
+  string value_text = 5;
+  DateValueInput date = 6; // optional; when kind set, inserts a DateValue
+}
+
+message SetSourceMetadataResponse {
+  string value_text = 1;
+  string date_value_id = 2;
+}
+
+message ClearSourceMetadataRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  string field_id = 4;
+}
+
+message ClearSourceMetadataResponse {}
+
+message CreateArtifactRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  string file_id = 4; // empty = fileless
+  string description = 5;
+}
+
+message CreateArtifactResponse {
+  Artifact artifact = 1;
+}
+
+message IngestArtifactFileRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string artifact_id = 3;
+  string path = 4; // absolute path on disk; bytes not in protobuf
+}
+
+message IngestArtifactFileResponse {
+  Artifact artifact = 1;
+  SourceFileRef file = 2;
+  bool reused = 3;
+}
+
+message ListSourceTypesRequest {
+  string project_dir = 1;
+}
+
+message ListSourceTypesResponse {
+  repeated SourceType types = 1;
+}
+
+message CreateSourceTypeRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string key = 3;
+  string label = 4;
+  string description = 5;
+}
+
+message CreateSourceTypeResponse {
+  SourceType type = 1;
+}
+
+message ListMetadataFieldsRequest {
+  string project_dir = 1;
+}
+
+message ListMetadataFieldsResponse {
+  repeated MetadataField fields = 1;
+}
+
+message CreateMetadataFieldRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string key = 3;
+  string label = 4;
+  string data_type = 5;
+  string description = 6;
+}
+
+message CreateMetadataFieldResponse {
+  MetadataField field = 1;
 }
 
 // ErrorKind classifies a failure for client UX (tone, retry hints). Copy still

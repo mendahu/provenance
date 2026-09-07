@@ -8,6 +8,7 @@ import (
 	"github.com/mendahu/provenencia/api/proto/engine"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/identity"
+	"github.com/mendahu/provenencia/core/onboarding"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -126,6 +127,26 @@ func saveIdentity(t *testing.T, name string) (dir string, id identity.Identity) 
 		t.Fatal(err)
 	}
 	return dir, id
+}
+
+func sourceFixture(t *testing.T) (projectDir, userID, typeID string) {
+	t.Helper()
+	res, err := onboarding.Complete(t.TempDir(), t.TempDir(), "Jake", "Sources")
+	if err != nil {
+		t.Fatal(err)
+	}
+	listOut, err := ListSourceTypes(marshalProto(t, &engine.ListSourceTypesRequest{ProjectDir: res.ProjectDir}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var types engine.ListSourceTypesResponse
+	if err := proto.Unmarshal(listOut, &types); err != nil {
+		t.Fatal(err)
+	}
+	if len(types.Types) == 0 {
+		t.Fatal("expected seeded types")
+	}
+	return res.ProjectDir, res.Identity.UserID.String(), types.Types[0].Id
 }
 
 func assertIdentityNotFound(t *testing.T, out []byte, _ proto.Message) {

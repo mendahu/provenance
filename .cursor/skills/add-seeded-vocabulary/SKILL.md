@@ -51,11 +51,11 @@ Uniqueness is **`UNIQUE (key, origin)`**. Lookup is always `(key, origin)`, neve
 ```
 core/onboarding/ready.go
   createCatalog → database.Create + reconcile
-  openCatalog   → database.Open + reconcile
+  OpenCatalog   → database.Open + reconcile
   reconcile     → users.EnsureRefs + sourcevocab.Ensure (+ future Ensures)
 ```
 
-Complete / Open / ProjectInfo / ListContributors must use **`createCatalog` / `openCatalog`**, not raw `database.Create`/`Open`. Do **not** scatter `sourcevocab.Ensure` at each use-case.
+Complete / Open / ProjectInfo / ListContributors must use **`createCatalog` / `OpenCatalog`**, not raw `database.Create`/`Open`. Do **not** scatter `sourcevocab.Ensure` at each use-case.
 
 When adding another seed domain’s `Ensure`, call it from **`reconcile` only**.
 

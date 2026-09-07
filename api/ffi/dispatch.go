@@ -21,6 +21,21 @@ const (
 	MethodListProjectUsers      = int32(engine.Method_METHOD_LIST_PROJECT_USERS)
 	MethodSignOut               = int32(engine.Method_METHOD_SIGN_OUT)
 	MethodGetProjectInfo        = int32(engine.Method_METHOD_GET_PROJECT_INFO)
+	MethodListSources           = int32(engine.Method_METHOD_LIST_SOURCES)
+	MethodGetSourceWorkspace    = int32(engine.Method_METHOD_GET_SOURCE_WORKSPACE)
+	MethodCreateSource          = int32(engine.Method_METHOD_CREATE_SOURCE)
+	MethodUpdateSource          = int32(engine.Method_METHOD_UPDATE_SOURCE)
+	MethodAddSourceNote         = int32(engine.Method_METHOD_ADD_SOURCE_NOTE)
+	MethodUpdateSourceNote      = int32(engine.Method_METHOD_UPDATE_SOURCE_NOTE)
+	MethodDeleteSourceNote      = int32(engine.Method_METHOD_DELETE_SOURCE_NOTE)
+	MethodSetSourceMetadata     = int32(engine.Method_METHOD_SET_SOURCE_METADATA)
+	MethodClearSourceMetadata   = int32(engine.Method_METHOD_CLEAR_SOURCE_METADATA)
+	MethodCreateArtifact        = int32(engine.Method_METHOD_CREATE_ARTIFACT)
+	MethodIngestArtifactFile    = int32(engine.Method_METHOD_INGEST_ARTIFACT_FILE)
+	MethodListSourceTypes       = int32(engine.Method_METHOD_LIST_SOURCE_TYPES)
+	MethodCreateSourceType      = int32(engine.Method_METHOD_CREATE_SOURCE_TYPE)
+	MethodListMetadataFields    = int32(engine.Method_METHOD_LIST_METADATA_FIELDS)
+	MethodCreateMetadataField   = int32(engine.Method_METHOD_CREATE_METADATA_FIELD)
 )
 
 // Call routes one coarse FFI operation to api/ffi/handlers.
@@ -48,6 +63,36 @@ func Call(method int32, in []byte) ([]byte, error) {
 		return handlers.SignOut(in)
 	case MethodGetProjectInfo:
 		return handlers.GetProjectInfo(in)
+	case MethodListSources:
+		return handlers.ListSources(in)
+	case MethodGetSourceWorkspace:
+		return handlers.GetSourceWorkspace(in)
+	case MethodCreateSource:
+		return handlers.CreateSource(in)
+	case MethodUpdateSource:
+		return handlers.UpdateSource(in)
+	case MethodAddSourceNote:
+		return handlers.AddSourceNote(in)
+	case MethodUpdateSourceNote:
+		return handlers.UpdateSourceNote(in)
+	case MethodDeleteSourceNote:
+		return handlers.DeleteSourceNote(in)
+	case MethodSetSourceMetadata:
+		return handlers.SetSourceMetadata(in)
+	case MethodClearSourceMetadata:
+		return handlers.ClearSourceMetadata(in)
+	case MethodCreateArtifact:
+		return handlers.CreateArtifact(in)
+	case MethodIngestArtifactFile:
+		return handlers.IngestArtifactFile(in)
+	case MethodListSourceTypes:
+		return handlers.ListSourceTypes(in)
+	case MethodCreateSourceType:
+		return handlers.CreateSourceType(in)
+	case MethodListMetadataFields:
+		return handlers.ListMetadataFields(in)
+	case MethodCreateMetadataField:
+		return handlers.CreateMetadataField(in)
 	default:
 		return nil, apperr.New(apperr.CodeInternalUnknownMethod, apperr.KindInternal, strconv.Itoa(int(method)))
 	}

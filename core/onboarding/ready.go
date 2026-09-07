@@ -6,7 +6,7 @@ import (
 	"github.com/mendahu/provenencia/core/database/users"
 )
 
-// createCatalog and openCatalog are the only researcher-facing catalog entry
+// createCatalog and OpenCatalog are the only researcher-facing catalog entry
 // points in onboarding. database.Create/Open stay migrate-only for tests and
 // low-level use; reconcile (refs + provenencia vocabulary) runs here once.
 func createCatalog(parent, folder string) (*database.Catalog, error) {
@@ -21,7 +21,9 @@ func createCatalog(parent, folder string) (*database.Catalog, error) {
 	return c, nil
 }
 
-func openCatalog(projectDir string) (*database.Catalog, error) {
+// OpenCatalog opens a project for researcher use (migrate + reconcile).
+// FFI Source handlers and onboarding open paths must use this, not database.Open.
+func OpenCatalog(projectDir string) (*database.Catalog, error) {
 	c, err := database.Open(projectDir)
 	if err != nil {
 		return nil, err
