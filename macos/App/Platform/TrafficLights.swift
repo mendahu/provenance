@@ -1,4 +1,4 @@
-import AppKit
+@preconcurrency import AppKit
 import SwiftUI
 
 /// Repositions the window's standard traffic-light buttons so their
@@ -84,12 +84,15 @@ enum TrafficLights {
 /// or app delegate to hook otherwise) to call `TrafficLights.align` once
 /// the view lands in a window, and again on every resize.
 private struct TrafficLightAligner: NSViewRepresentable {
+    @MainActor
     func makeNSView(context: Context) -> NSView {
         AligningView()
     }
 
+    @MainActor
     func updateNSView(_: NSView, context: Context) {}
 
+    @MainActor
     private final class AligningView: NSView {
         private var resizeObserver: NSObjectProtocol?
 
@@ -105,9 +108,18 @@ private struct TrafficLightAligner: NSViewRepresentable {
                 forName: NSWindow.didResizeNotification,
                 object: window,
                 queue: .main
-            ) { _ in
-                TrafficLights.align(window)
+            ) { [weak self] _ in
+                // Block is `@Sendable` and does not see `@MainActor`; hop
+                // without carrying `NSNotification` / `NSWindow` across.
+                Task { @MainActor in
+                    self?.alignIfNeeded()
+                }
             }
+        }
+
+        private func alignIfNeeded() {
+            guard let window else { return }
+            TrafficLights.align(window)
         }
 
         deinit {
