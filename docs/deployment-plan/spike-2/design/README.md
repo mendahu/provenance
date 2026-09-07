@@ -10,11 +10,6 @@ Hand these files to Claude Design **one at a time**. Each brief is self-containe
 | S2-04 | [`S2-04-sources-catalog.md`](S2-04-sources-catalog.md) | PRs S2-17, S2-18 |
 | S2-20 | [`S2-20-files-list.md`](S2-20-files-list.md) | PR S2-21 |
 
-Former briefs kept for reference only (do not hand to Design as current scope):
-
-- [`S2-03-artifacts-ingest.md`](S2-03-artifacts-ingest.md) — old standalone Artifacts board (folded into S2-04)
-- [`S2-04-extensible-vocabulary.md`](S2-04-extensible-vocabulary.md) — old combined types+fields (split into S2-02 / S2-03)
-
 Sprint task list (PR sequence, non-design work): [`../README.md`](../README.md).
 
 ## How to use
