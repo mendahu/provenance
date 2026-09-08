@@ -78,9 +78,9 @@ extension View {
     /// e.g. a text field's resting state) by overlaying a soft dark stroke
     /// along the shape's top edge, masked to the shape.
     ///
-    /// `visible` fades the shadow rather than removing it — see
-    /// `pvFocusRing(_:cornerRadius:)` for why that distinction matters.
-    /// Pass `visible: false` instead of writing `if !focused { … }`.
+    /// `visible` fades the shadow rather than removing it — pass
+    /// `visible: false` instead of `if !focused { … }` (see
+    /// `DesignSystem/README.md` § "Interaction state").
     func pvInsetShadow(cornerRadius: CGFloat, visible: Bool = true) -> some View {
         let layer = PVElevation.inset
         return overlay(
@@ -94,21 +94,10 @@ extension View {
         )
     }
 
-    /// Approximates CSS `--ring-focus` (a solid, non-blurred ring outside
-    /// the element on focus) as a stroked overlay in `PVColor.borderFocus`.
-    ///
-    /// **Takes `focused` as a parameter on purpose — never apply this
-    /// conditionally.** The ring is always in the hierarchy and only its
-    /// opacity changes. Writing `if focused { pvFocusRing() }` instead
-    /// makes the two branches different view types (`_ConditionalContent`),
-    /// so SwiftUI rebuilds that subtree the moment focus flips — which
-    /// tears down the `NSTextField` underneath and destroys the first
-    /// responder it just gained. The field then won't take a click, or
-    /// accepts one keystroke and beeps on every one after. This helper
-    /// mirrors the design system's own `swift/ProvenenciaTokens.swift`,
-    /// which has always been written this way; an earlier version of this
-    /// file dropped the parameter, which is what forced the call site to
-    /// branch. See `DesignSystem/README.md` § "Interaction state".
+    /// Approximates CSS `--ring-focus` as a stroked overlay in
+    /// `PVColor.borderFocus`. Always applied; `focused` only changes
+    /// opacity — never wrap this in `if focused` (see
+    /// `DesignSystem/README.md` § "Interaction state").
     func pvFocusRing(_ focused: Bool, cornerRadius: CGFloat) -> some View {
         overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

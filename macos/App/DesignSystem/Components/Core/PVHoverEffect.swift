@@ -1,27 +1,13 @@
 import SwiftUI
 
 /// Shared interaction chrome for `ButtonStyle` bodies: hover tracking,
-/// disabled opacity, reduce-motion-aware press scale, and the animations
-/// tying them together — plus, critically, the `contentShape(Rectangle())`
-/// that makes hover and click agree on the same hit-testing surface.
-///
-/// `PVButtonBody`, `PVIconButtonBody`, and `PVSidebarNavRowBody`
-/// (`PVSidebarNav.swift`) each used to re-derive this independently; one
-/// of them (the sidebar row) briefly drifted from the others and needed
-/// two different `contentShape`s for two different pointer interactions
-/// before landing here. Centralizing it means a future button-style body
-/// gets correct, consistent hover/click/press behavior by construction,
-/// not by remembering every piece.
-///
-/// The caller supplies only what actually varies between components: the
-/// content itself, built from an already-combined `isHovering &&
-/// isEnabled` flag (so callers never have to re-check `isEnabled`
-/// themselves for hover purposes).
+/// disabled opacity, reduce-motion-aware press scale, and a single
+/// `contentShape(Rectangle())` so hover and click share one hit target.
+/// Callers build content from `showHover` (`isHovering && isEnabled`).
 struct PVHoverEffect<Content: View>: View {
     let isPressed: Bool
-    /// Defaults to the fast, snappy timing new call sites should use.
-    /// `PVButtonBody` passes `PVMotion.fastStandard` to keep its existing,
-    /// already-shipped feel unchanged by this refactor.
+    /// Defaults to snappy timing; `PVButtonBody` passes `PVMotion.fastStandard`
+    /// to keep its existing feel.
     var hoverAnimation: Animation = PVMotion.instantStandard
     @ViewBuilder var content: (_ showHover: Bool) -> Content
 

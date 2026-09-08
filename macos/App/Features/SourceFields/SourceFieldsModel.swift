@@ -17,9 +17,22 @@ final class SourceFieldsModel {
         var description: String
     }
 
-    struct Toast: Equatable {
+    struct Toast: Equatable, Hashable {
         var title: String
         var body: String
+    }
+
+    /// Detail-pane mode. Illegal combinations of the old flags
+    /// (`isAdding` + `selectedFieldID` + `resumeSelectionID`) are
+    /// unrepresentable here. `draft` is set for `.adding` / `.editing`
+    /// (form bindings) and also for `.viewing` (unused by the UI, but
+    /// kept non-nil so tearing down `Binding($model.draft)` projections
+    /// does not trap when leaving the form).
+    enum Mode: Equatable {
+        case empty
+        case viewing(id: String)
+        case adding(resumeID: String?)
+        case editing(id: String)
     }
 
     private(set) var fields: [CatalogMetadataField] = []
@@ -29,14 +42,15 @@ final class SourceFieldsModel {
     var query = ""
     private(set) var sortAscending = true
 
-    private(set) var selectedFieldID: String?
-    private(set) var isAdding = false
+    private(set) var mode: Mode = .empty
+    /// Non-nil whenever a field is selected or the add form is open.
+    /// Cleared only for `.empty`. Do not nil this while the edit/add form
+    /// may still be in the hierarchy — `@Bindable` projections into an
+    /// optional trap if it becomes nil mid-update (edit/add → view).
     var draft: Draft?
     private(set) var isSaving = false
     var formError: String?
     var toast: Toast?
-
-    private var resumeSelectionID: String?
 
     private let projectDir: String
     private let userID: String
@@ -59,13 +73,23 @@ final class SourceFieldsModel {
         }
     }
 
+    var isAdding: Bool {
+        if case .adding = mode { return true }
+        return false
+    }
+
     var selectedField: CatalogMetadataField? {
-        guard !isAdding, let selectedFieldID else { return nil }
-        return fields.first { $0.id == selectedFieldID }
+        switch mode {
+        case .viewing(let id), .editing(let id):
+            return fields.first { $0.id == id }
+        case .empty, .adding:
+            return nil
+        }
     }
 
     var isSelectedFieldLocked: Bool {
-        selectedField.map { $0.origin != SourceFieldOrigin.user } ?? false
+        if case .viewing = mode { return true }
+        return false
     }
 
     /// Live key preview while adding — mirrors what the engine will mint.
@@ -74,7 +98,7 @@ final class SourceFieldsModel {
     }
 
     var isDirty: Bool {
-        guard !isAdding, let field = selectedField, let draft else { return false }
+        guard case .editing = mode, let field = selectedField, let draft else { return false }
         return draft.label != field.label || draft.dataType != field.dataType || draft.description != field.description
     }
 
@@ -115,36 +139,42 @@ final class SourceFieldsModel {
 
     func select(_ id: String) {
         guard let field = fields.first(where: { $0.id == id }) else { return }
-        selectedFieldID = id
-        isAdding = false
-        resumeSelectionID = nil
         formError = nil
-        isSaving = false
+        // Always keep `draft` non-nil here. The locked (.viewing) panel does
+        // not bind it, but going edit/add → view with `draft = nil` in the
+        // same turn tears down `Binding($model.draft)` and traps.
         draft = Draft(label: field.label, dataType: field.dataType, description: field.description)
+        if field.origin == SourceFieldOrigin.user {
+            mode = .editing(id: id)
+        } else {
+            mode = .viewing(id: id)
+        }
     }
 
     func openAdd() {
-        resumeSelectionID = selectedFieldID
-        selectedFieldID = nil
-        isAdding = true
+        let resumeID: String? = switch mode {
+        case .viewing(let id), .editing(let id): id
+        case .empty, .adding: nil
+        }
         formError = nil
-        isSaving = false
+        mode = .adding(resumeID: resumeID)
         draft = Draft(label: "", dataType: SourceFieldDataType.text, description: "")
     }
 
     func cancelAdd() {
-        isAdding = false
-        draft = nil
+        guard case .adding(let resumeID) = mode else { return }
         formError = nil
-        let resumeID = resumeSelectionID
-        resumeSelectionID = nil
         if let resumeID {
             select(resumeID)
+        } else {
+            mode = .empty
+            // Leave `draft` in place — nilling it in the same turn as
+            // removing the form races `@Bindable` optional projections.
         }
     }
 
     func revertEdit() {
-        guard let field = selectedField else { return }
+        guard case .editing(let id) = mode, let field = fields.first(where: { $0.id == id }) else { return }
         draft = Draft(label: field.label, dataType: field.dataType, description: field.description)
         formError = nil
     }
@@ -164,34 +194,36 @@ final class SourceFieldsModel {
         formError = nil
         defer { isSaving = false }
         do {
-            if isAdding {
+            switch mode {
+            case .adding:
                 let created = try await store.createMetadataField(
                     projectDir: projectDir, userID: userID,
                     label: label, dataType: draft.dataType, description: draft.description
                 )
                 fields.append(created)
                 query = ""
-                isAdding = false
-                resumeSelectionID = nil
-                selectedFieldID = created.id
+                mode = .editing(id: created.id)
                 self.draft = Draft(label: created.label, dataType: created.dataType, description: created.description)
                 toast = Toast(
                     title: String(localized: L10n.SourceFields.toastAddedTitle),
                     body: L10n.SourceFields.toastAddedBody(label: created.label, key: created.key)
                 )
-            } else if let field = selectedField {
+            case .editing(let id):
                 let updated = try await store.updateMetadataField(
-                    projectDir: projectDir, userID: userID, fieldID: field.id,
+                    projectDir: projectDir, userID: userID, fieldID: id,
                     label: label, dataType: draft.dataType, description: draft.description
                 )
                 if let idx = fields.firstIndex(where: { $0.id == updated.id }) {
                     fields[idx] = updated
                 }
+                mode = .editing(id: updated.id)
                 self.draft = Draft(label: updated.label, dataType: updated.dataType, description: updated.description)
                 toast = Toast(
                     title: String(localized: L10n.SourceFields.toastUpdatedTitle),
                     body: L10n.SourceFields.toastUpdatedBody(label: updated.label, key: updated.key)
                 )
+            case .empty, .viewing:
+                break
             }
         } catch {
             formError = L10n.Errors.message(for: error)
@@ -211,6 +243,14 @@ final class SourceFieldsModel {
 enum SourceFieldOrigin {
     static let provenencia = "provenencia"
     static let user = "user"
+
+    private static let pluginPrefix = "plugin:"
+
+    /// The id after `plugin:` (e.g. `"plugin:findagrave"` → `"findagrave"`),
+    /// or the raw origin unchanged when it has no such prefix.
+    static func pluginID(from origin: String) -> String {
+        origin.hasPrefix(pluginPrefix) ? String(origin.dropFirst(pluginPrefix.count)) : origin
+    }
 }
 
 enum SourceFieldDataType {

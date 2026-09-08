@@ -4,11 +4,7 @@ import SwiftUI
 /// column header (F-4), the field rows (F-1/F-2), and a result-count
 /// footer.
 struct SourceFieldsListPane: View {
-    let model: SourceFieldsModel
-
-    private var queryBinding: Binding<String> {
-        Binding(get: { model.query }, set: { model.query = $0 })
-    }
+    @Bindable var model: SourceFieldsModel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -21,7 +17,7 @@ struct SourceFieldsListPane: View {
 
     private var searchBar: some View {
         HStack(spacing: PVSpacing.space5) {
-            PVInput(text: queryBinding, prompt: L10n.SourceFields.searchPlaceholder, icon: .search)
+            PVInput(text: $model.query, prompt: L10n.SourceFields.searchPlaceholder, icon: .search)
                 .frame(maxWidth: 420)
             if !model.query.isEmpty {
                 PVButton(L10n.SourceFields.clearSearch, variant: .ghost, size: .sm) {
@@ -35,7 +31,7 @@ struct SourceFieldsListPane: View {
         .padding(.vertical, PVSpacing.space6)
         .background(PVColor.surfaceCard)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
+            PVDivider()
         }
     }
 
@@ -54,15 +50,13 @@ struct SourceFieldsListPane: View {
         .padding(.vertical, PVSpacing.space3)
         .background(PVColor.surfaceSunken)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(PVColor.borderDefault).frame(height: 1)
+            PVDivider(color: PVColor.borderDefault)
         }
     }
 
     private func columnHeaderText(_ text: LocalizedStringResource) -> some View {
         Text(text)
-            .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
-            .tracking(PVTypeScale.micro * PVTracking.caps)
-            .textCase(.uppercase)
+            .pvMicroCaps()
             .foregroundStyle(PVColor.textMuted)
     }
 
@@ -114,7 +108,7 @@ struct SourceFieldsListPane: View {
                             isSelected: !model.isAdding && model.selectedField?.id == field.id,
                             select: { model.select(field.id) }
                         )
-                        Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
+                        PVDivider()
                     }
                 }
             }
@@ -133,7 +127,7 @@ struct SourceFieldsListPane: View {
         .padding(.vertical, PVSpacing.space3)
         .background(PVColor.surfaceCard)
         .overlay(alignment: .top) {
-            Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
+            PVDivider()
         }
     }
 }

@@ -264,6 +264,12 @@ enum L10n {
             comment: "Error when the last active project folder is missing"
         )
 
+        static let workspaceMissingContext = LocalizedStringResource(
+            "onboarding.workspaceMissingContext",
+            defaultValue: "Provenencia could not open the workspace because the project or your account is missing. Create or open a project to continue.",
+            comment: "Error when entering the workspace without a project directory or user id"
+        )
+
         static let createNewFolderNote = LocalizedStringResource(
             "onboarding.chooseFile.createNewFolderNote",
             defaultValue: "The folder is written to ~/Documents when you continue. You name the research on the next screen.",

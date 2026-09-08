@@ -136,6 +136,7 @@ red `Text`), plus `Badge`/`EmptyState`/`Callout` (added for the S2-02
 | SidebarNav | `Components/Navigation/PVSidebarNav.swift` (added for the S2-01 workspace chrome; ports that board's revised `collapsed`-capable `SidebarNav.jsx`) |
 | IconButton | `Components/Core/PVIconButton.swift` (added for the workspace sidebar's collapse toggle, which needed real hover feedback) |
 | Badge | `Components/Core/PVBadge.swift` (added for S2-02's data-type/origin badges) |
+| Divider | `Components/Core/PVDivider.swift` (1pt hairline; horizontal/vertical) |
 | EmptyState | `Components/Feedback/PVEmptyState.swift` (added for S2-02's empty/no-match states; the web spec's `action` slot isn't ported — see the file's header comment) |
 | Callout | `Components/Feedback/PVCallout.swift` (added for S2-02's "this field is locked" note; only the subset S2-02 needs is ported — see the file's header comment) |
 

@@ -38,6 +38,15 @@ enum PVControlSize {
         case .lg: return PVFont.body(size: PVTypeScale.body, weight: PVFontWeight.medium)
         }
     }
+
+    /// SF Symbol point size for leading / icon-only glyphs on this control size.
+    var iconGlyphSize: CGFloat {
+        switch self {
+        case .sm: 13
+        case .md: 15
+        case .lg: 17
+        }
+    }
 }
 
 /// Provenencia button chrome. Prefer `.buttonStyle(.pv(.primary))` on any `Button`;
@@ -102,20 +111,6 @@ struct PVButton: View {
         }
         .buttonStyle(.pv(variant, size: size))
         .disabled(loading)
-    }
-}
-
-/// Duplicated (not shared) from `PVIconButton.swift`'s identically-named,
-/// identically-valued `private` extension — both are file-scoped by
-/// design (Swift's `private` on an extension member), so this can't just
-/// reference that one.
-private extension PVControlSize {
-    var iconGlyphSize: CGFloat {
-        switch self {
-        case .sm: 13
-        case .md: 15
-        case .lg: 17
-        }
     }
 }
 

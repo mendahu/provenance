@@ -1,25 +1,17 @@
 import SwiftUI
 
 /// Shared chrome for single-line inputs (focus ring, inset rest shadow).
-///
-/// **Every layer here is structurally identical whether or not the field
-/// is focused** — only colors and opacities change. That is not a style
-/// preference, it's load-bearing: an earlier version switched between
-/// `pvFocusRing` and `pvInsetShadow` with an `if/else` (two different view
-/// types, so `_ConditionalContent`) and wrapped the whole thing in
-/// `.animation(_:value: isFocused)`. Both are keyed on focus, so the
-/// instant the field became first responder SwiftUI structurally replaced
-/// the subtree — including the embedded `NSTextField` — and focus was
-/// destroyed by the very act of acquiring it. Symptom: click does nothing
-/// (or accepts exactly one keystroke), then the field is inert and typing
-/// beeps. Isolated with a battery of diagnostic fields; a chrome with the
-/// same padding/background/border but no focus-keyed branch or animation
-/// worked fine.
-///
-/// So: no `if/else` in this chain, and no animation modifier wrapping the
-/// field. The border/ring transitions are animated on the decorative
-/// shapes themselves, which don't contain the field.
+/// Focus only changes colors/opacities on layers that are always present —
+/// never branch the view tree on focus (see `DesignSystem/README.md`
+/// § "Interaction state").
 struct PVInputChrome: ViewModifier {
+    /// Horizontal inset when there is no leading icon (matches trailing padding).
+    static let horizontalInset: CGFloat = 10
+    /// Leading overlay glyph size — must match `PVInput`'s icon overlay.
+    static let iconSize: CGFloat = 14
+    /// Gap between the leading icon and the text.
+    static let iconTextGap: CGFloat = 7
+
     var size: PVControlSize = .md
     var mono: Bool = false
     var isFocused: Bool = false
@@ -27,12 +19,19 @@ struct PVInputChrome: ViewModifier {
     /// Reserves room on the left for `PVInput`'s icon overlay.
     var leadingIconInset: Bool = false
 
+    private var leadingPadding: CGFloat {
+        if leadingIconInset {
+            return Self.horizontalInset + Self.iconSize + Self.iconTextGap
+        }
+        return Self.horizontalInset
+    }
+
     func body(content: Content) -> some View {
         content
             .font(mono ? PVFont.mono(size: size == .sm ? PVTypeScale.caption : PVTypeScale.bodySmall) : size.font)
             .foregroundStyle(PVColor.textPrimary)
-            .padding(.leading, leadingIconInset ? 10 + 14 + 7 : 10)
-            .padding(.trailing, 10)
+            .padding(.leading, leadingPadding)
+            .padding(.trailing, Self.horizontalInset)
             .frame(height: size.height)
             .background(
                 RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
@@ -93,27 +92,32 @@ struct PVInput: View {
             if isReadOnly {
                 Text(text)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .modifier(PVInputChrome(size: size, mono: mono, isFocused: false, isInvalid: isInvalid, leadingIconInset: icon != nil))
-            } else if let prompt {
-                TextField("", text: $text, prompt: Text(prompt))
-                    .textFieldStyle(.plain)
-                    .focused($isFocused)
-                    .modifier(PVInputChrome(size: size, mono: mono, isFocused: isFocused, isInvalid: isInvalid, leadingIconInset: icon != nil))
+                    .modifier(chrome(isFocused: false))
             } else {
-                TextField("", text: $text)
+                TextField("", text: $text, prompt: prompt.map { Text($0) })
                     .textFieldStyle(.plain)
                     .focused($isFocused)
-                    .modifier(PVInputChrome(size: size, mono: mono, isFocused: isFocused, isInvalid: isInvalid, leadingIconInset: icon != nil))
+                    .modifier(chrome(isFocused: isFocused))
             }
         }
         .overlay(alignment: .leading) {
             if let icon {
-                PVIcon(icon, size: 14)
+                PVIcon(icon, size: PVInputChrome.iconSize)
                     .foregroundStyle(PVColor.textFaint)
-                    .padding(.leading, 10)
+                    .padding(.leading, PVInputChrome.horizontalInset)
                     .allowsHitTesting(false)
             }
         }
+    }
+
+    private func chrome(isFocused: Bool) -> PVInputChrome {
+        PVInputChrome(
+            size: size,
+            mono: mono,
+            isFocused: isFocused,
+            isInvalid: isInvalid,
+            leadingIconInset: icon != nil
+        )
     }
 }
 

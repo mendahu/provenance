@@ -836,6 +836,18 @@
         }
       }
     },
+    "onboarding.workspaceMissingContext" : {
+      "comment" : "Error when entering the workspace without a project directory or user id",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provenencia could not open the workspace because the project or your account is missing. Create or open a project to continue."
+          }
+        }
+      }
+    },
     "onboarding.open.chooseFolder" : {
       "comment" : "Button to open a folder picker",
       "extractionState" : "manual",

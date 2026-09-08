@@ -18,9 +18,7 @@ struct OnboardingOpenPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
             Text(L10n.Onboarding.projectFolder)
-                .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
-                .tracking(PVTypeScale.micro * PVTracking.caps)
-                .textCase(.uppercase)
+                .pvMicroCaps()
                 .foregroundStyle(PVColor.textMuted)
             if model.availableProjects.isEmpty {
                 HStack(alignment: .center, spacing: PVSpacing.space5) {

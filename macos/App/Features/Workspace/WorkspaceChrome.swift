@@ -43,7 +43,7 @@ extension View {
         offset(y: WorkspaceChrome.verticalNudge)
             .frame(height: WorkspaceChrome.headerHeight)
             .overlay(alignment: .bottom) {
-                Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
+                PVDivider()
             }
             // Outermost so the full visual height — including the
             // hairline — initiates a window move (see `WindowDragRegion`).

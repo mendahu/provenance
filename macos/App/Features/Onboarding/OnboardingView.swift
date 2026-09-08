@@ -28,8 +28,8 @@ struct OnboardingView: View {
                 OnboardingChooseFileView(model: model)
             case .identify:
                 OnboardingIdentifyView(model: model)
-            case .home:
-                WorkspaceView(model: model)
+            case .home(let projectDir, let userID):
+                WorkspaceView(model: model, projectDir: projectDir, userID: userID)
             }
         }
         .frame(minWidth: minWindowSize.width, minHeight: minWindowSize.height)

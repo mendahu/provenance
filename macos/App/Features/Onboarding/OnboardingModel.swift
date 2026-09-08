@@ -5,11 +5,17 @@ import Observation
 @MainActor
 @Observable
 final class OnboardingModel {
-    enum Phase {
+    enum Phase: Equatable {
         case loading
         case chooseFile
         case identify
-        case home
+        /// Open workspace — both values are required; use `enterHome` to set.
+        case home(projectDir: String, userID: String)
+
+        var isHome: Bool {
+            if case .home = self { return true }
+            return false
+        }
     }
 
     enum Mode: String {
@@ -99,8 +105,7 @@ final class OnboardingModel {
                 if let active = try await store.activeProject(identityDir: identityDir.path) {
                     if InstallPaths.isProjectDirectory(active) {
                         await loadProjectInfo(path: active)
-                        activeProjectDir = active
-                        phase = .home
+                        enterHome(projectDir: active, userID: id.userID)
                         return
                     }
                     try await store.removeActiveProject(identityDir: identityDir.path)
@@ -280,9 +285,24 @@ final class OnboardingModel {
     private func applyOpened(_ result: OnboardingResult) {
         session = InstallIdentity(userID: result.userID, displayName: result.displayName, ref: result.ref)
         project = normalizedProject(result.project, path: result.projectDir)
-        activeProjectDir = result.projectDir
         displayName = result.displayName
-        phase = .home
+        enterHome(projectDir: result.projectDir, userID: result.userID)
+    }
+
+    /// Sole path into `.home`. Rejects empty project/user ids, surfaces an
+    /// error toast, and returns to choose-file instead of mounting the
+    /// workspace with fake `""` sentinels.
+    private func enterHome(projectDir: String, userID: String) {
+        let projectDir = projectDir.trimmingCharacters(in: .whitespacesAndNewlines)
+        let userID = userID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !projectDir.isEmpty, !userID.isEmpty else {
+            activeProjectDir = nil
+            present(L10n.Onboarding.workspaceMissingContext)
+            phase = .chooseFile
+            return
+        }
+        activeProjectDir = projectDir
+        phase = .home(projectDir: projectDir, userID: userID)
     }
 
     private func loadProjectInfo(path: String) async {

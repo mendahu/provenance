@@ -4,17 +4,22 @@ import SwiftUI
 /// content host (W-1). Replaces `OnboardingHomeView` as the permanent
 /// chrome once a project is open (`OnboardingModel.phase == .home`) — see
 /// `docs/deployment-plan/spike-2/design/S2-01-workspace-chrome.md`.
+///
+/// `projectDir` and `userID` are non-optional: `OnboardingView` only
+/// mounts this from `.home(projectDir:userID:)`, which is set solely via
+/// `OnboardingModel.enterHome`.
 struct WorkspaceView: View {
     var model: OnboardingModel
+    let projectDir: String
+    let userID: String
     @State private var workspace: WorkspaceModel
     @Environment(SignOutCoordinator.self) private var signOutCoordinator
 
-    init(model: OnboardingModel) {
+    init(model: OnboardingModel, projectDir: String, userID: String) {
         self.model = model
-        // `model.activeProjectDir` is always set by the time `.home` is
-        // reached (see `OnboardingModel.load()`/`applyOpened(_:)`) — the
-        // empty-string fallback only guards a state that shouldn't occur.
-        _workspace = State(initialValue: WorkspaceModel(projectDir: model.activeProjectDir ?? "", store: model.store))
+        self.projectDir = projectDir
+        self.userID = userID
+        _workspace = State(initialValue: WorkspaceModel(projectDir: projectDir, store: model.store))
     }
 
     var body: some View {
@@ -23,8 +28,8 @@ struct WorkspaceView: View {
             WorkspaceContent(
                 section: workspace.selectedSection,
                 project: model.project,
-                projectDir: model.activeProjectDir ?? "",
-                userID: model.session?.userID ?? "",
+                projectDir: projectDir,
+                userID: userID,
                 store: model.store
             )
         }
@@ -47,9 +52,15 @@ struct WorkspaceView: View {
 
 #if DEBUG
 #Preview("Expanded, Sources") {
-    WorkspaceView(model: WorkspaceView.previewModel())
-        .environment(SignOutCoordinator())
-        .frame(width: PVSpacing.widthWorkspaceMin, height: PVSpacing.heightWorkspaceMin)
+    let model = WorkspaceView.previewModel()
+    let projectDir = model.activeProjectDir ?? ""
+    WorkspaceView(
+        model: model,
+        projectDir: projectDir,
+        userID: PreviewFixture.identity.userID
+    )
+    .environment(SignOutCoordinator())
+    .frame(width: PVSpacing.widthWorkspaceMin, height: PVSpacing.heightWorkspaceMin)
 }
 
 extension WorkspaceView {
@@ -72,7 +83,7 @@ extension WorkspaceView {
         model.session = PreviewFixture.identity
         model.project = PreviewFixture.project
         model.activeProjectDir = projectDir
-        model.phase = .home
+        model.phase = .home(projectDir: projectDir, userID: PreviewFixture.identity.userID)
         return model
     }
 }

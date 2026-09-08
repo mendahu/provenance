@@ -26,11 +26,11 @@ struct SourceFieldsView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
+            PVDivider()
             HStack(spacing: 0) {
                 SourceFieldsListPane(model: model)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                Rectangle().fill(PVColor.borderSubtle).frame(width: 1)
+                PVDivider(axis: .vertical)
                 SourceFieldsDetailPane(model: model)
                     .frame(width: detailPaneWidth)
                     .frame(maxHeight: .infinity)
@@ -46,6 +46,7 @@ struct SourceFieldsView: View {
                     message: toast.body,
                     onDismiss: { model.toast = nil }
                 )
+                .id(toast)
                 .padding(PVSpacing.space8)
                 .transition(.move(edge: .trailing).combined(with: .opacity))
                 .accessibilityIdentifier("sourceFields.toast")

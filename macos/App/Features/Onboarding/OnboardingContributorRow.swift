@@ -51,7 +51,7 @@ struct OnboardingContributorRow: View {
                 case .none:
                     EmptyView()
                 case .solid:
-                    Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
+                    PVDivider()
                 case .dashed:
                     OnboardingHorizontalLine()
                         .stroke(PVColor.borderDefault, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))

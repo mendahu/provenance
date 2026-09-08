@@ -42,9 +42,9 @@ struct SourceFieldsRow: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(width: Self.keyColumnWidth, alignment: .leading)
-                dataTypeBadge
+                SourceFieldDataTypeBadge(dataType: field.dataType)
                     .frame(width: Self.dataTypeColumnWidth, alignment: .leading)
-                originBadge
+                SourceFieldOriginBadge(origin: field.origin)
                     .frame(width: Self.originColumnWidth, alignment: .leading)
             }
             .padding(.horizontal, PVSpacing.gutterPage)
@@ -54,27 +54,6 @@ struct SourceFieldsRow: View {
         }
         .buttonStyle(SourceFieldsRowStyle(isSelected: isSelected))
         .accessibilityIdentifier("sourceFields.row.\(field.id)")
-    }
-
-    @ViewBuilder
-    private var dataTypeBadge: some View {
-        if field.dataType == SourceFieldDataType.date {
-            PVBadge(L10n.SourceFields.dataTypeDate, tone: .info, icon: .calendar, subtle: true)
-        } else {
-            PVBadge(L10n.SourceFields.dataTypeText, tone: .neutral, icon: .textType, subtle: true)
-        }
-    }
-
-    @ViewBuilder
-    private var originBadge: some View {
-        switch field.origin {
-        case SourceFieldOrigin.provenencia:
-            PVBadge(L10n.SourceFields.originSeeded, tone: .accent)
-        case SourceFieldOrigin.user:
-            PVBadge(L10n.SourceFields.originUser, tone: .warning)
-        default:
-            PVBadge(text: field.origin, tone: .info)
-        }
     }
 }
 

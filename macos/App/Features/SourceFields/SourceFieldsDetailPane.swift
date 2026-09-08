@@ -4,7 +4,7 @@ import SwiftUI
 /// field's detail (locked read-only for `provenencia`/`plugin:…`, editable
 /// for `user`), or an empty prompt when nothing is selected — S2-02 §3.2/3.3.
 struct SourceFieldsDetailPane: View {
-    let model: SourceFieldsModel
+    @Bindable var model: SourceFieldsModel
 
     var body: some View {
         ScrollView {
@@ -42,6 +42,18 @@ struct SourceFieldsDetailPane: View {
         }
         .padding(PVSpacing.space8)
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Force a fresh subtree when switching add / view / edit so form
+        // bindings are not reused across modes that no longer own a draft.
+        .id(panelIdentity)
+    }
+
+    private var panelIdentity: String {
+        switch model.mode {
+        case .empty: "empty"
+        case .adding: "adding"
+        case .viewing(let id): "viewing-\(id)"
+        case .editing(let id): "editing-\(id)"
+        }
     }
 
     // MARK: Header (shared by add / locked / editable)
@@ -49,9 +61,7 @@ struct SourceFieldsDetailPane: View {
     private var panelHeader: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space5) {
             Text(model.isAdding ? L10n.SourceFields.detailEyebrowNewField : L10n.SourceFields.detailEyebrowField)
-                .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
-                .tracking(PVTypeScale.micro * PVTracking.caps)
-                .textCase(.uppercase)
+                .pvMicroCaps()
                 .foregroundStyle(PVColor.textMuted)
             Text(panelTitle)
                 .font(PVFont.display(size: PVTypeScale.h2))
@@ -85,17 +95,10 @@ struct SourceFieldsDetailPane: View {
         return model.selectedField?.key ?? ""
     }
 
-    @ViewBuilder
     private var originBadge: some View {
-        let origin = model.isAdding ? SourceFieldOrigin.user : (model.selectedField?.origin ?? SourceFieldOrigin.user)
-        switch origin {
-        case SourceFieldOrigin.provenencia:
-            PVBadge(L10n.SourceFields.originSeeded, tone: .accent)
-        case SourceFieldOrigin.user:
-            PVBadge(L10n.SourceFields.originUser, tone: .warning)
-        default:
-            PVBadge(text: origin, tone: .info)
-        }
+        SourceFieldOriginBadge(
+            origin: model.isAdding ? SourceFieldOrigin.user : (model.selectedField?.origin ?? SourceFieldOrigin.user)
+        )
     }
 
     // MARK: Locked (provenencia / plugin) detail
@@ -106,7 +109,7 @@ struct SourceFieldsDetailPane: View {
             VStack(alignment: .leading, spacing: PVSpacing.space7) {
                 PVCallout(tone: .neutral, icon: .lock, message: lockedNote(for: field), compact: true)
                 labeledSection(L10n.SourceFields.dataTypeSectionLabel) {
-                    Text(field.dataType == SourceFieldDataType.date ? L10n.SourceFields.dataTypeDate : L10n.SourceFields.dataTypeText)
+                    Text(SourceFieldDataType.label(for: field.dataType))
                         .font(PVFont.body(size: PVTypeScale.bodySmall))
                         .foregroundStyle(PVColor.textPrimary)
                 }
@@ -118,7 +121,7 @@ struct SourceFieldsDetailPane: View {
             }
             .padding(.top, PVSpacing.space7)
             .overlay(alignment: .top) {
-                Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
+                PVDivider()
             }
         }
     }
@@ -127,34 +130,19 @@ struct SourceFieldsDetailPane: View {
         if field.origin == SourceFieldOrigin.provenencia {
             return String(localized: L10n.SourceFields.lockedNoteSeeded)
         }
-        let pluginID = field.origin.hasPrefix("plugin:") ? String(field.origin.dropFirst("plugin:".count)) : field.origin
-        return L10n.SourceFields.lockedNotePlugin(pluginID: pluginID)
+        return L10n.SourceFields.lockedNotePlugin(pluginID: SourceFieldOrigin.pluginID(from: field.origin))
     }
 
     private func labeledSection(_ label: LocalizedStringResource, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: PVSpacing.space2) {
             Text(label)
-                .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
-                .tracking(PVTypeScale.micro * PVTracking.caps)
-                .textCase(.uppercase)
+                .pvMicroCaps()
                 .foregroundStyle(PVColor.textMuted)
             content()
         }
     }
 
     // MARK: Add / editable form
-
-    private var labelBinding: Binding<String> {
-        Binding(get: { model.draft?.label ?? "" }, set: { model.draft?.label = $0 })
-    }
-
-    private var dataTypeBinding: Binding<String> {
-        Binding(get: { model.draft?.dataType ?? SourceFieldDataType.text }, set: { model.draft?.dataType = $0 })
-    }
-
-    private var descriptionBinding: Binding<String> {
-        Binding(get: { model.draft?.description ?? "" }, set: { model.draft?.description = $0 })
-    }
 
     private var dataTypeOptions: [PVSelectOption] {
         [
@@ -163,42 +151,44 @@ struct SourceFieldsDetailPane: View {
         ]
     }
 
+    /// `panel(isLocked: false)` is only reached in `.adding` / `.editing`,
+    /// where `draft` is set, so the `Binding($model.draft)` unwrap always
+    /// succeeds in practice.
+    @ViewBuilder
     private var form: some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space7) {
-            PVField(label: L10n.SourceFields.formLabel, error: formError, required: true) {
-                PVInput(
-                    text: labelBinding,
-                    prompt: model.isAdding ? L10n.SourceFields.formLabelPlaceholder : nil,
-                    isInvalid: formError != nil
-                )
-            }
-            PVField(label: L10n.SourceFields.formDataType, hint: L10n.SourceFields.formDataTypeHint) {
-                PVSelect(selection: dataTypeBinding, options: dataTypeOptions)
-            }
-            PVField(label: L10n.SourceFields.formDescription, hint: L10n.SourceFields.formDescriptionHint) {
-                PVInput(text: descriptionBinding, prompt: model.isAdding ? L10n.SourceFields.formDescriptionPlaceholder : nil)
-            }
-            HStack(spacing: PVSpacing.space5) {
-                PVButton(primaryLabel, variant: .primary, loading: model.isSaving) {
-                    Task { await model.submit() }
+        if let draft = Binding($model.draft) {
+            VStack(alignment: .leading, spacing: PVSpacing.space7) {
+                PVField(label: L10n.SourceFields.formLabel, error: model.formError, required: true) {
+                    PVInput(
+                        text: draft.label,
+                        prompt: model.isAdding ? L10n.SourceFields.formLabelPlaceholder : nil,
+                        isInvalid: model.formError != nil
+                    )
                 }
-                .disabled(!model.canSubmit)
-                .accessibilityIdentifier("sourceFields.form.submit")
-                PVButton(secondaryLabel, variant: .ghost) {
-                    secondaryAction()
+                PVField(label: L10n.SourceFields.formDataType, hint: L10n.SourceFields.formDataTypeHint) {
+                    PVSelect(selection: draft.dataType, options: dataTypeOptions)
                 }
-                .disabled(model.isSaving || (!model.isAdding && !model.isDirty))
-                .accessibilityIdentifier("sourceFields.form.secondary")
+                PVField(label: L10n.SourceFields.formDescription, hint: L10n.SourceFields.formDescriptionHint) {
+                    PVInput(text: draft.description, prompt: model.isAdding ? L10n.SourceFields.formDescriptionPlaceholder : nil)
+                }
+                HStack(spacing: PVSpacing.space5) {
+                    PVButton(primaryLabel, variant: .primary, loading: model.isSaving) {
+                        Task { await model.submit() }
+                    }
+                    .disabled(!model.canSubmit)
+                    .accessibilityIdentifier("sourceFields.form.submit")
+                    PVButton(secondaryLabel, variant: .ghost) {
+                        secondaryAction()
+                    }
+                    .disabled(model.isSaving || (!model.isAdding && !model.isDirty))
+                    .accessibilityIdentifier("sourceFields.form.secondary")
+                }
+            }
+            .padding(.top, PVSpacing.space7)
+            .overlay(alignment: .top) {
+                PVDivider()
             }
         }
-        .padding(.top, PVSpacing.space7)
-        .overlay(alignment: .top) {
-            Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
-        }
-    }
-
-    private var formError: String? {
-        model.formError
     }
 
     private var primaryLabel: LocalizedStringResource {

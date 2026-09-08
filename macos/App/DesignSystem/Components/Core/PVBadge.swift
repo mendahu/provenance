@@ -20,16 +20,14 @@ enum PVBadgeTone {
 /// fill, optional leading icon, uppercase micro caption). `subtle` swaps
 /// the filled background for a bordered outline, same as the web prop.
 struct PVBadge: View {
-    private let titleKey: LocalizedStringResource?
-    private let text: String?
+    private let label: Text
     private let tone: PVBadgeTone
     private let icon: PVSymbol?
     private let subtle: Bool
 
     /// For fixed UI copy (e.g. "provenencia", "you").
     init(_ titleKey: LocalizedStringResource, tone: PVBadgeTone = .neutral, icon: PVSymbol? = nil, subtle: Bool = false) {
-        self.titleKey = titleKey
-        text = nil
+        label = Text(titleKey)
         self.tone = tone
         self.icon = icon
         self.subtle = subtle
@@ -37,8 +35,7 @@ struct PVBadge: View {
 
     /// For badge content that is data, not UI copy (e.g. a raw `plugin:…` origin id).
     init(text: String, tone: PVBadgeTone = .neutral, icon: PVSymbol? = nil, subtle: Bool = false) {
-        titleKey = nil
-        self.text = text
+        label = Text(text)
         self.tone = tone
         self.icon = icon
         self.subtle = subtle
@@ -50,15 +47,9 @@ struct PVBadge: View {
             if let icon {
                 PVIcon(icon, size: 11)
             }
-            Group {
-                if let titleKey {
-                    Text(titleKey)
-                } else {
-                    Text(text ?? "")
-                }
-            }
-            .tracking(PVTypeScale.micro * PVTracking.caps)
-            .textCase(.uppercase)
+            label
+                .tracking(PVTypeScale.micro * PVTracking.caps)
+                .textCase(.uppercase)
         }
         .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
         .foregroundStyle(colors.foreground)
