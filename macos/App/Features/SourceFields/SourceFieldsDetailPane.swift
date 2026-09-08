@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// The right pane of `SourceFieldsView`: the add-field form, a selected
-/// field's detail (locked read-only for `provenencia`/`plugin:…`, editable
-/// for `user`), or an empty prompt when nothing is selected — S2-02 §3.2/3.3.
+/// field's detail (editable for `user` / `provenencia`, locked read-only for
+/// `plugin:…`), or an empty prompt when nothing is selected — S2-02 §3.2/3.3.
 struct SourceFieldsDetailPane: View {
     @Bindable var model: SourceFieldsModel
 
@@ -101,7 +101,7 @@ struct SourceFieldsDetailPane: View {
         )
     }
 
-    // MARK: Locked (provenencia / plugin) detail
+    // MARK: Locked (plugin) detail
 
     @ViewBuilder
     private var lockedBody: some View {
@@ -127,10 +127,7 @@ struct SourceFieldsDetailPane: View {
     }
 
     private func lockedNote(for field: CatalogMetadataField) -> String {
-        if field.origin == SourceFieldOrigin.provenencia {
-            return String(localized: L10n.SourceFields.lockedNoteSeeded)
-        }
-        return L10n.SourceFields.lockedNotePlugin(pluginID: SourceFieldOrigin.pluginID(from: field.origin))
+        L10n.SourceFields.lockedNotePlugin(pluginID: SourceFieldOrigin.pluginID(from: field.origin))
     }
 
     private func labeledSection(_ label: LocalizedStringResource, @ViewBuilder content: () -> some View) -> some View {
@@ -165,8 +162,15 @@ struct SourceFieldsDetailPane: View {
                         isInvalid: model.formError != nil
                     )
                 }
-                PVField(label: L10n.SourceFields.formDataType, hint: L10n.SourceFields.formDataTypeHint) {
-                    PVSelect(selection: draft.dataType, options: dataTypeOptions)
+                PVField(label: L10n.SourceFields.formDataType, hint: model.isAdding ? L10n.SourceFields.formDataTypeHint : L10n.SourceFields.formDataTypeImmutableHint) {
+                    if model.isAdding {
+                        PVSelect(selection: draft.dataType, options: dataTypeOptions)
+                    } else {
+                        Text(SourceFieldDataType.label(for: draft.wrappedValue.dataType))
+                            .font(PVFont.body(size: PVTypeScale.body))
+                            .foregroundStyle(PVColor.textPrimary)
+                            .accessibilityIdentifier("sourceFields.form.dataType.readonly")
+                    }
                 }
                 PVField(label: L10n.SourceFields.formDescription, hint: L10n.SourceFields.formDescriptionHint) {
                     PVInput(text: draft.description, prompt: model.isAdding ? L10n.SourceFields.formDescriptionPlaceholder : nil)

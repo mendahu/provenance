@@ -27,18 +27,18 @@ func TestSourceMetadata(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	mustBookSource := func(t *testing.T, c *database.Catalog) sources.Source {
+	mustSeededSource := func(t *testing.T, c *database.Catalog) sources.Source {
 		t.Helper()
-		if err := sourcevocab.Ensure(c); err != nil {
+		if err := sourcevocab.Install(c); err != nil {
 			t.Fatal(err)
 		}
-		st, err := sourcetypes.Lookup(c, "book", sourcetypes.OriginProvenencia)
+		st, err := sourcetypes.Lookup(c, "birth_certificate", sourcetypes.OriginProvenencia)
 		if err != nil {
 			t.Fatal(err)
 		}
 		s, err := sources.Create(c, userID, sources.CreateInput{
 			SourceTypeID: st.ID,
-			Title:        "Family History",
+			Title:        "Birth of Alice",
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -97,15 +97,15 @@ func TestSourceMetadata(t *testing.T) {
 			name: "set text and reject date on text field",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
-				src := mustBookSource(t, c)
-				author := mustField(t, c, "author")
+				src := mustSeededSource(t, c)
+				doc := mustField(t, c, "document_number")
 				row, err := Set(c, userID, Input{
-					SourceID: src.ID, FieldID: author.ID, ValueText: "Alice Smith",
+					SourceID: src.ID, FieldID: doc.ID, ValueText: "12345",
 				})
 				if err != nil {
 					t.Fatal(err)
 				}
-				if row.ValueText != "Alice Smith" || row.DateValueID != nil {
+				if row.ValueText != "12345" || row.DateValueID != nil {
 					t.Fatalf("%+v", row)
 				}
 				if latestAction(t, c) != "update_source_metadata" {
@@ -113,7 +113,7 @@ func TestSourceMetadata(t *testing.T) {
 				}
 				dv := mustYear(t, c, 1890, datevalues.QualifierABT)
 				if _, err := Set(c, userID, Input{
-					SourceID: src.ID, FieldID: author.ID, ValueText: "x", DateValueID: dv,
+					SourceID: src.ID, FieldID: doc.ID, ValueText: "x", DateValueID: dv,
 				}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("got %v", err)
 				}
@@ -123,21 +123,21 @@ func TestSourceMetadata(t *testing.T) {
 			name: "date text only structured only and both",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
-				src := mustBookSource(t, c)
-				pub := mustField(t, c, "publication_date")
+				src := mustSeededSource(t, c)
+				rec := mustField(t, c, "record_date")
 				if _, err := Set(c, userID, Input{
-					SourceID: src.ID, FieldID: pub.ID, ValueText: "about the year 1890",
+					SourceID: src.ID, FieldID: rec.ID, ValueText: "about the year 1890",
 				}); err != nil {
 					t.Fatal(err)
 				}
 				dv := mustYear(t, c, 1890, datevalues.QualifierABT)
 				if _, err := Set(c, userID, Input{
-					SourceID: src.ID, FieldID: pub.ID, DateValueID: dv,
+					SourceID: src.ID, FieldID: rec.ID, DateValueID: dv,
 				}); err != nil {
 					t.Fatal(err)
 				}
 				both, err := Set(c, userID, Input{
-					SourceID: src.ID, FieldID: pub.ID,
+					SourceID: src.ID, FieldID: rec.ID,
 					ValueText: "about the year 1890", DateValueID: dv,
 				})
 				if err != nil {
@@ -146,7 +146,7 @@ func TestSourceMetadata(t *testing.T) {
 				if both.ValueText != "about the year 1890" || string(both.DateValueID) != string(dv) {
 					t.Fatalf("%+v", both)
 				}
-				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: pub.ID}); !errors.Is(err, ErrInvalid) {
+				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: rec.ID}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("empty set %v", err)
 				}
 			},
@@ -155,13 +155,13 @@ func TestSourceMetadata(t *testing.T) {
 			name: "clear and upsert same pair",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
-				src := mustBookSource(t, c)
-				isbn := mustField(t, c, "isbn")
-				first, err := Set(c, userID, Input{SourceID: src.ID, FieldID: isbn.ID, ValueText: "111"})
+				src := mustSeededSource(t, c)
+				doc := mustField(t, c, "document_number")
+				first, err := Set(c, userID, Input{SourceID: src.ID, FieldID: doc.ID, ValueText: "111"})
 				if err != nil {
 					t.Fatal(err)
 				}
-				second, err := Set(c, userID, Input{SourceID: src.ID, FieldID: isbn.ID, ValueText: "222"})
+				second, err := Set(c, userID, Input{SourceID: src.ID, FieldID: doc.ID, ValueText: "222"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -172,7 +172,7 @@ func TestSourceMetadata(t *testing.T) {
 				if err != nil || len(list) != 1 {
 					t.Fatalf("%v len=%d", err, len(list))
 				}
-				if err := Clear(c, userID, src.ID, isbn.ID); err != nil {
+				if err := Clear(c, userID, src.ID, doc.ID); err != nil {
 					t.Fatal(err)
 				}
 				if latestAction(t, c) != "update_source_metadata" {
@@ -182,7 +182,7 @@ func TestSourceMetadata(t *testing.T) {
 				if err != nil || len(list) != 0 {
 					t.Fatalf("after clear %v len=%d", err, len(list))
 				}
-				if err := Clear(c, userID, src.ID, isbn.ID); err != nil {
+				if err := Clear(c, userID, src.ID, doc.ID); err != nil {
 					t.Fatal(err)
 				}
 			},
@@ -191,9 +191,9 @@ func TestSourceMetadata(t *testing.T) {
 			name: "list workspace suggested and extras",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
-				src := mustBookSource(t, c)
-				author := mustField(t, c, "author")
-				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: author.ID, ValueText: "Alice"}); err != nil {
+				src := mustSeededSource(t, c)
+				doc := mustField(t, c, "document_number")
+				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: doc.ID, ValueText: "12345"}); err != nil {
 					t.Fatal(err)
 				}
 				extraID, err := sourcefields.Upsert(c, sourcefields.Field{
@@ -209,15 +209,15 @@ func TestSourceMetadata(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				var sawAuthor, sawUnsetSuggested, sawExtra bool
+				var sawDoc, sawUnsetSuggested, sawExtra bool
 				for _, e := range ws {
 					switch e.Field.Key {
-					case "author":
-						sawAuthor = true
-						if !e.Suggested || e.Value == nil || e.Value.ValueText != "Alice" {
-							t.Fatalf("author %+v", e)
+					case "document_number":
+						sawDoc = true
+						if !e.Suggested || e.Value == nil || e.Value.ValueText != "12345" {
+							t.Fatalf("document_number %+v", e)
 						}
-					case "publisher", "publication_date", "isbn":
+					case "record_date", "issue_date":
 						if e.Suggested && e.Value == nil {
 							sawUnsetSuggested = true
 						}
@@ -228,8 +228,8 @@ func TestSourceMetadata(t *testing.T) {
 						}
 					}
 				}
-				if !sawAuthor || !sawUnsetSuggested || !sawExtra {
-					t.Fatalf("author=%v unset=%v extra=%v entries=%d", sawAuthor, sawUnsetSuggested, sawExtra, len(ws))
+				if !sawDoc || !sawUnsetSuggested || !sawExtra {
+					t.Fatalf("doc=%v unset=%v extra=%v entries=%d", sawDoc, sawUnsetSuggested, sawExtra, len(ws))
 				}
 			},
 		},
@@ -237,9 +237,9 @@ func TestSourceMetadata(t *testing.T) {
 			name: "source delete cascades metadata",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
-				src := mustBookSource(t, c)
-				author := mustField(t, c, "author")
-				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: author.ID, ValueText: "x"}); err != nil {
+				src := mustSeededSource(t, c)
+				doc := mustField(t, c, "document_number")
+				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: doc.ID, ValueText: "x"}); err != nil {
 					t.Fatal(err)
 				}
 				db, err := c.DB()
@@ -258,24 +258,24 @@ func TestSourceMetadata(t *testing.T) {
 			name: "reject bad ids and empty text set",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
-				src := mustBookSource(t, c)
-				author := mustField(t, c, "author")
+				src := mustSeededSource(t, c)
+				doc := mustField(t, c, "document_number")
 				missing := make([]byte, 16)
 				missing[15] = 9
-				if _, err := Set(c, userID, Input{SourceID: missing, FieldID: author.ID, ValueText: "x"}); !errors.Is(err, ErrInvalid) {
+				if _, err := Set(c, userID, Input{SourceID: missing, FieldID: doc.ID, ValueText: "x"}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("bad source %v", err)
 				}
 				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: missing, ValueText: "x"}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("bad field %v", err)
 				}
-				if _, err := Set(c, nil, Input{SourceID: src.ID, FieldID: author.ID, ValueText: "x"}); !errors.Is(err, ErrInvalid) {
+				if _, err := Set(c, nil, Input{SourceID: src.ID, FieldID: doc.ID, ValueText: "x"}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("nil user %v", err)
 				}
-				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: author.ID}); !errors.Is(err, ErrInvalid) {
+				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: doc.ID}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("empty text %v", err)
 				}
-				pub := mustField(t, c, "publication_date")
-				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: pub.ID, DateValueID: missing}); !errors.Is(err, ErrInvalid) {
+				rec := mustField(t, c, "record_date")
+				if _, err := Set(c, userID, Input{SourceID: src.ID, FieldID: rec.ID, DateValueID: missing}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("bad date %v", err)
 				}
 			},

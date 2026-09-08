@@ -584,7 +584,13 @@ enum L10n {
         static let formDataTypeHint = LocalizedStringResource(
             "sourceFields.form.dataTypeHint",
             defaultValue: "Only text and date exist in the Source layer today",
-            comment: "Hint under the data type picker"
+            comment: "Hint under the data type picker on add"
+        )
+
+        static let formDataTypeImmutableHint = LocalizedStringResource(
+            "sourceFields.form.dataTypeImmutableHint",
+            defaultValue: "Data type is fixed when the field is created so existing values stay valid.",
+            comment: "Hint under the read-only data type on edit"
         )
 
         static let formDescription = LocalizedStringResource(
@@ -812,6 +818,11 @@ enum L10n {
             defaultValue: "Invalid source type.",
             comment: "FFI error sourcetypes.invalid"
         )
+        static let sourceTypesInUse = LocalizedStringResource(
+            "error.sourcetypes.in_use",
+            defaultValue: "That source type is still used by one or more sources.",
+            comment: "FFI error sourcetypes.in_use"
+        )
         static let sourceFieldsInvalid = LocalizedStringResource(
             "error.sourcefields.invalid",
             defaultValue: "Invalid metadata field.",
@@ -825,6 +836,11 @@ enum L10n {
             ))
             return String(format: format, locale: .current, key)
         }
+        static let sourceFieldsInUse = LocalizedStringResource(
+            "error.sourcefields.in_use",
+            defaultValue: "That metadata field is still used on one or more sources.",
+            comment: "FFI error sourcefields.in_use"
+        )
         static let sourceVocabInvalid = LocalizedStringResource(
             "error.sourcevocab.invalid",
             defaultValue: "Invalid source vocabulary.",
@@ -913,10 +929,14 @@ enum L10n {
                 return String(localized: ingestPermissionDenied)
             case "sourcetypes.invalid":
                 return String(localized: sourceTypesInvalid)
+            case "sourcetypes.in_use":
+                return String(localized: sourceTypesInUse)
             case "sourcefields.invalid":
                 return String(localized: sourceFieldsInvalid)
             case "sourcefields.duplicate_key":
                 return sourceFieldsDuplicateKey(key: params.first ?? "?")
+            case "sourcefields.in_use":
+                return String(localized: sourceFieldsInUse)
             case "sourcevocab.invalid":
                 return String(localized: sourceVocabInvalid)
             case "datevalues.invalid":

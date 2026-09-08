@@ -8,36 +8,35 @@ import (
 
 // createCatalog and OpenCatalog are the only researcher-facing catalog entry
 // points in onboarding. database.Create/Open stay migrate-only for tests and
-// low-level use; reconcile (refs + provenencia vocabulary) runs here once.
+// low-level use. Refs are reconciled on create and open; Source vocabulary is
+// installed once at create only (never healed on open).
 func createCatalog(parent, folder string) (*database.Catalog, error) {
 	c, err := database.Create(parent, folder)
 	if err != nil {
 		return nil, err
 	}
-	if err := reconcile(c); err != nil {
+	if err := users.EnsureRefs(c); err != nil {
+		_ = c.Close()
+		return nil, err
+	}
+	if err := sourcevocab.Install(c); err != nil {
 		_ = c.Close()
 		return nil, err
 	}
 	return c, nil
 }
 
-// OpenCatalog opens a project for researcher use (migrate + reconcile).
+// OpenCatalog opens a project for researcher use (migrate + ensure user refs).
 // FFI Source handlers and onboarding open paths must use this, not database.Open.
+// Does not re-install or heal Source vocabulary.
 func OpenCatalog(projectDir string) (*database.Catalog, error) {
 	c, err := database.Open(projectDir)
 	if err != nil {
 		return nil, err
 	}
-	if err := reconcile(c); err != nil {
+	if err := users.EnsureRefs(c); err != nil {
 		_ = c.Close()
 		return nil, err
 	}
 	return c, nil
-}
-
-func reconcile(c *database.Catalog) error {
-	if err := users.EnsureRefs(c); err != nil {
-		return err
-	}
-	return sourcevocab.Ensure(c)
 }

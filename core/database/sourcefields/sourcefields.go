@@ -18,9 +18,12 @@ var ErrInvalid = apperr.New(apperr.CodeSourceFieldsInvalid, apperr.KindUser)
 // names a user-origin field. Carries the colliding key as a param.
 var ErrDuplicateKey = apperr.New(apperr.CodeSourceFieldsDuplicateKey, apperr.KindConflict)
 
-// ErrLocked is returned by Update when the target field isn't user-origin
-// (seeded/provenencia and plugin-origin fields are view-only).
+// ErrLocked is returned by Update when the target field is plugin-origin
+// (project fields — user and provenencia starters — are editable).
 var ErrLocked = apperr.New(apperr.CodeSourceFieldsInvalid, apperr.KindUser)
+
+// ErrInUse is returned by Delete when source_metadata still references the field.
+var ErrInUse = apperr.New(apperr.CodeSourceFieldsInUse, apperr.KindConflict)
 
 const (
 	OriginProvenencia = "provenencia"
@@ -41,8 +44,9 @@ const (
 		FROM source_metadata_fields WHERE id = ?`
 	sqlList = `SELECT id, key, origin, label, data_type, COALESCE(description, '')
 		FROM source_metadata_fields ORDER BY label COLLATE NOCASE, origin, key`
-	sqlUpdate = `UPDATE source_metadata_fields SET label = ?, data_type = ?, description = ? WHERE id = ?`
+	sqlUpdate = `UPDATE source_metadata_fields SET label = ?, description = ? WHERE id = ?`
 	sqlDelete = `DELETE FROM source_metadata_fields WHERE id = ?`
+	sqlInUse  = `SELECT 1 FROM source_metadata WHERE field_id = ? LIMIT 1`
 )
 
 // Field is one source_metadata_fields row.
@@ -120,9 +124,10 @@ func Create(c *database.Catalog, label, dataType, description string) (Field, er
 	return Lookup(c, key, OriginUser)
 }
 
-// Update patches label, data_type, and description for a user-origin field
-// by id. The field's key and origin never change here — the key is minted
-// once at Create. Returns ErrLocked if the field isn't user-origin.
+// Update patches label and description for a project field (user or
+// provenencia) by id. Key, origin, and data_type are immutable after create.
+// dataType must match the existing value (callers still pass it for clarity).
+// Returns ErrLocked for plugin-origin fields.
 func Update(c *database.Catalog, id []byte, label, dataType, description string) (Field, error) {
 	db, err := c.DB()
 	if err != nil {
@@ -138,8 +143,11 @@ func Update(c *database.Catalog, id []byte, label, dataType, description string)
 	if err != nil {
 		return Field{}, err
 	}
-	if existing.Origin != OriginUser {
+	if existing.Origin != OriginUser && existing.Origin != OriginProvenencia {
 		return Field{}, ErrLocked
+	}
+	if dataType != existing.DataType {
+		return Field{}, ErrInvalid
 	}
 	var desc any
 	if description == "" {
@@ -147,7 +155,7 @@ func Update(c *database.Catalog, id []byte, label, dataType, description string)
 	} else {
 		desc = description
 	}
-	if _, err := db.Exec(sqlUpdate, label, dataType, desc, id); err != nil {
+	if _, err := db.Exec(sqlUpdate, label, desc, id); err != nil {
 		return Field{}, err
 	}
 	return GetByID(c, id)
@@ -215,7 +223,8 @@ func List(c *database.Catalog) ([]Field, error) {
 	return out, rows.Err()
 }
 
-// Delete removes a field by id (for tests / admin). Cascades suggestion joins.
+// Delete removes a field by id when no source_metadata rows reference it.
+// Cascades suggestion joins. Any origin may be deleted when unused.
 func Delete(c *database.Catalog, id []byte) error {
 	db, err := c.DB()
 	if err != nil {
@@ -223,6 +232,14 @@ func Delete(c *database.Catalog, id []byte) error {
 	}
 	if len(id) != 16 {
 		return ErrInvalid
+	}
+	var one int
+	err = db.QueryRow(sqlInUse, id).Scan(&one)
+	if err == nil {
+		return ErrInUse
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return err
 	}
 	_, err = db.Exec(sqlDelete, id)
 	return err

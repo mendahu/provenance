@@ -379,11 +379,13 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         guard let idx = list.firstIndex(where: { $0.id == fieldID }) else {
             throw StoreBoom.boom
         }
-        guard list[idx].origin == "user" else {
+        guard list[idx].origin == "user" || list[idx].origin == "provenencia" else {
+            throw StoreBoom.boom
+        }
+        guard list[idx].dataType == dataType else {
             throw StoreBoom.boom
         }
         list[idx].label = label
-        list[idx].dataType = dataType
         list[idx].description = description
         fieldsByProject[projectDir] = list
         return list[idx]

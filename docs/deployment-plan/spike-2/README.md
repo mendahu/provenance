@@ -55,7 +55,7 @@ Onboarding (Spike 1) → signed in
 - Audit write path (`audit_transactions` / `audit_changes`) used by every Source-layer mutation.
 - Shared `date_values` table (schema + minimal Go helpers) so date-typed Source metadata can land without a second migration later.
 - Full Source-layer table set from the Source doc: `source_types`, `sources`, `source_notes`, `source_metadata_fields`, `source_type_metadata_fields`, `source_metadata`, `artifacts`, `files`, `file_derivatives`.
-- Small **seed** of types/fields (not the entire [`seeded-vocabulary.md`](../../seeded-vocabulary.md) horizon list). Prefer photograph + book + one vital/census-shaped type unless design picks a different dogfood set.
+- Small **seed** of types/fields (not the entire [`seeded-vocabulary.md`](../../seeded-vocabulary.md) horizon list). Create-time starter today: `birth_certificate` plus a few suggested fields; opens do not heal or expand the set.
 - Go domain packages for CRUD + ingest; FFI use-cases (coarse verbs); SwiftUI Source catalog UI inside the workspace, consuming `GenealogyStore`.
 - Claude Design boards for workspace chrome, Source fields, Source types, Sources catalog (Source → Artifact → File), and the Files list.
 - Refs: mint `SRC-…` / `ART-…` via `core/ref` on insert ([`catalog-refs.md`](../../catalog-refs.md)).
@@ -171,8 +171,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done) — mounts in the **Source fields** destination |
-| **Deliverables** | Board for the **Source fields** destination: searchable list/table of `source_metadata_fields` (label + data type; origin visible in one list, not split lists); detail/edit (label, data type, description; description detail-only); add/create flow with **auto slug key from label** (not user-typed). No delete. Add chrome (modal/sheet vs nested pane + back) is a Design choice. Lives inside the workspace content host — not a separate window chrome. |
-| **Context** | Source doc §5.1; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1.1 (`origin`). Simplest Spike 2 UI; no dependency on Sources catalog or type↔field suggestions. **`provenencia` rows are view-only; `user` rows are editable.** |
+| **Deliverables** | Board for the **Source fields** destination: searchable list/table of `source_metadata_fields` (label + data type; origin visible in one list, not split lists); detail/edit (label, description; **data type immutable after create**); add/create flow with **auto slug key from label** (not user-typed). No delete. Add chrome (modal/sheet vs nested pane + back) is a Design choice. Lives inside the workspace content host — not a separate window chrome. |
+| **Context** | Source doc §5.1; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1.1 (`origin`). Simplest Spike 2 UI; no dependency on Sources catalog or type↔field suggestions. **`user` and create-time `provenencia` rows are editable; plugin rows are view-only.** |
 | **Out** | Delete/retire fields; attaching fields to types (S2-03); Source instance metadata values; Source types admin; Citations/credibility. |
 | **Feeds** | S2-15 (and supplies the field pool for S2-03) |
 
@@ -252,8 +252,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-04 seed decision (or interim seed with note “Design may trim”) |
-| **Deliverables** | Done. Migration `000005` + `sourcetypes`/`sourcefields`/`sourcevocab`; origin namespaces; `Ensure` reconciles provenencia seed (photograph/book/passport/birth_record/marriage_record) on Create/Open. |
-| **Context** | Source doc §§3, 5.1–5.2; vocabulary doc §1.1 / §2. Interim seed broader than S2-04 V-19; Design may still trim without a schema change. |
+| **Deliverables** | Done. Migration `000005` + `sourcetypes`/`sourcefields`/`sourcevocab`; origin namespaces; create-time `Install` seeds a trimmed starter (`birth_certificate` + suggested fields). Opens do not heal Source vocab. |
+| **Context** | Source doc §§3, 5.1–5.2; vocabulary doc §1.1 / §2. Starter is intentionally tiny; horizon lists stay documentation. |
 | **Out** | No `sources` rows yet. |
 
 ---
@@ -345,8 +345,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-02 (design enough), S2-13, S2-14 |
-| **Deliverables** | **Source fields** destination: searchable list/table (label, data type, origin); detail/edit for user fields (label, data type, description); add/create flow per S2-02 board. No delete. **Auto-generate `key` as a kebab slug of the label** — do not collect key in the UI. Prefer Go as source of truth (e.g. derive in `CreateMetadataField` from label; ignore/omit client-supplied key), with a small shared slug helper if needed (related to onboarding folder slug rules, without the `.provenencia` suffix). If edit needs an `UpdateMetadataField` (or equivalent) FFI beyond today’s create/list, include that thin engine gap in this PR. `Features/` model+views mounted in the existing workspace content host. Unit tests with `FakeStore` (including slug collision / unslugifiable label). L10n via skill. |
-| **Context** | Mount under S2-14 **Source fields** pane — do not reintroduce a separate top-level window chrome. **`provenencia` rows are view-only; `user` rows are editable.** |
+| **Deliverables** | **Source fields** destination: searchable list/table (label, data type, origin); detail/edit for project fields (label, description; data type fixed at create); add/create flow per S2-02 board. No delete. **Auto-generate `key` as a kebab slug of the label** — do not collect key in the UI. Prefer Go as source of truth (e.g. derive in `CreateMetadataField` from label; ignore/omit client-supplied key), with a small shared slug helper if needed (related to onboarding folder slug rules, without the `.provenencia` suffix). If edit needs an `UpdateMetadataField` (or equivalent) FFI beyond today’s create/list, include that thin engine gap in this PR. `Features/` model+views mounted in the existing workspace content host. Unit tests with `FakeStore` (including slug collision / unslugifiable label). L10n via skill. |
+| **Context** | Mount under S2-14 **Source fields** pane — do not reintroduce a separate top-level window chrome. **`user` and create-time `provenencia` rows are editable; plugin rows are view-only.** |
 | **Out** | Type↔field suggestions UI; Source catalog; delete/retire. |
 | **Feeds** | S2-22 (extract the hand-rolled list into `PVTable`) |
 
