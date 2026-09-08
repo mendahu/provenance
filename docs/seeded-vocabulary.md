@@ -62,14 +62,14 @@ plugin:<plugin_id>   -- reserved prefix for future plugin-contributed vocabulary
 - Vocabulary rows use a UUID **`id`** primary key. Domain tables reference vocabulary **by `id`**, never by bare `key`, so colliding keys across origins stay unambiguous.
 - Application recognition of well-known shipped terms looks up `(key, origin = 'provenencia')` (optional first-class UX). Using a term on a Source, Node, or Claim always stores the vocabulary row’s `id`.
 - UI should surface origin (badge/caption: app / custom / plugin) without treating non-`provenencia` rows as second-class when *using* them.
-- `provenencia` rows are not deletable (or delete is refused). `user` rows follow ordinary unused-delete rules. Plugin rows follow plugin lifecycle rules when plugins exist.
+- Vocabulary rows of any origin may be **deleted when unused** (no Sources referencing a type; no `source_metadata` referencing a field). Delete is refused with a conflict error while in use. Suggestion joins cascade on delete.
 - Node Type `ref_prefix` remains **globally** unique across origins (refs must not collide in speech).
 
 There is no separate `builtin` boolean; `origin = 'provenencia'` replaces that flag.
 
 ### Implementation (Source seed today)
 
-Product-seeded Source types/fields/suggestions live in a **code registry** (`core/database/sourcevocab/registry.go`) and are reconciled by `sourcevocab.Ensure` on every researcher-facing catalog create/open via `onboarding.createCatalog` / `OpenCatalog` (see `core/onboarding/ready.go`). Do not put seed rows in SQL migrations.
+Product-seeded Source types/fields/suggestions live in a **code registry** (`core/database/sourcevocab/registry.go`) and are installed once by `sourcevocab.Install` at catalog **create** via `onboarding.createCatalog` (see `core/onboarding/ready.go`). Opens (`OpenCatalog`) do **not** re-install or heal deleted seed rows. Do not put seed rows in SQL migrations. The current create-time starter is a single `birth_certificate` type plus a few suggested fields — the §2 lists below remain a horizon catalog of suggested keys, not a ship commitment.
 
 When extending or adding another vocabulary domain’s seed, follow the project skill [`.cursor/skills/add-seeded-vocabulary/SKILL.md`](../.cursor/skills/add-seeded-vocabulary/SKILL.md).
 

@@ -36,6 +36,8 @@ enum Method {
   METHOD_CREATE_METADATA_FIELD = 26;
   METHOD_COUNT_FILES = 27;
   METHOD_UPDATE_METADATA_FIELD = 28;
+  METHOD_DELETE_SOURCE_TYPE = 29;
+  METHOD_DELETE_METADATA_FIELD = 30;
 }
 
 message PingRequest {
@@ -412,6 +414,22 @@ message UpdateMetadataFieldRequest {
 message UpdateMetadataFieldResponse {
   MetadataField field = 1;
 }
+
+message DeleteSourceTypeRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string type_id = 3;
+}
+
+message DeleteSourceTypeResponse {}
+
+message DeleteMetadataFieldRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string field_id = 3;
+}
+
+message DeleteMetadataFieldResponse {}
 
 // CountFiles reports the total number of content-addressed files rows in
 // the project — distinct files, not the (larger, per-source) artifact

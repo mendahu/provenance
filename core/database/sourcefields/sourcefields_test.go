@@ -5,7 +5,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/mendahu/provenencia/core/database"
+	"github.com/mendahu/provenencia/core/database/sources"
+	"github.com/mendahu/provenencia/core/database/sourcetypes"
+	"github.com/mendahu/provenencia/core/database/users"
+	"github.com/mendahu/provenencia/core/ref"
 )
 
 func TestUpsertLookupList(t *testing.T) {
@@ -171,6 +176,68 @@ func TestCreateUpdateGetByID(t *testing.T) {
 			name: "get by id missing",
 			run: func(t *testing.T, c *database.Catalog) {
 				if _, err := GetByID(c, make([]byte, 16)); !errors.Is(err, sql.ErrNoRows) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+		{
+			name: "delete unused provenencia ok",
+			run: func(t *testing.T, c *database.Catalog) {
+				id, err := Upsert(c, Field{
+					Key: "author", Origin: OriginProvenencia, Label: "Author", DataType: DataTypeText,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := Delete(c, id); err != nil {
+					t.Fatal(err)
+				}
+				_, err = Lookup(c, "author", OriginProvenencia)
+				if !errors.Is(err, sql.ErrNoRows) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+		{
+			name: "delete in use refuses",
+			run: func(t *testing.T, c *database.Catalog) {
+				userID := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+				r, err := ref.Mint(ref.PrefixUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := users.Upsert(c, userID, "Jake", r); err != nil {
+					t.Fatal(err)
+				}
+				typeID, err := sourcetypes.Upsert(c, sourcetypes.Type{
+					Key: "book", Origin: sourcetypes.OriginUser, Label: "Book",
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				src, err := sources.Create(c, userID, sources.CreateInput{SourceTypeID: typeID, Title: "T"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				field, err := Create(c, "Folio", DataTypeText, "")
+				if err != nil {
+					t.Fatal(err)
+				}
+				db, err := c.DB()
+				if err != nil {
+					t.Fatal(err)
+				}
+				metaID, err := uuid.NewV7()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := db.Exec(
+					`INSERT INTO source_metadata (id, source_id, field_id, value_text, date_value_id) VALUES (?, ?, ?, ?, NULL)`,
+					metaID[:], src.ID, field.ID, "12",
+				); err != nil {
+					t.Fatal(err)
+				}
+				if err := Delete(c, field.ID); !errors.Is(err, ErrInUse) {
 					t.Fatalf("got %v", err)
 				}
 			},

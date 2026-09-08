@@ -150,3 +150,116 @@ func TestUpdateMetadataField(t *testing.T) {
 		},
 	})
 }
+
+func TestDeleteSourceType(t *testing.T) {
+	runRPC(t, DeleteSourceType, []rpcTest{
+		{name: "bad proto", raw: []byte{0xff}, wantErr: true},
+		{
+			name: "deletes unused user type",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				out, err := CreateSourceType(marshalProto(t, &engine.CreateSourceTypeRequest{
+					ProjectDir: dir, UserId: userID, Key: "deed", Label: "Deed",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var created engine.CreateSourceTypeResponse
+				if err := proto.Unmarshal(out, &created); err != nil {
+					t.Fatal(err)
+				}
+				return &engine.DeleteSourceTypeRequest{
+					ProjectDir: dir, UserId: userID, TypeId: created.Type.GetId(),
+				}
+			},
+			want: &engine.DeleteSourceTypeResponse{},
+		},
+		{
+			name: "refuses type in use",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, typeID := sourceFixture(t)
+				if _, err := CreateSource(marshalProto(t, &engine.CreateSourceRequest{
+					ProjectDir: dir, UserId: userID, SourceTypeId: typeID, Title: "One",
+				})); err != nil {
+					t.Fatal(err)
+				}
+				return &engine.DeleteSourceTypeRequest{
+					ProjectDir: dir, UserId: userID, TypeId: typeID,
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "deletes unused seeded type",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, typeID := sourceFixture(t)
+				return &engine.DeleteSourceTypeRequest{
+					ProjectDir: dir, UserId: userID, TypeId: typeID,
+				}
+			},
+			want: &engine.DeleteSourceTypeResponse{},
+		},
+	})
+}
+
+func TestDeleteMetadataField(t *testing.T) {
+	runRPC(t, DeleteMetadataField, []rpcTest{
+		{name: "bad proto", raw: []byte{0xff}, wantErr: true},
+		{
+			name: "deletes unused user field",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				out, err := CreateMetadataField(marshalProto(t, &engine.CreateMetadataFieldRequest{
+					ProjectDir: dir, UserId: userID, Label: "Folio", DataType: "text",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var created engine.CreateMetadataFieldResponse
+				if err := proto.Unmarshal(out, &created); err != nil {
+					t.Fatal(err)
+				}
+				return &engine.DeleteMetadataFieldRequest{
+					ProjectDir: dir, UserId: userID, FieldId: created.Field.GetId(),
+				}
+			},
+			want: &engine.DeleteMetadataFieldResponse{},
+		},
+		{
+			name: "refuses field in use",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, typeID := sourceFixture(t)
+				fout, err := CreateMetadataField(marshalProto(t, &engine.CreateMetadataFieldRequest{
+					ProjectDir: dir, UserId: userID, Label: "Folio", DataType: "text",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var field engine.CreateMetadataFieldResponse
+				if err := proto.Unmarshal(fout, &field); err != nil {
+					t.Fatal(err)
+				}
+				sout, err := CreateSource(marshalProto(t, &engine.CreateSourceRequest{
+					ProjectDir: dir, UserId: userID, SourceTypeId: typeID, Title: "One",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var src engine.CreateSourceResponse
+				if err := proto.Unmarshal(sout, &src); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := SetSourceMetadata(marshalProto(t, &engine.SetSourceMetadataRequest{
+					ProjectDir: dir, UserId: userID, SourceId: src.Source.GetId(),
+					FieldId: field.Field.GetId(), ValueText: "12",
+				})); err != nil {
+					t.Fatal(err)
+				}
+				return &engine.DeleteMetadataFieldRequest{
+					ProjectDir: dir, UserId: userID, FieldId: field.Field.GetId(),
+				}
+			},
+			wantErr: true,
+		},
+	})
+}

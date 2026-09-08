@@ -380,6 +380,18 @@
         }
       }
     },
+    "error.sourcefields.in_use" : {
+      "comment" : "FFI error sourcefields.in_use",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That metadata field is still used on one or more sources."
+          }
+        }
+      }
+    },
     "error.sourcefields.invalid" : {
       "comment" : "FFI error sourcefields.invalid",
       "extractionState" : "manual",
@@ -412,6 +424,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid source."
+          }
+        }
+      }
+    },
+    "error.sourcetypes.in_use" : {
+      "comment" : "FFI error sourcetypes.in_use",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That source type is still used by one or more sources."
           }
         }
       }

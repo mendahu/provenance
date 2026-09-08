@@ -55,7 +55,7 @@ Onboarding (Spike 1) → signed in
 - Audit write path (`audit_transactions` / `audit_changes`) used by every Source-layer mutation.
 - Shared `date_values` table (schema + minimal Go helpers) so date-typed Source metadata can land without a second migration later.
 - Full Source-layer table set from the Source doc: `source_types`, `sources`, `source_notes`, `source_metadata_fields`, `source_type_metadata_fields`, `source_metadata`, `artifacts`, `files`, `file_derivatives`.
-- Small **seed** of types/fields (not the entire [`seeded-vocabulary.md`](../../seeded-vocabulary.md) horizon list). Prefer photograph + book + one vital/census-shaped type unless design picks a different dogfood set.
+- Small **seed** of types/fields (not the entire [`seeded-vocabulary.md`](../../seeded-vocabulary.md) horizon list). Create-time starter today: `birth_certificate` plus a few suggested fields; opens do not heal or expand the set.
 - Go domain packages for CRUD + ingest; FFI use-cases (coarse verbs); SwiftUI Source catalog UI inside the workspace, consuming `GenealogyStore`.
 - Claude Design boards for workspace chrome, Source fields, Source types, Sources catalog (Source → Artifact → File), and the Files list.
 - Refs: mint `SRC-…` / `ART-…` via `core/ref` on insert ([`catalog-refs.md`](../../catalog-refs.md)).
@@ -252,8 +252,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-04 seed decision (or interim seed with note “Design may trim”) |
-| **Deliverables** | Done. Migration `000005` + `sourcetypes`/`sourcefields`/`sourcevocab`; origin namespaces; `Ensure` reconciles provenencia seed (photograph/book/passport/birth_record/marriage_record) on Create/Open. |
-| **Context** | Source doc §§3, 5.1–5.2; vocabulary doc §1.1 / §2. Interim seed broader than S2-04 V-19; Design may still trim without a schema change. |
+| **Deliverables** | Done. Migration `000005` + `sourcetypes`/`sourcefields`/`sourcevocab`; origin namespaces; create-time `Install` seeds a trimmed starter (`birth_certificate` + suggested fields). Opens do not heal Source vocab. |
+| **Context** | Source doc §§3, 5.1–5.2; vocabulary doc §1.1 / §2. Starter is intentionally tiny; horizon lists stay documentation. |
 | **Out** | No `sources` rows yet. |
 
 ---

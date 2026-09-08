@@ -106,9 +106,9 @@ CREATE TABLE source_types (
 
 `origin` is the vocabulary namespace (product seed, researcher, or future plugin). Rules and reserved values: [`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1. Uniqueness is `(key, origin)` so a later product seed can share a `key` with an existing user or plugin term without colliding. Domain rows (`sources.source_type_id`) reference the UUID `id`, not bare `key`.
 
-New projects may be seeded with a small set of common types such as `birth_certificate`, `census`, `photograph`, and similar (`origin = 'provenencia'`), growing as real cataloging needs appear. The horizon catalog (and suggested metadata fields) lives in [`seeded-vocabulary.md`](seeded-vocabulary.md).
+New projects may be seeded at create time with a small starter (today: `birth_certificate` and a few suggested fields; `origin = 'provenencia'`). The horizon catalog (and suggested metadata fields) lives in [`seeded-vocabulary.md`](seeded-vocabulary.md). Existing catalogs are not healed or backfilled on open.
 
-Users may add project-specific types (`origin = 'user'`) without schema changes. Product-seeded types are defaults, not an enum and not structurally privileged subclasses beyond non-deletability and first-class UX for well-known keys.
+Users may add project-specific types (`origin = 'user'`) without schema changes. Product-seeded types are create-time defaults, not an enum and not structurally privileged subclasses beyond optional first-class UX for well-known keys. Any origin may be deleted when unused.
 
 A source type does not imply a specialized table or interpretation behavior.
 

@@ -22,6 +22,9 @@ var ErrDuplicateKey = apperr.New(apperr.CodeSourceFieldsDuplicateKey, apperr.Kin
 // (seeded/provenencia and plugin-origin fields are view-only).
 var ErrLocked = apperr.New(apperr.CodeSourceFieldsInvalid, apperr.KindUser)
 
+// ErrInUse is returned by Delete when source_metadata still references the field.
+var ErrInUse = apperr.New(apperr.CodeSourceFieldsInUse, apperr.KindConflict)
+
 const (
 	OriginProvenencia = "provenencia"
 	OriginUser        = "user"
@@ -43,6 +46,7 @@ const (
 		FROM source_metadata_fields ORDER BY label COLLATE NOCASE, origin, key`
 	sqlUpdate = `UPDATE source_metadata_fields SET label = ?, data_type = ?, description = ? WHERE id = ?`
 	sqlDelete = `DELETE FROM source_metadata_fields WHERE id = ?`
+	sqlInUse  = `SELECT 1 FROM source_metadata WHERE field_id = ? LIMIT 1`
 )
 
 // Field is one source_metadata_fields row.
@@ -215,7 +219,8 @@ func List(c *database.Catalog) ([]Field, error) {
 	return out, rows.Err()
 }
 
-// Delete removes a field by id (for tests / admin). Cascades suggestion joins.
+// Delete removes a field by id when no source_metadata rows reference it.
+// Cascades suggestion joins. Any origin may be deleted when unused.
 func Delete(c *database.Catalog, id []byte) error {
 	db, err := c.DB()
 	if err != nil {
@@ -223,6 +228,14 @@ func Delete(c *database.Catalog, id []byte) error {
 	}
 	if len(id) != 16 {
 		return ErrInvalid
+	}
+	var one int
+	err = db.QueryRow(sqlInUse, id).Scan(&one)
+	if err == nil {
+		return ErrInUse
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return err
 	}
 	_, err = db.Exec(sqlDelete, id)
 	return err

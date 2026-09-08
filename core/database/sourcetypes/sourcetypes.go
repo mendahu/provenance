@@ -13,6 +13,9 @@ import (
 
 var ErrInvalid = apperr.New(apperr.CodeSourceTypesInvalid, apperr.KindUser)
 
+// ErrInUse is returned by Delete when sources still reference the type.
+var ErrInUse = apperr.New(apperr.CodeSourceTypesInUse, apperr.KindConflict)
+
 const (
 	OriginProvenencia = "provenencia"
 	OriginUser        = "user"
@@ -27,6 +30,7 @@ const (
 	sqlList = `SELECT id, key, origin, label, COALESCE(description, '')
 		FROM source_types ORDER BY label COLLATE NOCASE, origin, key`
 	sqlDelete = `DELETE FROM source_types WHERE id = ?`
+	sqlInUse  = `SELECT 1 FROM sources WHERE source_type_id = ? LIMIT 1`
 )
 
 // Type is one source_types row.
@@ -121,7 +125,8 @@ func List(c *database.Catalog) ([]Type, error) {
 	return out, rows.Err()
 }
 
-// Delete removes a type by id (for tests / admin). Cascades suggestion joins.
+// Delete removes a type by id when no sources reference it.
+// Cascades suggestion joins. Any origin may be deleted when unused.
 func Delete(c *database.Catalog, id []byte) error {
 	db, err := c.DB()
 	if err != nil {
@@ -129,6 +134,14 @@ func Delete(c *database.Catalog, id []byte) error {
 	}
 	if len(id) != 16 {
 		return ErrInvalid
+	}
+	var one int
+	err = db.QueryRow(sqlInUse, id).Scan(&one)
+	if err == nil {
+		return ErrInUse
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return err
 	}
 	_, err = db.Exec(sqlDelete, id)
 	return err

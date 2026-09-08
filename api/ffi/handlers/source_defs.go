@@ -123,6 +123,52 @@ func UpdateMetadataField(in []byte) ([]byte, error) {
 	return proto.Marshal(&engine.UpdateMetadataFieldResponse{Field: metadataFieldProto(got)})
 }
 
+func DeleteSourceType(in []byte) ([]byte, error) {
+	var req engine.DeleteSourceTypeRequest
+	if err := proto.Unmarshal(in, &req); err != nil {
+		return nil, unmarshalErr("delete_source_type", err)
+	}
+	if _, err := parseUserID(req.GetUserId()); err != nil {
+		return nil, err
+	}
+	typeID, err := parseID(req.GetTypeId())
+	if err != nil {
+		return nil, err
+	}
+	c, err := openProjectCatalog(req.GetProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+	if err := sourcetypes.Delete(c, typeID); err != nil {
+		return nil, err
+	}
+	return proto.Marshal(&engine.DeleteSourceTypeResponse{})
+}
+
+func DeleteMetadataField(in []byte) ([]byte, error) {
+	var req engine.DeleteMetadataFieldRequest
+	if err := proto.Unmarshal(in, &req); err != nil {
+		return nil, unmarshalErr("delete_metadata_field", err)
+	}
+	if _, err := parseUserID(req.GetUserId()); err != nil {
+		return nil, err
+	}
+	fieldID, err := parseID(req.GetFieldId())
+	if err != nil {
+		return nil, err
+	}
+	c, err := openProjectCatalog(req.GetProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+	if err := sourcefields.Delete(c, fieldID); err != nil {
+		return nil, err
+	}
+	return proto.Marshal(&engine.DeleteMetadataFieldResponse{})
+}
+
 func sourceTypeProto(t sourcetypes.Type) *engine.SourceType {
 	return &engine.SourceType{
 		Id:          uuidString(t.ID),

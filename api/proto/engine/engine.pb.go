@@ -55,6 +55,8 @@ const (
 	Method_METHOD_CREATE_METADATA_FIELD   Method = 26
 	Method_METHOD_COUNT_FILES             Method = 27
 	Method_METHOD_UPDATE_METADATA_FIELD   Method = 28
+	Method_METHOD_DELETE_SOURCE_TYPE      Method = 29
+	Method_METHOD_DELETE_METADATA_FIELD   Method = 30
 )
 
 // Enum value maps for Method.
@@ -89,6 +91,8 @@ var (
 		26: "METHOD_CREATE_METADATA_FIELD",
 		27: "METHOD_COUNT_FILES",
 		28: "METHOD_UPDATE_METADATA_FIELD",
+		29: "METHOD_DELETE_SOURCE_TYPE",
+		30: "METHOD_DELETE_METADATA_FIELD",
 	}
 	Method_value = map[string]int32{
 		"METHOD_UNSPECIFIED":             0,
@@ -120,6 +124,8 @@ var (
 		"METHOD_CREATE_METADATA_FIELD":   26,
 		"METHOD_COUNT_FILES":             27,
 		"METHOD_UPDATE_METADATA_FIELD":   28,
+		"METHOD_DELETE_SOURCE_TYPE":      29,
+		"METHOD_DELETE_METADATA_FIELD":   30,
 	}
 )
 
@@ -3984,6 +3990,198 @@ func (x *UpdateMetadataFieldResponse) GetField() *MetadataField {
 	return nil
 }
 
+type DeleteSourceTypeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectDir    string                 `protobuf:"bytes,1,opt,name=project_dir,json=projectDir,proto3" json:"project_dir,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	TypeId        string                 `protobuf:"bytes,3,opt,name=type_id,json=typeId,proto3" json:"type_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSourceTypeRequest) Reset() {
+	*x = DeleteSourceTypeRequest{}
+	mi := &file_engine_proto_msgTypes[64]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSourceTypeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSourceTypeRequest) ProtoMessage() {}
+
+func (x *DeleteSourceTypeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[64]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSourceTypeRequest.ProtoReflect.Descriptor instead.
+func (*DeleteSourceTypeRequest) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{64}
+}
+
+func (x *DeleteSourceTypeRequest) GetProjectDir() string {
+	if x != nil {
+		return x.ProjectDir
+	}
+	return ""
+}
+
+func (x *DeleteSourceTypeRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *DeleteSourceTypeRequest) GetTypeId() string {
+	if x != nil {
+		return x.TypeId
+	}
+	return ""
+}
+
+type DeleteSourceTypeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSourceTypeResponse) Reset() {
+	*x = DeleteSourceTypeResponse{}
+	mi := &file_engine_proto_msgTypes[65]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSourceTypeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSourceTypeResponse) ProtoMessage() {}
+
+func (x *DeleteSourceTypeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[65]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSourceTypeResponse.ProtoReflect.Descriptor instead.
+func (*DeleteSourceTypeResponse) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{65}
+}
+
+type DeleteMetadataFieldRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectDir    string                 `protobuf:"bytes,1,opt,name=project_dir,json=projectDir,proto3" json:"project_dir,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	FieldId       string                 `protobuf:"bytes,3,opt,name=field_id,json=fieldId,proto3" json:"field_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteMetadataFieldRequest) Reset() {
+	*x = DeleteMetadataFieldRequest{}
+	mi := &file_engine_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteMetadataFieldRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteMetadataFieldRequest) ProtoMessage() {}
+
+func (x *DeleteMetadataFieldRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteMetadataFieldRequest.ProtoReflect.Descriptor instead.
+func (*DeleteMetadataFieldRequest) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *DeleteMetadataFieldRequest) GetProjectDir() string {
+	if x != nil {
+		return x.ProjectDir
+	}
+	return ""
+}
+
+func (x *DeleteMetadataFieldRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *DeleteMetadataFieldRequest) GetFieldId() string {
+	if x != nil {
+		return x.FieldId
+	}
+	return ""
+}
+
+type DeleteMetadataFieldResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteMetadataFieldResponse) Reset() {
+	*x = DeleteMetadataFieldResponse{}
+	mi := &file_engine_proto_msgTypes[67]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteMetadataFieldResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteMetadataFieldResponse) ProtoMessage() {}
+
+func (x *DeleteMetadataFieldResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[67]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteMetadataFieldResponse.ProtoReflect.Descriptor instead.
+func (*DeleteMetadataFieldResponse) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{67}
+}
+
 // CountFiles reports the total number of content-addressed files rows in
 // the project — distinct files, not the (larger, per-source) artifact
 // count. No project-wide artifact listing exists yet (S2-17).
@@ -3996,7 +4194,7 @@ type CountFilesRequest struct {
 
 func (x *CountFilesRequest) Reset() {
 	*x = CountFilesRequest{}
-	mi := &file_engine_proto_msgTypes[64]
+	mi := &file_engine_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4008,7 +4206,7 @@ func (x *CountFilesRequest) String() string {
 func (*CountFilesRequest) ProtoMessage() {}
 
 func (x *CountFilesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[64]
+	mi := &file_engine_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4021,7 +4219,7 @@ func (x *CountFilesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CountFilesRequest.ProtoReflect.Descriptor instead.
 func (*CountFilesRequest) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{64}
+	return file_engine_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *CountFilesRequest) GetProjectDir() string {
@@ -4040,7 +4238,7 @@ type CountFilesResponse struct {
 
 func (x *CountFilesResponse) Reset() {
 	*x = CountFilesResponse{}
-	mi := &file_engine_proto_msgTypes[65]
+	mi := &file_engine_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4052,7 +4250,7 @@ func (x *CountFilesResponse) String() string {
 func (*CountFilesResponse) ProtoMessage() {}
 
 func (x *CountFilesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[65]
+	mi := &file_engine_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4065,7 +4263,7 @@ func (x *CountFilesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CountFilesResponse.ProtoReflect.Descriptor instead.
 func (*CountFilesResponse) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{65}
+	return file_engine_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *CountFilesResponse) GetCount() int32 {
@@ -4088,7 +4286,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_engine_proto_msgTypes[66]
+	mi := &file_engine_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4100,7 +4298,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[66]
+	mi := &file_engine_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4113,7 +4311,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{66}
+	return file_engine_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *Error) GetCode() string {
@@ -4448,7 +4646,19 @@ const file_engine_proto_rawDesc = "" +
 	"\tdata_type\x18\x05 \x01(\tR\bdataType\x12 \n" +
 	"\vdescription\x18\x06 \x01(\tR\vdescription\"Y\n" +
 	"\x1bUpdateMetadataFieldResponse\x12:\n" +
-	"\x05field\x18\x01 \x01(\v2$.provenencia.engine.v1.MetadataFieldR\x05field\"4\n" +
+	"\x05field\x18\x01 \x01(\v2$.provenencia.engine.v1.MetadataFieldR\x05field\"l\n" +
+	"\x17DeleteSourceTypeRequest\x12\x1f\n" +
+	"\vproject_dir\x18\x01 \x01(\tR\n" +
+	"projectDir\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x17\n" +
+	"\atype_id\x18\x03 \x01(\tR\x06typeId\"\x1a\n" +
+	"\x18DeleteSourceTypeResponse\"q\n" +
+	"\x1aDeleteMetadataFieldRequest\x12\x1f\n" +
+	"\vproject_dir\x18\x01 \x01(\tR\n" +
+	"projectDir\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x19\n" +
+	"\bfield_id\x18\x03 \x01(\tR\afieldId\"\x1d\n" +
+	"\x1bDeleteMetadataFieldResponse\"4\n" +
 	"\x11CountFilesRequest\x12\x1f\n" +
 	"\vproject_dir\x18\x01 \x01(\tR\n" +
 	"projectDir\"*\n" +
@@ -4457,7 +4667,7 @@ const file_engine_proto_rawDesc = "" +
 	"\x05Error\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x124\n" +
 	"\x04kind\x18\x02 \x01(\x0e2 .provenencia.engine.v1.ErrorKindR\x04kind\x12\x16\n" +
-	"\x06params\x18\x03 \x03(\tR\x06params*\xda\x06\n" +
+	"\x06params\x18\x03 \x03(\tR\x06params*\x9b\a\n" +
 	"\x06Method\x12\x16\n" +
 	"\x12METHOD_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vMETHOD_PING\x10\x01\x12\x16\n" +
@@ -4488,7 +4698,9 @@ const file_engine_proto_rawDesc = "" +
 	"\x1bMETHOD_LIST_METADATA_FIELDS\x10\x19\x12 \n" +
 	"\x1cMETHOD_CREATE_METADATA_FIELD\x10\x1a\x12\x16\n" +
 	"\x12METHOD_COUNT_FILES\x10\x1b\x12 \n" +
-	"\x1cMETHOD_UPDATE_METADATA_FIELD\x10\x1c*\x88\x01\n" +
+	"\x1cMETHOD_UPDATE_METADATA_FIELD\x10\x1c\x12\x1d\n" +
+	"\x19METHOD_DELETE_SOURCE_TYPE\x10\x1d\x12 \n" +
+	"\x1cMETHOD_DELETE_METADATA_FIELD\x10\x1e*\x88\x01\n" +
 	"\tErrorKind\x12\x1a\n" +
 	"\x16ERROR_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fERROR_KIND_USER\x10\x01\x12\x17\n" +
@@ -4509,7 +4721,7 @@ func file_engine_proto_rawDescGZIP() []byte {
 }
 
 var file_engine_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 67)
+var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 71)
 var file_engine_proto_goTypes = []any{
 	(Method)(0),                           // 0: provenencia.engine.v1.Method
 	(ErrorKind)(0),                        // 1: provenencia.engine.v1.ErrorKind
@@ -4577,9 +4789,13 @@ var file_engine_proto_goTypes = []any{
 	(*CreateMetadataFieldResponse)(nil),   // 63: provenencia.engine.v1.CreateMetadataFieldResponse
 	(*UpdateMetadataFieldRequest)(nil),    // 64: provenencia.engine.v1.UpdateMetadataFieldRequest
 	(*UpdateMetadataFieldResponse)(nil),   // 65: provenencia.engine.v1.UpdateMetadataFieldResponse
-	(*CountFilesRequest)(nil),             // 66: provenencia.engine.v1.CountFilesRequest
-	(*CountFilesResponse)(nil),            // 67: provenencia.engine.v1.CountFilesResponse
-	(*Error)(nil),                         // 68: provenencia.engine.v1.Error
+	(*DeleteSourceTypeRequest)(nil),       // 66: provenencia.engine.v1.DeleteSourceTypeRequest
+	(*DeleteSourceTypeResponse)(nil),      // 67: provenencia.engine.v1.DeleteSourceTypeResponse
+	(*DeleteMetadataFieldRequest)(nil),    // 68: provenencia.engine.v1.DeleteMetadataFieldRequest
+	(*DeleteMetadataFieldResponse)(nil),   // 69: provenencia.engine.v1.DeleteMetadataFieldResponse
+	(*CountFilesRequest)(nil),             // 70: provenencia.engine.v1.CountFilesRequest
+	(*CountFilesResponse)(nil),            // 71: provenencia.engine.v1.CountFilesResponse
+	(*Error)(nil),                         // 72: provenencia.engine.v1.Error
 }
 var file_engine_proto_depIdxs = []int32{
 	24, // 0: provenencia.engine.v1.CompleteOnboardingResponse.project:type_name -> provenencia.engine.v1.ProjectInfo
@@ -4626,7 +4842,7 @@ func file_engine_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_engine_proto_rawDesc), len(file_engine_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   67,
+			NumMessages:   71,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -1,9 +1,9 @@
-// Package sourcevocab owns type↔field suggestions and provenencia seed reconcile.
+// Package sourcevocab owns type↔field suggestions and provenencia create-time seed.
 //
-// Ensure upserts the shipped vocabulary registry (origin=provenencia) and
-// restores missing suggestion joins. It does not delete user/plugin rows or
-// extra user-added suggestions. Recreating a deleted provenencia row mints a
-// new UUID.
+// Install upserts the shipped vocabulary registry (origin=provenencia) once at
+// catalog create. Call it only from onboarding.createCatalog — not on open.
+// It does not heal deleted rows on later opens; calling it twice would refresh
+// labels via Upsert (create path invokes it once).
 package sourcevocab
 
 import (
@@ -93,8 +93,9 @@ func DeleteSuggestion(c *database.Catalog, typeID, fieldID []byte) error {
 	return err
 }
 
-// Ensure reconciles the provenencia seed registry into the catalog.
-func Ensure(c *database.Catalog) error {
+// Install writes the provenencia seed registry into a new catalog.
+// Call only at create time (onboarding.createCatalog).
+func Install(c *database.Catalog) error {
 	if _, err := c.DB(); err != nil {
 		return err
 	}

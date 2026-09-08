@@ -108,10 +108,10 @@ func TestComplete(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if len(types) != 5 {
+				if len(types) != 1 {
 					t.Fatalf("seeded source types %d", len(types))
 				}
-				if _, err := sourcetypes.Lookup(p, "photograph", sourcetypes.OriginProvenencia); err != nil {
+				if _, err := sourcetypes.Lookup(p, "birth_certificate", sourcetypes.OriginProvenencia); err != nil {
 					t.Fatal(err)
 				}
 				if filepath.Base(res.ProjectDir) != "robins-family"+database.Suffix {

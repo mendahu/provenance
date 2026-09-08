@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/mendahu/provenencia/core/database"
+	"github.com/mendahu/provenencia/core/database/sources"
+	"github.com/mendahu/provenencia/core/database/users"
+	"github.com/mendahu/provenencia/core/ref"
 )
 
 func TestUpsertLookupList(t *testing.T) {
@@ -79,6 +82,72 @@ func TestUpsertLookupList(t *testing.T) {
 			run: func(t *testing.T, c *database.Catalog) {
 				_, err := Lookup(c, "nope", OriginProvenencia)
 				if !errors.Is(err, sql.ErrNoRows) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := database.Create(t.TempDir(), "t.provenencia")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer c.Close()
+			tt.run(t, c)
+		})
+	}
+}
+
+func TestDelete(t *testing.T) {
+	userID := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+
+	tests := []struct {
+		name string
+		run  func(t *testing.T, c *database.Catalog)
+	}{
+		{
+			name: "unused provenencia ok",
+			run: func(t *testing.T, c *database.Catalog) {
+				id, err := Upsert(c, Type{Key: "census", Origin: OriginProvenencia, Label: "Census"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := Delete(c, id); err != nil {
+					t.Fatal(err)
+				}
+				_, err = Lookup(c, "census", OriginProvenencia)
+				if !errors.Is(err, sql.ErrNoRows) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+		{
+			name: "in use refuses",
+			run: func(t *testing.T, c *database.Catalog) {
+				r, err := ref.Mint(ref.PrefixUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := users.Upsert(c, userID, "Jake", r); err != nil {
+					t.Fatal(err)
+				}
+				id, err := Upsert(c, Type{Key: "book", Origin: OriginUser, Label: "Book"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := sources.Create(c, userID, sources.CreateInput{SourceTypeID: id, Title: "T"}); err != nil {
+					t.Fatal(err)
+				}
+				if err := Delete(c, id); !errors.Is(err, ErrInUse) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+		{
+			name: "bad id",
+			run: func(t *testing.T, c *database.Catalog) {
+				if err := Delete(c, []byte{1}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("got %v", err)
 				}
 			},
