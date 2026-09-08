@@ -23,16 +23,6 @@ struct PVIconButton: View {
     }
 }
 
-private extension PVControlSize {
-    var iconGlyphSize: CGFloat {
-        switch self {
-        case .sm: 13
-        case .md: 15
-        case .lg: 17
-        }
-    }
-}
-
 private struct PVIconButtonStyle: ButtonStyle {
     var size: PVControlSize = .md
 

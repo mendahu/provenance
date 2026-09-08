@@ -171,10 +171,22 @@ protocol GenealogyStore: Sendable {
         description: String
     ) async throws -> CatalogSourceType
     func listMetadataFields(projectDir: String) async throws -> [CatalogMetadataField]
+    /// `key` is never accepted from the caller — the engine mints it as a
+    /// kebab-case slug of `label` (see `FieldSlug.kebab` for the client-side
+    /// preview mirror).
     func createMetadataField(
         projectDir: String,
         userID: String,
-        key: String,
+        label: String,
+        dataType: String,
+        description: String
+    ) async throws -> CatalogMetadataField
+    /// Patches label, data type, and description for a `user`-origin field.
+    /// The key never changes here. Fails for `provenencia`/`plugin:…` rows.
+    func updateMetadataField(
+        projectDir: String,
+        userID: String,
+        fieldID: String,
         label: String,
         dataType: String,
         description: String

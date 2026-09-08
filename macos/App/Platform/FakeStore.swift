@@ -344,11 +344,17 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     func createMetadataField(
         projectDir: String,
         userID _: String,
-        key: String,
         label: String,
         dataType: String,
         description: String
     ) async throws -> CatalogMetadataField {
+        let key = FieldSlug.kebab(label)
+        if key.isEmpty {
+            throw StoreBoom.boom
+        }
+        if (fieldsByProject[projectDir] ?? []).contains(where: { $0.origin == "user" && $0.key == key }) {
+            throw StoreBoom.boom
+        }
         let field = CatalogMetadataField(
             id: UUID().uuidString.lowercased(),
             key: key,
@@ -359,6 +365,28 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         )
         fieldsByProject[projectDir, default: []].append(field)
         return field
+    }
+
+    func updateMetadataField(
+        projectDir: String,
+        userID _: String,
+        fieldID: String,
+        label: String,
+        dataType: String,
+        description: String
+    ) async throws -> CatalogMetadataField {
+        var list = fieldsByProject[projectDir] ?? []
+        guard let idx = list.firstIndex(where: { $0.id == fieldID }) else {
+            throw StoreBoom.boom
+        }
+        guard list[idx].origin == "user" else {
+            throw StoreBoom.boom
+        }
+        list[idx].label = label
+        list[idx].dataType = dataType
+        list[idx].description = description
+        fieldsByProject[projectDir] = list
+        return list[idx]
     }
 
     func countFiles(projectDir: String) async throws -> Int {

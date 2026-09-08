@@ -264,6 +264,12 @@ enum L10n {
             comment: "Error when the last active project folder is missing"
         )
 
+        static let workspaceMissingContext = LocalizedStringResource(
+            "onboarding.workspaceMissingContext",
+            defaultValue: "Provenencia could not open the workspace because the project or your account is missing. Create or open a project to continue.",
+            comment: "Error when entering the workspace without a project directory or user id"
+        )
+
         static let createNewFolderNote = LocalizedStringResource(
             "onboarding.chooseFile.createNewFolderNote",
             defaultValue: "The folder is written to ~/Documents when you continue. You name the research on the next screen.",
@@ -349,6 +355,321 @@ enum L10n {
             defaultValue: "Show labels",
             comment: "Tooltip/accessibility label for the sidebar toggle when collapsed"
         )
+    }
+
+    /// The **Source fields** workspace destination (S2-15): browse, search,
+    /// and create/edit the project's `source_metadata_fields` vocabulary.
+    enum SourceFields {
+        static let description = LocalizedStringResource(
+            "sourceFields.list.description",
+            defaultValue: "The metadata a source can carry in this project. Provenencia seeds the common fields; you add the ones your records actually use.",
+            comment: "Explanatory copy under the Source fields page title"
+        )
+
+        static func countLine(total: Int, seeded: Int, user: Int) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceFields.list.countLine",
+                defaultValue: "%lld fields · %lld seeded · %lld yours",
+                comment: "Source fields count summary; arguments are total, seeded (provenencia), and user field counts"
+            ))
+            return String(format: format, locale: .current, total, seeded, user)
+        }
+
+        static func countLineWithPlugin(total: Int, seeded: Int, user: Int, plugin: Int) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceFields.list.countLineWithPlugin",
+                defaultValue: "%lld fields · %lld seeded · %lld yours · %lld plugin",
+                comment: "Source fields count summary including plugin-origin fields; arguments are total, seeded, user, and plugin field counts"
+            ))
+            return String(format: format, locale: .current, total, seeded, user, plugin)
+        }
+
+        static let addField = LocalizedStringResource(
+            "sourceFields.list.addField",
+            defaultValue: "Add field",
+            comment: "Button: add a new Source field (toolbar, empty state, and add-form submit)"
+        )
+
+        static let searchPlaceholder = LocalizedStringResource(
+            "sourceFields.list.searchPlaceholder",
+            defaultValue: "Search fields — label, key, or description",
+            comment: "Placeholder for the Source fields search input"
+        )
+
+        static let clearSearch = LocalizedStringResource(
+            "sourceFields.list.clearSearch",
+            defaultValue: "Clear search",
+            comment: "Button that clears the Source fields search query"
+        )
+
+        static let columnLabel = LocalizedStringResource(
+            "sourceFields.list.columnLabel",
+            defaultValue: "Label",
+            comment: "Source fields list column header: label"
+        )
+
+        static let columnKey = LocalizedStringResource(
+            "sourceFields.list.columnKey",
+            defaultValue: "Key",
+            comment: "Source fields list column header: key"
+        )
+
+        static let columnDataType = LocalizedStringResource(
+            "sourceFields.list.columnDataType",
+            defaultValue: "Data type",
+            comment: "Source fields list column header: data type"
+        )
+
+        static let columnOrigin = LocalizedStringResource(
+            "sourceFields.list.columnOrigin",
+            defaultValue: "Origin",
+            comment: "Source fields list column header: origin"
+        )
+
+        static let dataTypeText = LocalizedStringResource(
+            "sourceFields.dataType.text",
+            defaultValue: "text",
+            comment: "Source field data type badge/option: text"
+        )
+
+        static let dataTypeDate = LocalizedStringResource(
+            "sourceFields.dataType.date",
+            defaultValue: "date",
+            comment: "Source field data type badge/option: date"
+        )
+
+        static let originSeeded = LocalizedStringResource(
+            "sourceFields.origin.seeded",
+            defaultValue: "provenencia",
+            comment: "Origin badge for a field seeded by Provenencia"
+        )
+
+        static let originUser = LocalizedStringResource(
+            "sourceFields.origin.user",
+            defaultValue: "you",
+            comment: "Origin badge for a field the researcher added"
+        )
+
+        static let emptyProjectTitle = LocalizedStringResource(
+            "sourceFields.emptyProject.title",
+            defaultValue: "No source fields yet",
+            comment: "Title of the empty state when the project has zero metadata fields"
+        )
+
+        static let emptyProjectBody = LocalizedStringResource(
+            "sourceFields.emptyProject.body",
+            defaultValue: "This project has no metadata vocabulary. Add the fields your records actually carry — a certificate number, a photographer, an album code.",
+            comment: "Body of the empty state when the project has zero metadata fields"
+        )
+
+        static let noMatchTitle = LocalizedStringResource(
+            "sourceFields.noMatch.title",
+            defaultValue: "No field matches",
+            comment: "Title of the empty state when a search finds no fields"
+        )
+
+        static func noMatchBody(query: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceFields.noMatch.body",
+                defaultValue: "Nothing in this project’s vocabulary matches “%@”. Clear the search, or add the field.",
+                comment: "Body of the no-match empty state; argument is the search query"
+            ))
+            return String(format: format, locale: .current, query)
+        }
+
+        static func resultLine(shown: Int, total: Int) -> String {
+            if shown == total {
+                let format = String(localized: LocalizedStringResource(
+                    "sourceFields.list.resultLineAll",
+                    defaultValue: "%lld fields",
+                    comment: "Footer result count when no search/filter narrows the Source fields list; argument is the total"
+                ))
+                return String(format: format, locale: .current, total)
+            }
+            let format = String(localized: LocalizedStringResource(
+                "sourceFields.list.resultLineFiltered",
+                defaultValue: "%lld of %lld fields shown",
+                comment: "Footer result count when search narrows the Source fields list; arguments are shown then total"
+            ))
+            return String(format: format, locale: .current, shown, total)
+        }
+
+        static let detailEyebrowField = LocalizedStringResource(
+            "sourceFields.detail.eyebrowField",
+            defaultValue: "Field",
+            comment: "Eyebrow label above an existing field's detail panel"
+        )
+
+        static let detailEyebrowNewField = LocalizedStringResource(
+            "sourceFields.detail.eyebrowNewField",
+            defaultValue: "New field",
+            comment: "Eyebrow label above the add-field panel"
+        )
+
+        static let keyHintAdd = LocalizedStringResource(
+            "sourceFields.detail.keyHintAdd",
+            defaultValue: "Provenencia mints the key from the label when the field is added",
+            comment: "Hint under the live key preview while adding a field"
+        )
+
+        static let keyHintEdit = LocalizedStringResource(
+            "sourceFields.detail.keyHintEdit",
+            defaultValue: "The key is minted once from the label and never changes — renaming the field keeps existing sources attached",
+            comment: "Hint under the key on an existing field's detail panel"
+        )
+
+        static let lockedNoteSeeded = LocalizedStringResource(
+            "sourceFields.detail.lockedNoteSeeded",
+            defaultValue: "Seeded by Provenencia. Its label, data type, and description are fixed so citations stay comparable between projects.",
+            comment: "Callout explaining why a provenencia-origin field can't be edited"
+        )
+
+        static func lockedNotePlugin(pluginID: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceFields.detail.lockedNotePlugin",
+                defaultValue: "Supplied by the %@ plugin. The plugin owns this definition — Provenencia will not edit it.",
+                comment: "Callout explaining why a plugin-origin field can't be edited; argument is the plugin id"
+            ))
+            return String(format: format, locale: .current, pluginID)
+        }
+
+        static let dataTypeSectionLabel = LocalizedStringResource(
+            "sourceFields.detail.dataTypeSectionLabel",
+            defaultValue: "Data type",
+            comment: "Section label above the read-only data type line on a locked field's detail"
+        )
+
+        static let descriptionSectionLabel = LocalizedStringResource(
+            "sourceFields.detail.descriptionSectionLabel",
+            defaultValue: "Description",
+            comment: "Section label above the read-only description on a locked field's detail"
+        )
+
+        static let descriptionEmptyPlaceholder = LocalizedStringResource(
+            "sourceFields.detail.descriptionEmptyPlaceholder",
+            defaultValue: "—",
+            comment: "Shown in place of a locked field's description when it has none"
+        )
+
+        static let panelEmptyTitle = LocalizedStringResource(
+            "sourceFields.detail.panelEmptyTitle",
+            defaultValue: "No field selected",
+            comment: "Title of the empty state shown in the detail panel before any field is selected"
+        )
+
+        static let panelEmptyBody = LocalizedStringResource(
+            "sourceFields.detail.panelEmptyBody",
+            defaultValue: "Select a field to read its definition. Fields seeded by Provenencia are fixed; the ones you added stay editable.",
+            comment: "Body of the empty state shown in the detail panel before any field is selected"
+        )
+
+        static let formLabel = LocalizedStringResource(
+            "sourceFields.form.label",
+            defaultValue: "Label",
+            comment: "Add/edit form field: label"
+        )
+
+        static let formLabelPlaceholder = LocalizedStringResource(
+            "sourceFields.form.labelPlaceholder",
+            defaultValue: "Grandma’s album code",
+            comment: "Placeholder text for the add-field label input"
+        )
+
+        static let formDataType = LocalizedStringResource(
+            "sourceFields.form.dataType",
+            defaultValue: "Data type",
+            comment: "Add/edit form field: data type picker"
+        )
+
+        static let formDataTypeHint = LocalizedStringResource(
+            "sourceFields.form.dataTypeHint",
+            defaultValue: "Only text and date exist in the Source layer today",
+            comment: "Hint under the data type picker"
+        )
+
+        static let formDescription = LocalizedStringResource(
+            "sourceFields.form.description",
+            defaultValue: "Description",
+            comment: "Add/edit form field: description"
+        )
+
+        static let formDescriptionHint = LocalizedStringResource(
+            "sourceFields.form.descriptionHint",
+            defaultValue: "What a researcher should put in this field, in your own words",
+            comment: "Hint under the description field"
+        )
+
+        static let formDescriptionPlaceholder = LocalizedStringResource(
+            "sourceFields.form.descriptionPlaceholder",
+            defaultValue: "Pencil code on the back of prints from the album",
+            comment: "Placeholder text for the add-field description input"
+        )
+
+        static let errorLabelRequired = LocalizedStringResource(
+            "sourceFields.form.errorLabelRequired",
+            defaultValue: "A label is required — it is how the field reads on a source.",
+            comment: "Inline validation error when the label is blank"
+        )
+
+        static let errorUnslugifiable = LocalizedStringResource(
+            "sourceFields.form.errorUnslugifiable",
+            defaultValue: "That label cannot be turned into a key. Use at least one letter or number.",
+            comment: "Inline validation error when the label has no letters or digits to slug"
+        )
+
+        static let saveSaving = LocalizedStringResource(
+            "sourceFields.form.saveSaving",
+            defaultValue: "Saving",
+            comment: "Primary button label while a Source field add/edit is in flight"
+        )
+
+        static let saveChanges = LocalizedStringResource(
+            "sourceFields.form.saveChanges",
+            defaultValue: "Save changes",
+            comment: "Primary button label for committing an edit to an existing field"
+        )
+
+        static let cancel = LocalizedStringResource(
+            "sourceFields.form.cancel",
+            defaultValue: "Cancel",
+            comment: "Secondary button label that dismisses the add-field form"
+        )
+
+        static let revert = LocalizedStringResource(
+            "sourceFields.form.revert",
+            defaultValue: "Revert",
+            comment: "Secondary button label that discards unsaved edits to an existing field"
+        )
+
+        static let toastAddedTitle = LocalizedStringResource(
+            "sourceFields.toast.addedTitle",
+            defaultValue: "Field added",
+            comment: "Success toast title after creating a Source field"
+        )
+
+        static func toastAddedBody(label: String, key: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceFields.toast.addedBody",
+                defaultValue: "%@ is in this project’s vocabulary as %@.",
+                comment: "Success toast body after creating a Source field; arguments are label then minted key"
+            ))
+            return String(format: format, locale: .current, label, key)
+        }
+
+        static let toastUpdatedTitle = LocalizedStringResource(
+            "sourceFields.toast.updatedTitle",
+            defaultValue: "Field updated",
+            comment: "Success toast title after editing a Source field"
+        )
+
+        static func toastUpdatedBody(label: String, key: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceFields.toast.updatedBody",
+                defaultValue: "%@ — the key stays %@.",
+                comment: "Success toast body after editing a Source field; arguments are label then key"
+            ))
+            return String(format: format, locale: .current, label, key)
+        }
     }
 
     /// Maps stable Go/FFI error codes to localized user-facing copy.
@@ -491,6 +812,14 @@ enum L10n {
             defaultValue: "Invalid metadata field.",
             comment: "FFI error sourcefields.invalid"
         )
+        static func sourceFieldsDuplicateKey(key: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "error.sourcefields.duplicate_key",
+                defaultValue: "You already have a field with the key %@. Give this one a different label.",
+                comment: "FFI error sourcefields.duplicate_key; argument is the colliding key"
+            ))
+            return String(format: format, locale: .current, key)
+        }
         static let sourceVocabInvalid = LocalizedStringResource(
             "error.sourcevocab.invalid",
             defaultValue: "Invalid source vocabulary.",
@@ -579,6 +908,8 @@ enum L10n {
                 return String(localized: sourceTypesInvalid)
             case "sourcefields.invalid":
                 return String(localized: sourceFieldsInvalid)
+            case "sourcefields.duplicate_key":
+                return sourceFieldsDuplicateKey(key: params.first ?? "?")
             case "sourcevocab.invalid":
                 return String(localized: sourceVocabInvalid)
             case "datevalues.invalid":

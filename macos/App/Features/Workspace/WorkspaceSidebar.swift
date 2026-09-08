@@ -66,7 +66,7 @@ struct WorkspaceSidebar: View {
         .frame(width: workspace.isSidebarCollapsed ? collapsedWidth : expandedWidth)
         .background(PVColor.surfaceCard)
         .overlay(alignment: .trailing) {
-            Rectangle().fill(PVColor.borderSubtle).frame(width: 1)
+            PVDivider(axis: .vertical)
         }
         .pvAnimation(PVMotion.easeStandard, value: workspace.isSidebarCollapsed)
         .accessibilityIdentifier("workspace.sidebar")
@@ -105,7 +105,7 @@ struct WorkspaceSidebar: View {
     @ViewBuilder
     private var footer: some View {
         VStack(spacing: 0) {
-            Rectangle().fill(PVColor.borderSubtle).frame(height: 1)
+            PVDivider()
             if workspace.isSidebarCollapsed {
                 collapsedFooter
             } else {

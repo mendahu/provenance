@@ -134,6 +134,7 @@ S2-12 PR — file_derivatives + thumbnail pipeline (minimal) (done)
 S2-13 PR — FFI Source use-cases (done)
 S2-14 PR — Swift app workspace layout (sidebar shell) (done)
 S2-15 PR — Swift Source fields (list + create/edit)
+S2-22 PR — PVTable (custom-chrome table + keyboard/a11y)
 S2-16 PR — Swift Source types (list + associations)
 S2-17 PR — Swift Sources catalog (list + Source detail)
 S2-18 PR — Swift Artifacts + file ingest + list thumbnails
@@ -141,7 +142,7 @@ S2-21 PR — Swift Files list (+ Source link)
 S2-19 PR — Dogfood polish (copy, empty states, errors, tests)
 ```
 
-Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **S2-03** → **S2-04** → **S2-20**. Feature UI: **S2-15** → **S2-16** → **S2-17** → **S2-18** → **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
+Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **S2-03** → **S2-04** → **S2-20**. Feature UI: **S2-15** → **S2-22** → **S2-16** → **S2-17** → **S2-18** → **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
 
 ---
 
@@ -347,6 +348,22 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | **Deliverables** | **Source fields** destination: searchable list/table (label, data type, origin); detail/edit for user fields (label, data type, description); add/create flow per S2-02 board. No delete. **Auto-generate `key` as a kebab slug of the label** — do not collect key in the UI. Prefer Go as source of truth (e.g. derive in `CreateMetadataField` from label; ignore/omit client-supplied key), with a small shared slug helper if needed (related to onboarding folder slug rules, without the `.provenencia` suffix). If edit needs an `UpdateMetadataField` (or equivalent) FFI beyond today’s create/list, include that thin engine gap in this PR. `Features/` model+views mounted in the existing workspace content host. Unit tests with `FakeStore` (including slug collision / unslugifiable label). L10n via skill. |
 | **Context** | Mount under S2-14 **Source fields** pane — do not reintroduce a separate top-level window chrome. **`provenencia` rows are view-only; `user` rows are editable.** |
 | **Out** | Type↔field suggestions UI; Source catalog; delete/retire. |
+| **Feeds** | S2-22 (extract the hand-rolled list into `PVTable`) |
+
+---
+
+### S2-22 — PR: `PVTable` — custom-chrome table with keyboard/a11y
+
+**Implementation brief (full checklist for the implementing agent):** [`S2-22-pv-table.md`](S2-22-pv-table.md)
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-15 (Source fields list exists to extract from) |
+| **Deliverables** | Design-system **`PVTable`** under `macos/App/DesignSystem/Components/Data/`: generic single-selection table that keeps Provenencia visual chrome (micro-caps headers, hover/selected row, accent bar, badge cells) rather than SwiftUI `Table` / `NSTableView`. Migrate the Source fields list pane onto it. Add native-parity **keyboard** (focusable table, ↑/↓ + Home/End, scroll-into-view, type-to-select by primary text) and **VoiceOver** (combined row elements, selected trait, sort ascending/descending announced). Unit-test pure helpers (type-select buffer, selection movement). Document the tradeoff + interaction contract in `DesignSystem/README.md`. L10n for any new a11y strings via skill. |
+| **Context** | Tabular browse lists matter less visually than design-system fidelity in this product, but researchers still expect Mac keyboard and accessibility behavior. Extract once here so S2-16+ (Source types, Sources, Files) can reuse `PVTable` instead of copying the hand-rolled `ScrollView` + `LazyVStack` pattern. Deployment target is macOS 14 — prefer `.focusable()` / `.onKeyPress` / `ScrollViewReader`; no AppKit wrap required. |
+| **Out** | Native SwiftUI `Table`; multi-select; column resize/reorder; rewriting Source types / Sources / Files lists (those PRs *consume* `PVTable`); FFI/data-model changes; unrelated DesignSystem cleanup. |
+| **Feeds** | S2-16, S2-17, S2-21 (prefer `PVTable` for list UIs) |
 
 ---
 
@@ -355,9 +372,9 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-03 (design enough), S2-15 (fields exist to assign), S2-13, S2-14 |
-| **Deliverables** | **Source types** destination: list (label + key, origin); detail/expanded per S2-03 (description + suggested fields); assign/remove `source_type_metadata_fields` associations from the Source fields pool; add/create type; no delete type. Unit tests with `FakeStore`. L10n via skill. Include thin FFI for list suggestions + attach/detach (and update type if needed) — Go already has `sourcevocab.EnsureSuggestion` / `DeleteSuggestion` / `ListSuggestions`; wire them if not yet exposed. |
-| **Context** | Mount under S2-14 **Source types** pane. Removing a suggestion must not delete field vocabulary or Source metadata values. |
+| **Depends on** | S2-03 (design enough), S2-15 (fields exist to assign), **S2-22** (`PVTable` for the types list), S2-13, S2-14 |
+| **Deliverables** | **Source types** destination: list (label + key, origin) via **`PVTable`**; detail/expanded per S2-03 (description + suggested fields); assign/remove `source_type_metadata_fields` associations from the Source fields pool; add/create type; no delete type. Unit tests with `FakeStore`. L10n via skill. Include thin FFI for list suggestions + attach/detach (and update type if needed) — Go already has `sourcevocab.EnsureSuggestion` / `DeleteSuggestion` / `ListSuggestions`; wire them if not yet exposed. |
+| **Context** | Mount under S2-14 **Source types** pane. Removing a suggestion must not delete field vocabulary or Source metadata values. Reuse `PVTable` from S2-22 — do not reintroduce a hand-rolled column list. |
 | **Out** | Source catalog UI; delete types; field definition CRUD (S2-15). |
 
 ---
@@ -368,7 +385,7 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-04 (design enough), S2-16 (types available to pick), S2-13, S2-14 |
-| **Deliverables** | **Sources** destination: list rows (title, `SRC-…`, type name; thumbnail placeholder OK if S2-18 owns real thumbs); navigate into Source detail (description; Artifacts list with `ART-…` + display fallback; notes + metadata editor driven by type suggestions). **Add Source** flow. Unit tests with `FakeStore`. L10n via skill. |
+| **Deliverables** | **Sources** destination: list rows (title, `SRC-…`, type name; thumbnail placeholder OK if S2-18 owns real thumbs) via **`PVTable`** where the list is a multi-column browse table; navigate into Source detail (description; Artifacts list with `ART-…` + display fallback; notes + metadata editor driven by type suggestions). **Add Source** flow. Unit tests with `FakeStore`. L10n via skill. |
 | **Context** | Mount under S2-14 **Sources** pane. Prefer matching S2-04 navigation pattern. Artifact file ingest can stub “Add file” until S2-18 if needed — prefer wiring create-fileless Artifact here. |
 | **Out** | Full ingest UI; derivative/thumbnail ensure on lists (S2-18). |
 
@@ -391,8 +408,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-20 (design enough), S2-17 (Sources navigation target), S2-18 (thumbnail wiring preferred), S2-13, S2-14 |
-| **Deliverables** | **Files** destination: list thumbnail, media type, original filename; Source link navigates into Sources detail. Add `ListFiles` (or equivalent) FFI joining current Artifact→Source when present; exclude derivative-only rows from the peer list. Unit tests with `FakeStore`. L10n via skill. |
+| **Depends on** | S2-20 (design enough), S2-17 (Sources navigation target), S2-18 (thumbnail wiring preferred), **S2-22** (`PVTable` preferred for the list), S2-13, S2-14 |
+| **Deliverables** | **Files** destination: list thumbnail, media type, original filename via **`PVTable`** (or `PVTable`-compatible row chrome); Source link navigates into Sources detail. Add `ListFiles` (or equivalent) FFI joining current Artifact→Source when present; exclude derivative-only rows from the peer list. Unit tests with `FakeStore`. L10n via skill. |
 | **Context** | Mount under existing S2-14 **Files** pane. Share thumbnail ensure/list helpers with S2-18 where practical. |
 | **Out** | Ingest UI; File delete/GC. |
 
@@ -403,7 +420,7 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-14, S2-15, S2-16, S2-17, S2-18, S2-21 |
+| **Depends on** | S2-14, S2-15, S2-22, S2-16, S2-17, S2-18, S2-21 |
 | **Deliverables** | Empty/error copy pass; accessibility identifiers for workspace nav + Source flows; Go+Swift test gaps closed for happy paths and one failure each (duplicate type key, ingest missing file, audit present after create). Update [`deployment-plan/README.md`](../README.md) when archiving this spike. Optional: short “how to dogfood Source catalog” note in README or spike retro. |
 | **Out** | Product SemVer bump only if cutting a release ([`versioning.md`](../../versioning.md)). |
 
@@ -424,6 +441,7 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | S2-13 | Expose Source catalog use-cases over FFI |
 | S2-14 | Replace post-onboarding home with a sidebar workspace shell |
 | S2-15 | Let researchers browse and define Source metadata fields |
+| S2-22 | Extract a design-system table with keyboard and VoiceOver parity |
 | S2-16 | Let researchers define Source types and suggested fields |
 | S2-17 | Add a Source catalog inside the app workspace |
 | S2-18 | Let researchers attach Artifacts and ingest Files with thumbnails |
@@ -438,9 +456,9 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Design (Claude Design)** | S2-01 (done) → S2-02 (fields) → S2-03 (types) → S2-04 (Sources) → S2-20 (Files) |
 | **Core schema / Go** | S2-05…S2-13 (done) |
-| **FFI + Mac** | S2-14 (done) → S2-15 → S2-16 → S2-17 → S2-18 → S2-21 → S2-19 |
+| **FFI + Mac** | S2-14 (done) → S2-15 → **S2-22** (`PVTable`) → S2-16 → S2-17 → S2-18 → S2-21 → S2-19 |
 
-Prefer **many small PRs**. Vocabulary admin before Sources catalog. Split catalog UI: Source list/detail (S2-17), Artifact ingest + thumbnails (S2-18), then project Files browser (S2-21). Do not fold the workspace shell into feature destination PRs.
+Prefer **many small PRs**. Vocabulary admin before Sources catalog. Land **`PVTable` (S2-22)** before Source types so later list UIs reuse it. Split catalog UI: Source list/detail (S2-17), Artifact ingest + thumbnails (S2-18), then project Files browser (S2-21). Do not fold the workspace shell into feature destination PRs.
 
 ---
 

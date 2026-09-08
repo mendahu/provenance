@@ -54,9 +54,9 @@ enum PVLineHeight {
 /// Letter spacing (tracking), matching `--tracking-*`, in points of
 /// `kerning`/`tracking` per the SwiftUI `Text` modifiers of the same name.
 /// CSS values are `em`-relative; these are pre-multiplied against
-/// `PVTypeScale` at the two call sites that use non-zero tracking
-/// (`--tracking-display` on display type, `--tracking-caps` on eyebrows) —
-/// see usage notes in `DesignSystem/README.md`.
+/// `PVTypeScale` at call sites that use non-zero tracking
+/// (`--tracking-display` on display type, `--tracking-caps` via
+/// `.pvMicroCaps()` / badges) — see `DesignSystem/README.md`.
 enum PVTracking {
     static let display: CGFloat = -0.02
     static let normal: CGFloat = 0
@@ -146,5 +146,15 @@ enum PVFontRegistration {
 
     static func registerBundledFontsIfNeeded() {
         _ = registered
+    }
+}
+
+extension View {
+    /// Eyebrow / column-header style: micro semibold + caps tracking + uppercase.
+    /// Does not set foreground — callers pick muted/faint/etc.
+    func pvMicroCaps() -> some View {
+        font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
+            .tracking(PVTypeScale.micro * PVTracking.caps)
+            .textCase(.uppercase)
     }
 }

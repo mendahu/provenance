@@ -58,9 +58,7 @@ struct PVSidebarNav: View {
         VStack(alignment: collapsed ? .center : .leading, spacing: PVSpacing.space1) {
             if let groupLabel, !collapsed {
                 Text(groupLabel)
-                    .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
-                    .tracking(PVTypeScale.micro * PVTracking.caps)
-                    .textCase(.uppercase)
+                    .pvMicroCaps()
                     .foregroundStyle(PVColor.textFaint)
                     .padding(.horizontal, PVSpacing.space4)
                     .padding(.bottom, PVSpacing.space2)
@@ -79,16 +77,9 @@ struct PVSidebarNav: View {
     }
 }
 
-/// A `Button` plus modifiers chained *after* `.buttonStyle(.plain)` gives
-/// the button two different hit-testing surfaces: the button's own tap
-/// gesture sees only what's inside its label, while a separately-attached
-/// `.onHover` sees the fully-composed outer view — an earlier version of
-/// this row learned that the hard way, needing two different
-/// `contentShape`s for two different pointer interactions. Routing
-/// through a proper `ButtonStyle` (`PVSidebarNavRowStyle`/`Body` below),
-/// backed by the shared `PVHoverEffect` every `ButtonStyle` body in this
-/// design system now uses, collapses that back to one surface — click,
-/// hover, and the pressed state all agree by construction.
+/// Sidebar row button. Uses a `ButtonStyle` + `PVHoverEffect` so click,
+/// hover, and pressed share one hit-testing surface (modifiers chained
+/// after `.buttonStyle(.plain)` do not).
 private struct PVSidebarNavButton: View {
     let item: PVSidebarNavItem
     let isSelected: Bool

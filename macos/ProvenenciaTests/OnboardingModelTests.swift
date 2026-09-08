@@ -51,7 +51,7 @@ struct OnboardingModelTests {
         )
         let model = OnboardingModel(store: store, folders: folders)
         await model.load()
-        #expect(model.phase == .home)
+        #expect(model.phase == .home(projectDir: project.path, userID: jane.userID))
         #expect(model.project?.folderName == "Robins Family.provenencia")
         #expect(model.project?.label == "Robins Family")
         #expect(model.session?.ref == jane.ref)
@@ -73,7 +73,7 @@ struct OnboardingModelTests {
         model.displayName = "Jake"
         model.familyName = "Robins Family"
         await model.submit()
-        #expect(model.phase == .home)
+        #expect(model.phase.isHome)
         #expect(model.project?.label == "Robins Family")
         #expect(model.project?.folderName == "robins-family.provenencia")
         #expect(store.activeProjectDir?.hasSuffix("robins-family.provenencia") == true)
@@ -183,7 +183,7 @@ struct OnboardingModelTests {
         await model.submit()
         #expect(model.phase == .identify)
         await model.submit()
-        #expect(model.phase == .home)
+        #expect(model.phase.isHome)
         #expect(model.project?.folderName == "robins.provenencia")
         #expect(model.project?.label == "Robins")
         #expect(store.identity?.displayName == "Jane Smith")
@@ -204,7 +204,7 @@ struct OnboardingModelTests {
         #expect(model.selectedContributorID == OnboardingModel.newContributorID)
         model.selectedContributorID = jane.userID
         await model.submit()
-        #expect(model.phase == .home)
+        #expect(model.phase.isHome)
         #expect(store.identity == jane)
         #expect(store.activeProjectDir == project.path)
         #expect(model.session?.displayName == jane.displayName)
@@ -243,7 +243,7 @@ struct OnboardingModelTests {
         let store = FakeStore(identity: jane, activeProjectDir: project.path)
         let model = OnboardingModel(store: store, folders: folders)
         await model.load()
-        #expect(model.phase == .home)
+        #expect(model.phase.isHome)
         await model.signOut()
         #expect(model.phase == .chooseFile)
         #expect(!model.researcherLocked)
@@ -381,7 +381,14 @@ private struct ThrowingStore: GenealogyStore {
     func createMetadataField(
         projectDir _: String,
         userID _: String,
-        key _: String,
+        label _: String,
+        dataType _: String,
+        description _: String
+    ) async throws -> CatalogMetadataField { throw StoreBoom.boom }
+    func updateMetadataField(
+        projectDir _: String,
+        userID _: String,
+        fieldID _: String,
         label _: String,
         dataType _: String,
         description _: String

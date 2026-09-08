@@ -45,5 +45,7 @@ $(SRCROOT)/../core/onboarding/open_test.go
 $(SRCROOT)/../core/onboarding/sanitize.go
 $(SRCROOT)/../core/ref/ref.go
 $(SRCROOT)/../core/ref/ref_test.go
+$(SRCROOT)/../core/slug/slug.go
+$(SRCROOT)/../core/slug/slug_test.go
 $(SRCROOT)/../core/version.go
 $(SRCROOT)/../core/version_test.go

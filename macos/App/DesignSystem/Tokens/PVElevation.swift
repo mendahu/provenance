@@ -77,23 +77,36 @@ extension View {
     /// Approximates CSS `--shadow-inset` (a shadow cast *into* the surface,
     /// e.g. a text field's resting state) by overlaying a soft dark stroke
     /// along the shape's top edge, masked to the shape.
-    func pvInsetShadow(cornerRadius: CGFloat) -> some View {
+    ///
+    /// `visible` fades the shadow rather than removing it — pass
+    /// `visible: false` instead of `if !focused { … }` (see
+    /// `DesignSystem/README.md` § "Interaction state").
+    func pvInsetShadow(cornerRadius: CGFloat, visible: Bool = true) -> some View {
         let layer = PVElevation.inset
         return overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(layer.color, lineWidth: layer.radius)
+                .stroke(layer.color.opacity(visible ? 1 : 0), lineWidth: layer.radius)
                 .blur(radius: layer.radius / 2)
                 .offset(y: layer.y)
                 .mask(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .allowsHitTesting(false)
+                .pvAnimation(PVMotion.fastStandard, value: visible)
         )
     }
 
-    /// Approximates CSS `--ring-focus` (a solid, non-blurred ring outside
-    /// the element on focus) as a stroked overlay in `PVColor.borderFocus`.
-    func pvFocusRing(cornerRadius: CGFloat) -> some View {
+    /// Approximates CSS `--ring-focus` as a stroked overlay in
+    /// `PVColor.borderFocus`. Always applied; `focused` only changes
+    /// opacity — never wrap this in `if focused` (see
+    /// `DesignSystem/README.md` § "Interaction state").
+    func pvFocusRing(_ focused: Bool, cornerRadius: CGFloat) -> some View {
         overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .strokeBorder(PVColor.borderFocus.opacity(PVElevation.focusRingOpacity), lineWidth: PVElevation.focusRingWidth)
+                .strokeBorder(
+                    PVColor.borderFocus.opacity(focused ? PVElevation.focusRingOpacity : 0),
+                    lineWidth: PVElevation.focusRingWidth
+                )
+                .allowsHitTesting(false)
+                .pvAnimation(PVMotion.fastStandard, value: focused)
         )
     }
 }
