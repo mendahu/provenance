@@ -2,7 +2,7 @@
 
 Working notes for implementation milestones. These are stopping points, not a full product roadmap.
 
-Authoritative domain and stack decisions remain in the sibling docs under [`docs/`](../).
+Authoritative domain and stack decisions remain in the sibling docs under [`docs/`](../). Unscheduled product ideas live in [`ideas/`](../ideas/) — a parking lot, not a spike queue.
 
 ## Current
 
