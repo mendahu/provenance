@@ -18,8 +18,8 @@ var ErrInvalid = apperr.New(apperr.CodeSourceFieldsInvalid, apperr.KindUser)
 // names a user-origin field. Carries the colliding key as a param.
 var ErrDuplicateKey = apperr.New(apperr.CodeSourceFieldsDuplicateKey, apperr.KindConflict)
 
-// ErrLocked is returned by Update when the target field isn't user-origin
-// (seeded/provenencia and plugin-origin fields are view-only).
+// ErrLocked is returned by Update when the target field is plugin-origin
+// (project fields — user and provenencia starters — are editable).
 var ErrLocked = apperr.New(apperr.CodeSourceFieldsInvalid, apperr.KindUser)
 
 // ErrInUse is returned by Delete when source_metadata still references the field.
@@ -124,9 +124,9 @@ func Create(c *database.Catalog, label, dataType, description string) (Field, er
 	return Lookup(c, key, OriginUser)
 }
 
-// Update patches label, data_type, and description for a user-origin field
-// by id. The field's key and origin never change here — the key is minted
-// once at Create. Returns ErrLocked if the field isn't user-origin.
+// Update patches label, data_type, and description for a project field
+// (user or provenencia) by id. The field's key and origin never change here —
+// the key is minted once at Create. Returns ErrLocked for plugin-origin fields.
 func Update(c *database.Catalog, id []byte, label, dataType, description string) (Field, error) {
 	db, err := c.DB()
 	if err != nil {
@@ -142,7 +142,7 @@ func Update(c *database.Catalog, id []byte, label, dataType, description string)
 	if err != nil {
 		return Field{}, err
 	}
-	if existing.Origin != OriginUser {
+	if existing.Origin != OriginUser && existing.Origin != OriginProvenencia {
 		return Field{}, ErrLocked
 	}
 	var desc any

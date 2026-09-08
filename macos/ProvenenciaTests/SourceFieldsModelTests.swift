@@ -55,13 +55,34 @@ struct SourceFieldsModelTests {
         #expect(model.visibleFields.map(\.id) == ["1", "2"])
     }
 
-    @Test func selectedFieldLockedForNonUserOrigin() async {
-        let model = makeModel(fields: [seededField(), userField()])
+    @Test func selectedFieldLockedForPluginOriginOnly() async {
+        let plugin = CatalogMetadataField(
+            id: "3", key: "memorial-id", origin: "plugin:findagrave",
+            label: "Memorial id", dataType: "text", description: ""
+        )
+        let model = makeModel(fields: [seededField(), userField(), plugin])
         await model.load()
         model.select("1")
-        #expect(model.isSelectedFieldLocked)
+        #expect(!model.isSelectedFieldLocked)
         model.select("2")
         #expect(!model.isSelectedFieldLocked)
+        model.select("3")
+        #expect(model.isSelectedFieldLocked)
+    }
+
+    @Test func submitEditUpdatesSeededFieldButKeepsKeyAndOrigin() async {
+        let model = makeModel(fields: [seededField()])
+        await model.load()
+        model.select("1")
+        #expect(!model.isSelectedFieldLocked)
+        model.draft?.label = "Author renamed"
+        model.draft?.description = "Updated starter."
+        await model.submit()
+        #expect(model.formError == nil)
+        #expect(model.fields.first?.label == "Author renamed")
+        #expect(model.fields.first?.key == "author")
+        #expect(model.fields.first?.origin == "provenencia")
+        #expect(model.toast?.title == String(localized: L10n.SourceFields.toastUpdatedTitle))
     }
 
     @Test func openAddSeedsBlankDraftAndClearsSelection() async {

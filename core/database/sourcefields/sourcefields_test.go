@@ -159,7 +159,7 @@ func TestCreateUpdateGetByID(t *testing.T) {
 			},
 		},
 		{
-			name: "update rejects seeded field",
+			name: "update provenencia field",
 			run: func(t *testing.T, c *database.Catalog) {
 				id, err := Upsert(c, Field{
 					Key: "author", Origin: OriginProvenencia, Label: "Author", DataType: DataTypeText,
@@ -167,7 +167,27 @@ func TestCreateUpdateGetByID(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, err := Update(c, id, "Author 2", DataTypeText, ""); !errors.Is(err, ErrLocked) {
+				updated, err := Update(c, id, "Author renamed", DataTypeDate, "edited")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if updated.Key != "author" || updated.Origin != OriginProvenencia ||
+					updated.Label != "Author renamed" || updated.DataType != DataTypeDate ||
+					updated.Description != "edited" {
+					t.Fatalf("got %+v", updated)
+				}
+			},
+		},
+		{
+			name: "update rejects plugin field",
+			run: func(t *testing.T, c *database.Catalog) {
+				id, err := Upsert(c, Field{
+					Key: "memorial_id", Origin: "plugin:findagrave", Label: "Memorial id", DataType: DataTypeText,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := Update(c, id, "Memorial", DataTypeText, ""); !errors.Is(err, ErrLocked) {
 					t.Fatalf("got %v", err)
 				}
 			},

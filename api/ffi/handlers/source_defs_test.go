@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/mendahu/provenencia/api/proto/engine"
+	"github.com/mendahu/provenencia/core/database/sourcefields"
+	"github.com/mendahu/provenencia/core/onboarding"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -121,7 +123,7 @@ func TestUpdateMetadataField(t *testing.T) {
 			},
 		},
 		{
-			name: "rejects editing a seeded field",
+			name: "updates a seeded field",
 			reqFn: func(t *testing.T) proto.Message {
 				dir, userID, _ := sourceFixture(t)
 				listOut, err := ListMetadataFields(marshalProto(t, &engine.ListMetadataFieldsRequest{ProjectDir: dir}))
@@ -143,7 +145,39 @@ func TestUpdateMetadataField(t *testing.T) {
 					t.Fatal("expected a seeded field")
 				}
 				return &engine.UpdateMetadataFieldRequest{
-					ProjectDir: dir, UserId: userID, FieldId: seededID, Label: "Changed", DataType: "text",
+					ProjectDir: dir, UserId: userID, FieldId: seededID,
+					Label: "Renamed starter", DataType: "text", Description: "edited",
+				}
+			},
+			after: func(t *testing.T, out []byte, _ proto.Message) {
+				var resp engine.UpdateMetadataFieldResponse
+				if err := proto.Unmarshal(out, &resp); err != nil {
+					t.Fatal(err)
+				}
+				if resp.Field.GetOrigin() != "provenencia" || resp.Field.GetLabel() != "Renamed starter" ||
+					resp.Field.GetDescription() != "edited" || resp.Field.GetKey() == "" {
+					t.Fatalf("%+v", resp.Field)
+				}
+			},
+		},
+		{
+			name: "rejects editing a plugin field",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				c, err := onboarding.OpenCatalog(dir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer c.Close()
+				id, err := sourcefields.Upsert(c, sourcefields.Field{
+					Key: "memorial_id", Origin: "plugin:findagrave", Label: "Memorial id", DataType: sourcefields.DataTypeText,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				return &engine.UpdateMetadataFieldRequest{
+					ProjectDir: dir, UserId: userID, FieldId: uuidString(id),
+					Label: "Changed", DataType: "text",
 				}
 			},
 			wantErr: true,

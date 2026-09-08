@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// The right pane of `SourceFieldsView`: the add-field form, a selected
-/// field's detail (locked read-only for `provenencia`/`plugin:…`, editable
-/// for `user`), or an empty prompt when nothing is selected — S2-02 §3.2/3.3.
+/// field's detail (editable for `user` / `provenencia`, locked read-only for
+/// `plugin:…`), or an empty prompt when nothing is selected — S2-02 §3.2/3.3.
 struct SourceFieldsDetailPane: View {
     @Bindable var model: SourceFieldsModel
 
@@ -101,7 +101,7 @@ struct SourceFieldsDetailPane: View {
         )
     }
 
-    // MARK: Locked (provenencia / plugin) detail
+    // MARK: Locked (plugin) detail
 
     @ViewBuilder
     private var lockedBody: some View {
@@ -127,10 +127,7 @@ struct SourceFieldsDetailPane: View {
     }
 
     private func lockedNote(for field: CatalogMetadataField) -> String {
-        if field.origin == SourceFieldOrigin.provenencia {
-            return String(localized: L10n.SourceFields.lockedNoteSeeded)
-        }
-        return L10n.SourceFields.lockedNotePlugin(pluginID: SourceFieldOrigin.pluginID(from: field.origin))
+        L10n.SourceFields.lockedNotePlugin(pluginID: SourceFieldOrigin.pluginID(from: field.origin))
     }
 
     private func labeledSection(_ label: LocalizedStringResource, @ViewBuilder content: () -> some View) -> some View {

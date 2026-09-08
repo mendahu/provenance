@@ -3,8 +3,9 @@ import Observation
 
 /// State for the **Source fields** workspace destination (S2-02 board /
 /// S2-15 PR): browse/search/sort the project's `source_metadata_fields`
-/// vocabulary, and create or edit `user`-origin rows. `provenencia` (and
-/// any future `plugin:…`) rows are view-only — see `isSelectedFieldLocked`.
+/// vocabulary, and create or edit project rows (`user` and create-time
+/// `provenencia` starters). Plugin-origin rows stay view-only — see
+/// `isSelectedFieldLocked`.
 @MainActor
 @Observable
 final class SourceFieldsModel {
@@ -144,7 +145,7 @@ final class SourceFieldsModel {
         // not bind it, but going edit/add → view with `draft = nil` in the
         // same turn tears down `Binding($model.draft)` and traps.
         draft = Draft(label: field.label, dataType: field.dataType, description: field.description)
-        if field.origin == SourceFieldOrigin.user {
+        if field.origin == SourceFieldOrigin.user || field.origin == SourceFieldOrigin.provenencia {
             mode = .editing(id: id)
         } else {
             mode = .viewing(id: id)
