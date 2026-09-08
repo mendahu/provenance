@@ -107,11 +107,18 @@ private struct TrafficLightAligner: NSViewRepresentable {
             resizeObserver = NotificationCenter.default.addObserver(
                 forName: NSWindow.didResizeNotification,
                 object: window,
-                queue: .main
+                queue: nil
             ) { [weak self] _ in
-                // Block is `@Sendable` and does not see `@MainActor`; hop
-                // without carrying `NSNotification` / `NSWindow` across.
-                Task { @MainActor in
+                // Must realign *synchronously*, within the same run-loop
+                // pass that resized the window: AppKit has just snapped the
+                // buttons back to their default corner, and a deferred hop
+                // (`Task { @MainActor … }`) lets that frame draw before we
+                // move them — visible as the stoplights flashing into the
+                // corner on every live-resize step. The block is `@Sendable`
+                // and doesn't see `@MainActor`, but `didResizeNotification`
+                // is always posted on the main thread, so assume rather
+                // than hop. (Don't touch the `NSNotification` inside.)
+                MainActor.assumeIsolated {
                     self?.alignIfNeeded()
                 }
             }
