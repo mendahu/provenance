@@ -12,8 +12,12 @@ struct SourceFieldsModelTests {
         CatalogMetadataField(id: id, key: "author", origin: "provenencia", label: label, dataType: "text", description: "Seeded.")
     }
 
-    private func userField(id: String = "2", label: String = "Grandma's album code") -> CatalogMetadataField {
-        CatalogMetadataField(id: id, key: FieldSlug.kebab(label), origin: "user", label: label, dataType: "text", description: "Pencil code.")
+    private func userField(id: String = "2", label: String = "Grandma's album code", usedBy: Int = 0) -> CatalogMetadataField {
+        CatalogMetadataField(id: id, key: FieldSlug.kebab(label), origin: "user", label: label, dataType: "text", description: "Pencil code.", usedBy: usedBy)
+    }
+
+    private func pluginField(id: String = "3", label: String = "Memorial id") -> CatalogMetadataField {
+        CatalogMetadataField(id: id, key: "memorial-id", origin: "plugin:findagrave", label: label, dataType: "text", description: "From the plugin.")
     }
 
     private func makeModel(store: FakeStore = FakeStore(), fields: [CatalogMetadataField] = []) -> SourceFieldsModel {
@@ -83,6 +87,32 @@ struct SourceFieldsModelTests {
         #expect(model.fields.first?.key == "author")
         #expect(model.fields.first?.origin == "provenencia")
         #expect(model.toast?.title == String(localized: L10n.SourceFields.toastUpdatedTitle))
+    }
+
+    @Test func seededAndUserFieldsAreEditedTheSameWay() async {
+        let model = makeModel(fields: [seededField(), userField()])
+        await model.load()
+
+        for id in ["1", "2"] {
+            model.select(id)
+            #expect(model.mode == .editing(id: id))
+            #expect(!model.isSelectedFieldLocked)
+            #expect(!model.isDirty)
+
+            model.draft?.label = "Renamed \(id)"
+            #expect(model.isDirty)
+            #expect(model.canSubmit)
+        }
+    }
+
+    @Test func pluginFieldsAreTheOnlyReadOnlyOnes() async {
+        let model = makeModel(fields: [pluginField()])
+        await model.load()
+        model.select("3")
+
+        #expect(model.mode == .viewing(id: "3"))
+        #expect(model.isSelectedFieldLocked)
+        #expect(!model.canSubmit)
     }
 
     @Test func openAddSeedsBlankDraftAndClearsSelection() async {
@@ -185,4 +215,126 @@ struct SourceFieldsModelTests {
         model.draft?.label = "New field"
         #expect(model.canSubmit)
     }
+    // MARK: Delete
+
+    @Test func deleteIsOfferedForSavedFieldsOnly() async {
+        let model = makeModel(fields: [userField()])
+        await model.load()
+        #expect(!model.showsDelete)
+
+        model.select("2")
+        #expect(model.showsDelete)
+
+        model.openAdd()
+        #expect(!model.showsDelete)
+    }
+
+    @Test func unusedProjectOwnedFieldsCanBeDeleted() async {
+        let model = makeModel(fields: [seededField(), userField()])
+        await model.load()
+
+        model.select("1")
+        #expect(model.canDeleteSelectedField)
+        model.select("2")
+        #expect(model.canDeleteSelectedField)
+    }
+
+    @Test func pluginFieldsCannotBeDeletedAndSayWhy() async {
+        let model = makeModel(fields: [pluginField()])
+        await model.load()
+        model.select("3")
+
+        #expect(!model.canDeleteSelectedField)
+        #expect(String(localized: model.deleteTooltip) == String(localized: L10n.SourceFields.deleteOwnedByPlugin))
+    }
+
+    @Test func fieldsInUseCannotBeDeletedAndCountTheSources() async {
+        let model = makeModel(fields: [userField(usedBy: 3)])
+        await model.load()
+        model.select("2")
+
+        #expect(!model.canDeleteSelectedField)
+        #expect(String(localized: model.deleteTooltip) == String(localized: L10n.SourceFields.deleteInUse(count: 3)))
+    }
+
+    @Test func aSingleUseReadsAsOneSource() async {
+        let model = makeModel(fields: [userField(usedBy: 1)])
+        await model.load()
+        model.select("2")
+
+        #expect(String(localized: model.deleteTooltip) == String(localized: L10n.SourceFields.deleteInUse(count: 1)))
+        #expect(String(localized: model.deleteTooltip) != String(localized: L10n.SourceFields.deleteInUse(count: 2)))
+    }
+
+    @Test func deletableFieldTooltipNamesTheAction() async {
+        let model = makeModel(fields: [userField()])
+        await model.load()
+        model.select("2")
+
+        #expect(String(localized: model.deleteTooltip) == String(localized: L10n.SourceFields.deleteField))
+    }
+
+    @Test func askDeleteOpensConfirmationForTheSelectedField() async {
+        let model = makeModel(fields: [userField()])
+        await model.load()
+        model.select("2")
+        model.askDelete()
+
+        #expect(model.pendingDeleteField?.id == "2")
+    }
+
+    @Test func askDeleteIsIgnoredWhenTheFieldCannotBeDeleted() async {
+        let model = makeModel(fields: [userField(usedBy: 2)])
+        await model.load()
+        model.select("2")
+        model.askDelete()
+
+        #expect(model.pendingDeleteField == nil)
+    }
+
+    @Test func cancelDeleteClosesTheConfirmationAndKeepsTheField() async {
+        let model = makeModel(fields: [userField()])
+        await model.load()
+        model.select("2")
+        model.askDelete()
+        model.cancelDelete()
+
+        #expect(model.pendingDeleteField == nil)
+        #expect(model.fields.count == 1)
+        #expect(model.selectedField?.id == "2")
+    }
+
+    @Test func confirmDeleteRemovesTheFieldClearsSelectionAndToasts() async {
+        let store = FakeStore()
+        let model = makeModel(store: store, fields: [seededField(), userField()])
+        await model.load()
+        model.select("2")
+        model.askDelete()
+        await model.confirmDelete()
+
+        #expect(model.fields.map(\.id) == ["1"])
+        #expect(store.fieldsByProject[projectDir]?.map(\.id) == ["1"])
+        #expect(model.selectedField == nil)
+        #expect(model.pendingDeleteField == nil)
+        #expect(!model.isDeleting)
+        #expect(model.toast?.title == String(localized: L10n.SourceFields.toastDeletedTitle))
+    }
+
+    @Test func confirmDeleteKeepsTheConfirmationOpenWhenTheStoreRefuses() async {
+        let store = FakeStore()
+        let model = makeModel(store: store, fields: [userField()])
+        await model.load()
+        model.select("2")
+        model.askDelete()
+        // A source picks the field up after the model last listed, so the
+        // count the button was enabled from is stale and the engine refuses.
+        // That race is why the dialog has an error path at all.
+        store.fieldsByProject[projectDir] = [userField(usedBy: 4)]
+        await model.confirmDelete()
+
+        #expect(model.fields.count == 1)
+        #expect(model.pendingDeleteField?.id == "2")
+        #expect(model.deleteError != nil)
+    }
+
 }

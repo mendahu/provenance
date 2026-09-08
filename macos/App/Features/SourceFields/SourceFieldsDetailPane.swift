@@ -60,9 +60,15 @@ struct SourceFieldsDetailPane: View {
 
     private var panelHeader: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space5) {
-            Text(model.isAdding ? L10n.SourceFields.detailEyebrowNewField : L10n.SourceFields.detailEyebrowField)
-                .pvMicroCaps()
-                .foregroundStyle(PVColor.textMuted)
+            HStack(alignment: .top, spacing: PVSpacing.space5) {
+                Text(model.isAdding ? L10n.SourceFields.detailEyebrowNewField : L10n.SourceFields.detailEyebrowField)
+                    .pvMicroCaps()
+                    .foregroundStyle(PVColor.textMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if model.showsDelete {
+                    deleteButton
+                }
+            }
             Text(panelTitle)
                 .font(PVFont.display(size: PVTypeScale.h2))
                 .foregroundStyle(PVColor.textDisplay)
@@ -77,6 +83,17 @@ struct SourceFieldsDetailPane: View {
                 .font(PVFont.body(size: PVTypeScale.micro, italic: true))
                 .foregroundStyle(PVColor.textMuted)
         }
+    }
+
+    /// Disabled rather than hidden when the field cannot be deleted — the
+    /// tooltip is where the reason lives (a plugin owns it, or sources still
+    /// carry values for it).
+    private var deleteButton: some View {
+        PVIconButton(.trash, label: model.deleteTooltip, size: .sm, tone: .danger) {
+            model.askDelete()
+        }
+        .disabled(!model.canDeleteSelectedField)
+        .accessibilityIdentifier("sourceFields.delete")
     }
 
     private var panelTitle: String {

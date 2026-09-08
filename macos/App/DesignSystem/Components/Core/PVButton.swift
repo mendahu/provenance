@@ -4,7 +4,7 @@ import SwiftUI
 /// spec's underlined, no-chrome variant (`Button.jsx`'s `variants.link`) —
 /// added for `PVButton`'s use as an inline text action (e.g. "Reset search").
 enum PVButtonVariant {
-    case primary, secondary, ghost, link
+    case primary, secondary, ghost, danger, link
 }
 
 /// Shared control size for buttons, inputs, and selects.
@@ -141,6 +141,12 @@ private struct PVButtonPalette {
                 foreground: PVColor.textSecondary,
                 border: .clear, hoverBorder: nil
             )
+        case .danger:
+            return PVButtonPalette(
+                background: PVColor.danger, hoverBackground: PVColor.dangerHover,
+                foreground: PVColor.dangerButtonForeground,
+                border: PVColor.danger, hoverBorder: PVColor.dangerHover
+            )
         case .link:
             return PVButtonPalette(
                 background: .clear, hoverBackground: nil,
@@ -198,6 +204,7 @@ private struct PVButtonBody: View {
         PVButton("Back", variant: .ghost, size: .md) {}
         PVButton("Add field", variant: .primary, icon: .plus) {}
         PVButton("Saving", variant: .primary, loading: true) {}
+        PVButton("Delete field", variant: .danger, icon: .trash) {}
         PVButton("Reset search", variant: .link) {}
     }
     .padding(PVSpacing.space9)

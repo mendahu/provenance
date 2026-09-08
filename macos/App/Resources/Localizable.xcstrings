@@ -20,6 +20,66 @@
         }
       }
     },
+    "designSystem.table.filterColumn" : {
+      "comment" : "Accessibility label for a PVTable column's filter menu; argument is the column title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter %@"
+          }
+        }
+      }
+    },
+    "designSystem.table.filterOptionCount" : {
+      "comment" : "A PVTable filter menu option with its row count; arguments are the option label and the count",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ (%2$lld)"
+          }
+        }
+      }
+    },
+    "designSystem.table.sortAscending" : {
+      "comment" : "Spoken sort state of a PVTable column header sorted ascending",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorted ascending. Activate to sort descending"
+          }
+        }
+      }
+    },
+    "designSystem.table.sortDescending" : {
+      "comment" : "Spoken sort state of a PVTable column header sorted descending",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorted descending. Activate to sort ascending"
+          }
+        }
+      }
+    },
+    "designSystem.table.sortNone" : {
+      "comment" : "Spoken sort state of an unsorted PVTable column header",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not sorted. Activate to sort ascending"
+          }
+        }
+      }
+    },
     "designSystem.toast.dismiss" : {
       "comment" : "Accessibility label for a PVToast's dismiss button",
       "extractionState" : "manual",
@@ -980,6 +1040,102 @@
         }
       }
     },
+    "sourceFields.delete.action" : {
+      "comment" : "Delete button in the Source fields detail pane, and the confirm dialog's destructive button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete field"
+          }
+        }
+      }
+    },
+    "sourceFields.delete.confirmBody" : {
+      "comment" : "Body of the delete-field confirmation dialog; argument is the field key",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No source in this project uses %@, so nothing loses data. The key is released and could be minted again by a later field with the same label."
+          }
+        }
+      }
+    },
+    "sourceFields.delete.confirmSubtitle" : {
+      "comment" : "Subtitle of the delete-field confirmation dialog",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting a field removes it from this project's vocabulary. Sources already saved keep their values."
+          }
+        }
+      }
+    },
+    "sourceFields.delete.confirmTitle" : {
+      "comment" : "Title of the delete-field confirmation dialog; argument is the field label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete %@?"
+          }
+        }
+      }
+    },
+    "sourceFields.delete.inUseOne" : {
+      "comment" : "Tooltip on the disabled delete button when exactly one source carries a value for the field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In use on 1 source"
+          }
+        }
+      }
+    },
+    "sourceFields.delete.inUseOther" : {
+      "comment" : "Tooltip on the disabled delete button; argument is how many sources carry a value for the field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In use on %lld sources"
+          }
+        }
+      }
+    },
+    "sourceFields.delete.keep" : {
+      "comment" : "Button that closes the delete-field confirmation without deleting",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep field"
+          }
+        }
+      }
+    },
+    "sourceFields.delete.ownedByPlugin" : {
+      "comment" : "Tooltip on the disabled delete button when the selected field comes from a plugin",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Owned by the plugin"
+          }
+        }
+      }
+    },
     "sourceFields.detail.dataTypeSectionLabel" : {
       "comment" : "Section label above the read-only data type line on a locked field's detail",
       "extractionState" : "manual",
@@ -1076,18 +1232,6 @@
         }
       }
     },
-    "sourceFields.detail.lockedNoteSeeded" : {
-      "comment" : "Callout explaining why a provenencia-origin field can't be edited",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seeded by Provenencia. Its label, data type, and description are fixed so citations stay comparable between projects."
-          }
-        }
-      }
-    },
     "sourceFields.detail.panelEmptyBody" : {
       "comment" : "Body of the empty state shown in the detail panel before any field is selected",
       "extractionState" : "manual",
@@ -1095,7 +1239,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select a field to read its definition. Fields seeded by Provenencia are fixed; the ones you added stay editable."
+            "value" : "Select a field to read or edit its definition. Fields supplied by a plugin are read-only; the rest of this project's vocabulary stays editable."
           }
         }
       }
@@ -1364,18 +1508,6 @@
         }
       }
     },
-    "sourceFields.list.columnOrigin" : {
-      "comment" : "Source fields list column header: origin",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Origin"
-          }
-        }
-      }
-    },
     "sourceFields.list.countLine" : {
       "comment" : "Source fields count summary; arguments are total, seeded (provenencia), and user field counts",
       "extractionState" : "manual",
@@ -1448,6 +1580,18 @@
         }
       }
     },
+    "sourceFields.list.seededPill" : {
+      "comment" : "Accessibility label and tooltip for the pill marking a Provenencia-seeded field in the list",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seeded by Provenencia"
+          }
+        }
+      }
+    },
     "sourceFields.noMatch.body" : {
       "comment" : "Body of the no-match empty state; argument is the search query",
       "extractionState" : "manual",
@@ -1516,6 +1660,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Field added"
+          }
+        }
+      }
+    },
+    "sourceFields.toast.deletedBody" : {
+      "comment" : "Toast body after a source field is deleted; argument is the field label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is no longer in this project's vocabulary."
+          }
+        }
+      }
+    },
+    "sourceFields.toast.deletedTitle" : {
+      "comment" : "Toast title after a source field is deleted",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Field deleted"
           }
         }
       }

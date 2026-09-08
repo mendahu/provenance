@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		01574F7767F9B0AF5550AFAD /* PVMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C355704657FB6A572BF7FD6A /* PVMotion.swift */; };
-		045F383DABA3280D902C7A9D /* SourceFieldsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375BB04D93FF1B5E49E62F85 /* SourceFieldsRow.swift */; };
 		7D3F5A9C218E4B60FD92C3E4 /* SourceFieldsBadges.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B81E22A90F43D6B15E77A1 /* SourceFieldsBadges.swift */; };
 		07D60E0FE9704E4723AE18DD /* PVLogoMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11ADAF744C32587CD34CDD23 /* PVLogoMark.swift */; };
 		080D24179717B185C273478D /* PVField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D4D3531F81FABFCDDE4F84 /* PVField.swift */; };
@@ -31,6 +30,8 @@
 		840A56FF5DC13597C1DFDDF9 /* TrafficLights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C0991FB99984CAEB385DA4 /* TrafficLights.swift */; };
 		854A784AE802C0EF7A484971 /* PVToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC0B0A893C7248A08303738 /* PVToast.swift */; };
 		89CEBFA09358C67639951CE0 /* PVEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3555554CD714B1FD24C2DB2F /* PVEmptyState.swift */; };
+		AA00000000000000000000C6 /* PVDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000C7 /* PVDialog.swift */; };
+		AA00000000000000000000C1 /* PVTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000C2 /* PVTable.swift */; };
 		8B20E11A26E9E10EF915519C /* TrafficLightsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B567080CA23230E18488F894 /* TrafficLightsTests.swift */; };
 		9BCF5ECCD155C02B71931BB5 /* FieldSlug.swift in Sources */ = {isa = PBXBuildFile; fileRef = E07E52EC527189A4A377F9AD /* FieldSlug.swift */; };
 		A62122AE913D5F5B8B72D083 /* PVCallout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B9D94DAB5FD1587C260FE3 /* PVCallout.swift */; };
@@ -74,6 +75,7 @@
 		DC8E6C8D157C17756D4C2AC8 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 1B183C69AA74C2C22006FC05 /* Fonts */; };
 		E3D046BD80595D1F07691D1F /* PVHoverEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC485E7480EE58A01EA9A85 /* PVHoverEffect.swift */; };
 		E63D8CEC3F6AC5C7E90EBBFE /* FieldSlugTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8291342170CC4CB42EFA814C /* FieldSlugTests.swift */; };
+		AA00000000000000000000C4 /* PVTableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000C5 /* PVTableTests.swift */; };
 		E9178C44063AD95B47B5D524 /* PVSidebarNav.swift in Sources */ = {isa = PBXBuildFile; fileRef = E98DA667F92287934B46B640 /* PVSidebarNav.swift */; };
 		ECC25906B62C6453A5CB9D25 /* PVInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40F72A548E04F25E0AA30CDB /* PVInput.swift */; };
 /* End PBXBuildFile section */
@@ -110,8 +112,9 @@
 		28FB7FB1DE947EE962F4BA83 /* PVSelect.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVSelect.swift; sourceTree = "<group>"; };
 		2B7FCE6BAF87CC79B6907492 /* PVRadius.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVRadius.swift; sourceTree = "<group>"; };
 		3555554CD714B1FD24C2DB2F /* PVEmptyState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVEmptyState.swift; sourceTree = "<group>"; };
+		AA00000000000000000000C7 /* PVDialog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVDialog.swift; sourceTree = "<group>"; };
+		AA00000000000000000000C2 /* PVTable.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVTable.swift; sourceTree = "<group>"; };
 		36412B0A6A6851ADB45A7AA8 /* PVIcon.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVIcon.swift; sourceTree = "<group>"; };
-		375BB04D93FF1B5E49E62F85 /* SourceFieldsRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsRow.swift; sourceTree = "<group>"; };
 		C4B81E22A90F43D6B15E77A1 /* SourceFieldsBadges.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsBadges.swift; sourceTree = "<group>"; };
 		3B7791238B5C7C6F0C5BE388 /* SourceFieldsModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsModel.swift; sourceTree = "<group>"; };
 		4094CD05F31CFF0AA37C888A /* PVColor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVColor.swift; sourceTree = "<group>"; };
@@ -121,6 +124,7 @@
 		68425DFE8D1974D7A4AC5BF8 /* PVIconButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVIconButton.swift; sourceTree = "<group>"; };
 		6AAC04817D6F4CCC9CDC9B17 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; path = README.md; sourceTree = "<group>"; };
 		8291342170CC4CB42EFA814C /* FieldSlugTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FieldSlugTests.swift; sourceTree = "<group>"; };
+		AA00000000000000000000C5 /* PVTableTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVTableTests.swift; sourceTree = "<group>"; };
 		85C0991FB99984CAEB385DA4 /* TrafficLights.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrafficLights.swift; sourceTree = "<group>"; };
 		8E4ED11C20279A6A4CE40A64 /* SourceFieldsListPane.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsListPane.swift; sourceTree = "<group>"; };
 		8FC0B0A893C7248A08303738 /* PVToast.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVToast.swift; sourceTree = "<group>"; };
@@ -203,7 +207,6 @@
 				3B7791238B5C7C6F0C5BE388 /* SourceFieldsModel.swift */,
 				950877B33DC4E16E5BA8B5D6 /* SourceFieldsView.swift */,
 				8E4ED11C20279A6A4CE40A64 /* SourceFieldsListPane.swift */,
-				375BB04D93FF1B5E49E62F85 /* SourceFieldsRow.swift */,
 				C4B81E22A90F43D6B15E77A1 /* SourceFieldsBadges.swift */,
 				DAA7D6A46A5016665371A2C5 /* SourceFieldsDetailPane.swift */,
 			);
@@ -261,6 +264,7 @@
 			children = (
 				8FC0B0A893C7248A08303738 /* PVToast.swift */,
 				3555554CD714B1FD24C2DB2F /* PVEmptyState.swift */,
+				AA00000000000000000000C7 /* PVDialog.swift */,
 				C9B9D94DAB5FD1587C260FE3 /* PVCallout.swift */,
 			);
 			name = Feedback;
@@ -419,15 +423,26 @@
 				164584B2DB70D89A55C4178F /* WorkspaceModelTests.swift */,
 				B567080CA23230E18488F894 /* TrafficLightsTests.swift */,
 				8291342170CC4CB42EFA814C /* FieldSlugTests.swift */,
+				AA00000000000000000000C5 /* PVTableTests.swift */,
 				4F0CB87F6EC5759DF8D0A7AF /* SourceFieldsModelTests.swift */,
 			);
 			path = ProvenenciaTests;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000000C3 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000000000000000000C2 /* PVTable.swift */,
+			);
+			name = Data;
+			path = Data;
 			sourceTree = "<group>";
 		};
 		C17391C6B09DD9AAD985A390 /* Components */ = {
 			isa = PBXGroup;
 			children = (
 				A6C6775E822CC039D1AF078F /* Core */,
+				AA00000000000000000000C3 /* Data */,
 				751809A4EF38DC6F6B1B17A4 /* Forms */,
 				7CE27BCE83A155C8F77EF85E /* Feedback */,
 				4890BA38D028388F6C2157E5 /* Navigation */,
@@ -616,11 +631,12 @@
 				BE57602FF7EBA86C1DEE63FF /* PVBadge.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5E /* PVDivider.swift in Sources */,
 				89CEBFA09358C67639951CE0 /* PVEmptyState.swift in Sources */,
+				AA00000000000000000000C6 /* PVDialog.swift in Sources */,
+				AA00000000000000000000C1 /* PVTable.swift in Sources */,
 				A62122AE913D5F5B8B72D083 /* PVCallout.swift in Sources */,
 				BD1582FF721A5711F38C97A0 /* SourceFieldsModel.swift in Sources */,
 				6422592F5C31D8F535B03C6A /* SourceFieldsView.swift in Sources */,
 				D0D0E4841104F1836736A7CD /* SourceFieldsListPane.swift in Sources */,
-				045F383DABA3280D902C7A9D /* SourceFieldsRow.swift in Sources */,
 				7D3F5A9C218E4B60FD92C3E4 /* SourceFieldsBadges.swift in Sources */,
 				57420D5CDD1330745ACC33FD /* SourceFieldsDetailPane.swift in Sources */,
 			);
@@ -636,6 +652,7 @@
 				826574F8CA8D24BE551A88BF /* WorkspaceModelTests.swift in Sources */,
 				8B20E11A26E9E10EF915519C /* TrafficLightsTests.swift in Sources */,
 				E63D8CEC3F6AC5C7E90EBBFE /* FieldSlugTests.swift in Sources */,
+				AA00000000000000000000C4 /* PVTableTests.swift in Sources */,
 				CE7E43F00CA602E2794E0ADA /* SourceFieldsModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

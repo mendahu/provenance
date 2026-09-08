@@ -388,6 +388,21 @@ struct GoStore: GenealogyStore {
         return Self.mapMetadataField(resp.field)
     }
 
+    func deleteMetadataField(
+        projectDir: String,
+        userID: String,
+        fieldID: String
+    ) async throws {
+        var req = Provenencia_Engine_V1_DeleteMetadataFieldRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.fieldID = fieldID
+        let _: Provenencia_Engine_V1_DeleteMetadataFieldResponse = try await provenenciaCall(
+            method: CoreMethod.deleteMetadataField,
+            request: req
+        )
+    }
+
     func countFiles(projectDir: String) async throws -> Int {
         var req = Provenencia_Engine_V1_CountFilesRequest()
         req.projectDir = projectDir
@@ -462,7 +477,8 @@ struct GoStore: GenealogyStore {
             origin: f.origin,
             label: f.label,
             dataType: f.dataType,
-            description: f.description_p
+            description: f.description_p,
+            usedBy: Int(f.usedBy)
         )
     }
 

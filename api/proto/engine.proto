@@ -202,6 +202,10 @@ message MetadataField {
   string label = 4;
   string data_type = 5; // text | date
   string description = 6;
+  // How many source_metadata rows reference this field. Deleting is only
+  // allowed at 0 (see sourcefields.ErrInUse); the client uses the count to
+  // disable its delete affordance and say what is holding the field.
+  int32 used_by = 7;
 }
 
 message MetadataWorkspaceEntry {

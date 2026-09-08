@@ -134,21 +134,22 @@ red `Text`), plus `Badge`/`EmptyState`/`Callout` (added for the S2-02
 | Toast | `Components/Feedback/PVToast.swift` |
 | LogoMark | `Components/Core/PVLogoMark.swift` |
 | SidebarNav | `Components/Navigation/PVSidebarNav.swift` (added for the S2-01 workspace chrome; ports that board's revised `collapsed`-capable `SidebarNav.jsx`) |
-| IconButton | `Components/Core/PVIconButton.swift` (added for the workspace sidebar's collapse toggle, which needed real hover feedback) |
-| Badge | `Components/Core/PVBadge.swift` (added for S2-02's data-type/origin badges) |
+| IconButton | `Components/Core/PVIconButton.swift` (added for the workspace sidebar's collapse toggle, which needed real hover feedback; `label` is required per `IconButton.jsx` and doubles as the `.help` tooltip, and `tone: .danger` tints a destructive action) |
+| Badge | `Components/Core/PVBadge.swift` (added for S2-02's data-type/origin badges; a glyph-only variant carries the S2-22 seeded pill) |
 | Divider | `Components/Core/PVDivider.swift` (1pt hairline; horizontal/vertical) |
 | EmptyState | `Components/Feedback/PVEmptyState.swift` (added for S2-02's empty/no-match states; the web spec's `action` slot isn't ported — see the file's header comment) |
 | Callout | `Components/Feedback/PVCallout.swift` (added for S2-02's "this field is locked" note; only the subset S2-02 needs is ported — see the file's header comment) |
+| Table | `Components/Data/PVTable.swift` (added for S2-22, extracted from the Source fields list; see "The table tradeoff" below) |
+| Dialog | `Components/Feedback/PVDialog.swift` (added for S2-22's delete confirmation; renders the panel only — presentation is a macOS `.sheet` at the call site, see the file's header comment) |
 
-The other 14 design-system components have **no files yet** — add them on
+The other 13 design-system components have **no files yet** — add them on
 demand, following the pattern above, when a screen needs one:
 
 | Component | Category | Purpose |
 |---|---|---|
 | Card | Core | Bordered content container with optional header/footer |
 | Tag | Core | Removable/interactive pill with a color dot |
-| Tooltip | Core | Hover label |
-| Dialog | Feedback | Modal dialog |
+| Tooltip | Core | Hover label — on macOS this is usually SwiftUI's own `.help()`, which is what `PVIconButton` uses; port the web hover card only if a call site needs richer content |
 | Checkbox | Forms | Checkbox control |
 | Radio | Forms | Radio control |
 | Switch | Forms | Toggle switch |
@@ -158,6 +159,56 @@ demand, following the pattern above, when a screen needs one:
 | FactRow | Research | One asserted fact: type glyph, date, value, place, grade, conflict note |
 | PersonChip | Research | A person with life dates and a lineage-colored rule |
 | SourceCitation | Research | Citation + repository + scan thumbnail + grade, as one unit |
+
+## The table tradeoff
+
+`PVTable` is custom chrome on purpose. SwiftUI `Table` and AppKit
+`NSTableView` bring their own header, row and selection styling, and none of
+it can be pushed all the way to the design system's look: micro-caps headers,
+a 2pt accent bar on the selected row, hairline `borderSubtle` rules, badge
+cells, the warm hover tint. Visual fidelity won; the cost is that keyboard
+and screen-reader parity had to be built by hand.
+
+**Interaction contract** (mirrors `components/data/Table.prompt.md`):
+
+| Input | Behavior |
+|---|---|
+| ↑ / ↓ | Move selection through the visible rows. Clamps at both ends — does **not** wrap. |
+| ⌥↑ / Home | Select the first row. |
+| ⌥↓ / End | Select the last row. |
+| Page up / Page down | Move ten rows, clamped. |
+| a–z, 0–9 | Type-to-select on `primaryText`. The buffer resets after 800ms; a single keystroke advances to the *next* match, so repeated presses cycle. |
+| Escape | Clears the type-select buffer. |
+
+The row list is one focus stop, so tab order reads: search field → sort
+headers → table → detail pane. Selection always scrolls into view via
+`ScrollViewReader`. Like a native table, the highlight dims when the table
+does not have focus — `surfaceSelected` + accent bar when focused,
+`surfaceSelectedInactive` + `borderStrong` when not. Focus shows
+`pvFocusRing` on the container; the view structure never changes on focus
+(same rule as `PVInput`).
+
+The caller owns the data: `rows` arrive already filtered and sorted, and the
+table reports sort/filter intent through `onSortChange` /
+`PVTableColumnFilter.onChange`. Column definitions are the single source of
+truth for width — never restate a width at the call site. Search bars and
+result footers are feature chrome and stay in the pane.
+
+**Honest accessibility limit.** A custom view cannot claim AppKit's table
+grid role, so VoiceOver will not announce "table, row 3 of 12, column 2".
+Rows are `.accessibilityElement(children: .combine)` instead, so each reads
+as a single element ("Author, author, text") with `.isSelected` on the
+selected one, and sortable headers announce their direction via
+`.accessibilityValue` because `PVIcon` is `accessibilityHidden`. That
+list-like semantic is accepted for single-selection browse lists; do not
+reach for `PVTable` where cell-level navigation matters.
+
+`PVTableSelection.moveIndex` and `PVTableTypeSelectMatcher` are pure and
+sit outside the view so selection movement and prefix matching are unit
+tested without mounting UI (`ProvenenciaTests/PVTableTests.swift`).
+
+Not implemented, deliberately — same scope line as the web component:
+multi-select, column resize/reorder, drag-and-drop, inline editing.
 
 ## Fonts
 

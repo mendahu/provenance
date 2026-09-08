@@ -20,6 +20,21 @@ struct SourceFieldOriginBadge: View {
     }
 }
 
+/// The pill that marks a Provenencia-seeded field inline after its label in
+/// the list. Only `provenencia` rows carry one — `user` and `plugin:…` rows
+/// show nothing, so the column reads as an exception marker rather than a
+/// third origin column. The full origin vocabulary still renders as
+/// `SourceFieldOriginBadge` in the detail pane.
+struct SourceFieldSeededPill: View {
+    let origin: String
+
+    var body: some View {
+        if origin == SourceFieldOrigin.provenencia {
+            PVBadge(icon: .shieldCheck, label: L10n.SourceFields.seededPill, tone: .accent, subtle: true)
+        }
+    }
+}
+
 /// The data-type → badge mapping in one place. Same open-vocabulary
 /// stance as `SourceFieldOriginBadge`: anything the client doesn't know
 /// renders as the `text` badge.
@@ -51,6 +66,7 @@ extension SourceFieldDataType {
         SourceFieldOriginBadge(origin: "plugin:findagrave")
         SourceFieldDataTypeBadge(dataType: SourceFieldDataType.text)
         SourceFieldDataTypeBadge(dataType: SourceFieldDataType.date)
+        SourceFieldSeededPill(origin: SourceFieldOrigin.provenencia)
     }
     .padding(PVSpacing.space9)
     .background(PVColor.surfacePage)

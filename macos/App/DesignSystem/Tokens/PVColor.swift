@@ -42,6 +42,12 @@ enum PVColor {
         dark: Color(.sRGB, red: 220.0 / 255, green: 231.0 / 255, blue: 236.0 / 255, opacity: 0.12)
     )
     static let surfaceSelected = Color.pvDynamic(light: PVPalette.iron100, dark: PVPalette.hex("#1E2E37"))
+    /// `--surface-selected-inactive`: the dimmed selection a `PVTable` shows
+    /// when it does not have focus, matching a native macOS table. The CSS is
+    /// `color-mix(in oklab, var(--surface-selected) 55%, var(--surface-card))`;
+    /// SwiftUI has no oklab mix on macOS 14, so these are that mix resolved
+    /// once, per theme.
+    static let surfaceSelectedInactive = Color.pvDynamic(light: PVPalette.hex("#ECF1F2"), dark: PVPalette.hex("#1C2325"))
     static let surfaceOverlay = Color.pvDynamic(
         light: Color(.sRGB, red: 27.0 / 255, green: 23.0 / 255, blue: 18.0 / 255, opacity: 0.44),
         dark: Color(.sRGB, red: 6.0 / 255, green: 5.0 / 255, blue: 4.0 / 255, opacity: 0.6)
@@ -71,6 +77,12 @@ enum PVColor {
     static let warningSoft = Color.pvDynamic(light: PVPalette.ochre100, dark: PVPalette.hex("#2E2410"))
     static let warningForeground = Color.pvDynamic(light: PVPalette.ochre900, dark: PVPalette.hex("#F0D79A"))
     static let danger = Color.pvDynamic(light: PVPalette.madder500, dark: PVPalette.hex("#DE8271"))
+    /// `Button.jsx`'s `danger` hover — the raw `--madder-700`, not a
+    /// theme-scoped alias, so it is the same value in light and dark.
+    static let dangerHover = PVPalette.madder700
+    /// `Button.jsx` sets the `danger` variant's text to the raw `--paper-0`,
+    /// which stays light on the madder fill in both themes.
+    static let dangerButtonForeground = PVPalette.paper0
     static let dangerSoft = Color.pvDynamic(light: PVPalette.madder100, dark: PVPalette.hex("#331611"))
     static let dangerForeground = Color.pvDynamic(light: PVPalette.madder900, dark: PVPalette.hex("#F2BCB0"))
     static let info = Color.pvDynamic(light: PVPalette.lapis500, dark: PVPalette.hex("#8E9DDA"))

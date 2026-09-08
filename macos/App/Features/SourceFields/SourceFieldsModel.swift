@@ -53,6 +53,16 @@ final class SourceFieldsModel {
     var formError: String?
     var toast: Toast?
 
+    /// The field the delete confirmation is open for. Held as an id (not a
+    /// `Bool`) so the dialog keeps naming the right field even if selection
+    /// moves underneath it.
+    private(set) var pendingDeleteID: String?
+    private(set) var isDeleting = false
+    /// Only set when a confirmed delete failed — the dialog stays open and
+    /// says why. The in-use case is normally caught before this by
+    /// `canDeleteSelectedField`.
+    private(set) var deleteError: String?
+
     private let projectDir: String
     private let userID: String
     private let store: any GenealogyStore
@@ -108,6 +118,33 @@ final class SourceFieldsModel {
             return false
         }
         return isAdding || isDirty
+    }
+
+    /// The detail pane shows a delete affordance whenever a saved field is
+    /// selected — disabled, with a reason, when it cannot be deleted.
+    var showsDelete: Bool { !isAdding && selectedField != nil }
+
+    /// A field is deletable when this project owns its definition (a plugin
+    /// owns its own) and no source carries a value for it yet. The engine
+    /// enforces the second rule too (`sourcefields.in_use`).
+    var canDeleteSelectedField: Bool {
+        guard let field = selectedField else { return false }
+        return !SourceFieldOrigin.isPlugin(field.origin) && field.usedBy == 0
+    }
+
+    /// Tooltip on the delete button — the action when it is available, the
+    /// reason it is not when it is disabled.
+    var deleteTooltip: LocalizedStringResource {
+        guard let field = selectedField else { return L10n.SourceFields.deleteField }
+        if SourceFieldOrigin.isPlugin(field.origin) { return L10n.SourceFields.deleteOwnedByPlugin }
+        if field.usedBy > 0 { return L10n.SourceFields.deleteInUse(count: field.usedBy) }
+        return L10n.SourceFields.deleteField
+    }
+
+    /// The field the open confirmation refers to, if any.
+    var pendingDeleteField: CatalogMetadataField? {
+        guard let pendingDeleteID else { return nil }
+        return fields.first { $0.id == pendingDeleteID }
     }
 
     var seededCount: Int { fields.filter { $0.origin == SourceFieldOrigin.provenencia }.count }
@@ -180,6 +217,41 @@ final class SourceFieldsModel {
         formError = nil
     }
 
+    func askDelete() {
+        guard canDeleteSelectedField, let field = selectedField else { return }
+        deleteError = nil
+        pendingDeleteID = field.id
+    }
+
+    func cancelDelete() {
+        guard !isDeleting else { return }
+        pendingDeleteID = nil
+        deleteError = nil
+    }
+
+    func confirmDelete() async {
+        guard let field = pendingDeleteField, !isDeleting else { return }
+        isDeleting = true
+        deleteError = nil
+        defer { isDeleting = false }
+        do {
+            try await store.deleteMetadataField(projectDir: projectDir, userID: userID, fieldID: field.id)
+            fields.removeAll { $0.id == field.id }
+            pendingDeleteID = nil
+            formError = nil
+            // Leave `draft` in place, same reason as `cancelAdd`: nilling it
+            // in the same turn the form leaves the hierarchy races
+            // `@Bindable` optional projections.
+            mode = .empty
+            toast = Toast(
+                title: String(localized: L10n.SourceFields.toastDeletedTitle),
+                body: L10n.SourceFields.toastDeletedBody(label: field.label)
+            )
+        } catch {
+            deleteError = L10n.Errors.message(for: error)
+        }
+    }
+
     func submit() async {
         guard let draft else { return }
         let label = draft.label.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -246,6 +318,12 @@ enum SourceFieldOrigin {
     static let user = "user"
 
     private static let pluginPrefix = "plugin:"
+
+    /// Anything that is neither seeded nor researcher-authored is owned by a
+    /// plugin — the same open-vocabulary stance the badges take.
+    static func isPlugin(_ origin: String) -> Bool {
+        origin != provenencia && origin != user
+    }
 
     /// The id after `plugin:` (e.g. `"plugin:findagrave"` → `"findagrave"`),
     /// or the raw origin unchanged when it has no such prefix.

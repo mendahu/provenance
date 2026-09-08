@@ -53,8 +53,52 @@ struct SourceFieldsView: View {
             }
         }
         .animation(reduceMotion ? nil : PVMotion.easeStandard, value: model.toast)
+        .sheet(isPresented: isConfirmingDelete) {
+            deleteConfirmation
+        }
         .task { await model.load() }
         .accessibilityIdentifier("sourceFields")
+    }
+
+    /// `PVDialog` renders only the panel; the sheet supplies macOS's own
+    /// modality and scrim (see `PVDialog`'s header comment).
+    private var isConfirmingDelete: Binding<Bool> {
+        Binding(
+            get: { model.pendingDeleteField != nil },
+            set: { if !$0 { model.cancelDelete() } }
+        )
+    }
+
+    @ViewBuilder
+    private var deleteConfirmation: some View {
+        if let field = model.pendingDeleteField {
+            PVDialog(
+                title: Text(L10n.SourceFields.deleteConfirmTitle(label: field.label)),
+                subtitle: Text(L10n.SourceFields.deleteConfirmSubtitle)
+            ) {
+                Text(L10n.SourceFields.deleteConfirmBody(key: field.key))
+                    .fixedSize(horizontal: false, vertical: true)
+                if let deleteError = model.deleteError {
+                    PVCallout(tone: .danger, message: deleteError)
+                }
+            } footer: {
+                PVButton(L10n.SourceFields.deleteKeep, variant: .ghost) {
+                    model.cancelDelete()
+                }
+                .disabled(model.isDeleting)
+                .accessibilityIdentifier("sourceFields.delete.cancel")
+                PVButton(
+                    L10n.SourceFields.deleteField,
+                    variant: .danger,
+                    icon: .trash,
+                    loading: model.isDeleting
+                ) {
+                    Task { await model.confirmDelete() }
+                }
+                .accessibilityIdentifier("sourceFields.delete.confirm")
+            }
+            .accessibilityIdentifier("sourceFields.deleteConfirm")
+        }
     }
 
     private var header: some View {

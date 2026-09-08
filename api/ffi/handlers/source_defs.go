@@ -120,6 +120,9 @@ func UpdateMetadataField(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if got.UsedBy, err = sourcefields.UsedBy(c, fieldID); err != nil {
+		return nil, err
+	}
 	return proto.Marshal(&engine.UpdateMetadataFieldResponse{Field: metadataFieldProto(got)})
 }
 
@@ -187,5 +190,6 @@ func metadataFieldProto(f sourcefields.Field) *engine.MetadataField {
 		Label:       f.Label,
 		DataType:    f.DataType,
 		Description: f.Description,
+		UsedBy:      int32(f.UsedBy),
 	}
 }
