@@ -35,6 +35,7 @@ enum Method {
   METHOD_LIST_METADATA_FIELDS = 25;
   METHOD_CREATE_METADATA_FIELD = 26;
   METHOD_COUNT_FILES = 27;
+  METHOD_UPDATE_METADATA_FIELD = 28;
 }
 
 message PingRequest {
@@ -388,13 +389,27 @@ message ListMetadataFieldsResponse {
 message CreateMetadataFieldRequest {
   string project_dir = 1;
   string user_id = 2;
-  string key = 3;
+  reserved 3; // key: minted server-side from label (core/slug.Kebab), never client-supplied
+  reserved "key";
   string label = 4;
   string data_type = 5;
   string description = 6;
 }
 
 message CreateMetadataFieldResponse {
+  MetadataField field = 1;
+}
+
+message UpdateMetadataFieldRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string field_id = 3;
+  string label = 4;
+  string data_type = 5;
+  string description = 6;
+}
+
+message UpdateMetadataFieldResponse {
   MetadataField field = 1;
 }
 

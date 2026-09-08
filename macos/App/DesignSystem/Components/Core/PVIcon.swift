@@ -16,6 +16,13 @@ enum PVSymbol: String {
     case list = "list.bullet"
     case account = "person.crop.circle"
     case sidebarToggle = "sidebar.left"
+    case search = "magnifyingglass"
+    case searchEmpty = "text.magnifyingglass"
+    case plus = "plus"
+    case sortAscending = "chevron.up"
+    case calendar = "calendar"
+    case textType = "textformat"
+    case lock = "lock.fill"
 }
 
 /// Renders a design-system icon via SF Symbols.

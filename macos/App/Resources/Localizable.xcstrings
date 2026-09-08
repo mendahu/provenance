@@ -356,6 +356,18 @@
         }
       }
     },
+    "error.sourcefields.duplicate_key" : {
+      "comment" : "FFI error sourcefields.duplicate_key; argument is the colliding key",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You already have a field with the key %@. Give this one a different label."
+          }
+        }
+      }
+    },
     "error.sourcefields.invalid" : {
       "comment" : "FFI error sourcefields.invalid",
       "extractionState" : "manual",
@@ -892,6 +904,582 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select a project"
+          }
+        }
+      }
+    },
+    "sourceFields.dataType.date" : {
+      "comment" : "Source field data type badge/option: date",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "date"
+          }
+        }
+      }
+    },
+    "sourceFields.dataType.text" : {
+      "comment" : "Source field data type badge/option: text",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "text"
+          }
+        }
+      }
+    },
+    "sourceFields.detail.dataTypeSectionLabel" : {
+      "comment" : "Section label above the read-only data type line on a locked field's detail",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data type"
+          }
+        }
+      }
+    },
+    "sourceFields.detail.descriptionEmptyPlaceholder" : {
+      "comment" : "Shown in place of a locked field's description when it has none",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        }
+      }
+    },
+    "sourceFields.detail.descriptionSectionLabel" : {
+      "comment" : "Section label above the read-only description on a locked field's detail",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Description"
+          }
+        }
+      }
+    },
+    "sourceFields.detail.eyebrowField" : {
+      "comment" : "Eyebrow label above an existing field's detail panel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Field"
+          }
+        }
+      }
+    },
+    "sourceFields.detail.eyebrowNewField" : {
+      "comment" : "Eyebrow label above the add-field panel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New field"
+          }
+        }
+      }
+    },
+    "sourceFields.detail.keyHintAdd" : {
+      "comment" : "Hint under the live key preview while adding a field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provenencia mints the key from the label when the field is added"
+          }
+        }
+      }
+    },
+    "sourceFields.detail.keyHintEdit" : {
+      "comment" : "Hint under the key on an existing field's detail panel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The key is minted once from the label and never changes — renaming the field keeps existing sources attached"
+          }
+        }
+      }
+    },
+    "sourceFields.detail.lockedNotePlugin" : {
+      "comment" : "Callout explaining why a plugin-origin field can't be edited; argument is the plugin id",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supplied by the %@ plugin. The plugin owns this definition — Provenencia will not edit it."
+          }
+        }
+      }
+    },
+    "sourceFields.detail.lockedNoteSeeded" : {
+      "comment" : "Callout explaining why a provenencia-origin field can't be edited",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seeded by Provenencia. Its label, data type, and description are fixed so citations stay comparable between projects."
+          }
+        }
+      }
+    },
+    "sourceFields.detail.panelEmptyBody" : {
+      "comment" : "Body of the empty state shown in the detail panel before any field is selected",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a field to read its definition. Fields seeded by Provenencia are fixed; the ones you added stay editable."
+          }
+        }
+      }
+    },
+    "sourceFields.detail.panelEmptyTitle" : {
+      "comment" : "Title of the empty state shown in the detail panel before any field is selected",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No field selected"
+          }
+        }
+      }
+    },
+    "sourceFields.emptyProject.body" : {
+      "comment" : "Body of the empty state when the project has zero metadata fields",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This project has no metadata vocabulary. Add the fields your records actually carry — a certificate number, a photographer, an album code."
+          }
+        }
+      }
+    },
+    "sourceFields.emptyProject.title" : {
+      "comment" : "Title of the empty state when the project has zero metadata fields",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No source fields yet"
+          }
+        }
+      }
+    },
+    "sourceFields.form.cancel" : {
+      "comment" : "Secondary button label that dismisses the add-field form",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "sourceFields.form.dataType" : {
+      "comment" : "Add/edit form field: data type picker",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data type"
+          }
+        }
+      }
+    },
+    "sourceFields.form.dataTypeHint" : {
+      "comment" : "Hint under the data type picker",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only text and date exist in the Source layer today"
+          }
+        }
+      }
+    },
+    "sourceFields.form.description" : {
+      "comment" : "Add/edit form field: description",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Description"
+          }
+        }
+      }
+    },
+    "sourceFields.form.descriptionHint" : {
+      "comment" : "Hint under the description field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What a researcher should put in this field, in your own words"
+          }
+        }
+      }
+    },
+    "sourceFields.form.descriptionPlaceholder" : {
+      "comment" : "Placeholder text for the add-field description input",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pencil code on the back of prints from the album"
+          }
+        }
+      }
+    },
+    "sourceFields.form.errorLabelRequired" : {
+      "comment" : "Inline validation error when the label is blank",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A label is required — it is how the field reads on a source."
+          }
+        }
+      }
+    },
+    "sourceFields.form.errorUnslugifiable" : {
+      "comment" : "Inline validation error when the label has no letters or digits to slug",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That label cannot be turned into a key. Use at least one letter or number."
+          }
+        }
+      }
+    },
+    "sourceFields.form.label" : {
+      "comment" : "Add/edit form field: label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Label"
+          }
+        }
+      }
+    },
+    "sourceFields.form.labelPlaceholder" : {
+      "comment" : "Placeholder text for the add-field label input",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grandma’s album code"
+          }
+        }
+      }
+    },
+    "sourceFields.form.revert" : {
+      "comment" : "Secondary button label that discards unsaved edits to an existing field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revert"
+          }
+        }
+      }
+    },
+    "sourceFields.form.saveChanges" : {
+      "comment" : "Primary button label for committing an edit to an existing field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save changes"
+          }
+        }
+      }
+    },
+    "sourceFields.form.saveSaving" : {
+      "comment" : "Primary button label while a Source field add/edit is in flight",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving"
+          }
+        }
+      }
+    },
+    "sourceFields.list.addField" : {
+      "comment" : "Button: add a new Source field (toolbar, empty state, and add-form submit)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add field"
+          }
+        }
+      }
+    },
+    "sourceFields.list.clearSearch" : {
+      "comment" : "Button that clears the Source fields search query",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear search"
+          }
+        }
+      }
+    },
+    "sourceFields.list.columnDataType" : {
+      "comment" : "Source fields list column header: data type",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data type"
+          }
+        }
+      }
+    },
+    "sourceFields.list.columnKey" : {
+      "comment" : "Source fields list column header: key",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Key"
+          }
+        }
+      }
+    },
+    "sourceFields.list.columnLabel" : {
+      "comment" : "Source fields list column header: label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Label"
+          }
+        }
+      }
+    },
+    "sourceFields.list.columnOrigin" : {
+      "comment" : "Source fields list column header: origin",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Origin"
+          }
+        }
+      }
+    },
+    "sourceFields.list.countLine" : {
+      "comment" : "Source fields count summary; arguments are total, seeded (provenencia), and user field counts",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld fields · %lld seeded · %lld yours"
+          }
+        }
+      }
+    },
+    "sourceFields.list.countLineWithPlugin" : {
+      "comment" : "Source fields count summary including plugin-origin fields; arguments are total, seeded, user, and plugin field counts",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld fields · %lld seeded · %lld yours · %lld plugin"
+          }
+        }
+      }
+    },
+    "sourceFields.list.description" : {
+      "comment" : "Explanatory copy under the Source fields page title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The metadata a source can carry in this project. Provenencia seeds the common fields; you add the ones your records actually use."
+          }
+        }
+      }
+    },
+    "sourceFields.list.resultLineAll" : {
+      "comment" : "Footer result count when no search/filter narrows the Source fields list; argument is the total",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld fields"
+          }
+        }
+      }
+    },
+    "sourceFields.list.resultLineFiltered" : {
+      "comment" : "Footer result count when search narrows the Source fields list; arguments are shown then total",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld fields shown"
+          }
+        }
+      }
+    },
+    "sourceFields.list.searchPlaceholder" : {
+      "comment" : "Placeholder for the Source fields search input",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search fields — label, key, or description"
+          }
+        }
+      }
+    },
+    "sourceFields.noMatch.body" : {
+      "comment" : "Body of the no-match empty state; argument is the search query",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing in this project’s vocabulary matches “%@”. Clear the search, or add the field."
+          }
+        }
+      }
+    },
+    "sourceFields.noMatch.title" : {
+      "comment" : "Title of the empty state when a search finds no fields",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No field matches"
+          }
+        }
+      }
+    },
+    "sourceFields.origin.seeded" : {
+      "comment" : "Origin badge for a field seeded by Provenencia",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "provenencia"
+          }
+        }
+      }
+    },
+    "sourceFields.origin.user" : {
+      "comment" : "Origin badge for a field the researcher added",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "you"
+          }
+        }
+      }
+    },
+    "sourceFields.toast.addedBody" : {
+      "comment" : "Success toast body after creating a Source field; arguments are label then minted key",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is in this project’s vocabulary as %@."
+          }
+        }
+      }
+    },
+    "sourceFields.toast.addedTitle" : {
+      "comment" : "Success toast title after creating a Source field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Field added"
+          }
+        }
+      }
+    },
+    "sourceFields.toast.updatedBody" : {
+      "comment" : "Success toast body after editing a Source field; arguments are label then key",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ — the key stays %@."
+          }
+        }
+      }
+    },
+    "sourceFields.toast.updatedTitle" : {
+      "comment" : "Success toast title after editing a Source field",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Field updated"
           }
         }
       }

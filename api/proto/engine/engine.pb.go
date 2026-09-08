@@ -54,6 +54,7 @@ const (
 	Method_METHOD_LIST_METADATA_FIELDS    Method = 25
 	Method_METHOD_CREATE_METADATA_FIELD   Method = 26
 	Method_METHOD_COUNT_FILES             Method = 27
+	Method_METHOD_UPDATE_METADATA_FIELD   Method = 28
 )
 
 // Enum value maps for Method.
@@ -87,6 +88,7 @@ var (
 		25: "METHOD_LIST_METADATA_FIELDS",
 		26: "METHOD_CREATE_METADATA_FIELD",
 		27: "METHOD_COUNT_FILES",
+		28: "METHOD_UPDATE_METADATA_FIELD",
 	}
 	Method_value = map[string]int32{
 		"METHOD_UNSPECIFIED":             0,
@@ -117,6 +119,7 @@ var (
 		"METHOD_LIST_METADATA_FIELDS":    25,
 		"METHOD_CREATE_METADATA_FIELD":   26,
 		"METHOD_COUNT_FILES":             27,
+		"METHOD_UPDATE_METADATA_FIELD":   28,
 	}
 )
 
@@ -3737,7 +3740,6 @@ type CreateMetadataFieldRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectDir    string                 `protobuf:"bytes,1,opt,name=project_dir,json=projectDir,proto3" json:"project_dir,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Key           string                 `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
 	Label         string                 `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
 	DataType      string                 `protobuf:"bytes,5,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`
 	Description   string                 `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
@@ -3785,13 +3787,6 @@ func (x *CreateMetadataFieldRequest) GetProjectDir() string {
 func (x *CreateMetadataFieldRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
-	}
-	return ""
-}
-
-func (x *CreateMetadataFieldRequest) GetKey() string {
-	if x != nil {
-		return x.Key
 	}
 	return ""
 }
@@ -3861,6 +3856,134 @@ func (x *CreateMetadataFieldResponse) GetField() *MetadataField {
 	return nil
 }
 
+type UpdateMetadataFieldRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectDir    string                 `protobuf:"bytes,1,opt,name=project_dir,json=projectDir,proto3" json:"project_dir,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	FieldId       string                 `protobuf:"bytes,3,opt,name=field_id,json=fieldId,proto3" json:"field_id,omitempty"`
+	Label         string                 `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
+	DataType      string                 `protobuf:"bytes,5,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`
+	Description   string                 `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateMetadataFieldRequest) Reset() {
+	*x = UpdateMetadataFieldRequest{}
+	mi := &file_engine_proto_msgTypes[62]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateMetadataFieldRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateMetadataFieldRequest) ProtoMessage() {}
+
+func (x *UpdateMetadataFieldRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[62]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateMetadataFieldRequest.ProtoReflect.Descriptor instead.
+func (*UpdateMetadataFieldRequest) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{62}
+}
+
+func (x *UpdateMetadataFieldRequest) GetProjectDir() string {
+	if x != nil {
+		return x.ProjectDir
+	}
+	return ""
+}
+
+func (x *UpdateMetadataFieldRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UpdateMetadataFieldRequest) GetFieldId() string {
+	if x != nil {
+		return x.FieldId
+	}
+	return ""
+}
+
+func (x *UpdateMetadataFieldRequest) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *UpdateMetadataFieldRequest) GetDataType() string {
+	if x != nil {
+		return x.DataType
+	}
+	return ""
+}
+
+func (x *UpdateMetadataFieldRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+type UpdateMetadataFieldResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Field         *MetadataField         `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateMetadataFieldResponse) Reset() {
+	*x = UpdateMetadataFieldResponse{}
+	mi := &file_engine_proto_msgTypes[63]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateMetadataFieldResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateMetadataFieldResponse) ProtoMessage() {}
+
+func (x *UpdateMetadataFieldResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[63]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateMetadataFieldResponse.ProtoReflect.Descriptor instead.
+func (*UpdateMetadataFieldResponse) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{63}
+}
+
+func (x *UpdateMetadataFieldResponse) GetField() *MetadataField {
+	if x != nil {
+		return x.Field
+	}
+	return nil
+}
+
 // CountFiles reports the total number of content-addressed files rows in
 // the project — distinct files, not the (larger, per-source) artifact
 // count. No project-wide artifact listing exists yet (S2-17).
@@ -3873,7 +3996,7 @@ type CountFilesRequest struct {
 
 func (x *CountFilesRequest) Reset() {
 	*x = CountFilesRequest{}
-	mi := &file_engine_proto_msgTypes[62]
+	mi := &file_engine_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3885,7 +4008,7 @@ func (x *CountFilesRequest) String() string {
 func (*CountFilesRequest) ProtoMessage() {}
 
 func (x *CountFilesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[62]
+	mi := &file_engine_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3898,7 +4021,7 @@ func (x *CountFilesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CountFilesRequest.ProtoReflect.Descriptor instead.
 func (*CountFilesRequest) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{62}
+	return file_engine_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *CountFilesRequest) GetProjectDir() string {
@@ -3917,7 +4040,7 @@ type CountFilesResponse struct {
 
 func (x *CountFilesResponse) Reset() {
 	*x = CountFilesResponse{}
-	mi := &file_engine_proto_msgTypes[63]
+	mi := &file_engine_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3929,7 +4052,7 @@ func (x *CountFilesResponse) String() string {
 func (*CountFilesResponse) ProtoMessage() {}
 
 func (x *CountFilesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[63]
+	mi := &file_engine_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3942,7 +4065,7 @@ func (x *CountFilesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CountFilesResponse.ProtoReflect.Descriptor instead.
 func (*CountFilesResponse) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{63}
+	return file_engine_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *CountFilesResponse) GetCount() int32 {
@@ -3965,7 +4088,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_engine_proto_msgTypes[64]
+	mi := &file_engine_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3977,7 +4100,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[64]
+	mi := &file_engine_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3990,7 +4113,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{64}
+	return file_engine_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *Error) GetCode() string {
@@ -4306,16 +4429,25 @@ const file_engine_proto_rawDesc = "" +
 	"\vproject_dir\x18\x01 \x01(\tR\n" +
 	"projectDir\"Z\n" +
 	"\x1aListMetadataFieldsResponse\x12<\n" +
-	"\x06fields\x18\x01 \x03(\v2$.provenencia.engine.v1.MetadataFieldR\x06fields\"\xbd\x01\n" +
+	"\x06fields\x18\x01 \x03(\v2$.provenencia.engine.v1.MetadataFieldR\x06fields\"\xb6\x01\n" +
 	"\x1aCreateMetadataFieldRequest\x12\x1f\n" +
 	"\vproject_dir\x18\x01 \x01(\tR\n" +
 	"projectDir\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x10\n" +
-	"\x03key\x18\x03 \x01(\tR\x03key\x12\x14\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
+	"\x05label\x18\x04 \x01(\tR\x05label\x12\x1b\n" +
+	"\tdata_type\x18\x05 \x01(\tR\bdataType\x12 \n" +
+	"\vdescription\x18\x06 \x01(\tR\vdescriptionJ\x04\b\x03\x10\x04R\x03key\"Y\n" +
+	"\x1bCreateMetadataFieldResponse\x12:\n" +
+	"\x05field\x18\x01 \x01(\v2$.provenencia.engine.v1.MetadataFieldR\x05field\"\xc6\x01\n" +
+	"\x1aUpdateMetadataFieldRequest\x12\x1f\n" +
+	"\vproject_dir\x18\x01 \x01(\tR\n" +
+	"projectDir\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x19\n" +
+	"\bfield_id\x18\x03 \x01(\tR\afieldId\x12\x14\n" +
 	"\x05label\x18\x04 \x01(\tR\x05label\x12\x1b\n" +
 	"\tdata_type\x18\x05 \x01(\tR\bdataType\x12 \n" +
 	"\vdescription\x18\x06 \x01(\tR\vdescription\"Y\n" +
-	"\x1bCreateMetadataFieldResponse\x12:\n" +
+	"\x1bUpdateMetadataFieldResponse\x12:\n" +
 	"\x05field\x18\x01 \x01(\v2$.provenencia.engine.v1.MetadataFieldR\x05field\"4\n" +
 	"\x11CountFilesRequest\x12\x1f\n" +
 	"\vproject_dir\x18\x01 \x01(\tR\n" +
@@ -4325,7 +4457,7 @@ const file_engine_proto_rawDesc = "" +
 	"\x05Error\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x124\n" +
 	"\x04kind\x18\x02 \x01(\x0e2 .provenencia.engine.v1.ErrorKindR\x04kind\x12\x16\n" +
-	"\x06params\x18\x03 \x03(\tR\x06params*\xb8\x06\n" +
+	"\x06params\x18\x03 \x03(\tR\x06params*\xda\x06\n" +
 	"\x06Method\x12\x16\n" +
 	"\x12METHOD_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vMETHOD_PING\x10\x01\x12\x16\n" +
@@ -4355,7 +4487,8 @@ const file_engine_proto_rawDesc = "" +
 	"\x19METHOD_CREATE_SOURCE_TYPE\x10\x18\x12\x1f\n" +
 	"\x1bMETHOD_LIST_METADATA_FIELDS\x10\x19\x12 \n" +
 	"\x1cMETHOD_CREATE_METADATA_FIELD\x10\x1a\x12\x16\n" +
-	"\x12METHOD_COUNT_FILES\x10\x1b*\x88\x01\n" +
+	"\x12METHOD_COUNT_FILES\x10\x1b\x12 \n" +
+	"\x1cMETHOD_UPDATE_METADATA_FIELD\x10\x1c*\x88\x01\n" +
 	"\tErrorKind\x12\x1a\n" +
 	"\x16ERROR_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fERROR_KIND_USER\x10\x01\x12\x17\n" +
@@ -4376,7 +4509,7 @@ func file_engine_proto_rawDescGZIP() []byte {
 }
 
 var file_engine_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 65)
+var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 67)
 var file_engine_proto_goTypes = []any{
 	(Method)(0),                           // 0: provenencia.engine.v1.Method
 	(ErrorKind)(0),                        // 1: provenencia.engine.v1.ErrorKind
@@ -4442,9 +4575,11 @@ var file_engine_proto_goTypes = []any{
 	(*ListMetadataFieldsResponse)(nil),    // 61: provenencia.engine.v1.ListMetadataFieldsResponse
 	(*CreateMetadataFieldRequest)(nil),    // 62: provenencia.engine.v1.CreateMetadataFieldRequest
 	(*CreateMetadataFieldResponse)(nil),   // 63: provenencia.engine.v1.CreateMetadataFieldResponse
-	(*CountFilesRequest)(nil),             // 64: provenencia.engine.v1.CountFilesRequest
-	(*CountFilesResponse)(nil),            // 65: provenencia.engine.v1.CountFilesResponse
-	(*Error)(nil),                         // 66: provenencia.engine.v1.Error
+	(*UpdateMetadataFieldRequest)(nil),    // 64: provenencia.engine.v1.UpdateMetadataFieldRequest
+	(*UpdateMetadataFieldResponse)(nil),   // 65: provenencia.engine.v1.UpdateMetadataFieldResponse
+	(*CountFilesRequest)(nil),             // 66: provenencia.engine.v1.CountFilesRequest
+	(*CountFilesResponse)(nil),            // 67: provenencia.engine.v1.CountFilesResponse
+	(*Error)(nil),                         // 68: provenencia.engine.v1.Error
 }
 var file_engine_proto_depIdxs = []int32{
 	24, // 0: provenencia.engine.v1.CompleteOnboardingResponse.project:type_name -> provenencia.engine.v1.ProjectInfo
@@ -4470,12 +4605,13 @@ var file_engine_proto_depIdxs = []int32{
 	30, // 20: provenencia.engine.v1.CreateSourceTypeResponse.type:type_name -> provenencia.engine.v1.SourceType
 	31, // 21: provenencia.engine.v1.ListMetadataFieldsResponse.fields:type_name -> provenencia.engine.v1.MetadataField
 	31, // 22: provenencia.engine.v1.CreateMetadataFieldResponse.field:type_name -> provenencia.engine.v1.MetadataField
-	1,  // 23: provenencia.engine.v1.Error.kind:type_name -> provenencia.engine.v1.ErrorKind
-	24, // [24:24] is the sub-list for method output_type
-	24, // [24:24] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	31, // 23: provenencia.engine.v1.UpdateMetadataFieldResponse.field:type_name -> provenencia.engine.v1.MetadataField
+	1,  // 24: provenencia.engine.v1.Error.kind:type_name -> provenencia.engine.v1.ErrorKind
+	25, // [25:25] is the sub-list for method output_type
+	25, // [25:25] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_engine_proto_init() }
@@ -4490,7 +4626,7 @@ func file_engine_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_engine_proto_rawDesc), len(file_engine_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   65,
+			NumMessages:   67,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

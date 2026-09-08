@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		01574F7767F9B0AF5550AFAD /* PVMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C355704657FB6A572BF7FD6A /* PVMotion.swift */; };
+		045F383DABA3280D902C7A9D /* SourceFieldsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375BB04D93FF1B5E49E62F85 /* SourceFieldsRow.swift */; };
 		07D60E0FE9704E4723AE18DD /* PVLogoMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11ADAF744C32587CD34CDD23 /* PVLogoMark.swift */; };
 		080D24179717B185C273478D /* PVField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D4D3531F81FABFCDDE4F84 /* PVField.swift */; };
 		13208FE0B57739DECCA156C7 /* WorkspaceChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B33345A1FE839C1516B4FC /* WorkspaceChrome.swift */; };
@@ -19,15 +20,19 @@
 		537CBAF612C54F4F04ADA683 /* PVSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BEB8D3B3D1A6C08B3733B13 /* PVSpacing.swift */; };
 		563FA9B6FA344585CE32B2A7 /* PVIconButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68425DFE8D1974D7A4AC5BF8 /* PVIconButton.swift */; };
 		56FF85A0EB2688B0B226A023 /* PVTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2789221068BF64015C43CA5 /* PVTypography.swift */; };
+		57420D5CDD1330745ACC33FD /* SourceFieldsDetailPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7D6A46A5016665371A2C5 /* SourceFieldsDetailPane.swift */; };
 		60591A4DC996FC9EB9F29023 /* PVColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4094CD05F31CFF0AA37C888A /* PVColor.swift */; };
 		6227C44524E2C4EB3DE4AAD7 /* WorkspaceSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FE31A30B665829ECF16A6F /* WorkspaceSidebar.swift */; };
+		6422592F5C31D8F535B03C6A /* SourceFieldsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950877B33DC4E16E5BA8B5D6 /* SourceFieldsView.swift */; };
 		6D245285E4AB8AAFDE78E313 /* PVIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36412B0A6A6851ADB45A7AA8 /* PVIcon.swift */; };
 		6F7945720B05D7777BFA79A2 /* WorkspaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03B00F6F0D021AFCDAD2DEB /* WorkspaceModel.swift */; };
 		826574F8CA8D24BE551A88BF /* WorkspaceModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 164584B2DB70D89A55C4178F /* WorkspaceModelTests.swift */; };
 		840A56FF5DC13597C1DFDDF9 /* TrafficLights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C0991FB99984CAEB385DA4 /* TrafficLights.swift */; };
-		B2C3D4E5F60718293A4B5C6D /* WindowDragRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */; };
 		854A784AE802C0EF7A484971 /* PVToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC0B0A893C7248A08303738 /* PVToast.swift */; };
+		89CEBFA09358C67639951CE0 /* PVEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3555554CD714B1FD24C2DB2F /* PVEmptyState.swift */; };
 		8B20E11A26E9E10EF915519C /* TrafficLightsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B567080CA23230E18488F894 /* TrafficLightsTests.swift */; };
+		9BCF5ECCD155C02B71931BB5 /* FieldSlug.swift in Sources */ = {isa = PBXBuildFile; fileRef = E07E52EC527189A4A377F9AD /* FieldSlug.swift */; };
+		A62122AE913D5F5B8B72D083 /* PVCallout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B9D94DAB5FD1587C260FE3 /* PVCallout.swift */; };
 		A790E2993DB9D42163403BA3 /* PreviewFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10C63066463B02E05808F78 /* PreviewFixtures.swift */; };
 		AA0000000000000000000001 /* ProvenenciaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000010 /* ProvenenciaApp.swift */; };
 		AA0000000000000000000002 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000011 /* OnboardingView.swift */; };
@@ -57,10 +62,16 @@
 		AA0000000000000000000103 /* OnboardingProjectMetaLines.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* OnboardingProjectMetaLines.swift */; };
 		AA0000000000000000000105 /* OnboardingFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* OnboardingFooter.swift */; };
 		AA0000000000000000000107 /* OnboardingContributorRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000106 /* OnboardingContributorRow.swift */; };
+		B2C3D4E5F60718293A4B5C6D /* WindowDragRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */; };
+		BD1582FF721A5711F38C97A0 /* SourceFieldsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7791238B5C7C6F0C5BE388 /* SourceFieldsModel.swift */; };
+		BE57602FF7EBA86C1DEE63FF /* PVBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E732F3D44BB89512758F85 /* PVBadge.swift */; };
 		CA918E2A0BCB420DA8CD87E5 /* PVButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0AE6B1748FA280F95478205 /* PVButton.swift */; };
+		CE7E43F00CA602E2794E0ADA /* SourceFieldsModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0CB87F6EC5759DF8D0A7AF /* SourceFieldsModelTests.swift */; };
+		D0D0E4841104F1836736A7CD /* SourceFieldsListPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E4ED11C20279A6A4CE40A64 /* SourceFieldsListPane.swift */; };
 		DA26E3BA97D438A7561ED96D /* WorkspaceContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B417D5E38F11219198BF91 /* WorkspaceContent.swift */; };
 		DC8E6C8D157C17756D4C2AC8 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 1B183C69AA74C2C22006FC05 /* Fonts */; };
 		E3D046BD80595D1F07691D1F /* PVHoverEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC485E7480EE58A01EA9A85 /* PVHoverEffect.swift */; };
+		E63D8CEC3F6AC5C7E90EBBFE /* FieldSlugTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8291342170CC4CB42EFA814C /* FieldSlugTests.swift */; };
 		E9178C44063AD95B47B5D524 /* PVSidebarNav.swift in Sources */ = {isa = PBXBuildFile; fileRef = E98DA667F92287934B46B640 /* PVSidebarNav.swift */; };
 		ECC25906B62C6453A5CB9D25 /* PVInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40F72A548E04F25E0AA30CDB /* PVInput.swift */; };
 /* End PBXBuildFile section */
@@ -96,18 +107,25 @@
 		1B183C69AA74C2C22006FC05 /* Fonts */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder; name = Fonts; path = Fonts; sourceTree = "<group>"; };
 		28FB7FB1DE947EE962F4BA83 /* PVSelect.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVSelect.swift; sourceTree = "<group>"; };
 		2B7FCE6BAF87CC79B6907492 /* PVRadius.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVRadius.swift; sourceTree = "<group>"; };
+		3555554CD714B1FD24C2DB2F /* PVEmptyState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVEmptyState.swift; sourceTree = "<group>"; };
 		36412B0A6A6851ADB45A7AA8 /* PVIcon.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVIcon.swift; sourceTree = "<group>"; };
+		375BB04D93FF1B5E49E62F85 /* SourceFieldsRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsRow.swift; sourceTree = "<group>"; };
+		3B7791238B5C7C6F0C5BE388 /* SourceFieldsModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsModel.swift; sourceTree = "<group>"; };
 		4094CD05F31CFF0AA37C888A /* PVColor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVColor.swift; sourceTree = "<group>"; };
 		40F72A548E04F25E0AA30CDB /* PVInput.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVInput.swift; sourceTree = "<group>"; };
 		48B417D5E38F11219198BF91 /* WorkspaceContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceContent.swift; sourceTree = "<group>"; };
+		4F0CB87F6EC5759DF8D0A7AF /* SourceFieldsModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsModelTests.swift; sourceTree = "<group>"; };
 		68425DFE8D1974D7A4AC5BF8 /* PVIconButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVIconButton.swift; sourceTree = "<group>"; };
 		6AAC04817D6F4CCC9CDC9B17 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; path = README.md; sourceTree = "<group>"; };
+		8291342170CC4CB42EFA814C /* FieldSlugTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FieldSlugTests.swift; sourceTree = "<group>"; };
 		85C0991FB99984CAEB385DA4 /* TrafficLights.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrafficLights.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WindowDragRegion.swift; sourceTree = "<group>"; };
+		8E4ED11C20279A6A4CE40A64 /* SourceFieldsListPane.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsListPane.swift; sourceTree = "<group>"; };
 		8FC0B0A893C7248A08303738 /* PVToast.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVToast.swift; sourceTree = "<group>"; };
+		950877B33DC4E16E5BA8B5D6 /* SourceFieldsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsView.swift; sourceTree = "<group>"; };
 		9A63753F8D90991976A28F13 /* PVElevation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVElevation.swift; sourceTree = "<group>"; };
 		9BEB8D3B3D1A6C08B3733B13 /* PVSpacing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVSpacing.swift; sourceTree = "<group>"; };
 		A0AE6B1748FA280F95478205 /* PVButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVButton.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WindowDragRegion.swift; sourceTree = "<group>"; };
 		A5B33345A1FE839C1516B4FC /* WorkspaceChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceChrome.swift; sourceTree = "<group>"; };
 		AA0000000000000000000010 /* ProvenenciaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvenenciaApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000011 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -142,12 +160,16 @@
 		B567080CA23230E18488F894 /* TrafficLightsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrafficLightsTests.swift; sourceTree = "<group>"; };
 		C1FE31A30B665829ECF16A6F /* WorkspaceSidebar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebar.swift; sourceTree = "<group>"; };
 		C355704657FB6A572BF7FD6A /* PVMotion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVMotion.swift; sourceTree = "<group>"; };
+		C9B9D94DAB5FD1587C260FE3 /* PVCallout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVCallout.swift; sourceTree = "<group>"; };
 		CEC485E7480EE58A01EA9A85 /* PVHoverEffect.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVHoverEffect.swift; sourceTree = "<group>"; };
 		D8F65C4577481FF5F505271F /* WorkspaceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		DAA7D6A46A5016665371A2C5 /* SourceFieldsDetailPane.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceFieldsDetailPane.swift; sourceTree = "<group>"; };
+		E07E52EC527189A4A377F9AD /* FieldSlug.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FieldSlug.swift; sourceTree = "<group>"; };
 		E2789221068BF64015C43CA5 /* PVTypography.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVTypography.swift; sourceTree = "<group>"; };
 		E98DA667F92287934B46B640 /* PVSidebarNav.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVSidebarNav.swift; sourceTree = "<group>"; };
 		F03B00F6F0D021AFCDAD2DEB /* WorkspaceModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceModel.swift; sourceTree = "<group>"; };
 		F10C63066463B02E05808F78 /* PreviewFixtures.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PreviewFixtures.swift; sourceTree = "<group>"; };
+		F3E732F3D44BB89512758F85 /* PVBadge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVBadge.swift; sourceTree = "<group>"; };
 		F56B617548A3EF65699270F8 /* SignOutCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SignOutCoordinator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -171,6 +193,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		423C55925CCDB8118E02BF19 /* SourceFields */ = {
+			isa = PBXGroup;
+			children = (
+				3B7791238B5C7C6F0C5BE388 /* SourceFieldsModel.swift */,
+				950877B33DC4E16E5BA8B5D6 /* SourceFieldsView.swift */,
+				8E4ED11C20279A6A4CE40A64 /* SourceFieldsListPane.swift */,
+				375BB04D93FF1B5E49E62F85 /* SourceFieldsRow.swift */,
+				DAA7D6A46A5016665371A2C5 /* SourceFieldsDetailPane.swift */,
+			);
+			name = SourceFields;
+			path = SourceFields;
+			sourceTree = "<group>";
+		};
 		4890BA38D028388F6C2157E5 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
@@ -220,6 +255,8 @@
 			isa = PBXGroup;
 			children = (
 				8FC0B0A893C7248A08303738 /* PVToast.swift */,
+				3555554CD714B1FD24C2DB2F /* PVEmptyState.swift */,
+				C9B9D94DAB5FD1587C260FE3 /* PVCallout.swift */,
 			);
 			name = Feedback;
 			path = Feedback;
@@ -246,6 +283,7 @@
 				11ADAF744C32587CD34CDD23 /* PVLogoMark.swift */,
 				68425DFE8D1974D7A4AC5BF8 /* PVIconButton.swift */,
 				CEC485E7480EE58A01EA9A85 /* PVHoverEffect.swift */,
+				F3E732F3D44BB89512758F85 /* PVBadge.swift */,
 			);
 			name = Core;
 			path = Core;
@@ -321,6 +359,7 @@
 				85C0991FB99984CAEB385DA4 /* TrafficLights.swift */,
 				A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */,
 				F10C63066463B02E05808F78 /* PreviewFixtures.swift */,
+				E07E52EC527189A4A377F9AD /* FieldSlug.swift */,
 			);
 			path = Platform;
 			sourceTree = "<group>";
@@ -330,6 +369,7 @@
 			children = (
 				AA0000000000000000000048 /* Onboarding */,
 				8D76A01BF603CC419C35EEBD /* Workspace */,
+				423C55925CCDB8118E02BF19 /* SourceFields */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -372,6 +412,8 @@
 				AA00000000000000000000F2 /* ProjectSlugTests.swift */,
 				164584B2DB70D89A55C4178F /* WorkspaceModelTests.swift */,
 				B567080CA23230E18488F894 /* TrafficLightsTests.swift */,
+				8291342170CC4CB42EFA814C /* FieldSlugTests.swift */,
+				4F0CB87F6EC5759DF8D0A7AF /* SourceFieldsModelTests.swift */,
 			);
 			path = ProvenenciaTests;
 			sourceTree = "<group>";
@@ -564,6 +606,15 @@
 				563FA9B6FA344585CE32B2A7 /* PVIconButton.swift in Sources */,
 				E3D046BD80595D1F07691D1F /* PVHoverEffect.swift in Sources */,
 				A790E2993DB9D42163403BA3 /* PreviewFixtures.swift in Sources */,
+				9BCF5ECCD155C02B71931BB5 /* FieldSlug.swift in Sources */,
+				BE57602FF7EBA86C1DEE63FF /* PVBadge.swift in Sources */,
+				89CEBFA09358C67639951CE0 /* PVEmptyState.swift in Sources */,
+				A62122AE913D5F5B8B72D083 /* PVCallout.swift in Sources */,
+				BD1582FF721A5711F38C97A0 /* SourceFieldsModel.swift in Sources */,
+				6422592F5C31D8F535B03C6A /* SourceFieldsView.swift in Sources */,
+				D0D0E4841104F1836736A7CD /* SourceFieldsListPane.swift in Sources */,
+				045F383DABA3280D902C7A9D /* SourceFieldsRow.swift in Sources */,
+				57420D5CDD1330745ACC33FD /* SourceFieldsDetailPane.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -576,6 +627,8 @@
 				AA00000000000000000000F3 /* ProjectSlugTests.swift in Sources */,
 				826574F8CA8D24BE551A88BF /* WorkspaceModelTests.swift in Sources */,
 				8B20E11A26E9E10EF915519C /* TrafficLightsTests.swift in Sources */,
+				E63D8CEC3F6AC5C7E90EBBFE /* FieldSlugTests.swift in Sources */,
+				CE7E43F00CA602E2794E0ADA /* SourceFieldsModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -11,14 +11,19 @@ import SwiftUI
 struct PVField<Content: View>: View {
     private let label: LocalizedStringResource?
     private let hint: LocalizedStringResource?
-    private let error: LocalizedStringResource?
+    /// Plain `String`, not `LocalizedStringResource` — unlike `label`/`hint`,
+    /// an error is always dynamic content (a validation message, a mapped
+    /// FFI error code), already resolved via `String(localized:)` or
+    /// `L10n.Errors.message` before it reaches here. Same reasoning as
+    /// `PVToast`'s `title`/`message`.
+    private let error: String?
     private let required: Bool
     private let content: Content
 
     init(
         label: LocalizedStringResource? = nil,
         hint: LocalizedStringResource? = nil,
-        error: LocalizedStringResource? = nil,
+        error: String? = nil,
         required: Bool = false,
         @ViewBuilder content: () -> Content
     ) {

@@ -73,15 +73,60 @@ first component in that category), copy `PVButton.swift`'s shape, and read
 its exact CSS/JS spec out of the source design-system project first — don't
 guess at colors/spacing/sizes.
 
+**Check `swift/` in the source project before porting anything.** That
+project ships a Swift reference implementation (`ProvenenciaTokens.swift`,
+`ProvenenciaCore.swift`, …) alongside the CSS/JSX, and its own `SKILL.md`
+says to use those APIs "rather than translating CSS by hand." Several
+components here were re-derived from the CSS instead, and at least one of
+them lost a detail the Swift reference had already got right — see below.
+
+## Interaction state
+
+**Never branch view structure on focus, hover, pressed, or selected.**
+Those states change *values* — color, opacity, offset — on a view that is
+**always present**:
+
+```swift
+// WRONG — swaps view identity when focus flips
+if isFocused { content.pvFocusRing(…) } else { content.pvInsetShadow(…) }
+
+// RIGHT — one view, always applied; only the opacity changes
+content
+    .pvInsetShadow(cornerRadius: PVRadius.sm, visible: !isFocused)
+    .pvFocusRing(isFocused, cornerRadius: PVRadius.sm)
+```
+
+An `if/else` in a `ViewBuilder` compiles to `_ConditionalContent` — two
+different view types — so SwiftUI rebuilds that subtree whenever the
+condition flips. Around a text field that tears down the underlying
+`NSTextField` *at the instant focus arrives*, destroying the first
+responder it just gained: the field won't accept a click, or takes exactly
+one keystroke and then every key beeps. Nothing catches this — the code
+reads correctly, there are no UI tests, and `#Preview` doesn't exercise
+focus. `PVInput` shipped with this bug for exactly that reason.
+
+The same applies to `.animation(_:value:)` keyed on an interaction flag:
+scope it to the decorative shape, never to a wrapper containing the
+control. `pvFocusRing(_:cornerRadius:)` and `pvInsetShadow(cornerRadius:
+visible:)` both take the state as a parameter so the call site never needs
+a branch — that mirrors the design system's own `pvFocusRing(_:radius:)`.
+
+This generalizes: the web kit's CSS is full of ternaries like
+`boxShadow: focus ? 'var(--ring-focus)' : 'var(--shadow-inset)'`. In CSS
+that's a *property value* swap and costs nothing. Port it as a value swap,
+not as a conditional view. `Select`, `Checkbox`, and `Switch` all have the
+same shape waiting in their specs.
+
 ## What's built vs. not yet
 
 The components the **Onboarding Flow** board actually uses, plus `Toast`
 (added when onboarding needed a way to surface errors that wasn't an inline
-red `Text`):
+red `Text`), plus `Badge`/`EmptyState`/`Callout` (added for the S2-02
+**Source fields** board — see `Features/SourceFields/`):
 
 | Component | File | 
 |---|---|
-| Button | `Components/Core/PVButton.swift` |
+| Button | `Components/Core/PVButton.swift` (icon-left, loading spinner, and a chrome-less `link` variant added for S2-02) |
 | Icon | `Components/Core/PVIcon.swift` |
 | Field | `Components/Forms/PVField.swift` |
 | Input | `Components/Forms/PVInput.swift` |
@@ -90,18 +135,19 @@ red `Text`):
 | LogoMark | `Components/Core/PVLogoMark.swift` |
 | SidebarNav | `Components/Navigation/PVSidebarNav.swift` (added for the S2-01 workspace chrome; ports that board's revised `collapsed`-capable `SidebarNav.jsx`) |
 | IconButton | `Components/Core/PVIconButton.swift` (added for the workspace sidebar's collapse toggle, which needed real hover feedback) |
+| Badge | `Components/Core/PVBadge.swift` (added for S2-02's data-type/origin badges) |
+| EmptyState | `Components/Feedback/PVEmptyState.swift` (added for S2-02's empty/no-match states; the web spec's `action` slot isn't ported — see the file's header comment) |
+| Callout | `Components/Feedback/PVCallout.swift` (added for S2-02's "this field is locked" note; only the subset S2-02 needs is ported — see the file's header comment) |
 
-The other 17 design-system components have **no files yet** — add them on
+The other 14 design-system components have **no files yet** — add them on
 demand, following the pattern above, when a screen needs one:
 
 | Component | Category | Purpose |
 |---|---|---|
-| Badge | Core | Small status/label pill |
 | Card | Core | Bordered content container with optional header/footer |
 | Tag | Core | Removable/interactive pill with a color dot |
 | Tooltip | Core | Hover label |
 | Dialog | Feedback | Modal dialog |
-| EmptyState | Feedback | "Nothing here yet" placeholder |
 | Checkbox | Forms | Checkbox control |
 | Radio | Forms | Radio control |
 | Switch | Forms | Toggle switch |

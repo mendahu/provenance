@@ -32,7 +32,7 @@ struct OnboardingView: View {
                 WorkspaceView(model: model)
             }
         }
-        .frame(minWidth: PVSpacing.widthWindowMin, minHeight: 460)
+        .frame(minWidth: minWindowSize.width, minHeight: minWindowSize.height)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PVColor.surfacePage)
         .overlay(alignment: .topTrailing) {
@@ -51,6 +51,20 @@ struct OnboardingView: View {
         .animation(reduceMotion ? nil : PVMotion.easeStandard, value: model.error?.localizedDescription)
         .task {
             await model.load()
+        }
+    }
+
+    /// `.windowResizability(.contentSize)` (set in `ProvenenciaApp`) derives
+    /// the window's allowed size range from this frame, so the minimum
+    /// needs to grow once we're past onboarding: the workspace's two-pane
+    /// destinations (e.g. Source fields) need real room, while onboarding's
+    /// single-column forms would look lost at that size.
+    private var minWindowSize: CGSize {
+        switch model.phase {
+        case .home:
+            CGSize(width: PVSpacing.widthWorkspaceMin, height: PVSpacing.heightWorkspaceMin)
+        case .loading, .chooseFile, .identify:
+            CGSize(width: PVSpacing.widthWindowMin, height: PVSpacing.heightWindowMin)
         }
     }
 

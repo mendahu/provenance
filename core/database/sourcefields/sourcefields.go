@@ -9,9 +9,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
+	"github.com/mendahu/provenencia/core/slug"
 )
 
 var ErrInvalid = apperr.New(apperr.CodeSourceFieldsInvalid, apperr.KindUser)
+
+// ErrDuplicateKey is returned by Create when the label-derived key already
+// names a user-origin field. Carries the colliding key as a param.
+var ErrDuplicateKey = apperr.New(apperr.CodeSourceFieldsDuplicateKey, apperr.KindConflict)
+
+// ErrLocked is returned by Update when the target field isn't user-origin
+// (seeded/provenencia and plugin-origin fields are view-only).
+var ErrLocked = apperr.New(apperr.CodeSourceFieldsInvalid, apperr.KindUser)
 
 const (
 	OriginProvenencia = "provenencia"
@@ -28,8 +37,11 @@ const (
 			description = excluded.description`
 	sqlLookup = `SELECT id, key, origin, label, data_type, COALESCE(description, '')
 		FROM source_metadata_fields WHERE key = ? AND origin = ?`
+	sqlGetByID = `SELECT id, key, origin, label, data_type, COALESCE(description, '')
+		FROM source_metadata_fields WHERE id = ?`
 	sqlList = `SELECT id, key, origin, label, data_type, COALESCE(description, '')
 		FROM source_metadata_fields ORDER BY label COLLATE NOCASE, origin, key`
+	sqlUpdate = `UPDATE source_metadata_fields SET label = ?, data_type = ?, description = ? WHERE id = ?`
 	sqlDelete = `DELETE FROM source_metadata_fields WHERE id = ?`
 )
 
@@ -84,6 +96,80 @@ func Upsert(c *database.Catalog, f Field) ([]byte, error) {
 		return nil, err
 	}
 	return append([]byte(nil), id...), nil
+}
+
+// Create mints a kebab-case key from label (see core/slug.Kebab) and
+// inserts a new user-origin field. Returns ErrInvalid if the label cannot
+// form a key, or ErrDuplicateKey (params: the colliding key) if a
+// user-origin field with that key already exists.
+func Create(c *database.Catalog, label, dataType, description string) (Field, error) {
+	key := slug.Kebab(label)
+	if key == "" {
+		return Field{}, ErrInvalid
+	}
+	if _, err := Lookup(c, key, OriginUser); err == nil {
+		return Field{}, ErrDuplicateKey.WithParams(key)
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return Field{}, err
+	}
+	if _, err := Upsert(c, Field{
+		Key: key, Origin: OriginUser, Label: label, DataType: dataType, Description: description,
+	}); err != nil {
+		return Field{}, err
+	}
+	return Lookup(c, key, OriginUser)
+}
+
+// Update patches label, data_type, and description for a user-origin field
+// by id. The field's key and origin never change here — the key is minted
+// once at Create. Returns ErrLocked if the field isn't user-origin.
+func Update(c *database.Catalog, id []byte, label, dataType, description string) (Field, error) {
+	db, err := c.DB()
+	if err != nil {
+		return Field{}, err
+	}
+	label = strings.TrimSpace(label)
+	dataType = strings.TrimSpace(dataType)
+	description = strings.TrimSpace(description)
+	if len(id) != 16 || label == "" || !dataTypeOK(dataType) {
+		return Field{}, ErrInvalid
+	}
+	existing, err := GetByID(c, id)
+	if err != nil {
+		return Field{}, err
+	}
+	if existing.Origin != OriginUser {
+		return Field{}, ErrLocked
+	}
+	var desc any
+	if description == "" {
+		desc = nil
+	} else {
+		desc = description
+	}
+	if _, err := db.Exec(sqlUpdate, label, dataType, desc, id); err != nil {
+		return Field{}, err
+	}
+	return GetByID(c, id)
+}
+
+// GetByID returns the field with the given id, or sql.ErrNoRows.
+func GetByID(c *database.Catalog, id []byte) (Field, error) {
+	db, err := c.DB()
+	if err != nil {
+		return Field{}, err
+	}
+	if len(id) != 16 {
+		return Field{}, ErrInvalid
+	}
+	var f Field
+	err = db.QueryRow(sqlGetByID, id).Scan(
+		&f.ID, &f.Key, &f.Origin, &f.Label, &f.DataType, &f.Description,
+	)
+	if err != nil {
+		return Field{}, err
+	}
+	return f, nil
 }
 
 // Lookup returns the field for (key, origin), or sql.ErrNoRows.

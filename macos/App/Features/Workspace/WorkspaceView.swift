@@ -20,7 +20,13 @@ struct WorkspaceView: View {
     var body: some View {
         HStack(spacing: 0) {
             WorkspaceSidebar(session: model.session, workspace: workspace)
-            WorkspaceContent(section: workspace.selectedSection, project: model.project)
+            WorkspaceContent(
+                section: workspace.selectedSection,
+                project: model.project,
+                projectDir: model.activeProjectDir ?? "",
+                userID: model.session?.userID ?? "",
+                store: model.store
+            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
@@ -43,7 +49,7 @@ struct WorkspaceView: View {
 #Preview("Expanded, Sources") {
     WorkspaceView(model: WorkspaceView.previewModel())
         .environment(SignOutCoordinator())
-        .frame(width: 1200, height: 780)
+        .frame(width: PVSpacing.widthWorkspaceMin, height: PVSpacing.heightWorkspaceMin)
 }
 
 extension WorkspaceView {

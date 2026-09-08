@@ -381,7 +381,14 @@ private struct ThrowingStore: GenealogyStore {
     func createMetadataField(
         projectDir _: String,
         userID _: String,
-        key _: String,
+        label _: String,
+        dataType _: String,
+        description _: String
+    ) async throws -> CatalogMetadataField { throw StoreBoom.boom }
+    func updateMetadataField(
+        projectDir _: String,
+        userID _: String,
+        fieldID _: String,
         label _: String,
         dataType _: String,
         description _: String

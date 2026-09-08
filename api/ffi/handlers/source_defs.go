@@ -92,21 +92,35 @@ func CreateMetadataField(in []byte) ([]byte, error) {
 		return nil, err
 	}
 	defer c.Close()
-	_, err = sourcefields.Upsert(c, sourcefields.Field{
-		Key:         req.GetKey(),
-		Origin:      sourcefields.OriginUser,
-		Label:       req.GetLabel(),
-		DataType:    req.GetDataType(),
-		Description: req.GetDescription(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	got, err := sourcefields.Lookup(c, req.GetKey(), sourcefields.OriginUser)
+	got, err := sourcefields.Create(c, req.GetLabel(), req.GetDataType(), req.GetDescription())
 	if err != nil {
 		return nil, err
 	}
 	return proto.Marshal(&engine.CreateMetadataFieldResponse{Field: metadataFieldProto(got)})
+}
+
+func UpdateMetadataField(in []byte) ([]byte, error) {
+	var req engine.UpdateMetadataFieldRequest
+	if err := proto.Unmarshal(in, &req); err != nil {
+		return nil, unmarshalErr("update_metadata_field", err)
+	}
+	if _, err := parseUserID(req.GetUserId()); err != nil {
+		return nil, err
+	}
+	fieldID, err := parseID(req.GetFieldId())
+	if err != nil {
+		return nil, err
+	}
+	c, err := openProjectCatalog(req.GetProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+	got, err := sourcefields.Update(c, fieldID, req.GetLabel(), req.GetDataType(), req.GetDescription())
+	if err != nil {
+		return nil, err
+	}
+	return proto.Marshal(&engine.UpdateMetadataFieldResponse{Field: metadataFieldProto(got)})
 }
 
 func sourceTypeProto(t sourcetypes.Type) *engine.SourceType {

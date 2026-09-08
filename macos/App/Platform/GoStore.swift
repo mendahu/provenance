@@ -349,7 +349,6 @@ struct GoStore: GenealogyStore {
     func createMetadataField(
         projectDir: String,
         userID: String,
-        key: String,
         label: String,
         dataType: String,
         description: String
@@ -357,12 +356,33 @@ struct GoStore: GenealogyStore {
         var req = Provenencia_Engine_V1_CreateMetadataFieldRequest()
         req.projectDir = projectDir
         req.userID = userID
-        req.key = key
         req.label = label
         req.dataType = dataType
         req.description_p = description
         let resp: Provenencia_Engine_V1_CreateMetadataFieldResponse = try await provenenciaCall(
             method: CoreMethod.createMetadataField,
+            request: req
+        )
+        return Self.mapMetadataField(resp.field)
+    }
+
+    func updateMetadataField(
+        projectDir: String,
+        userID: String,
+        fieldID: String,
+        label: String,
+        dataType: String,
+        description: String
+    ) async throws -> CatalogMetadataField {
+        var req = Provenencia_Engine_V1_UpdateMetadataFieldRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.fieldID = fieldID
+        req.label = label
+        req.dataType = dataType
+        req.description_p = description
+        let resp: Provenencia_Engine_V1_UpdateMetadataFieldResponse = try await provenenciaCall(
+            method: CoreMethod.updateMetadataField,
             request: req
         )
         return Self.mapMetadataField(resp.field)

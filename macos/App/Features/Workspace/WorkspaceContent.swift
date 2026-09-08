@@ -2,28 +2,37 @@ import SwiftUI
 
 /// The workspace's single content host (W-3): a slim header carrying page
 /// context plus project identity (W-9, W-10), and the active
-/// destination's content below it. Content itself is a labeled empty
-/// placeholder — the real Source catalog and vocabulary editors land in
-/// later PRs (S2-02, S2-04).
+/// destination's content below it. **Source fields** (S2-15) mounts its
+/// own full-height `SourceFieldsView` below that header; every other
+/// destination still shows the labeled empty placeholder until its own PR
+/// (S2-04) lands.
 struct WorkspaceContent: View {
     let section: WorkspaceModel.Section
     let project: ProjectInfo?
+    let projectDir: String
+    let userID: String
+    let store: any GenealogyStore
 
     var body: some View {
         VStack(spacing: 0) {
             header
-            ScrollView {
-                VStack(alignment: .leading, spacing: PVSpacing.space7) {
-                    Text(section.label)
-                        .font(PVFont.display(size: PVTypeScale.h1))
-                        .foregroundStyle(PVColor.textDisplay)
-                    placeholder
+            switch section {
+            case .sourceFields:
+                SourceFieldsView(projectDir: projectDir, userID: userID, store: store)
+            default:
+                ScrollView {
+                    VStack(alignment: .leading, spacing: PVSpacing.space7) {
+                        Text(section.label)
+                            .font(PVFont.display(size: PVTypeScale.h1))
+                            .foregroundStyle(PVColor.textDisplay)
+                        placeholder
+                    }
+                    .frame(maxWidth: PVSpacing.widthContentMax, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, PVSpacing.space8)
+                    .padding(.horizontal, PVSpacing.gutterPage)
+                    .padding(.bottom, PVSpacing.space9)
                 }
-                .frame(maxWidth: PVSpacing.widthContentMax, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, PVSpacing.space8)
-                .padding(.horizontal, PVSpacing.gutterPage)
-                .padding(.bottom, PVSpacing.space9)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

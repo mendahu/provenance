@@ -37,6 +37,7 @@ const (
 	MethodListMetadataFields    = int32(engine.Method_METHOD_LIST_METADATA_FIELDS)
 	MethodCreateMetadataField   = int32(engine.Method_METHOD_CREATE_METADATA_FIELD)
 	MethodCountFiles            = int32(engine.Method_METHOD_COUNT_FILES)
+	MethodUpdateMetadataField   = int32(engine.Method_METHOD_UPDATE_METADATA_FIELD)
 )
 
 // Call routes one coarse FFI operation to api/ffi/handlers.
@@ -96,6 +97,8 @@ func Call(method int32, in []byte) ([]byte, error) {
 		return handlers.CreateMetadataField(in)
 	case MethodCountFiles:
 		return handlers.CountFiles(in)
+	case MethodUpdateMetadataField:
+		return handlers.UpdateMetadataField(in)
 	default:
 		return nil, apperr.New(apperr.CodeInternalUnknownMethod, apperr.KindInternal, strconv.Itoa(int(method)))
 	}
