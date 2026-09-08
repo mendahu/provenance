@@ -23,6 +23,7 @@ const (
 	CodeCatalogAlreadyOpen          = "catalog.already_open"
 	CodeCatalogNotAProject          = "catalog.not_a_project"
 	CodeCatalogUnsupportedVersion   = "catalog.unsupported_version"
+	CodeCatalogSchemaMismatch       = "catalog.schema_mismatch"
 	CodeCatalogInvalidFolderName    = "catalog.invalid_folder_name"
 	CodeCatalogClosed               = "catalog.closed"
 	CodeProjectInvalidMetadata      = "project.invalid_metadata"

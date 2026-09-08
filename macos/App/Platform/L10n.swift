@@ -707,6 +707,11 @@ enum L10n {
             defaultValue: "Catalog closed.",
             comment: "FFI error catalog.closed"
         )
+        static let catalogSchemaMismatch = LocalizedStringResource(
+            "error.catalog.schema_mismatch",
+            defaultValue: "This catalog’s schema does not match this version of Provenencia.",
+            comment: "FFI error catalog.schema_mismatch"
+        )
         static let projectInvalidMetadata = LocalizedStringResource(
             "error.project.invalid_metadata",
             defaultValue: "Invalid project metadata.",
@@ -866,6 +871,8 @@ enum L10n {
                 return String(localized: catalogInvalidFolderName)
             case "catalog.closed":
                 return String(localized: catalogClosed)
+            case "catalog.schema_mismatch":
+                return String(localized: catalogSchemaMismatch)
             case "project.invalid_metadata":
                 return String(localized: projectInvalidMetadata)
             case "project.missing_metadata":

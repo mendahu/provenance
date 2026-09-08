@@ -7,6 +7,7 @@ var (
 	ErrAlreadyOpen        = apperr.New(apperr.CodeCatalogAlreadyOpen, apperr.KindConflict)
 	ErrNotAProject        = apperr.New(apperr.CodeCatalogNotAProject, apperr.KindUser)
 	ErrUnsupportedVersion = apperr.New(apperr.CodeCatalogUnsupportedVersion, apperr.KindUser)
+	ErrSchemaMismatch     = apperr.New(apperr.CodeCatalogSchemaMismatch, apperr.KindUser)
 	ErrInvalidFolderName  = apperr.New(apperr.CodeCatalogInvalidFolderName, apperr.KindUser)
 	ErrClosed             = apperr.New(apperr.CodeCatalogClosed, apperr.KindConflict)
 )

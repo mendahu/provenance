@@ -128,6 +128,75 @@ func TestCreateOpen(t *testing.T) {
 			},
 		},
 		{
+			name: "create schema digest matches expected",
+			run: func(t *testing.T, parent string) {
+				c, err := Create(parent, "Hash.provenencia")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer c.Close()
+				got, err := schemaDigest(c.db)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got != expectedSchemaHash {
+					t.Fatalf("schema digest %q want %q", got, expectedSchemaHash)
+				}
+			},
+		},
+		{
+			name: "open refuses dropped table schema mismatch",
+			run: func(t *testing.T, parent string) {
+				c, err := Create(parent, "Drop.provenencia")
+				if err != nil {
+					t.Fatal(err)
+				}
+				dir := c.Dir()
+				if err := c.Close(); err != nil {
+					t.Fatal(err)
+				}
+				db, err := openDB(catalogPath(dir))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := db.Exec(`DROP TABLE sources`); err != nil {
+					db.Close()
+					t.Fatal(err)
+				}
+				db.Close()
+				_, err = Open(dir)
+				if !errors.Is(err, ErrSchemaMismatch) {
+					t.Fatalf("got %v want %v", err, ErrSchemaMismatch)
+				}
+			},
+		},
+		{
+			name: "open refuses rogue index schema mismatch",
+			run: func(t *testing.T, parent string) {
+				c, err := Create(parent, "Rogue.provenencia")
+				if err != nil {
+					t.Fatal(err)
+				}
+				dir := c.Dir()
+				if err := c.Close(); err != nil {
+					t.Fatal(err)
+				}
+				db, err := openDB(catalogPath(dir))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := db.Exec(`CREATE INDEX rogue_users_name ON users(display_name)`); err != nil {
+					db.Close()
+					t.Fatal(err)
+				}
+				db.Close()
+				_, err = Open(dir)
+				if !errors.Is(err, ErrSchemaMismatch) {
+					t.Fatalf("got %v want %v", err, ErrSchemaMismatch)
+				}
+			},
+		},
+		{
 			name: "create and reopen folder with query special chars",
 			run: func(t *testing.T, parent string) {
 				c, err := Create(parent, "Weird?Hash# Name.provenencia")
