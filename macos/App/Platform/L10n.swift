@@ -584,7 +584,13 @@ enum L10n {
         static let formDataTypeHint = LocalizedStringResource(
             "sourceFields.form.dataTypeHint",
             defaultValue: "Only text and date exist in the Source layer today",
-            comment: "Hint under the data type picker"
+            comment: "Hint under the data type picker on add"
+        )
+
+        static let formDataTypeImmutableHint = LocalizedStringResource(
+            "sourceFields.form.dataTypeImmutableHint",
+            defaultValue: "Data type is fixed when the field is created so existing values stay valid.",
+            comment: "Hint under the read-only data type on edit"
         )
 
         static let formDescription = LocalizedStringResource(

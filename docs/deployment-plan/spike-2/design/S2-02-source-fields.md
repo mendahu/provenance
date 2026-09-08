@@ -27,7 +27,7 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 | Field / concept | UI implication |
 | --- | --- |
 | `label` | Primary human name. Show in list and edit form. |
-| `data_type` | `text` or `date` only. Show in list; editable in form (picker). |
+| `data_type` | `text` or `date` only. Chosen at create; **immutable** afterward. Show in list; picker on add only. |
 | `description` | Optional help text. **Detail/edit only** — not required on list rows. |
 | `key` | Stable machine id within an origin. **Auto-generated on create** as a kebab-case slug of the label (not typed by the user). Show on detail (mono); do not expose as an editable form field. |
 | `origin` | Namespace: `provenencia` (product seed / “system”), `user` (researcher-added), later `plugin:<id>`. **Same list** for all origins — not separate lists. Surface origin as a column, badge, or sortable facet. |
@@ -62,8 +62,8 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 | ID | Requirement |
 | --- | --- |
 | F-9 | Detail shows **label**, **data type**, and **description** (multiline OK). |
-| F-10 | Edit allows changing **label**, **data type**, and **description**. |
-| F-11 | Show **origin** and **key** as identity context (mono for key). **`user` and create-time `provenencia` (starter) rows are editable** for label, data type, and description. Plugin-origin rows stay view-only unless a later spike says otherwise. |
+| F-10 | Edit allows changing **label** and **description**. **Data type is immutable** after create. |
+| F-11 | Show **origin** and **key** as identity context (mono for key). **`user` and create-time `provenencia` (starter) rows are editable** for label and description. Plugin-origin rows stay view-only unless a later spike says otherwise. |
 | F-12 | No delete / archive control on this board. |
 | F-13 | No `created_at` / author chrome — attribution is audit, not domain columns. |
 

@@ -172,7 +172,7 @@ CREATE TABLE source_metadata_fields (
 ) STRICT;
 ```
 
-Same `origin` / `UNIQUE (key, origin)` rules as `source_types` ([`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1). `source_metadata.field_id` and `source_type_metadata_fields.field_id` reference the UUID `id`.
+Same `origin` / `UNIQUE (key, origin)` rules as `source_types` ([`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1). `source_metadata.field_id` and `source_type_metadata_fields.field_id` reference the UUID `id`. **`data_type` is immutable after create** so existing `source_metadata` values stay consistent with validation.
 
 Possible seeded fields include `author`, `publisher`, `publication_date`, and similar. The authoritative list is in [`seeded-vocabulary.md`](seeded-vocabulary.md).
 

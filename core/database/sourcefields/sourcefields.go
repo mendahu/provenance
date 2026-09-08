@@ -44,7 +44,7 @@ const (
 		FROM source_metadata_fields WHERE id = ?`
 	sqlList = `SELECT id, key, origin, label, data_type, COALESCE(description, '')
 		FROM source_metadata_fields ORDER BY label COLLATE NOCASE, origin, key`
-	sqlUpdate = `UPDATE source_metadata_fields SET label = ?, data_type = ?, description = ? WHERE id = ?`
+	sqlUpdate = `UPDATE source_metadata_fields SET label = ?, description = ? WHERE id = ?`
 	sqlDelete = `DELETE FROM source_metadata_fields WHERE id = ?`
 	sqlInUse  = `SELECT 1 FROM source_metadata WHERE field_id = ? LIMIT 1`
 )
@@ -124,9 +124,10 @@ func Create(c *database.Catalog, label, dataType, description string) (Field, er
 	return Lookup(c, key, OriginUser)
 }
 
-// Update patches label, data_type, and description for a project field
-// (user or provenencia) by id. The field's key and origin never change here —
-// the key is minted once at Create. Returns ErrLocked for plugin-origin fields.
+// Update patches label and description for a project field (user or
+// provenencia) by id. Key, origin, and data_type are immutable after create.
+// dataType must match the existing value (callers still pass it for clarity).
+// Returns ErrLocked for plugin-origin fields.
 func Update(c *database.Catalog, id []byte, label, dataType, description string) (Field, error) {
 	db, err := c.DB()
 	if err != nil {
@@ -145,13 +146,16 @@ func Update(c *database.Catalog, id []byte, label, dataType, description string)
 	if existing.Origin != OriginUser && existing.Origin != OriginProvenencia {
 		return Field{}, ErrLocked
 	}
+	if dataType != existing.DataType {
+		return Field{}, ErrInvalid
+	}
 	var desc any
 	if description == "" {
 		desc = nil
 	} else {
 		desc = description
 	}
-	if _, err := db.Exec(sqlUpdate, label, dataType, desc, id); err != nil {
+	if _, err := db.Exec(sqlUpdate, label, desc, id); err != nil {
 		return Field{}, err
 	}
 	return GetByID(c, id)

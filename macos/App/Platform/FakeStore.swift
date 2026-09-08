@@ -382,8 +382,10 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         guard list[idx].origin == "user" || list[idx].origin == "provenencia" else {
             throw StoreBoom.boom
         }
+        guard list[idx].dataType == dataType else {
+            throw StoreBoom.boom
+        }
         list[idx].label = label
-        list[idx].dataType = dataType
         list[idx].description = description
         fieldsByProject[projectDir] = list
         return list[idx]

@@ -162,8 +162,15 @@ struct SourceFieldsDetailPane: View {
                         isInvalid: model.formError != nil
                     )
                 }
-                PVField(label: L10n.SourceFields.formDataType, hint: L10n.SourceFields.formDataTypeHint) {
-                    PVSelect(selection: draft.dataType, options: dataTypeOptions)
+                PVField(label: L10n.SourceFields.formDataType, hint: model.isAdding ? L10n.SourceFields.formDataTypeHint : L10n.SourceFields.formDataTypeImmutableHint) {
+                    if model.isAdding {
+                        PVSelect(selection: draft.dataType, options: dataTypeOptions)
+                    } else {
+                        Text(SourceFieldDataType.label(for: draft.wrappedValue.dataType))
+                            .font(PVFont.body(size: PVTypeScale.body))
+                            .foregroundStyle(PVColor.textPrimary)
+                            .accessibilityIdentifier("sourceFields.form.dataType.readonly")
+                    }
                 }
                 PVField(label: L10n.SourceFields.formDescription, hint: L10n.SourceFields.formDescriptionHint) {
                     PVInput(text: draft.description, prompt: model.isAdding ? L10n.SourceFields.formDescriptionPlaceholder : nil)

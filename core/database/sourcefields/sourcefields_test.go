@@ -135,18 +135,18 @@ func TestCreateUpdateGetByID(t *testing.T) {
 			},
 		},
 		{
-			name: "update patches label type description but not key",
+			name: "update patches label and description but not key or data type",
 			run: func(t *testing.T, c *database.Catalog) {
 				created, err := Create(c, "Album code", DataTypeText, "old")
 				if err != nil {
 					t.Fatal(err)
 				}
-				updated, err := Update(c, created.ID, "Album Code", DataTypeDate, "new")
+				updated, err := Update(c, created.ID, "Album Code", DataTypeText, "new")
 				if err != nil {
 					t.Fatal(err)
 				}
 				if updated.Key != created.Key || updated.Label != "Album Code" ||
-					updated.DataType != DataTypeDate || updated.Description != "new" {
+					updated.DataType != DataTypeText || updated.Description != "new" {
 					t.Fatalf("got %+v", updated)
 				}
 				got, err := GetByID(c, created.ID)
@@ -159,6 +159,18 @@ func TestCreateUpdateGetByID(t *testing.T) {
 			},
 		},
 		{
+			name: "update rejects data type change",
+			run: func(t *testing.T, c *database.Catalog) {
+				created, err := Create(c, "Album code", DataTypeText, "")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := Update(c, created.ID, "Album code", DataTypeDate, ""); !errors.Is(err, ErrInvalid) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+		{
 			name: "update provenencia field",
 			run: func(t *testing.T, c *database.Catalog) {
 				id, err := Upsert(c, Field{
@@ -167,12 +179,12 @@ func TestCreateUpdateGetByID(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				updated, err := Update(c, id, "Author renamed", DataTypeDate, "edited")
+				updated, err := Update(c, id, "Author renamed", DataTypeText, "edited")
 				if err != nil {
 					t.Fatal(err)
 				}
 				if updated.Key != "author" || updated.Origin != OriginProvenencia ||
-					updated.Label != "Author renamed" || updated.DataType != DataTypeDate ||
+					updated.Label != "Author renamed" || updated.DataType != DataTypeText ||
 					updated.Description != "edited" {
 					t.Fatalf("got %+v", updated)
 				}

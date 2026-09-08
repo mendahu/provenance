@@ -100,7 +100,7 @@ final class SourceFieldsModel {
 
     var isDirty: Bool {
         guard case .editing = mode, let field = selectedField, let draft else { return false }
-        return draft.label != field.label || draft.dataType != field.dataType || draft.description != field.description
+        return draft.label != field.label || draft.description != field.description
     }
 
     var canSubmit: Bool {

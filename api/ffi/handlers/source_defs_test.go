@@ -93,7 +93,37 @@ func TestUpdateMetadataField(t *testing.T) {
 	runRPC(t, UpdateMetadataField, []rpcTest{
 		{name: "bad proto", raw: []byte{0xff}, wantErr: true},
 		{
-			name: "updates label type description, key unchanged",
+			name: "updates label and description, key and data type unchanged",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				out, err := CreateMetadataField(marshalProto(t, &engine.CreateMetadataFieldRequest{
+					ProjectDir: dir, UserId: userID, Label: "Album code", DataType: "text",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var created engine.CreateMetadataFieldResponse
+				if err := proto.Unmarshal(out, &created); err != nil {
+					t.Fatal(err)
+				}
+				return &engine.UpdateMetadataFieldRequest{
+					ProjectDir: dir, UserId: userID, FieldId: created.Field.GetId(),
+					Label: "Album Code", DataType: "text", Description: "updated",
+				}
+			},
+			after: func(t *testing.T, out []byte, _ proto.Message) {
+				var resp engine.UpdateMetadataFieldResponse
+				if err := proto.Unmarshal(out, &resp); err != nil {
+					t.Fatal(err)
+				}
+				if resp.Field.GetKey() != "album-code" || resp.Field.GetLabel() != "Album Code" ||
+					resp.Field.GetDataType() != "text" || resp.Field.GetDescription() != "updated" {
+					t.Fatalf("%+v", resp.Field)
+				}
+			},
+		},
+		{
+			name: "rejects data type change",
 			reqFn: func(t *testing.T) proto.Message {
 				dir, userID, _ := sourceFixture(t)
 				out, err := CreateMetadataField(marshalProto(t, &engine.CreateMetadataFieldRequest{
@@ -111,16 +141,7 @@ func TestUpdateMetadataField(t *testing.T) {
 					Label: "Album Code", DataType: "date", Description: "updated",
 				}
 			},
-			after: func(t *testing.T, out []byte, _ proto.Message) {
-				var resp engine.UpdateMetadataFieldResponse
-				if err := proto.Unmarshal(out, &resp); err != nil {
-					t.Fatal(err)
-				}
-				if resp.Field.GetKey() != "album-code" || resp.Field.GetLabel() != "Album Code" ||
-					resp.Field.GetDataType() != "date" || resp.Field.GetDescription() != "updated" {
-					t.Fatalf("%+v", resp.Field)
-				}
-			},
+			wantErr: true,
 		},
 		{
 			name: "updates a seeded field",
