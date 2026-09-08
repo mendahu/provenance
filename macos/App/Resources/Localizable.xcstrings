@@ -80,6 +80,18 @@
         }
       }
     },
+    "error.catalog.schema_mismatch" : {
+      "comment" : "FFI error catalog.schema_mismatch",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This catalog’s schema does not match this version of Provenencia."
+          }
+        }
+      }
+    },
     "error.catalog.invalid_folder_name" : {
       "comment" : "FFI error catalog.invalid_folder_name",
       "extractionState" : "manual",

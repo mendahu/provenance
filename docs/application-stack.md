@@ -258,7 +258,7 @@ The public wrapper suffix is **`.provenencia`**, not `.genealogy`. It is a brand
 
 On macOS, register the folder as a document package with an exported reverse-DNS UTI (for example `app.provenencia.project`) whose imported filename extension is `provenencia`. Windows and Linux see a directory. Copying a project to another machine is **copy this whole directory** (after quit or including WAL/SHM). The same Go core opens it; there are no Mac-only paths in the database.
 
-**Open by content:** the suffix and UTI are hints. Create/open must verify `provenencia.sqlite`, a documented SQLite `application_id` (32-bit, assigned at implementation), and a schema/`user_version` this engine understands. A `.provenencia` folder with a foreign catalog is refused, not migrated. Do not add a parallel `metadata.json` merely to claim the folder.
+**Open by content:** the suffix and UTI are hints. Create/open must verify `provenencia.sqlite`, a documented SQLite `application_id` (32-bit, assigned at implementation), and a schema/`user_version` this engine understands. After migrate, the engine hashes `sqlite_schema` and refuses a mismatch against the digest implied by embedded migrations (`catalog.schema_mismatch`). A `.provenencia` folder with a foreign catalog is refused, not migrated. Do not add a parallel `metadata.json` merely to claim the folder.
 
 **Interchange:** Document the **directory layout + schema**. The `.sqlite` file is an inspectable catalog, not a complete project by itself (evidence bytes live under `objects/`). Users may browse tables and files with other tools. Provenencia must not rely on obfuscation.
 

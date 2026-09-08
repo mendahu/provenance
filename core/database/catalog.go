@@ -124,6 +124,11 @@ func Create(parent, folderName string) (*Catalog, error) {
 		_ = os.RemoveAll(dir)
 		return nil, err
 	}
+	if err := verifySchema(db); err != nil {
+		db.Close()
+		_ = os.RemoveAll(dir)
+		return nil, err
+	}
 	return &Catalog{dir: dir, db: db}, nil
 }
 
@@ -146,6 +151,10 @@ func Open(dir string) (*Catalog, error) {
 		return nil, err
 	}
 	if err := takeExclusiveLock(db); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if err := verifySchema(db); err != nil {
 		db.Close()
 		return nil, err
 	}

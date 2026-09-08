@@ -35,6 +35,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	if err := initExpectedSchemaHash(); err != nil {
+		panic(err)
+	}
 }
 
 // parseMigrations loads NNNNNN.sql files (six decimal digits, no gaps from 1).

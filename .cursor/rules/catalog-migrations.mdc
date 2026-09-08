@@ -1,6 +1,6 @@
 ---
 description: Catalog format is user_version SQL files, not timestamped web migrations
-globs: core/database/migrations/**,core/database/migrate.go,core/database/migrate_test.go
+globs: core/database/migrations/**,core/database/migrate.go,core/database/migrate_test.go,core/database/schemahash.go,core/database/catalog.go
 alwaysApply: false
 ---
 
@@ -10,4 +10,8 @@ Follow the project skill `.cursor/skills/add-catalog-migration/SKILL.md`.
 
 - Next step = next six-digit file under `core/database/migrations/`. No CLI; `Open`/`Create` apply it.
 - Do not edit shipped `NNNNNN.sql`. Do not use timestamps. `user_version` is not product `VERSION`.
-- `go test ./core/database/` is the lint (names, gaps, empty SQL, embed matches init).
+- After migrate, `Create`/`Open` hash `sqlite_schema` vs an init-derived expected digest (`schemahash.go`); mismatch → `catalog.schema_mismatch`.
+- New `NNNNNN.sql` automatically changes the expected digest — **no manual hash update**. Do not commit a golden hash file or constant.
+- Required gate: `CGO_ENABLED=1 go test ./core/database/` must pass (parse + Create/Open schema verify).
+- Never delete/skip `verifySchema`, never tell the user to “update the hash constant.”
+- `go test ./core/database/` is the lint (names, gaps, empty SQL, embed matches init, schema hash).

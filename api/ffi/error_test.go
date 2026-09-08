@@ -33,6 +33,12 @@ func TestEncodeError(t *testing.T) {
 			wantParams: []string{"9"},
 		},
 		{
+			name:     "schema mismatch",
+			err:      database.ErrSchemaMismatch,
+			wantCode: apperr.CodeCatalogSchemaMismatch,
+			wantKind: engine.ErrorKind_ERROR_KIND_USER,
+		},
+		{
 			name:     "unknown",
 			err:      errors.New("sqlite boom"),
 			wantCode: apperr.CodeInternalUnknown,
