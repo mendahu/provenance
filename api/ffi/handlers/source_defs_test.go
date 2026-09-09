@@ -49,6 +49,47 @@ func TestSourceDefs(t *testing.T) {
 	})
 }
 
+func TestCreateSourceTypeMintsKeyFromLabel(t *testing.T) {
+	runRPC(t, CreateSourceType, []rpcTest{
+		{name: "bad proto", raw: []byte{0xff}, wantErr: true},
+		{
+			name: "mints slug key",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				return &engine.CreateSourceTypeRequest{
+					ProjectDir: dir, UserId: userID, Label: "Grandma's scrapbook",
+				}
+			},
+			after: func(t *testing.T, out []byte, _ proto.Message) {
+				var resp engine.CreateSourceTypeResponse
+				if err := proto.Unmarshal(out, &resp); err != nil {
+					t.Fatal(err)
+				}
+				if resp.Type.GetKey() != "grandmas-scrapbook" || resp.Type.GetOrigin() != "user" {
+					t.Fatalf("%+v", resp.Type)
+				}
+			},
+		},
+		{
+			name: "rejects unslugifiable label",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				return &engine.CreateSourceTypeRequest{ProjectDir: dir, UserId: userID, Label: "..."}
+			},
+			wantErr: true,
+		},
+		{
+			name: "rejects duplicate key under user origin",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				return &engine.CreateSourceTypeRequest{ProjectDir: dir, UserId: userID, Label: "Deed"}
+			},
+			calls:   2,
+			wantErr: true,
+		},
+	})
+}
+
 func TestCreateMetadataFieldMintsKeyFromLabel(t *testing.T) {
 	runRPC(t, CreateMetadataField, []rpcTest{
 		{name: "bad proto", raw: []byte{0xff}, wantErr: true},
@@ -370,7 +411,7 @@ func TestUpdateSourceType(t *testing.T) {
 					Label: "Renamed starter", Description: "edited",
 				}
 			},
-			after: func(t *testing.T, out []byte, _ proto.Message) {
+			after: func(t *testing.T, out []byte, req proto.Message) {
 				var resp engine.UpdateSourceTypeResponse
 				if err := proto.Unmarshal(out, &resp); err != nil {
 					t.Fatal(err)
@@ -378,6 +419,23 @@ func TestUpdateSourceType(t *testing.T) {
 				if resp.Type.GetOrigin() != "provenencia" || resp.Type.GetLabel() != "Renamed starter" ||
 					resp.Type.GetDescription() != "edited" || resp.Type.GetUsedBy() != 1 {
 					t.Fatalf("%+v", resp.Type)
+				}
+				// The update reply also refreshes the suggested-field count
+				// — the seeded starter ships with suggestions, so it must
+				// agree with what ListTypeSuggestions reads.
+				ur := req.(*engine.UpdateSourceTypeRequest)
+				lout, err := ListTypeSuggestions(marshalProto(t, &engine.ListTypeSuggestionsRequest{
+					ProjectDir: ur.ProjectDir, TypeId: ur.TypeId,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var list engine.ListTypeSuggestionsResponse
+				if err := proto.Unmarshal(lout, &list); err != nil {
+					t.Fatal(err)
+				}
+				if len(list.Suggestions) == 0 || int(resp.Type.GetSuggestedFieldCount()) != len(list.Suggestions) {
+					t.Fatalf("suggested_field_count %d, suggestions %d", resp.Type.GetSuggestedFieldCount(), len(list.Suggestions))
 				}
 			},
 		},

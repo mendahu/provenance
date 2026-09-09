@@ -1,12 +1,8 @@
 import SwiftUI
 
-/// The left pane of `SourceTypesView`: search (T-4) and a result-count
-/// footer around a `PVTable` of the project's types (T-1/T-2/T-3).
-///
-/// The search bar and footer stay here on purpose — they are feature chrome,
-/// not table chrome (see `PVTable`'s contract). Everything between them —
-/// column header, sort control, rows, selection, keyboard and VoiceOver
-/// behaviour — belongs to `PVTable`.
+/// The left pane of `SourceTypesView` (T-1/T-2/T-3/T-4): the shared
+/// `VocabularyListPane` chrome around this destination's columns — label
+/// with origin pill, mono key, suggested-field count — sortable by all three.
 struct SourceTypesListPane: View {
     @Bindable var model: SourceTypesModel
 
@@ -16,53 +12,31 @@ struct SourceTypesListPane: View {
     private static let fieldsColumnWidth: CGFloat = 132
 
     var body: some View {
-        VStack(spacing: 0) {
-            searchBar
-            table
-            footer
-        }
-    }
-
-    private var searchBar: some View {
-        HStack(spacing: PVSpacing.space5) {
-            PVInput(text: $model.query, prompt: L10n.SourceTypes.searchPlaceholder, icon: .search)
-                .frame(maxWidth: 420)
-            if !model.query.isEmpty {
-                PVButton(L10n.SourceTypes.clearSearch, variant: .ghost, size: .sm) {
-                    model.query = ""
-                }
-                .accessibilityIdentifier("sourceTypes.clearSearch")
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, PVSpacing.gutterPage)
-        .padding(.vertical, PVSpacing.space6)
-        .background(PVColor.surfaceCard)
-        .overlay(alignment: .bottom) {
-            PVDivider()
-        }
-    }
-
-    // MARK: Table
-
-    private var table: some View {
-        PVTable(
+        VocabularyListPane(
+            query: $model.query,
+            totalCount: model.types.count,
             rows: model.visibleTypes,
+            isLoading: model.isLoading,
             columns: columns,
             selection: selection,
-            primaryText: \.label,
             sort: PVTableSort(
                 columnID: model.sortColumn.rawValue,
                 direction: model.sortAscending ? .ascending : .descending
             ),
             onSortChange: { model.sortBy($0) },
-            label: L10n.Workspace.sourceTypesTitle,
-            rowAccessibilityIdentifier: { "sourceTypes.row.\($0.id)" },
-            sortAccessibilityIdentifier: { "sourceTypes.sortBy.\($0)" }
-        ) {
-            placeholder
-        }
-        .accessibilityIdentifier("sourceTypes.list")
+            strings: VocabularyListStrings(
+                searchPlaceholder: L10n.SourceTypes.searchPlaceholder,
+                clearSearch: L10n.SourceTypes.clearSearch,
+                tableLabel: L10n.Workspace.sourceTypesTitle,
+                emptyIcon: .library,
+                emptyTitle: L10n.SourceTypes.emptyProjectTitle,
+                emptyBody: L10n.SourceTypes.emptyProjectBody,
+                noMatchTitle: L10n.SourceTypes.noMatchTitle,
+                noMatchBody: { L10n.SourceTypes.noMatchBody(query: $0) },
+                resultLine: { L10n.SourceTypes.resultLine(shown: $0, total: $1) }
+            ),
+            identifierPrefix: "sourceTypes"
+        )
     }
 
     private var columns: [PVTableColumn<CatalogSourceType>] {
@@ -118,47 +92,5 @@ struct SourceTypesListPane: View {
             get: { model.isAdding ? nil : model.selectedType?.id },
             set: { if let id = $0 { model.select(id) } }
         )
-    }
-
-    /// Loading / empty / no-match chrome, rendered inside the table body so
-    /// the column header stays put — the same slot the web board uses.
-    @ViewBuilder
-    private var placeholder: some View {
-        if model.isLoading && model.types.isEmpty {
-            ProgressView()
-                .tint(PVColor.accent)
-                .frame(maxWidth: .infinity)
-                .padding(PVSpacing.space9)
-        } else if model.types.isEmpty {
-            PVEmptyState(
-                icon: .library,
-                title: L10n.SourceTypes.emptyProjectTitle,
-                message: String(localized: L10n.SourceTypes.emptyProjectBody)
-            )
-            .padding(PVSpacing.space9)
-        } else if model.visibleTypes.isEmpty {
-            PVEmptyState(
-                icon: .searchEmpty,
-                title: L10n.SourceTypes.noMatchTitle,
-                message: L10n.SourceTypes.noMatchBody(query: model.query),
-                compact: true
-            )
-            .padding(PVSpacing.space9)
-        }
-    }
-
-    private var footer: some View {
-        HStack {
-            Text(L10n.SourceTypes.resultLine(shown: model.visibleTypes.count, total: model.types.count))
-                .font(PVFont.mono(size: PVTypeScale.micro))
-                .foregroundStyle(PVColor.textMuted)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, PVSpacing.gutterPage)
-        .padding(.vertical, PVSpacing.space3)
-        .background(PVColor.surfaceCard)
-        .overlay(alignment: .top) {
-            PVDivider()
-        }
     }
 }

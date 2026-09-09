@@ -18,24 +18,6 @@ final class SourceFieldsModel {
         var description: String
     }
 
-    struct Toast: Equatable, Hashable {
-        var title: String
-        var body: String
-    }
-
-    /// Detail-pane mode. Illegal combinations of the old flags
-    /// (`isAdding` + `selectedFieldID` + `resumeSelectionID`) are
-    /// unrepresentable here. `draft` is set for `.adding` / `.editing`
-    /// (form bindings) and also for `.viewing` (unused by the UI, but
-    /// kept non-nil so tearing down `Binding($model.draft)` projections
-    /// does not trap when leaving the form).
-    enum Mode: Equatable {
-        case empty
-        case viewing(id: String)
-        case adding(resumeID: String?)
-        case editing(id: String)
-    }
-
     private(set) var fields: [CatalogMetadataField] = []
     private(set) var isLoading = false
     var loadError: Error?
@@ -43,7 +25,8 @@ final class SourceFieldsModel {
     var query = ""
     private(set) var sortAscending = true
 
-    private(set) var mode: Mode = .empty
+    /// Detail-pane mode — see `VocabularyPaneMode` for the invariants.
+    private(set) var mode: VocabularyPaneMode = .empty
     /// Non-nil whenever a field is selected or the add form is open.
     /// Cleared only for `.empty`. Do not nil this while the edit/add form
     /// may still be in the hierarchy — `@Bindable` projections into an
@@ -51,7 +34,7 @@ final class SourceFieldsModel {
     var draft: Draft?
     private(set) var isSaving = false
     var formError: String?
-    var toast: Toast?
+    var toast: VocabularyToast?
 
     /// The field the delete confirmation is open for. Held as an id (not a
     /// `Bool`) so the dialog keeps naming the right field even if selection
@@ -76,9 +59,7 @@ final class SourceFieldsModel {
     // MARK: Derived
 
     var visibleFields: [CatalogMetadataField] {
-        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let filtered = q.isEmpty ? fields : fields.filter { matches($0, query: q) }
-        return filtered.sorted { a, b in
+        fields.matching(query).sorted { a, b in
             let order = a.label.localizedCaseInsensitiveCompare(b.label)
             return sortAscending ? order == .orderedAscending : order == .orderedDescending
         }
@@ -147,15 +128,12 @@ final class SourceFieldsModel {
         return fields.first { $0.id == pendingDeleteID }
     }
 
-    var seededCount: Int { fields.filter { $0.origin == CatalogOrigin.provenencia }.count }
-    var userCount: Int { fields.filter { $0.origin == CatalogOrigin.user }.count }
-    var pluginCount: Int { fields.filter { $0.origin != CatalogOrigin.provenencia && $0.origin != CatalogOrigin.user }.count }
-
     var countLine: String {
-        if pluginCount > 0 {
-            return L10n.SourceFields.countLineWithPlugin(total: fields.count, seeded: seededCount, user: userCount, plugin: pluginCount)
+        let (seeded, user, plugin) = (fields.seededCount, fields.userCount, fields.pluginCount)
+        if plugin > 0 {
+            return L10n.SourceFields.countLineWithPlugin(total: fields.count, seeded: seeded, user: user, plugin: plugin)
         }
-        return L10n.SourceFields.countLine(total: fields.count, seeded: seededCount, user: userCount)
+        return L10n.SourceFields.countLine(total: fields.count, seeded: seeded, user: user)
     }
 
     // MARK: Actions
@@ -182,11 +160,7 @@ final class SourceFieldsModel {
         // not bind it, but going edit/add → view with `draft = nil` in the
         // same turn tears down `Binding($model.draft)` and traps.
         draft = Draft(label: field.label, dataType: field.dataType, description: field.description)
-        if field.origin == CatalogOrigin.user || field.origin == CatalogOrigin.provenencia {
-            mode = .editing(id: id)
-        } else {
-            mode = .viewing(id: id)
-        }
+        mode = CatalogOrigin.isPlugin(field.origin) ? .viewing(id: id) : .editing(id: id)
     }
 
     func openAdd() {
@@ -245,9 +219,10 @@ final class SourceFieldsModel {
             // in the same turn the form leaves the hierarchy races
             // `@Bindable` optional projections.
             mode = .empty
-            toast = Toast(
+            toast = VocabularyToast(
                 title: String(localized: L10n.SourceFields.toastDeletedTitle),
-                body: L10n.SourceFields.toastDeletedBody(label: field.label)
+                body: L10n.SourceFields.toastDeletedBody(label: field.label),
+                tone: .success
             )
         } catch {
             deleteError = L10n.Errors.message(for: error)
@@ -279,9 +254,10 @@ final class SourceFieldsModel {
                 query = ""
                 mode = .editing(id: created.id)
                 self.draft = Draft(label: created.label, dataType: created.dataType, description: created.description)
-                toast = Toast(
+                toast = VocabularyToast(
                     title: String(localized: L10n.SourceFields.toastAddedTitle),
-                    body: L10n.SourceFields.toastAddedBody(label: created.label, key: created.key)
+                    body: L10n.SourceFields.toastAddedBody(label: created.label, key: created.key),
+                    tone: .success
                 )
             case .editing(let id):
                 let updated = try await store.updateMetadataField(
@@ -293,9 +269,10 @@ final class SourceFieldsModel {
                 }
                 mode = .editing(id: updated.id)
                 self.draft = Draft(label: updated.label, dataType: updated.dataType, description: updated.description)
-                toast = Toast(
+                toast = VocabularyToast(
                     title: String(localized: L10n.SourceFields.toastUpdatedTitle),
-                    body: L10n.SourceFields.toastUpdatedBody(label: updated.label, key: updated.key)
+                    body: L10n.SourceFields.toastUpdatedBody(label: updated.label, key: updated.key),
+                    tone: .success
                 )
             case .empty, .viewing:
                 break
@@ -303,11 +280,5 @@ final class SourceFieldsModel {
         } catch {
             formError = L10n.Errors.message(for: error)
         }
-    }
-
-    private func matches(_ field: CatalogMetadataField, query: String) -> Bool {
-        field.label.lowercased().contains(query)
-            || field.key.lowercased().contains(query)
-            || field.description.lowercased().contains(query)
     }
 }

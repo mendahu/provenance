@@ -29,9 +29,9 @@ struct SourceFieldsModelTests {
         let model = makeModel(fields: [seededField(), userField()])
         await model.load()
         #expect(model.fields.count == 2)
-        #expect(model.seededCount == 1)
-        #expect(model.userCount == 1)
-        #expect(model.pluginCount == 0)
+        #expect(model.fields.seededCount == 1)
+        #expect(model.fields.userCount == 1)
+        #expect(model.fields.pluginCount == 0)
     }
 
     @Test func searchFiltersByLabelKeyAndDescription() async {

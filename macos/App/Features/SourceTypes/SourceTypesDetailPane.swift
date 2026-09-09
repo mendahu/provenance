@@ -65,47 +65,19 @@ struct SourceTypesDetailPane: View {
     // MARK: Header (shared by add / locked / editable)
 
     private var panelHeader: some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space5) {
-            HStack(alignment: .top, spacing: PVSpacing.space5) {
-                Text(model.isAdding ? L10n.SourceTypes.detailEyebrowNewType : L10n.SourceTypes.detailEyebrowType)
-                    .pvMicroCaps()
-                    .foregroundStyle(PVColor.textMuted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if model.showsDelete {
-                    deleteButton
-                }
-            }
-            Text(panelTitle)
-                .font(PVFont.display(size: PVTypeScale.h2))
-                .foregroundStyle(PVColor.textDisplay)
-            HStack(spacing: PVSpacing.space5) {
-                OriginBadge(origin: model.isAdding ? CatalogOrigin.user : (model.selectedType?.origin ?? CatalogOrigin.user))
-                Text(panelKey)
-                    .font(PVFont.mono(size: PVTypeScale.micro))
-                    .foregroundStyle(PVColor.textSecondary)
-                    .accessibilityIdentifier("sourceTypes.detail.key")
-                if let type = model.selectedType {
-                    Text(L10n.SourceTypes.usage(count: type.usedBy))
-                        .font(PVFont.mono(size: PVTypeScale.micro))
-                        .foregroundStyle(PVColor.textFaint)
-                        .accessibilityIdentifier("sourceTypes.detail.usage")
-                }
-            }
-            Text(model.isAdding ? L10n.SourceTypes.keyHintAdd : L10n.SourceTypes.keyHintEdit)
-                .font(PVFont.body(size: PVTypeScale.micro, italic: true))
-                .foregroundStyle(PVColor.textMuted)
-        }
-    }
-
-    /// Disabled rather than hidden when the type cannot be deleted — the
-    /// tooltip is where the reason lives (a plugin owns it, or sources are
-    /// still classified as it).
-    private var deleteButton: some View {
-        PVIconButton(.trash, label: model.deleteTooltip, size: .sm, tone: .danger) {
-            model.askDelete()
-        }
-        .disabled(!model.canDeleteSelectedType)
-        .accessibilityIdentifier("sourceTypes.delete")
+        VocabularyPanelHeader(
+            eyebrow: model.isAdding ? L10n.SourceTypes.detailEyebrowNewType : L10n.SourceTypes.detailEyebrowType,
+            title: panelTitle,
+            origin: model.isAdding ? CatalogOrigin.user : (model.selectedType?.origin ?? CatalogOrigin.user),
+            keyText: panelKey,
+            usageLine: model.selectedType.map { String(localized: L10n.SourceTypes.usage(count: $0.usedBy)) },
+            keyHint: model.isAdding ? L10n.SourceTypes.keyHintAdd : L10n.SourceTypes.keyHintEdit,
+            showsDelete: model.showsDelete,
+            canDelete: model.canDeleteSelectedType,
+            deleteTooltip: model.deleteTooltip,
+            identifierPrefix: "sourceTypes",
+            onDelete: { model.askDelete() }
+        )
     }
 
     private var panelTitle: String {
@@ -136,7 +108,7 @@ struct SourceTypesDetailPane: View {
                     message: L10n.SourceTypes.lockedNotePlugin(pluginID: CatalogOrigin.pluginID(from: type.origin)),
                     compact: true
                 )
-                labeledSection(L10n.SourceTypes.descriptionSectionLabel) {
+                VocabularyLabeledSection(label: L10n.SourceTypes.descriptionSectionLabel) {
                     Text(type.description.isEmpty
                         ? String(localized: L10n.SourceTypes.descriptionEmptyPlaceholder)
                         : type.description)
@@ -148,15 +120,6 @@ struct SourceTypesDetailPane: View {
             .overlay(alignment: .top) {
                 PVDivider()
             }
-        }
-    }
-
-    private func labeledSection(_ label: LocalizedStringResource, @ViewBuilder content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space2) {
-            Text(label)
-                .pvMicroCaps()
-                .foregroundStyle(PVColor.textMuted)
-            content()
         }
     }
 
@@ -182,18 +145,16 @@ struct SourceTypesDetailPane: View {
                         prompt: model.isAdding ? L10n.SourceTypes.formDescriptionPlaceholder : nil
                     )
                 }
-                HStack(spacing: PVSpacing.space5) {
-                    PVButton(primaryLabel, variant: .primary, loading: model.isSaving) {
-                        Task { await model.submit() }
-                    }
-                    .disabled(!model.canSubmit)
-                    .accessibilityIdentifier("sourceTypes.form.submit")
-                    PVButton(secondaryLabel, variant: .ghost) {
-                        secondaryAction()
-                    }
-                    .disabled(model.isSaving || (!model.isAdding && !model.isDirty))
-                    .accessibilityIdentifier("sourceTypes.form.secondary")
-                }
+                VocabularyFormActions(
+                    primaryLabel: primaryLabel,
+                    secondaryLabel: secondaryLabel,
+                    isSaving: model.isSaving,
+                    canSubmit: model.canSubmit,
+                    isSecondaryDisabled: model.isSaving || (!model.isAdding && !model.isDirty),
+                    identifierPrefix: "sourceTypes",
+                    onPrimary: { Task { await model.submit() } },
+                    onSecondary: { secondaryAction() }
+                )
             }
             .padding(.top, PVSpacing.space7)
             .overlay(alignment: .top) {
@@ -357,7 +318,10 @@ struct SourceTypesDetailPane: View {
     /// carrying the reason when it is disabled — the same disabled-not-hidden
     /// pattern the delete affordance uses.
     private var assignControl: some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space4) {
+        // Resolved once per render, not once per row — the row builder runs
+        // for every visible option and only needs the badge's data type.
+        let dataTypes = Dictionary(uniqueKeysWithValues: model.assignPool.map { ($0.id, $0.dataType) })
+        return VStack(alignment: .leading, spacing: PVSpacing.space4) {
             HStack(spacing: PVSpacing.space5) {
                 PVComboBox(
                     selection: $model.assignPick,
@@ -368,7 +332,7 @@ struct SourceTypesDetailPane: View {
                     label: L10n.SourceTypes.assignFieldLabel,
                     accessibilityIdentifierPrefix: "sourceTypes.suggested.pool"
                 ) { option, query in
-                    poolRow(option, query: query)
+                    poolRow(option, query: query, dataTypes: dataTypes)
                 }
                 .disabled(model.assignPool.isEmpty || model.isAssigning)
                 PVIconButton(
@@ -393,7 +357,7 @@ struct SourceTypesDetailPane: View {
     /// The pool row: field label over its mono key, with the data type badge
     /// trailing. Label and key both carry the match highlight, so typing
     /// either one shows you why the row matched.
-    private func poolRow(_ option: PVComboBoxOption, query: String) -> some View {
+    private func poolRow(_ option: PVComboBoxOption, query: String, dataTypes: [String: String]) -> some View {
         HStack(spacing: PVSpacing.space5) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(PVComboBoxHighlight.attributed(option.label, query: query))
@@ -407,8 +371,8 @@ struct SourceTypesDetailPane: View {
                     .truncationMode(.middle)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if let field = model.assignPool.first(where: { $0.id == option.value }) {
-                SourceFieldDataTypeBadge(dataType: field.dataType)
+            if let dataType = dataTypes[option.value] {
+                SourceFieldDataTypeBadge(dataType: dataType)
             }
         }
     }

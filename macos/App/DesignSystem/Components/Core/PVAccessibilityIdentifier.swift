@@ -6,23 +6,11 @@ extension View {
     /// (`docs/macos-client-patterns.md` §5). Shared by `PVTable` and
     /// `PVComboBox`, both of which take an optional identifier (or prefix)
     /// from the feature that mounts them.
+    ///
+    /// An empty identifier is what every view has anyway, so `nil` maps to
+    /// `""` rather than branching — a conditional here would flip the view's
+    /// structural identity whenever an identifier appears or disappears.
     func pvAccessibilityIdentifier(_ identifier: String?) -> some View {
-        modifier(PVOptionalAccessibilityIdentifier(identifier))
-    }
-}
-
-private struct PVOptionalAccessibilityIdentifier: ViewModifier {
-    let identifier: String?
-
-    init(_ identifier: String?) {
-        self.identifier = identifier
-    }
-
-    func body(content: Content) -> some View {
-        if let identifier {
-            content.accessibilityIdentifier(identifier)
-        } else {
-            content
-        }
+        accessibilityIdentifier(identifier ?? "")
     }
 }

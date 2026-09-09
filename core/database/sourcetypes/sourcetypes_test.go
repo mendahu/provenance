@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/mendahu/provenencia/core/database"
+	"github.com/mendahu/provenencia/core/database/sourcefields"
 	"github.com/mendahu/provenencia/core/database/sources"
 	"github.com/mendahu/provenencia/core/database/users"
 	"github.com/mendahu/provenencia/core/ref"
@@ -311,6 +312,47 @@ func TestCreateUpdateGetByID(t *testing.T) {
 					byKey[tp.Key] = tp.UsedBy
 				}
 				if byKey["book"] != 2 || byKey["letter"] != 0 {
+					t.Fatalf("got %v", byKey)
+				}
+			},
+		},
+		{
+			name: "list counts the fields a type suggests",
+			run: func(t *testing.T, c *database.Catalog) {
+				typeID, err := Upsert(c, Type{Key: "book", Origin: OriginUser, Label: "Book"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := Upsert(c, Type{Key: "letter", Origin: OriginUser, Label: "Letter"}); err != nil {
+					t.Fatal(err)
+				}
+				fieldID, err := sourcefields.Upsert(c, sourcefields.Field{
+					Key: "author", Origin: sourcefields.OriginUser, Label: "Author", DataType: sourcefields.DataTypeText,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				// The join belongs to sourcevocab, which imports this
+				// package — insert the row directly to avoid the cycle.
+				db, err := c.DB()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := db.Exec(
+					`INSERT INTO source_type_metadata_fields (source_type_id, field_id, sort_order) VALUES (?, ?, 0)`,
+					typeID, fieldID,
+				); err != nil {
+					t.Fatal(err)
+				}
+				all, err := List(c)
+				if err != nil {
+					t.Fatal(err)
+				}
+				byKey := map[string]int{}
+				for _, tp := range all {
+					byKey[tp.Key] = tp.SuggestedFields
+				}
+				if byKey["book"] != 1 || byKey["letter"] != 0 {
 					t.Fatalf("got %v", byKey)
 				}
 			},

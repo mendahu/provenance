@@ -74,11 +74,9 @@ func UpdateSourceType(in []byte) ([]byte, error) {
 	if got.UsedBy, err = sourcetypes.UsedBy(c, typeID); err != nil {
 		return nil, err
 	}
-	suggested, err := sourcevocab.ListSuggestions(c, typeID)
-	if err != nil {
+	if got.SuggestedFields, err = sourcevocab.CountSuggestions(c, typeID); err != nil {
 		return nil, err
 	}
-	got.SuggestedFields = len(suggested)
 	return proto.Marshal(&engine.UpdateSourceTypeResponse{Type: sourceTypeProto(got)})
 }
 

@@ -15,7 +15,6 @@ import SwiftUI
 /// alike.
 struct SourceTypesView: View {
     @State private var model: SourceTypesModel
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Detail pane width — between the web board's `minmax(340px, 400px)`
     /// column and `PVSpacing.widthInspector` (340pt); no shared token covers
@@ -42,21 +41,7 @@ struct SourceTypesView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PVColor.surfacePage)
-        .overlay(alignment: .topTrailing) {
-            if let toast = model.toast {
-                PVToast(
-                    tone: toast.tone,
-                    title: toast.title,
-                    message: toast.body,
-                    onDismiss: { model.toast = nil }
-                )
-                .id(toast)
-                .padding(PVSpacing.space8)
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-                .accessibilityIdentifier("sourceTypes.toast")
-            }
-        }
-        .animation(reduceMotion ? nil : PVMotion.easeStandard, value: model.toast)
+        .vocabularyToastOverlay($model.toast, identifier: "sourceTypes.toast")
         .pvConfirmSheet(
             item: pendingDelete,
             copy: deleteCopy(for:),
@@ -102,32 +87,15 @@ struct SourceTypesView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .bottom, spacing: PVSpacing.space8) {
-            VStack(alignment: .leading, spacing: PVSpacing.space2) {
-                Text(L10n.Workspace.sourceTypesTitle)
-                    .font(PVFont.display(size: PVTypeScale.h1))
-                    .foregroundStyle(PVColor.textDisplay)
-                Text(L10n.SourceTypes.description)
-                    .font(PVFont.body(size: PVTypeScale.bodySmall))
-                    .foregroundStyle(PVColor.textMuted)
-                    .frame(maxWidth: PVSpacing.measureProse, alignment: .leading)
-            }
-            Spacer(minLength: PVSpacing.space6)
-            HStack(spacing: PVSpacing.space6) {
-                Text(model.countLine)
-                    .font(PVFont.mono(size: PVTypeScale.micro))
-                    .foregroundStyle(PVColor.textMuted)
-                    .accessibilityIdentifier("sourceTypes.countLine")
-                PVButton(L10n.SourceTypes.addType, variant: .primary, icon: .plus) {
-                    model.openAdd()
-                }
-                .disabled(model.isAdding)
-                .accessibilityIdentifier("sourceTypes.addType")
-            }
-        }
-        .padding(.horizontal, PVSpacing.gutterPage)
-        .padding(.top, PVSpacing.space8)
-        .padding(.bottom, PVSpacing.space6)
+        VocabularyHeader(
+            title: L10n.Workspace.sourceTypesTitle,
+            description: L10n.SourceTypes.description,
+            countLine: model.countLine,
+            addLabel: L10n.SourceTypes.addType,
+            isAddDisabled: model.isAdding,
+            identifierPrefix: "sourceTypes",
+            onAdd: { model.openAdd() }
+        )
     }
 }
 

@@ -58,9 +58,9 @@ struct SourceTypesModelTests {
         await model.load()
         #expect(model.types.count == 3)
         #expect(model.fields.count == 1)
-        #expect(model.seededCount == 1)
-        #expect(model.userCount == 1)
-        #expect(model.pluginCount == 1)
+        #expect(model.types.seededCount == 1)
+        #expect(model.types.userCount == 1)
+        #expect(model.types.pluginCount == 1)
     }
 
     @Test func searchFiltersByLabelKeyAndDescription() async {

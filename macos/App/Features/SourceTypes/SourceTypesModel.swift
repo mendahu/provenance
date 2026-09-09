@@ -18,26 +18,6 @@ final class SourceTypesModel {
         var description: String
     }
 
-    struct Toast: Equatable, Hashable {
-        var title: String
-        var body: String
-        /// Assign / add / update read as success; detaching a suggestion is
-        /// not a win, just a change, so it carries the informational tone.
-        var tone: PVToastTone
-    }
-
-    /// Detail-pane mode, mirroring `SourceFieldsModel.Mode`: illegal
-    /// combinations of "adding" plus "a row is selected" are unrepresentable.
-    /// `draft` is set for `.adding` / `.editing` (form bindings) and also for
-    /// `.viewing`, so tearing down `Binding($model.draft)` projections when
-    /// leaving the form does not trap.
-    enum Mode: Equatable {
-        case empty
-        case viewing(id: String)
-        case adding(resumeID: String?)
-        case editing(id: String)
-    }
-
     /// Column ids the list can sort by. They double as `PVTable` column ids.
     enum SortColumn: String {
         case label
@@ -56,7 +36,8 @@ final class SourceTypesModel {
     private(set) var sortColumn: SortColumn = .label
     private(set) var sortAscending = true
 
-    private(set) var mode: Mode = .empty
+    /// Detail-pane mode — see `VocabularyPaneMode` for the invariants.
+    private(set) var mode: VocabularyPaneMode = .empty
     /// Non-nil whenever a type is selected or the add form is open. Cleared
     /// only for `.empty`. Do not nil this while the edit/add form may still
     /// be in the hierarchy — `@Bindable` projections into an optional trap if
@@ -64,7 +45,7 @@ final class SourceTypesModel {
     var draft: Draft?
     private(set) var isSaving = false
     var formError: String?
-    var toast: Toast?
+    var toast: VocabularyToast?
 
     /// The selected type's suggestions, in the engine's `sort_order`.
     private(set) var suggestions: [CatalogTypeSuggestion] = []
@@ -103,9 +84,7 @@ final class SourceTypesModel {
     // MARK: Derived
 
     var visibleTypes: [CatalogSourceType] {
-        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let filtered = q.isEmpty ? types : types.filter { matches($0, query: q) }
-        return filtered.sorted { a, b in
+        types.matching(query).sorted { a, b in
             let order = compare(a, b)
             return sortAscending ? order == .orderedAscending : order == .orderedDescending
         }
@@ -219,17 +198,14 @@ final class SourceTypesModel {
         return types.first { $0.id == pendingDeleteID }
     }
 
-    var seededCount: Int { types.filter { $0.origin == CatalogOrigin.provenencia }.count }
-    var userCount: Int { types.filter { $0.origin == CatalogOrigin.user }.count }
-    var pluginCount: Int { types.filter { CatalogOrigin.isPlugin($0.origin) }.count }
-
     var countLine: String {
-        if pluginCount > 0 {
+        let (seeded, user, plugin) = (types.seededCount, types.userCount, types.pluginCount)
+        if plugin > 0 {
             return L10n.SourceTypes.countLineWithPlugin(
-                total: types.count, seeded: seededCount, user: userCount, plugin: pluginCount
+                total: types.count, seeded: seeded, user: user, plugin: plugin
             )
         }
-        return L10n.SourceTypes.countLine(total: types.count, seeded: seededCount, user: userCount)
+        return L10n.SourceTypes.countLine(total: types.count, seeded: seeded, user: user)
     }
 
     // MARK: Actions
@@ -328,7 +304,7 @@ final class SourceTypesModel {
                 // A new type suggests nothing yet (S2-03 T-15) — assigning
                 // happens on the detail the save lands you on.
                 suggestions = []
-                toast = Toast(
+                toast = VocabularyToast(
                     title: String(localized: L10n.SourceTypes.toastAddedTitle),
                     body: L10n.SourceTypes.toastAddedBody(label: created.label, key: created.key),
                     tone: .success
@@ -341,7 +317,7 @@ final class SourceTypesModel {
                 replace(updated)
                 mode = .editing(id: updated.id)
                 self.draft = Draft(label: updated.label, description: updated.description)
-                toast = Toast(
+                toast = VocabularyToast(
                     title: String(localized: L10n.SourceTypes.toastUpdatedTitle),
                     body: L10n.SourceTypes.toastUpdatedBody(label: updated.label, key: updated.key),
                     tone: .success
@@ -386,7 +362,7 @@ final class SourceTypesModel {
             )
             apply(updated, to: type.id)
             assignPick = ""
-            toast = Toast(
+            toast = VocabularyToast(
                 title: String(localized: L10n.SourceTypes.toastAssignedTitle),
                 body: L10n.SourceTypes.toastAssignedBody(field: field.label, type: type.label),
                 tone: .success
@@ -410,7 +386,7 @@ final class SourceTypesModel {
                 projectDir: projectDir, userID: userID, typeID: type.id, fieldID: fieldID
             )
             apply(updated, to: type.id)
-            toast = Toast(
+            toast = VocabularyToast(
                 title: String(localized: L10n.SourceTypes.toastRemovedTitle),
                 body: L10n.SourceTypes.toastRemovedBody(
                     field: field.label, type: type.label, valueCount: field.usedBy
@@ -454,7 +430,7 @@ final class SourceTypesModel {
             // in the same turn the form leaves the hierarchy races
             // `@Bindable` optional projections.
             mode = .empty
-            toast = Toast(
+            toast = VocabularyToast(
                 title: String(localized: L10n.SourceTypes.toastDeletedTitle),
                 body: L10n.SourceTypes.toastDeletedBody(label: type.label),
                 tone: .success
@@ -493,11 +469,5 @@ final class SourceTypesModel {
             }
             return a.suggestedFieldCount < b.suggestedFieldCount ? .orderedAscending : .orderedDescending
         }
-    }
-
-    private func matches(_ type: CatalogSourceType, query: String) -> Bool {
-        type.label.lowercased().contains(query)
-            || type.key.lowercased().contains(query)
-            || type.description.lowercased().contains(query)
     }
 }
