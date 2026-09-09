@@ -242,14 +242,23 @@ hairline top rule — because that band is *content*, not window chrome. The
 blur, corner radius, drop shadow. Anything inside the panel is still ours to
 style. (`swift/ProvenenciaConfirm.swift` omits the band; we restore it.)
 
-**Radii inside a confirmation are not ours either.** The sheet's rounded
-corners come from the sheet *window*, and the buttons are native
-`.borderedProminent` controls at `.controlSize(.large)`, so both are rounder
-than `--radius-md` / `--radius-sm` would be on the web. That is correct: the
-native controls are what earn the destructive-role tint, default-button
-behaviour and system focus ring. Only genuinely in-content shapes take
-Provenencia radii — `PVConfirmKeyChip` uses `PVRadius.xs`, matching the
-design's square treatment for citable values.
+**The sheet's corner radius is not ours; its buttons are.** The panel's
+rounded corners come from the sheet *window* — there is no supported API to
+change them, and redrawing the panel to get square corners means giving up
+`.sheet` entirely. Accept the window radius as platform chrome, the same
+category as the titlebar. The action-bar buttons, though, sit *inside* the
+panel in a band we already paint, so by the content rule above they take
+`.buttonStyle(.pv(…))` — `PVRadius.sm` corners, DS palette — not the system
+`.borderedProminent` pill. Nothing native is lost: shortcuts, focus, roles
+and disabled state live on `Button`, not the style, and the destructive
+tint was already `PVColor.danger` rather than the system role tint. (This
+reverses an earlier decision to keep native buttons in the sheet; the
+system *alert* form still draws its own buttons and stays fully native.)
+In-content shapes keep Provenencia radii as before — `PVConfirmKeyChip`
+uses `PVRadius.xs`, matching the design's square treatment for citable
+values. Because a custom `ButtonStyle` draws no focus indication of its
+own, `PVButtonStyle` shows `pvFocusRing` when focused, so the sheet's
+cancel-first focus stays visible to keyboard users.
 
 The copy rules travel in `PVConfirmCopy`: the title is a question naming the
 record ("Delete Photographer?", never "Are you sure?"), the message says what

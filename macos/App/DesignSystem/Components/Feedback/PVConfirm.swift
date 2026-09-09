@@ -68,7 +68,9 @@ enum PVConfirmTone {
 
     var buttonRole: ButtonRole? { self == .danger ? .destructive : nil }
 
-    var accent: Color { self == .danger ? PVColor.danger : PVColor.accent }
+    /// Confirm-button chrome in the sheet form, where the button is content
+    /// and takes design-system styling (the system alert keeps native buttons).
+    var buttonVariant: PVButtonVariant { self == .danger ? .danger : .primary }
 }
 
 // MARK: - System alert (preferred)
@@ -187,16 +189,24 @@ struct PVConfirmSheetContent<Detail: View>: View {
     /// owns (scrim, blur, corner radius, shadow); an internal action bar is
     /// content, the same as the divider above it, so it is ours to paint.
     /// `swift/ProvenenciaConfirm.swift` omits it; this restores it.
+    /// The buttons take design-system chrome (`.pv(…)`), not the system
+    /// `.borderedProminent` pill — they sit *inside* the panel, in a band this
+    /// view already paints, so they are content by the same rule as the
+    /// `surfaceSunken` fill above. Nothing native is lost by the swap: the
+    /// keyboard shortcuts, focus, roles and disabled state live on `Button`
+    /// itself, and the destructive tint was already ours (`PVColor.danger`).
+    /// Only the *window's* chrome — corner radius, shadow, slide-in — stays
+    /// system-drawn, and the plain `.pvConfirm` alert stays fully native.
     private var actionBar: some View {
         HStack(spacing: PVSpacing.space5) {
             Spacer(minLength: PVSpacing.space8)
             Button(String(localized: copy.cancel)) { onCancel() }
+                .buttonStyle(.pv(.secondary, size: .lg))
                 .keyboardShortcut(.cancelAction)
                 .disabled(isRunning)
                 .focused($cancelFocused)
             Button(String(localized: copy.confirm), role: tone.buttonRole) { onConfirm() }
-                .buttonStyle(.borderedProminent)
-                .tint(tone.accent)
+                .buttonStyle(.pv(tone.buttonVariant, size: .lg))
                 .disabled(isRunning)
                 .overlay(alignment: .trailing) {
                     if isRunning {
@@ -206,7 +216,6 @@ struct PVConfirmSheetContent<Detail: View>: View {
                     }
                 }
         }
-        .controlSize(.large)
         .padding(.horizontal, PVSpacing.space8)
         .padding(.vertical, PVSpacing.space6)
         .frame(maxWidth: .infinity)

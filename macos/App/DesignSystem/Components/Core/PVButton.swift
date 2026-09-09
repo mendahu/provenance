@@ -162,6 +162,13 @@ private struct PVButtonBody: View {
     let variant: PVButtonVariant
     let size: PVControlSize
 
+    /// Keyboard focus on the button this style is rendering. Unlike the
+    /// system bordered styles, a custom `ButtonStyle` draws no focus
+    /// indication of its own, so without this a focused `.pv` button is
+    /// invisible to keyboard users (e.g. `PVConfirmSheetContent`, which
+    /// starts focus on its cancel button).
+    @Environment(\.isFocused) private var isFocused
+
     var body: some View {
         let palette = PVButtonPalette.palette(for: variant)
 
@@ -191,6 +198,11 @@ private struct PVButtonBody: View {
                         RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
                             .stroke(showHover ? (palette.hoverBorder ?? palette.border) : palette.border, lineWidth: 1)
                     )
+                    // Always applied; focus only changes opacity — never wrap
+                    // this in `if isFocused` (README § "Interaction state").
+                    // `link` skips it: a 3pt inner ring on bare underlined
+                    // text would sit on the glyphs.
+                    .pvFocusRing(isFocused, cornerRadius: PVRadius.sm)
             }
         }
     }
