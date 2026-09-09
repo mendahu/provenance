@@ -54,12 +54,12 @@ struct SourceFieldsView: View {
         }
         .animation(reduceMotion ? nil : PVMotion.easeStandard, value: model.toast)
         .pvConfirmSheet(
-            isPresented: isConfirmingDelete,
-            copy: deleteCopy,
+            item: pendingDelete,
+            copy: deleteCopy(for:),
             isRunning: model.isDeleting,
             onConfirm: { Task { await model.confirmDelete() } }
-        ) {
-            deleteDetail
+        ) { field in
+            deleteDetail(for: field)
         }
         .task { await model.load() }
         .accessibilityIdentifier("sourceFields")
@@ -67,17 +67,19 @@ struct SourceFieldsView: View {
 
     /// Dismissal is driven by the model, not by the sheet: a successful delete
     /// clears `pendingDeleteID`, and a failed one keeps the sheet up with the
-    /// reason (see `pvConfirmSheet`).
-    private var isConfirmingDelete: Binding<Bool> {
+    /// reason (see `pvConfirmSheet`). The sheet renders its copy and detail
+    /// from the field it receives — a snapshot `pvConfirmSheet` holds through
+    /// the dismiss animation — never from `model.pendingDeleteField` live.
+    private var pendingDelete: Binding<CatalogMetadataField?> {
         Binding(
-            get: { model.pendingDeleteField != nil },
-            set: { if !$0 { model.cancelDelete() } }
+            get: { model.pendingDeleteField },
+            set: { if $0 == nil { model.cancelDelete() } }
         )
     }
 
-    private var deleteCopy: PVConfirmCopy {
+    private func deleteCopy(for field: CatalogMetadataField) -> PVConfirmCopy {
         PVConfirmCopy(
-            title: L10n.SourceFields.deleteConfirmTitle(label: model.pendingDeleteField?.label ?? ""),
+            title: L10n.SourceFields.deleteConfirmTitle(label: field.label),
             message: String(localized: L10n.SourceFields.deleteConfirmMessage),
             confirm: L10n.SourceFields.deleteField,
             cancel: L10n.SourceFields.deleteKeep
@@ -87,11 +89,9 @@ struct SourceFieldsView: View {
     /// The consequence that earns this a sheet rather than a plain alert: the
     /// mono-set key the delete releases, plus the reason if it failed.
     @ViewBuilder
-    private var deleteDetail: some View {
-        if let field = model.pendingDeleteField {
-            PVConfirmKeyChip(label: L10n.SourceFields.deleteKeyReleased, value: field.key)
-                .accessibilityIdentifier("sourceFields.delete.key")
-        }
+    private func deleteDetail(for field: CatalogMetadataField) -> some View {
+        PVConfirmKeyChip(label: L10n.SourceFields.deleteKeyReleased, value: field.key)
+            .accessibilityIdentifier("sourceFields.delete.key")
         if let deleteError = model.deleteError {
             PVCallout(tone: .danger, message: deleteError)
         }

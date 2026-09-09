@@ -25,7 +25,7 @@ import SwiftUI
 ///    alert. The default: Apple's own pattern, fully system-drawn, and it
 ///    inherits keyboard, VoiceOver and Reduce Motion behaviour for free.
 ///    Message copy is plain text only.
-/// 2. ``SwiftUI/View/pvConfirmSheet(isPresented:copy:tone:isRunning:onConfirm:detail:)``
+/// 2. ``SwiftUI/View/pvConfirmSheet(item:copy:tone:isRunning:onConfirm:detail:)``
 ///    — a sheet, for when the consequence needs rich content (a mono-set key,
 ///    a list of affected records). Chrome still belongs to the window; this
 ///    only lays out content and the button row.
@@ -102,7 +102,7 @@ extension View {
     /// Native confirmation alert. Escape and Return both cancel; the confirm
     /// button carries the destructive role so the system tints it.
     ///
-    /// Prefer this over ``pvConfirmSheet(isPresented:copy:tone:isRunning:onConfirm:detail:)``
+    /// Prefer this over ``pvConfirmSheet(item:copy:tone:isRunning:onConfirm:detail:)``
     /// unless the consequence genuinely needs formatted content.
     func pvConfirm(
         isPresented: Binding<Bool>,
@@ -162,7 +162,7 @@ struct PVConfirmSheetContent<Detail: View>: View {
     }
 
     private var message: some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space6) {
+        VStack(alignment: .leading, spacing: PVSpacing.space7) {
             // Alerts are centred; a sheet carrying body copy reads better
             // leading-aligned.
             Text(copy.title)
@@ -180,7 +180,7 @@ struct PVConfirmSheetContent<Detail: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, PVSpacing.space7)
-        .padding(.vertical, PVSpacing.space8)
+        .padding(.vertical, PVSpacing.space9)
     }
 
     /// `Dialog.jsx` sets its footer on `--surface-sunken` with a hairline top
@@ -218,7 +218,7 @@ struct PVConfirmSheetContent<Detail: View>: View {
                 }
         }
         .padding(.horizontal, PVSpacing.space8)
-        .padding(.vertical, PVSpacing.space7)
+        .padding(.vertical, PVSpacing.space8)
         .frame(maxWidth: .infinity)
         .background(PVColor.surfaceSunken)
         .overlay(alignment: .top) {
@@ -228,31 +228,41 @@ struct PVConfirmSheetContent<Detail: View>: View {
 }
 
 extension View {
-    /// Sheet-based confirmation for rich consequence copy. `detail` renders
-    /// under the message — a mono-set key, an affected-record list.
+    /// Sheet-based confirmation for rich consequence copy, keyed to the
+    /// record it names. `copy` and `detail` render under the title — a
+    /// mono-set key, an affected-record list — and both receive the record
+    /// as a snapshot.
+    ///
+    /// **Why `item:` and not `isPresented: Bool`:** a confirmation's copy
+    /// names a record held by a model, and dismissing clears that model
+    /// state. With a `Bool` binding the content closures read the model
+    /// *live*, so the name and detail blank out the moment the state clears —
+    /// a visible flash while the window is still animating away.
+    /// `.sheet(item:)` hands the closures the last non-nil record, so the
+    /// sheet slides out still showing what it named.
     ///
     /// **Deviation from `swift/ProvenenciaConfirm.swift`:** the reference
-    /// clears `isPresented` before invoking `onConfirm`, which would close the
-    /// sheet the instant a confirm starts — leaving its own `isRunning` spinner
-    /// and any failure with nowhere to show. Dismissal is left to the caller's
-    /// binding instead, so an async action can stay on screen while it runs and
-    /// report an error in `detail` if it fails.
-    func pvConfirmSheet<Detail: View>(
-        isPresented: Binding<Bool>,
-        copy: PVConfirmCopy,
+    /// clears its presentation state before invoking `onConfirm`, which would
+    /// close the sheet the instant a confirm starts — leaving its own
+    /// `isRunning` spinner and any failure with nowhere to show. Dismissal is
+    /// left to the caller's binding instead, so an async action can stay on
+    /// screen while it runs and report an error in `detail` if it fails.
+    func pvConfirmSheet<Item: Identifiable, Detail: View>(
+        item: Binding<Item?>,
+        copy: @escaping (Item) -> PVConfirmCopy,
         tone: PVConfirmTone = .danger,
         isRunning: Bool = false,
         onConfirm: @escaping () -> Void,
-        @ViewBuilder detail: @escaping () -> Detail
+        @ViewBuilder detail: @escaping (Item) -> Detail
     ) -> some View {
-        sheet(isPresented: isPresented) {
+        sheet(item: item) { value in
             PVConfirmSheetContent(
-                copy: copy,
+                copy: copy(value),
                 tone: tone,
                 isRunning: isRunning,
                 onConfirm: onConfirm,
-                onCancel: { isPresented.wrappedValue = false },
-                detail: detail
+                onCancel: { item.wrappedValue = nil },
+                detail: { detail(value) }
             )
         }
     }

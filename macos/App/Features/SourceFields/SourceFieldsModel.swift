@@ -226,7 +226,9 @@ final class SourceFieldsModel {
     func cancelDelete() {
         guard !isDeleting else { return }
         pendingDeleteID = nil
-        deleteError = nil
+        // `deleteError` is deliberately left in place: the sheet is still
+        // animating out and reads it live, so nilling it here blanks the
+        // error callout mid-dismissal. `askDelete` resets it anyway.
     }
 
     func confirmDelete() async {

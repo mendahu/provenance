@@ -234,7 +234,7 @@ rules** across without its chrome, and offers the two right answers:
 | Modifier | Use |
 |---|---|
 | `.pvConfirm(isPresented:copy:tone:onConfirm:)` | **The default.** A system alert — Apple's own pattern, fully system-drawn, inherits keyboard, VoiceOver and Reduce Motion for free. Plain-text message only. |
-| `.pvConfirmSheet(isPresented:copy:tone:isRunning:onConfirm:detail:)` | When the consequence needs rich content — a mono-set key (`PVConfirmKeyChip`), a list of affected records. Chrome still belongs to the window; only content and the button row are ours. |
+| `.pvConfirmSheet(item:copy:tone:isRunning:onConfirm:detail:)` | When the consequence needs rich content — a mono-set key (`PVConfirmKeyChip`), a list of affected records. Chrome still belongs to the window; only content and the button row are ours. Keyed to the record it names (`item:`, not an `isPresented` Bool) so the copy and detail render from a snapshot and the sheet animates out still showing them, rather than blanking the instant the model clears. |
 
 The action bar keeps `Dialog.jsx`'s footer treatment — `surfaceSunken` with a
 hairline top rule — because that band is *content*, not window chrome. The
