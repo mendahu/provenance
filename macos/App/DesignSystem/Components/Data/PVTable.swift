@@ -252,7 +252,7 @@ struct PVTable<Row: Identifiable, Content: View>: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel(Text(column.title))
                             .accessibilityValue(Text(sortAccessibilityValue(column)))
-                            .modifier(PVTableIdentifier(sortAccessibilityIdentifier?(column.id)))
+                            .pvAccessibilityIdentifier(sortAccessibilityIdentifier?(column.id))
                     } else {
                         headerLabel(column)
                     }
@@ -361,7 +361,7 @@ struct PVTable<Row: Identifiable, Content: View>: View {
         .onTapGesture { selection = row.id }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .modifier(PVTableIdentifier(rowAccessibilityIdentifier?(row)))
+        .pvAccessibilityIdentifier(rowAccessibilityIdentifier?(row))
     }
 
     private func rowBackground(isSelected: Bool, showHover: Bool) -> Color {
@@ -418,24 +418,6 @@ struct PVTable<Row: Identifiable, Content: View>: View {
             let hit = PVTableTypeSelectMatcher.index(in: rows.map(primaryText), prefix: buffer, fromIndex: from)
             if hit >= 0 { select(at: hit) }
             return .handled
-        }
-    }
-}
-
-/// Applies an `.accessibilityIdentifier` only when the call site supplied one
-/// — components do not invent their own (`docs/macos-client-patterns.md` §5).
-private struct PVTableIdentifier: ViewModifier {
-    let identifier: String?
-
-    init(_ identifier: String?) {
-        self.identifier = identifier
-    }
-
-    func body(content: Content) -> some View {
-        if let identifier {
-            content.accessibilityIdentifier(identifier)
-        } else {
-            content
         }
     }
 }

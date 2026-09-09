@@ -395,6 +395,36 @@ enum L10n {
 
     /// The **Source fields** workspace destination (S2-15): browse, search,
     /// and create/edit the project's `source_metadata_fields` vocabulary.
+    /// Origin markers shared by every catalog vocabulary destination —
+    /// `OriginBadge` on a detail panel, `OriginPill` inline in a list.
+    enum Origin {
+        static let provenencia = LocalizedStringResource(
+            "origin.badge.provenencia",
+            defaultValue: "provenencia",
+            comment: "Origin badge for a vocabulary row seeded by Provenencia"
+        )
+
+        static let user = LocalizedStringResource(
+            "origin.badge.user",
+            defaultValue: "you",
+            comment: "Origin badge for a vocabulary row the researcher added"
+        )
+
+        static let seededPill = LocalizedStringResource(
+            "origin.pill.seeded",
+            defaultValue: "Seeded by Provenencia",
+            comment: "Accessibility label and tooltip for the pill marking a Provenencia-seeded row in a vocabulary list"
+        )
+
+        static func pluginPill(pluginID: String) -> LocalizedStringResource {
+            LocalizedStringResource(
+                "origin.pill.plugin",
+                defaultValue: "Supplied by the \(pluginID) plugin",
+                comment: "Accessibility label and tooltip for the pill marking a plugin-owned row in a vocabulary list; argument is the plugin id"
+            )
+        }
+    }
+
     enum SourceFields {
         static let description = LocalizedStringResource(
             "sourceFields.list.description",
@@ -466,24 +496,6 @@ enum L10n {
             "sourceFields.dataType.date",
             defaultValue: "date",
             comment: "Source field data type badge/option: date"
-        )
-
-        static let originSeeded = LocalizedStringResource(
-            "sourceFields.origin.seeded",
-            defaultValue: "provenencia",
-            comment: "Origin badge for a field seeded by Provenencia"
-        )
-
-        static let originUser = LocalizedStringResource(
-            "sourceFields.origin.user",
-            defaultValue: "you",
-            comment: "Origin badge for a field the researcher added"
-        )
-
-        static let seededPill = LocalizedStringResource(
-            "sourceFields.list.seededPill",
-            defaultValue: "Seeded by Provenencia",
-            comment: "Accessibility label and tooltip for the pill marking a Provenencia-seeded field in the list"
         )
 
         static let deleteField = LocalizedStringResource(
@@ -781,6 +793,527 @@ enum L10n {
     }
 
     /// Maps stable Go/FFI error codes to localized user-facing copy.
+    enum SourceTypes {
+        static let description = LocalizedStringResource(
+            "sourceTypes.list.description",
+            defaultValue: "The kinds of record this project cites, and the fields each kind usually carries. The fields are suggestions — a source of this type may leave any of them blank.",
+            comment: "Explanatory copy under the Source types page title"
+        )
+
+        static func countLine(total: Int, seeded: Int, user: Int) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.list.countLine",
+                defaultValue: "%lld types · %lld seeded · %lld yours",
+                comment: "Source types count summary; arguments are total, seeded (provenencia), and user type counts"
+            ))
+            return String(format: format, locale: .current, total, seeded, user)
+        }
+
+        static func countLineWithPlugin(total: Int, seeded: Int, user: Int, plugin: Int) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.list.countLineWithPlugin",
+                defaultValue: "%lld types · %lld seeded · %lld yours · %lld plugin",
+                comment: "Source types count summary including plugin-origin types; arguments are total, seeded, user, and plugin type counts"
+            ))
+            return String(format: format, locale: .current, total, seeded, user, plugin)
+        }
+
+        static let addType = LocalizedStringResource(
+            "sourceTypes.list.addType",
+            defaultValue: "Add type",
+            comment: "Button: add a new Source type (toolbar, empty state, and add-form submit)"
+        )
+
+        static let searchPlaceholder = LocalizedStringResource(
+            "sourceTypes.list.searchPlaceholder",
+            defaultValue: "Search types — label, key, or description",
+            comment: "Placeholder for the Source types search input"
+        )
+
+        static let clearSearch = LocalizedStringResource(
+            "sourceTypes.list.clearSearch",
+            defaultValue: "Clear search",
+            comment: "Button that clears the Source types search query"
+        )
+
+        static let columnLabel = LocalizedStringResource(
+            "sourceTypes.list.columnLabel",
+            defaultValue: "Label",
+            comment: "Source types list column header: label"
+        )
+
+        static let columnKey = LocalizedStringResource(
+            "sourceTypes.list.columnKey",
+            defaultValue: "Key",
+            comment: "Source types list column header: key"
+        )
+
+        static let columnFields = LocalizedStringResource(
+            "sourceTypes.list.columnFields",
+            defaultValue: "Associated fields",
+            comment: "Source types list column header: how many metadata fields the type suggests"
+        )
+
+        static let fieldCountNone = LocalizedStringResource(
+            "sourceTypes.list.fieldCountNone",
+            defaultValue: "—",
+            comment: "Shown in the associated-fields column when a type suggests no fields"
+        )
+
+        static func resultLine(shown: Int, total: Int) -> String {
+            if shown == total {
+                let format = String(localized: LocalizedStringResource(
+                    "sourceTypes.list.resultLineAll",
+                    defaultValue: "%lld types",
+                    comment: "Footer result count when no search narrows the Source types list; argument is the total"
+                ))
+                return String(format: format, locale: .current, total)
+            }
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.list.resultLineFiltered",
+                defaultValue: "%lld of %lld types shown",
+                comment: "Footer result count when search narrows the Source types list; arguments are shown then total"
+            ))
+            return String(format: format, locale: .current, shown, total)
+        }
+
+        static let emptyProjectTitle = LocalizedStringResource(
+            "sourceTypes.emptyProject.title",
+            defaultValue: "No source types yet",
+            comment: "Title of the empty state when the project has zero source types"
+        )
+
+        static let emptyProjectBody = LocalizedStringResource(
+            "sourceTypes.emptyProject.body",
+            defaultValue: "This project has no record classes to cite against. Add the kinds of record you actually hold — a parish register, a scrapbook, a headstone photograph.",
+            comment: "Body of the empty state when the project has zero source types"
+        )
+
+        static let noMatchTitle = LocalizedStringResource(
+            "sourceTypes.noMatch.title",
+            defaultValue: "No type matches",
+            comment: "Title of the empty state when a search finds no types"
+        )
+
+        static func noMatchBody(query: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.noMatch.body",
+                defaultValue: "Nothing in this project’s vocabulary matches “%@”. Clear the search, or add the type.",
+                comment: "Body of the no-match empty state; argument is the search query"
+            ))
+            return String(format: format, locale: .current, query)
+        }
+
+        static let detailEyebrowType = LocalizedStringResource(
+            "sourceTypes.detail.eyebrowType",
+            defaultValue: "Source type",
+            comment: "Eyebrow label above an existing type's detail panel"
+        )
+
+        static let detailEyebrowNewType = LocalizedStringResource(
+            "sourceTypes.detail.eyebrowNewType",
+            defaultValue: "New type",
+            comment: "Eyebrow label above the add-type panel"
+        )
+
+        static let keyHintAdd = LocalizedStringResource(
+            "sourceTypes.detail.keyHintAdd",
+            defaultValue: "Provenencia mints the key from the label when the type is added",
+            comment: "Hint under the live key preview while adding a type"
+        )
+
+        static let keyHintEdit = LocalizedStringResource(
+            "sourceTypes.detail.keyHintEdit",
+            defaultValue: "The key is minted once from the label and never changes — renaming the type keeps existing sources attached",
+            comment: "Hint under the key on an existing type's detail panel"
+        )
+
+        static func usage(count: Int) -> LocalizedStringResource {
+            switch count {
+            case 0: usageNone
+            case 1: usageOne
+            default: usageOther(count: count)
+            }
+        }
+
+        private static let usageNone = LocalizedStringResource(
+            "sourceTypes.detail.usageNone",
+            defaultValue: "no sources yet",
+            comment: "Line under a type's title when no source is classified as it"
+        )
+
+        private static let usageOne = LocalizedStringResource(
+            "sourceTypes.detail.usageOne",
+            defaultValue: "in use on 1 source",
+            comment: "Line under a type's title when exactly one source is classified as it"
+        )
+
+        private static func usageOther(count: Int) -> LocalizedStringResource {
+            LocalizedStringResource(
+                "sourceTypes.detail.usageOther",
+                defaultValue: "in use on \(count) sources",
+                comment: "Line under a type's title; argument is how many sources are classified as it"
+            )
+        }
+
+        static let panelEmptyTitle = LocalizedStringResource(
+            "sourceTypes.detail.panelEmptyTitle",
+            defaultValue: "No type selected",
+            comment: "Title of the empty state shown in the detail panel before any type is selected"
+        )
+
+        static let panelEmptyBody = LocalizedStringResource(
+            "sourceTypes.detail.panelEmptyBody",
+            defaultValue: "Select a type to read its description and the fields it suggests. Types seeded by Provenencia are yours to edit; only plugin-owned types are fixed.",
+            comment: "Body of the empty state shown in the detail panel before any type is selected"
+        )
+
+        static func lockedNotePlugin(pluginID: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.detail.lockedNotePlugin",
+                defaultValue: "Supplied by the %@ plugin. The plugin owns this type, its description and the fields it suggests — Provenencia will not edit or delete them.",
+                comment: "Callout explaining why a plugin-origin type can't be edited; argument is the plugin id"
+            ))
+            return String(format: format, locale: .current, pluginID)
+        }
+
+        static let descriptionSectionLabel = LocalizedStringResource(
+            "sourceTypes.detail.descriptionSectionLabel",
+            defaultValue: "Description",
+            comment: "Section label above the read-only description on a locked type's detail"
+        )
+
+        static let descriptionEmptyPlaceholder = LocalizedStringResource(
+            "sourceTypes.detail.descriptionEmptyPlaceholder",
+            defaultValue: "—",
+            comment: "Shown in place of a locked type's description when it has none"
+        )
+
+        static let formLabel = LocalizedStringResource(
+            "sourceTypes.form.label",
+            defaultValue: "Label",
+            comment: "Add/edit form field: label"
+        )
+
+        static let formLabelPlaceholder = LocalizedStringResource(
+            "sourceTypes.form.labelPlaceholder",
+            defaultValue: "Parish register",
+            comment: "Placeholder text for the add-type label input"
+        )
+
+        static let formDescription = LocalizedStringResource(
+            "sourceTypes.form.description",
+            defaultValue: "Description",
+            comment: "Add/edit form field: description"
+        )
+
+        static let formDescriptionHint = LocalizedStringResource(
+            "sourceTypes.form.descriptionHint",
+            defaultValue: "What kind of record belongs to this type, in your own words",
+            comment: "Hint under the description field"
+        )
+
+        static let formDescriptionPlaceholder = LocalizedStringResource(
+            "sourceTypes.form.descriptionPlaceholder",
+            defaultValue: "A bound register of baptisms, marriages or burials kept by a parish",
+            comment: "Placeholder text for the add-type description input"
+        )
+
+        static let errorLabelRequired = LocalizedStringResource(
+            "sourceTypes.form.errorLabelRequired",
+            defaultValue: "A label is required — it is how the type reads on a source.",
+            comment: "Inline validation error when the label is blank"
+        )
+
+        static let errorUnslugifiable = LocalizedStringResource(
+            "sourceTypes.form.errorUnslugifiable",
+            defaultValue: "That label cannot be turned into a key. Use at least one letter or number.",
+            comment: "Inline validation error when the label has no letters or digits to slug"
+        )
+
+        static let saveSaving = LocalizedStringResource(
+            "sourceTypes.form.saveSaving",
+            defaultValue: "Saving",
+            comment: "Primary button label while a Source type add/edit is in flight"
+        )
+
+        static let saveChanges = LocalizedStringResource(
+            "sourceTypes.form.saveChanges",
+            defaultValue: "Save changes",
+            comment: "Primary button label for committing an edit to an existing type"
+        )
+
+        static let cancel = LocalizedStringResource(
+            "sourceTypes.form.cancel",
+            defaultValue: "Cancel",
+            comment: "Secondary button label that dismisses the add-type form"
+        )
+
+        static let revert = LocalizedStringResource(
+            "sourceTypes.form.revert",
+            defaultValue: "Revert",
+            comment: "Secondary button label that discards unsaved edits to an existing type"
+        )
+
+        static let addSuggestionsNote = LocalizedStringResource(
+            "sourceTypes.form.addSuggestionsNote",
+            defaultValue: "Suggested fields are assigned after the type is saved.",
+            comment: "Callout in the add-type form explaining that associations come later"
+        )
+
+        static let suggestedSectionLabel = LocalizedStringResource(
+            "sourceTypes.suggested.sectionLabel",
+            defaultValue: "Suggested fields",
+            comment: "Section label above the fields a type suggests"
+        )
+
+        static let suggestedHint = LocalizedStringResource(
+            "sourceTypes.suggested.hint",
+            defaultValue: "Suggestions, not a schema — a source of this type may leave any of them blank",
+            comment: "Hint under the suggested fields section label"
+        )
+
+        static func assignedCount(count: Int) -> LocalizedStringResource {
+            count == 1 ? assignedCountOne : assignedCountOther(count: count)
+        }
+
+        private static let assignedCountOne = LocalizedStringResource(
+            "sourceTypes.suggested.countOne",
+            defaultValue: "1 field",
+            comment: "Count beside the suggested fields section label when the type suggests exactly one field"
+        )
+
+        private static func assignedCountOther(count: Int) -> LocalizedStringResource {
+            LocalizedStringResource(
+                "sourceTypes.suggested.countOther",
+                defaultValue: "\(count) fields",
+                comment: "Count beside the suggested fields section label; argument is how many fields the type suggests"
+            )
+        }
+
+        static let noAssignedBody = LocalizedStringResource(
+            "sourceTypes.suggested.noneBody",
+            defaultValue: "No suggested fields yet — a source of this type will offer nothing but the standard citation. Assign the fields these records usually carry.",
+            comment: "Body of the panel shown when a type suggests no fields yet"
+        )
+
+        static let assignPlaceholder = LocalizedStringResource(
+            "sourceTypes.suggested.assignPlaceholder",
+            defaultValue: "Field label or key",
+            comment: "Placeholder in the assign-field combo box, naming both things it searches"
+        )
+
+        static let assignNoMatch = LocalizedStringResource(
+            "sourceTypes.suggested.assignNoMatch",
+            defaultValue: "No field in the vocabulary matches that — add it in Source fields first",
+            comment: "Shown inside the assign-field combo box list when the typed query matches no field"
+        )
+
+        static let assignFieldLabel = LocalizedStringResource(
+            "sourceTypes.suggested.assignFieldLabel",
+            defaultValue: "Source field to assign",
+            comment: "Accessibility label for the assign-field combo box"
+        )
+
+        static let assignField = LocalizedStringResource(
+            "sourceTypes.suggested.assignField",
+            defaultValue: "Assign field",
+            comment: "Spoken label for the assign button when no field is picked yet"
+        )
+
+        static func assignFieldNamed(field: String, type: String) -> LocalizedStringResource {
+            LocalizedStringResource(
+                "sourceTypes.suggested.assignFieldNamed",
+                defaultValue: "Assign field \(field) to \(type)",
+                comment: "Spoken label for the assign button; arguments are the picked field label then the type label"
+            )
+        }
+
+        static let assignTipPoolEmpty = LocalizedStringResource(
+            "sourceTypes.suggested.assignTipPoolEmpty",
+            defaultValue: "Every field is already assigned",
+            comment: "Tooltip on the disabled assign button when the type already suggests the whole vocabulary"
+        )
+
+        static let assignTipChoose = LocalizedStringResource(
+            "sourceTypes.suggested.assignTipChoose",
+            defaultValue: "Choose a field to assign",
+            comment: "Tooltip on the disabled assign button before a field is picked"
+        )
+
+        static func assignTipField(label: String) -> LocalizedStringResource {
+            LocalizedStringResource(
+                "sourceTypes.suggested.assignTipField",
+                defaultValue: "Assign \(label) to this type",
+                comment: "Tooltip on the enabled assign button; argument is the picked field label"
+            )
+        }
+
+        static let poolHint = LocalizedStringResource(
+            "sourceTypes.suggested.poolHint",
+            defaultValue: "The pool is the Source fields vocabulary — add a new field there first if it is missing",
+            comment: "Hint under the assign-field picker naming where the pool comes from"
+        )
+
+        static let poolHintEmpty = LocalizedStringResource(
+            "sourceTypes.suggested.poolHintEmpty",
+            defaultValue: "Every field in the vocabulary is already suggested for this type",
+            comment: "Hint under the assign-field picker when nothing is left to assign"
+        )
+
+        static func removeSuggestion(label: String) -> LocalizedStringResource {
+            LocalizedStringResource(
+                "sourceTypes.suggested.remove",
+                defaultValue: "Remove \(label) from this type",
+                comment: "Accessibility label and tooltip on the control that detaches one suggested field; argument is the field label"
+            )
+        }
+
+        static let toastAssignedTitle = LocalizedStringResource(
+            "sourceTypes.toast.assignedTitle",
+            defaultValue: "Field assigned",
+            comment: "Toast title after attaching a field to a type"
+        )
+
+        static func toastAssignedBody(field: String, type: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.toast.assignedBody",
+                defaultValue: "%1$@ is now suggested for %2$@.",
+                comment: "Toast body after attaching a field to a type; arguments are the field label then the type label"
+            ))
+            return String(format: format, locale: .current, field, type)
+        }
+
+        static let toastRemovedTitle = LocalizedStringResource(
+            "sourceTypes.toast.removedTitle",
+            defaultValue: "Suggestion removed",
+            comment: "Toast title after detaching a field from a type"
+        )
+
+        /// The reassurance that carries T-20: detaching the join deletes
+        /// neither the field nor the values sources already hold for it.
+        static func toastRemovedBody(field: String, type: String, valueCount: Int) -> String {
+            if valueCount == 0 {
+                return String(format: String(localized: removedBodyNoValues), locale: .current, field, type)
+            }
+            return String(format: String(localized: removedBodyWithValues), locale: .current, field, type, valueCount)
+        }
+
+        private static let removedBodyNoValues = LocalizedStringResource(
+            "sourceTypes.toast.removedBodyNoValues",
+            defaultValue: "%1$@ is no longer suggested for %2$@. The field stays in this project’s vocabulary.",
+            comment: "Toast body after detaching a field no source carries a value for; arguments are the field label then the type label"
+        )
+
+        private static let removedBodyWithValues = LocalizedStringResource(
+            "sourceTypes.toast.removedBodyWithValues",
+            defaultValue: "%1$@ is no longer suggested for %2$@. The field stays in this project’s vocabulary, and the %3$lld sources already carrying a value keep it.",
+            comment: "Toast body after detaching a field sources still carry values for; arguments are the field label, the type label, then how many sources hold a value"
+        )
+
+        static let toastAddedTitle = LocalizedStringResource(
+            "sourceTypes.toast.addedTitle",
+            defaultValue: "Type added",
+            comment: "Success toast title after creating a Source type"
+        )
+
+        static func toastAddedBody(label: String, key: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.toast.addedBody",
+                defaultValue: "%1$@ is in this project’s vocabulary as %2$@. Assign the fields it should suggest.",
+                comment: "Success toast body after creating a Source type; arguments are label then minted key"
+            ))
+            return String(format: format, locale: .current, label, key)
+        }
+
+        static let toastUpdatedTitle = LocalizedStringResource(
+            "sourceTypes.toast.updatedTitle",
+            defaultValue: "Type updated",
+            comment: "Success toast title after editing a Source type"
+        )
+
+        static func toastUpdatedBody(label: String, key: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.toast.updatedBody",
+                defaultValue: "%1$@ — the key stays %2$@.",
+                comment: "Success toast body after editing a Source type; arguments are label then key"
+            ))
+            return String(format: format, locale: .current, label, key)
+        }
+
+        static let deleteType = LocalizedStringResource(
+            "sourceTypes.delete.action",
+            defaultValue: "Delete type",
+            comment: "Delete button in the Source types detail pane, and the confirm dialog's destructive button"
+        )
+
+        static let deleteOwnedByPlugin = LocalizedStringResource(
+            "sourceTypes.delete.ownedByPlugin",
+            defaultValue: "Owned by the plugin",
+            comment: "Tooltip on the disabled delete button when the selected type comes from a plugin"
+        )
+
+        static func deleteInUse(count: Int) -> LocalizedStringResource {
+            count == 1 ? deleteInUseOne : deleteInUseOther(count: count)
+        }
+
+        private static let deleteInUseOne = LocalizedStringResource(
+            "sourceTypes.delete.inUseOne",
+            defaultValue: "In use on 1 source",
+            comment: "Tooltip on the disabled delete button when exactly one source is classified as the type"
+        )
+
+        private static func deleteInUseOther(count: Int) -> LocalizedStringResource {
+            LocalizedStringResource(
+                "sourceTypes.delete.inUseOther",
+                defaultValue: "In use on \(count) sources",
+                comment: "Tooltip on the disabled delete button; argument is how many sources are classified as the type"
+            )
+        }
+
+        static func deleteConfirmTitle(label: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.delete.confirmTitle",
+                defaultValue: "Delete %@?",
+                comment: "Title of the delete-type confirmation dialog; argument is the type label"
+            ))
+            return String(format: format, locale: .current, label)
+        }
+
+        static let deleteConfirmMessage = LocalizedStringResource(
+            "sourceTypes.delete.confirmMessage",
+            defaultValue: "No source in this project is classified as this type, so no citation loses its class. The field suggestions attached to it go with it; the fields themselves stay in the vocabulary.",
+            comment: "Message of the delete-type confirmation sheet: what does and does not cascade"
+        )
+
+        static let deleteKeyReleased = LocalizedStringResource(
+            "sourceTypes.delete.keyReleased",
+            defaultValue: "Key released",
+            comment: "Micro-caps label beside the key a type delete releases, in the confirmation sheet"
+        )
+
+        static let deleteKeep = LocalizedStringResource(
+            "sourceTypes.delete.keep",
+            defaultValue: "Keep type",
+            comment: "Button that closes the delete-type confirmation without deleting"
+        )
+
+        static let toastDeletedTitle = LocalizedStringResource(
+            "sourceTypes.toast.deletedTitle",
+            defaultValue: "Type deleted",
+            comment: "Toast title after a source type is deleted"
+        )
+
+        static func toastDeletedBody(label: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceTypes.toast.deletedBody",
+                defaultValue: "%@ is no longer in this project’s vocabulary. Its field suggestions went with it; the fields did not.",
+                comment: "Toast body after a source type is deleted; argument is the type label"
+            ))
+            return String(format: format, locale: .current, label)
+        }
+    }
+
     enum Errors {
         static let catalogAlreadyExists = LocalizedStringResource(
             "error.catalog.already_exists",
@@ -925,6 +1458,14 @@ enum L10n {
             defaultValue: "That source type is still used by one or more sources.",
             comment: "FFI error sourcetypes.in_use"
         )
+        static func sourceTypesDuplicateKey(key: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "error.sourcetypes.duplicate_key",
+                defaultValue: "You already have a type with the key %@. Give this one a different label.",
+                comment: "FFI error sourcetypes.duplicate_key; argument is the colliding key"
+            ))
+            return String(format: format, locale: .current, key)
+        }
         static let sourceFieldsInvalid = LocalizedStringResource(
             "error.sourcefields.invalid",
             defaultValue: "Invalid metadata field.",
@@ -1033,6 +1574,8 @@ enum L10n {
                 return String(localized: sourceTypesInvalid)
             case "sourcetypes.in_use":
                 return String(localized: sourceTypesInUse)
+            case "sourcetypes.duplicate_key":
+                return sourceTypesDuplicateKey(key: params.first ?? "?")
             case "sourcefields.invalid":
                 return String(localized: sourceFieldsInvalid)
             case "sourcefields.duplicate_key":

@@ -55,12 +55,30 @@ struct CatalogArtifact: Sendable, Equatable {
     var file: CatalogFileRef?
 }
 
-struct CatalogSourceType: Sendable, Equatable {
+struct CatalogSourceType: Sendable, Equatable, Identifiable {
     var id: String
     var key: String
     var origin: String
     var label: String
     var description: String
+    /// How many sources classify as this type. Deleting is only allowed at
+    /// 0 — the engine refuses otherwise (`sourcetypes.in_use`). Only
+    /// `listSourceTypes` and `updateSourceType` populate it.
+    var usedBy: Int = 0
+    /// How many metadata fields this type suggests — the list's third
+    /// column, so browsing never fetches every type's join rows. Only
+    /// `listSourceTypes` and `updateSourceType` populate it.
+    var suggestedFieldCount: Int = 0
+}
+
+/// One `source_type_metadata_fields` join row: a field a type suggests, in
+/// its stored order. Suggestions are not a schema — a source of the type may
+/// leave any of them blank.
+struct CatalogTypeSuggestion: Sendable, Equatable, Identifiable {
+    var field: CatalogMetadataField
+    var sortOrder: Int
+
+    var id: String { field.id }
 }
 
 struct CatalogMetadataField: Sendable, Equatable, Identifiable {
@@ -168,13 +186,49 @@ protocol GenealogyStore: Sendable {
         path: String
     ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool)
     func listSourceTypes(projectDir: String) async throws -> [CatalogSourceType]
+    /// `key` is never accepted from the caller — the engine mints it as a
+    /// kebab-case slug of `label`, the same rule `createMetadataField` uses.
     func createSourceType(
         projectDir: String,
         userID: String,
-        key: String,
         label: String,
         description: String
     ) async throws -> CatalogSourceType
+    /// Patches label and description for a `user` or `provenencia` type.
+    /// The key never changes here, so a rename keeps existing sources
+    /// attached. Fails for `plugin:…` rows.
+    func updateSourceType(
+        projectDir: String,
+        userID: String,
+        typeID: String,
+        label: String,
+        description: String
+    ) async throws -> CatalogSourceType
+    /// Deletes a type no source refers to. Suggestion joins cascade; the
+    /// fields they named stay in the vocabulary.
+    func deleteSourceType(
+        projectDir: String,
+        userID: String,
+        typeID: String
+    ) async throws
+    func listTypeSuggestions(projectDir: String, typeID: String) async throws -> [CatalogTypeSuggestion]
+    /// Attaches an existing field to a type at the end of its order.
+    /// Assigning a field the type already suggests is a no-op. Returns the
+    /// type's whole suggestion list so the caller never re-derives order.
+    func assignTypeField(
+        projectDir: String,
+        userID: String,
+        typeID: String,
+        fieldID: String
+    ) async throws -> [CatalogTypeSuggestion]
+    /// Detaches a field from a type — the join only. The field stays in the
+    /// vocabulary and sources already carrying a value for it keep it.
+    func removeTypeField(
+        projectDir: String,
+        userID: String,
+        typeID: String,
+        fieldID: String
+    ) async throws -> [CatalogTypeSuggestion]
     func listMetadataFields(projectDir: String) async throws -> [CatalogMetadataField]
     /// `key` is never accepted from the caller — the engine mints it as a
     /// kebab-case slug of `label` (see `FieldSlug.kebab` for the client-side

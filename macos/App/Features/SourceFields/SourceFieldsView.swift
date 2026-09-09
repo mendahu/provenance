@@ -38,7 +38,7 @@ struct SourceFieldsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PVColor.surfacePage)
-        .overlay(alignment: .bottomTrailing) {
+        .overlay(alignment: .topTrailing) {
             if let toast = model.toast {
                 PVToast(
                     tone: .success,

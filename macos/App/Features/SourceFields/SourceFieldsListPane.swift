@@ -72,7 +72,7 @@ struct SourceFieldsListPane: View {
                         .font(PVFont.body(size: PVTypeScale.bodySmall))
                         .foregroundStyle(PVColor.textPrimary)
                         .lineLimit(1)
-                    SourceFieldSeededPill(origin: field.origin)
+                    OriginPill(origin: field.origin)
                 }
             },
             PVTableColumn(id: "key", title: L10n.SourceFields.columnKey, width: Self.keyColumnWidth) { field in

@@ -129,14 +129,14 @@ final class SourceFieldsModel {
     /// enforces the second rule too (`sourcefields.in_use`).
     var canDeleteSelectedField: Bool {
         guard let field = selectedField else { return false }
-        return !SourceFieldOrigin.isPlugin(field.origin) && field.usedBy == 0
+        return !CatalogOrigin.isPlugin(field.origin) && field.usedBy == 0
     }
 
     /// Tooltip on the delete button — the action when it is available, the
     /// reason it is not when it is disabled.
     var deleteTooltip: LocalizedStringResource {
         guard let field = selectedField else { return L10n.SourceFields.deleteField }
-        if SourceFieldOrigin.isPlugin(field.origin) { return L10n.SourceFields.deleteOwnedByPlugin }
+        if CatalogOrigin.isPlugin(field.origin) { return L10n.SourceFields.deleteOwnedByPlugin }
         if field.usedBy > 0 { return L10n.SourceFields.deleteInUse(count: field.usedBy) }
         return L10n.SourceFields.deleteField
     }
@@ -147,9 +147,9 @@ final class SourceFieldsModel {
         return fields.first { $0.id == pendingDeleteID }
     }
 
-    var seededCount: Int { fields.filter { $0.origin == SourceFieldOrigin.provenencia }.count }
-    var userCount: Int { fields.filter { $0.origin == SourceFieldOrigin.user }.count }
-    var pluginCount: Int { fields.filter { $0.origin != SourceFieldOrigin.provenencia && $0.origin != SourceFieldOrigin.user }.count }
+    var seededCount: Int { fields.filter { $0.origin == CatalogOrigin.provenencia }.count }
+    var userCount: Int { fields.filter { $0.origin == CatalogOrigin.user }.count }
+    var pluginCount: Int { fields.filter { $0.origin != CatalogOrigin.provenencia && $0.origin != CatalogOrigin.user }.count }
 
     var countLine: String {
         if pluginCount > 0 {
@@ -182,7 +182,7 @@ final class SourceFieldsModel {
         // not bind it, but going edit/add → view with `draft = nil` in the
         // same turn tears down `Binding($model.draft)` and traps.
         draft = Draft(label: field.label, dataType: field.dataType, description: field.description)
-        if field.origin == SourceFieldOrigin.user || field.origin == SourceFieldOrigin.provenencia {
+        if field.origin == CatalogOrigin.user || field.origin == CatalogOrigin.provenencia {
             mode = .editing(id: id)
         } else {
             mode = .viewing(id: id)
@@ -310,31 +310,4 @@ final class SourceFieldsModel {
             || field.key.lowercased().contains(query)
             || field.description.lowercased().contains(query)
     }
-}
-
-/// `CatalogMetadataField.origin` / `.dataType` namespaces — mirrors
-/// `core/database/sourcefields`'s `Origin…`/`DataType…` constants (the FFI
-/// layer carries these as plain strings, not an enum).
-enum SourceFieldOrigin {
-    static let provenencia = "provenencia"
-    static let user = "user"
-
-    private static let pluginPrefix = "plugin:"
-
-    /// Anything that is neither seeded nor researcher-authored is owned by a
-    /// plugin — the same open-vocabulary stance the badges take.
-    static func isPlugin(_ origin: String) -> Bool {
-        origin != provenencia && origin != user
-    }
-
-    /// The id after `plugin:` (e.g. `"plugin:findagrave"` → `"findagrave"`),
-    /// or the raw origin unchanged when it has no such prefix.
-    static func pluginID(from origin: String) -> String {
-        origin.hasPrefix(pluginPrefix) ? String(origin.dropFirst(pluginPrefix.count)) : origin
-    }
-}
-
-enum SourceFieldDataType {
-    static let text = "text"
-    static let date = "date"
 }

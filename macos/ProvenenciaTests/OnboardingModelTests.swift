@@ -373,10 +373,35 @@ private struct ThrowingStore: GenealogyStore {
     func createSourceType(
         projectDir _: String,
         userID _: String,
-        key _: String,
         label _: String,
         description _: String
     ) async throws -> CatalogSourceType { throw StoreBoom.boom }
+    func updateSourceType(
+        projectDir _: String,
+        userID _: String,
+        typeID _: String,
+        label _: String,
+        description _: String
+    ) async throws -> CatalogSourceType { throw StoreBoom.boom }
+    func deleteSourceType(
+        projectDir _: String,
+        userID _: String,
+        typeID _: String
+    ) async throws { throw StoreBoom.boom }
+    func listTypeSuggestions(projectDir _: String, typeID _: String) async throws
+        -> [CatalogTypeSuggestion] { throw StoreBoom.boom }
+    func assignTypeField(
+        projectDir _: String,
+        userID _: String,
+        typeID _: String,
+        fieldID _: String
+    ) async throws -> [CatalogTypeSuggestion] { throw StoreBoom.boom }
+    func removeTypeField(
+        projectDir _: String,
+        userID _: String,
+        typeID _: String,
+        fieldID _: String
+    ) async throws -> [CatalogTypeSuggestion] { throw StoreBoom.boom }
     func listMetadataFields(projectDir _: String) async throws -> [CatalogMetadataField] { throw StoreBoom.boom }
     func createMetadataField(
         projectDir _: String,

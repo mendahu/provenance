@@ -113,8 +113,8 @@ struct SourceFieldsDetailPane: View {
     }
 
     private var originBadge: some View {
-        SourceFieldOriginBadge(
-            origin: model.isAdding ? SourceFieldOrigin.user : (model.selectedField?.origin ?? SourceFieldOrigin.user)
+        OriginBadge(
+            origin: model.isAdding ? CatalogOrigin.user : (model.selectedField?.origin ?? CatalogOrigin.user)
         )
     }
 
@@ -144,7 +144,7 @@ struct SourceFieldsDetailPane: View {
     }
 
     private func lockedNote(for field: CatalogMetadataField) -> String {
-        L10n.SourceFields.lockedNotePlugin(pluginID: SourceFieldOrigin.pluginID(from: field.origin))
+        L10n.SourceFields.lockedNotePlugin(pluginID: CatalogOrigin.pluginID(from: field.origin))
     }
 
     private func labeledSection(_ label: LocalizedStringResource, @ViewBuilder content: () -> some View) -> some View {

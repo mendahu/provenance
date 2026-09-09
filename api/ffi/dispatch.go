@@ -40,6 +40,10 @@ const (
 	MethodUpdateMetadataField   = int32(engine.Method_METHOD_UPDATE_METADATA_FIELD)
 	MethodDeleteSourceType      = int32(engine.Method_METHOD_DELETE_SOURCE_TYPE)
 	MethodDeleteMetadataField   = int32(engine.Method_METHOD_DELETE_METADATA_FIELD)
+	MethodUpdateSourceType      = int32(engine.Method_METHOD_UPDATE_SOURCE_TYPE)
+	MethodListTypeSuggestions   = int32(engine.Method_METHOD_LIST_TYPE_SUGGESTIONS)
+	MethodAssignTypeField       = int32(engine.Method_METHOD_ASSIGN_TYPE_FIELD)
+	MethodRemoveTypeField       = int32(engine.Method_METHOD_REMOVE_TYPE_FIELD)
 )
 
 // Call routes one coarse FFI operation to api/ffi/handlers.
@@ -105,6 +109,14 @@ func Call(method int32, in []byte) ([]byte, error) {
 		return handlers.DeleteSourceType(in)
 	case MethodDeleteMetadataField:
 		return handlers.DeleteMetadataField(in)
+	case MethodUpdateSourceType:
+		return handlers.UpdateSourceType(in)
+	case MethodListTypeSuggestions:
+		return handlers.ListTypeSuggestions(in)
+	case MethodAssignTypeField:
+		return handlers.AssignTypeField(in)
+	case MethodRemoveTypeField:
+		return handlers.RemoveTypeField(in)
 	default:
 		return nil, apperr.New(apperr.CodeInternalUnknownMethod, apperr.KindInternal, strconv.Itoa(int(method)))
 	}

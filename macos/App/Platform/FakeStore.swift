@@ -11,6 +11,9 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var notesBySource: [String: [CatalogSourceNote]] = [:]
     var artifactsBySource: [String: [CatalogArtifact]] = [:]
     var sourceTypesByProject: [String: [CatalogSourceType]] = [:]
+    /// Type↔field suggestion joins, keyed by source type id and held in the
+    /// order they were assigned — the engine's `sort_order`.
+    var suggestionsByType: [String: [CatalogTypeSuggestion]] = [:]
     var fieldsByProject: [String: [CatalogMetadataField]] = [:]
     var metadataBySource: [String: [CatalogMetadataEntry]] = [:]
     var fileCountByProject: [String: Int] = [:]
@@ -316,16 +319,30 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func listSourceTypes(projectDir: String) async throws -> [CatalogSourceType] {
-        sourceTypesByProject[projectDir] ?? []
+        (sourceTypesByProject[projectDir] ?? []).map(withSuggestedFieldCount)
+    }
+
+    /// The engine derives this column in its list query, so the fake keeps it
+    /// in step with `suggestionsByType` rather than making tests set it.
+    private func withSuggestedFieldCount(_ type: CatalogSourceType) -> CatalogSourceType {
+        var copy = type
+        copy.suggestedFieldCount = (suggestionsByType[type.id] ?? []).count
+        return copy
     }
 
     func createSourceType(
         projectDir: String,
         userID _: String,
-        key: String,
         label: String,
         description: String
     ) async throws -> CatalogSourceType {
+        let key = FieldSlug.kebab(label)
+        if key.isEmpty {
+            throw StoreBoom.boom
+        }
+        if (sourceTypesByProject[projectDir] ?? []).contains(where: { $0.origin == "user" && $0.key == key }) {
+            throw StoreBoom.boom
+        }
         let type = CatalogSourceType(
             id: UUID().uuidString.lowercased(),
             key: key,
@@ -335,6 +352,78 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         )
         sourceTypesByProject[projectDir, default: []].append(type)
         return type
+    }
+
+    func updateSourceType(
+        projectDir: String,
+        userID _: String,
+        typeID: String,
+        label: String,
+        description: String
+    ) async throws -> CatalogSourceType {
+        var list = sourceTypesByProject[projectDir] ?? []
+        guard let idx = list.firstIndex(where: { $0.id == typeID }) else {
+            throw StoreBoom.boom
+        }
+        guard list[idx].origin == "user" || list[idx].origin == "provenencia" else {
+            throw StoreBoom.boom
+        }
+        list[idx].label = label
+        list[idx].description = description
+        sourceTypesByProject[projectDir] = list
+        return withSuggestedFieldCount(list[idx])
+    }
+
+    func deleteSourceType(
+        projectDir: String,
+        userID _: String,
+        typeID: String
+    ) async throws {
+        var list = sourceTypesByProject[projectDir] ?? []
+        guard let idx = list.firstIndex(where: { $0.id == typeID }) else {
+            throw StoreBoom.boom
+        }
+        // The engine refuses a type sources still classify as.
+        guard list[idx].usedBy == 0 else {
+            throw StoreBoom.boom
+        }
+        list.remove(at: idx)
+        sourceTypesByProject[projectDir] = list
+        // Suggestion joins cascade; the fields they named do not.
+        suggestionsByType[typeID] = nil
+    }
+
+    func listTypeSuggestions(projectDir _: String, typeID: String) async throws -> [CatalogTypeSuggestion] {
+        suggestionsByType[typeID] ?? []
+    }
+
+    func assignTypeField(
+        projectDir: String,
+        userID _: String,
+        typeID: String,
+        fieldID: String
+    ) async throws -> [CatalogTypeSuggestion] {
+        guard let field = (fieldsByProject[projectDir] ?? []).first(where: { $0.id == fieldID }) else {
+            throw StoreBoom.boom
+        }
+        var list = suggestionsByType[typeID] ?? []
+        // Assigning a field the type already suggests leaves its place alone.
+        if !list.contains(where: { $0.field.id == fieldID }) {
+            list.append(CatalogTypeSuggestion(field: field, sortOrder: (list.last?.sortOrder ?? -1) + 1))
+            suggestionsByType[typeID] = list
+        }
+        return list
+    }
+
+    func removeTypeField(
+        projectDir _: String,
+        userID _: String,
+        typeID: String,
+        fieldID: String
+    ) async throws -> [CatalogTypeSuggestion] {
+        let list = (suggestionsByType[typeID] ?? []).filter { $0.field.id != fieldID }
+        suggestionsByType[typeID] = list
+        return list
     }
 
     func listMetadataFields(projectDir: String) async throws -> [CatalogMetadataField] {

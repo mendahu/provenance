@@ -33,6 +33,7 @@ const (
 	CodeDateValuesInvalid           = "datevalues.invalid"
 	CodeSourceTypesInvalid          = "sourcetypes.invalid"
 	CodeSourceTypesInUse            = "sourcetypes.in_use"
+	CodeSourceTypesDuplicateKey     = "sourcetypes.duplicate_key"
 	CodeSourceFieldsInvalid         = "sourcefields.invalid"
 	CodeSourceFieldsDuplicateKey    = "sourcefields.duplicate_key"
 	CodeSourceFieldsInUse           = "sourcefields.in_use"

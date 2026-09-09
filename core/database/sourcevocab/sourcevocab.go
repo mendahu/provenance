@@ -28,6 +28,11 @@ const (
 		ORDER BY j.sort_order ASC, f.label COLLATE NOCASE, f.key`
 	sqlDeleteSuggestion = `DELETE FROM source_type_metadata_fields
 		WHERE source_type_id = ? AND field_id = ?`
+	sqlNextSortOrder = `SELECT COALESCE(MAX(sort_order), -1) + 1
+		FROM source_type_metadata_fields WHERE source_type_id = ?`
+	sqlAppendSuggestion = `INSERT INTO source_type_metadata_fields (source_type_id, field_id, sort_order)
+		VALUES (?, ?, ?)
+		ON CONFLICT(source_type_id, field_id) DO NOTHING`
 )
 
 // Suggestion is one ordered field attached to a source type.
@@ -46,6 +51,25 @@ func EnsureSuggestion(c *database.Catalog, typeID, fieldID []byte, sortOrder int
 		return ErrInvalid
 	}
 	_, err = db.Exec(sqlEnsureSuggestion, typeID, fieldID, sortOrder)
+	return err
+}
+
+// AppendSuggestion attaches a field to a type at the end of its existing
+// order. Re-attaching a field already suggested for the type leaves its
+// place alone — the join is a set, so assigning twice is not an error.
+func AppendSuggestion(c *database.Catalog, typeID, fieldID []byte) error {
+	db, err := c.DB()
+	if err != nil {
+		return err
+	}
+	if len(typeID) != 16 || len(fieldID) != 16 {
+		return ErrInvalid
+	}
+	var next int
+	if err := db.QueryRow(sqlNextSortOrder, typeID).Scan(&next); err != nil {
+		return err
+	}
+	_, err = db.Exec(sqlAppendSuggestion, typeID, fieldID, next)
 	return err
 }
 
