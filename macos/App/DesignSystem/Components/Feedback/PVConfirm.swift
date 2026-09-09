@@ -162,7 +162,7 @@ struct PVConfirmSheetContent<Detail: View>: View {
     }
 
     private var message: some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space5) {
+        VStack(alignment: .leading, spacing: PVSpacing.space6) {
             // Alerts are centred; a sheet carrying body copy reads better
             // leading-aligned.
             Text(copy.title)
@@ -179,7 +179,8 @@ struct PVConfirmSheetContent<Detail: View>: View {
             detail()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(PVSpacing.space7)
+        .padding(.horizontal, PVSpacing.space7)
+        .padding(.vertical, PVSpacing.space8)
     }
 
     /// `Dialog.jsx` sets its footer on `--surface-sunken` with a hairline top
@@ -217,7 +218,7 @@ struct PVConfirmSheetContent<Detail: View>: View {
                 }
         }
         .padding(.horizontal, PVSpacing.space8)
-        .padding(.vertical, PVSpacing.space6)
+        .padding(.vertical, PVSpacing.space7)
         .frame(maxWidth: .infinity)
         .background(PVColor.surfaceSunken)
         .overlay(alignment: .top) {
