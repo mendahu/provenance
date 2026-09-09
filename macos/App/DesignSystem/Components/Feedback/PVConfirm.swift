@@ -12,9 +12,10 @@ import SwiftUI
 ///   controls just go inactive. A dark scrim is a web/iOS idiom and reads as
 ///   wrong here. The absent scrim is correct, not missing.
 /// - The sheet window supplies its own corner radius, shadow and material.
-///   Setting `.background` / `.cornerRadius` / `.shadow` on sheet content is
-///   what produces the double-rounded, double-shadowed panel — so nothing in
-///   this file sets any of them.
+///   Setting `.background` / `.cornerRadius` / `.shadow` on the sheet's *panel*
+///   is what produces the double-rounded, double-shadowed look — so nothing
+///   here does. Styling *within* the panel is still ours: the action bar keeps
+///   `Dialog.jsx`'s `--surface-sunken` band and hairline top rule.
 /// - Sheets are modal to their *window*, not the app, and slide from the
 ///   titlebar. That comes free from `.sheet`.
 ///
@@ -115,9 +116,9 @@ extension View {
 
 /// Sheet body for a confirmation whose consequence needs more than a string.
 ///
-/// Draws **no** background, corner radius, shadow or scrim — the sheet window
-/// owns all four. Margins follow AppKit alert metrics rather than the web
-/// component's token padding, which is tuned for an in-page panel.
+/// Draws **no** panel background, corner radius, shadow or scrim — the sheet
+/// window owns all four. The action bar's own `surfaceSunken` band is content,
+/// not window chrome, and is carried over from `Dialog.jsx`'s footer.
 struct PVConfirmSheetContent<Detail: View>: View {
     let copy: PVConfirmCopy
     let tone: PVConfirmTone
@@ -148,6 +149,17 @@ struct PVConfirmSheetContent<Detail: View>: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            message
+            actionBar
+        }
+        .frame(width: width)
+        // Focus starts on cancel, matching the web component and AppKit's own
+        // destructive alerts — Return must not complete a destructive action.
+        .onAppear { cancelFocused = true }
+    }
+
+    private var message: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space5) {
             // Alerts are centred; a sheet carrying body copy reads better
             // leading-aligned.
@@ -163,33 +175,45 @@ struct PVConfirmSheetContent<Detail: View>: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             detail()
-
-            HStack(spacing: PVSpacing.space5) {
-                Spacer(minLength: PVSpacing.space8)
-                Button(String(localized: copy.cancel)) { onCancel() }
-                    .keyboardShortcut(.cancelAction)
-                    .disabled(isRunning)
-                    .focused($cancelFocused)
-                Button(String(localized: copy.confirm), role: tone.buttonRole) { onConfirm() }
-                    .buttonStyle(.borderedProminent)
-                    .tint(tone.accent)
-                    .disabled(isRunning)
-                    .overlay(alignment: .trailing) {
-                        if isRunning {
-                            ProgressView()
-                                .controlSize(.small)
-                                .offset(x: 22)
-                        }
-                    }
-            }
-            .controlSize(.large)
-            .padding(.top, PVSpacing.space3)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(PVSpacing.space7)
-        .frame(width: width, alignment: .leading)
-        // Focus starts on cancel, matching the web component and AppKit's own
-        // destructive alerts — Return must not complete a destructive action.
-        .onAppear { cancelFocused = true }
+    }
+
+    /// `Dialog.jsx` sets its footer on `--surface-sunken` with a hairline top
+    /// rule, and `ConfirmDialog` passes its buttons straight into that slot —
+    /// so the band is part of the design, not browser-only chrome. The
+    /// "draw none of it" rule this file follows names four things the *window*
+    /// owns (scrim, blur, corner radius, shadow); an internal action bar is
+    /// content, the same as the divider above it, so it is ours to paint.
+    /// `swift/ProvenenciaConfirm.swift` omits it; this restores it.
+    private var actionBar: some View {
+        HStack(spacing: PVSpacing.space5) {
+            Spacer(minLength: PVSpacing.space8)
+            Button(String(localized: copy.cancel)) { onCancel() }
+                .keyboardShortcut(.cancelAction)
+                .disabled(isRunning)
+                .focused($cancelFocused)
+            Button(String(localized: copy.confirm), role: tone.buttonRole) { onConfirm() }
+                .buttonStyle(.borderedProminent)
+                .tint(tone.accent)
+                .disabled(isRunning)
+                .overlay(alignment: .trailing) {
+                    if isRunning {
+                        ProgressView()
+                            .controlSize(.small)
+                            .offset(x: 22)
+                    }
+                }
+        }
+        .controlSize(.large)
+        .padding(.horizontal, PVSpacing.space8)
+        .padding(.vertical, PVSpacing.space6)
+        .frame(maxWidth: .infinity)
+        .background(PVColor.surfaceSunken)
+        .overlay(alignment: .top) {
+            PVDivider()
+        }
     }
 }
 

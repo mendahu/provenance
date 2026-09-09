@@ -236,6 +236,21 @@ rules** across without its chrome, and offers the two right answers:
 | `.pvConfirm(isPresented:copy:tone:onConfirm:)` | **The default.** A system alert — Apple's own pattern, fully system-drawn, inherits keyboard, VoiceOver and Reduce Motion for free. Plain-text message only. |
 | `.pvConfirmSheet(isPresented:copy:tone:isRunning:onConfirm:detail:)` | When the consequence needs rich content — a mono-set key (`PVConfirmKeyChip`), a list of affected records. Chrome still belongs to the window; only content and the button row are ours. |
 
+The action bar keeps `Dialog.jsx`'s footer treatment — `surfaceSunken` with a
+hairline top rule — because that band is *content*, not window chrome. The
+"draw none of it" rule names four things the window owns: scrim, backdrop
+blur, corner radius, drop shadow. Anything inside the panel is still ours to
+style. (`swift/ProvenenciaConfirm.swift` omits the band; we restore it.)
+
+**Radii inside a confirmation are not ours either.** The sheet's rounded
+corners come from the sheet *window*, and the buttons are native
+`.borderedProminent` controls at `.controlSize(.large)`, so both are rounder
+than `--radius-md` / `--radius-sm` would be on the web. That is correct: the
+native controls are what earn the destructive-role tint, default-button
+behaviour and system focus ring. Only genuinely in-content shapes take
+Provenencia radii — `PVConfirmKeyChip` uses `PVRadius.xs`, matching the
+design's square treatment for citable values.
+
 The copy rules travel in `PVConfirmCopy`: the title is a question naming the
 record ("Delete Photographer?", never "Are you sure?"), the message says what
 is *and is not* lost, confirm repeats the verb ("Delete field", never "OK"),
