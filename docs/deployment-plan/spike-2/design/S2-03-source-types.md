@@ -27,9 +27,9 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 | Field / concept | UI implication |
 | --- | --- |
 | `label` | Primary human name. Show in list and detail. |
-| `key` | Stable machine id within an origin. Show in list (secondary) and/or detail (mono). |
+| `key` | Stable machine id within an origin. Show in list (secondary) and detail (mono). |
 | `description` | Optional help text. **Detail / expanded view only** — not required on collapsed list rows. |
-| `origin` | `provenencia` / `user` / later `plugin:…`. Same list for all origins; surface origin (badge/column). |
+| `origin` | `provenencia` / `user` / later `plugin:…`. Same list for all origins. In the list, show origin as a **badge next to the label** — not a separate column — matching Source fields (`SourceFieldSeededPill`: seeded rows get the subtle shield pill; `user` / `plugin:…` show nothing in-list). Full origin badge stays on detail. **Promote that list pill (and likely the detail origin badge) out of Source-fields-only into a shared component** so Source types reuses the same chrome. |
 | Uniqueness | `(key, origin)` — do not collapse colliding keys across origins. |
 
 ### 2.2 `source_type_metadata_fields` (suggestions)
@@ -41,14 +41,14 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 | `sort_order` | Preserve a stable display order when listing associations; Design may allow reorder if it stays simple. |
 | Field identity | Show field **label** (and data type) from `source_metadata_fields`; pool comes from the Source fields vocabulary (S2-02). |
 | Remove association | User **may remove** a type↔field join. That does **not** delete the field vocabulary row. |
-| No delete type | Do **not** delete `source_types` rows in this spike. |
+| Delete type | Same pattern as Source fields: a type **may be deleted only when no Sources refer to it**. Show a delete affordance (disabled rather than hidden when blocked). When in use, copy must say **how many Sources** use it (e.g. “In use on N sources”) — mirror Source fields’ `usedBy` / in-use tooltip. Plugin-owned types stay non-deletable. Suggestion joins cascade on delete; that is not the same as removing an association. |
 
 ### 2.3 What this destination is not
 
 - Not creating/editing field vocabulary definitions (that is S2-02) — except navigating or picking existing fields.
 - Not editing metadata **values** on a Source instance.
 - Not the Sources catalog list/detail.
-- Not deleting Source types.
+- Not force-deleting a type that still has Sources (delete is gated like Source fields).
 
 ---
 
@@ -59,8 +59,8 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 | ID | Requirement |
 | --- | --- |
 | T-1 | List all Source types for the open project inside the S2-01 content host. |
-| T-2 | Each row shows at least **label**; prefer also showing **key** (secondary / mono). |
-| T-3 | Origin visible in the list (badge/column) — system vs user in **one** list, not split lists. |
+| T-2 | Each row shows **label** and **key** (key secondary / mono). |
+| T-3 | Origin in the list as a **badge next to the label** (Source-fields pattern; shared component) — not a separate origin column. System vs user in **one** list, not split lists. |
 | T-4 | Search (or filter) at the top is recommended for parity with Source fields. |
 | T-5 | Obvious **Add type** action from the list. |
 | T-6 | Empty state + Add CTA if zero types (unlikely after seed). |
@@ -73,8 +73,8 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 | T-8 | Detail shows **all metadata fields currently associated** with this type (from the join table), with enough identity to scan (label + data type at minimum). |
 | T-9 | **Assign** association: pick from existing Source fields (S2-02 data) and attach to this type. Do not invent fields inline unless Design offers a clear shortcut that still creates a real `source_metadata_fields` row first. |
 | T-10 | **Remove** association: detach a field from this type without deleting the field vocabulary row. Confirm only if needed for calm UX — not a destructive “delete type” pattern. |
-| T-11 | Edit type **label** / **description** for `user` origin types. Prefer `provenencia` types **view-only** for type mutations (associations may still be adjustable — Design call; default: allow association edit on seeded types so dogfood can tune suggestions). |
-| T-12 | No delete/archive control for the Source type itself. |
+| T-11 | Edit type **label** / **description** for **`user` and `provenencia`** types alike — same pattern as Source fields. Plugin-origin types stay view-only. Delete uses the same gates as T-12 for both `user` and `provenencia` (unused, not plugin). |
+| T-12 | **Delete type** follows Source fields: affordance present; enabled only when unused (no Sources refer to it) and not plugin-owned. Disabled state explains why, including **in-use count** when Sources still reference the type. Confirm before delete; joins cascade. |
 | T-13 | **Navigation pattern is open:** in-list expand/collapse of a row **or** push to a nested detail with back/breadcrumb are both acceptable. Document the choice on the board; requirements above must hold either way. |
 
 ### 3.3 Add (create type)
@@ -115,14 +115,15 @@ Show one type with **no** associations yet (empty suggestions state + assign CTA
 3. **Assign field** flow (picker from existing Source fields).
 4. **Remove association** affordance (before/after).
 5. **Add type** flow.
-6. Optional: same type in the alternate nav pattern annotation if Design explored both expand vs breadcrumb.
+6. **Delete type** (enabled unused vs disabled in-use with count copy; confirm).
+7. Optional: same type in the alternate nav pattern annotation if Design explored both expand vs breadcrumb.
 
 ---
 
 ## 6. Out of scope
 
-- Deleting Source types.
-- Deleting Source field vocabulary rows (S2-02 also has no delete).
+- Force-deleting a Source type that still has Sources (must refuse / stay disabled with in-use copy).
+- Deleting Source field vocabulary rows from this destination (S2-02 owns field delete).
 - Source instance create/edit / metadata values.
 - Artifact ingest.
 - Credibility / Interpretation.
@@ -134,6 +135,6 @@ Show one type with **no** associations yet (empty suggestions state + assign CTA
 - [ ] Lives in **Source types** content host; no second app chrome.
 - [ ] List shows label (+ key); description is detail/expanded-only.
 - [ ] Associated fields from join table are visible; assign pulls from Source fields; remove association allowed.
-- [ ] No delete Source type.
+- [ ] Delete type only when unused; in-use copy shows Source count (Source-fields pattern).
 - [ ] Expand-in-list vs breadcrumb detail is an explicit Design decision on the board.
 - [ ] Does not redefine field vocabulary (S2-02 owns that).
