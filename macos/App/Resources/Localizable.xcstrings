@@ -1052,26 +1052,14 @@
         }
       }
     },
-    "sourceFields.delete.confirmBody" : {
-      "comment" : "Body of the delete-field confirmation dialog; argument is the field key",
+    "sourceFields.delete.confirmMessage" : {
+      "comment" : "Message of the delete-field confirmation sheet: what is and is not lost",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No source in this project uses %@, so nothing loses data. The key is released and could be minted again by a later field with the same label."
-          }
-        }
-      }
-    },
-    "sourceFields.delete.confirmSubtitle" : {
-      "comment" : "Subtitle of the delete-field confirmation dialog",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deleting a field removes it from this project's vocabulary. Sources already saved keep their values."
+            "value" : "No source in this project carries a value for this field, so nothing is lost. The key is released and can be minted again by a later field with the same label."
           }
         }
       }
@@ -1120,6 +1108,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keep field"
+          }
+        }
+      }
+    },
+    "sourceFields.delete.keyReleased" : {
+      "comment" : "Micro-caps label beside the key a field delete releases, in the confirmation sheet",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key released"
           }
         }
       }

@@ -53,15 +53,21 @@ struct SourceFieldsView: View {
             }
         }
         .animation(reduceMotion ? nil : PVMotion.easeStandard, value: model.toast)
-        .sheet(isPresented: isConfirmingDelete) {
-            deleteConfirmation
+        .pvConfirmSheet(
+            isPresented: isConfirmingDelete,
+            copy: deleteCopy,
+            isRunning: model.isDeleting,
+            onConfirm: { Task { await model.confirmDelete() } }
+        ) {
+            deleteDetail
         }
         .task { await model.load() }
         .accessibilityIdentifier("sourceFields")
     }
 
-    /// `PVDialog` renders only the panel; the sheet supplies macOS's own
-    /// modality and scrim (see `PVDialog`'s header comment).
+    /// Dismissal is driven by the model, not by the sheet: a successful delete
+    /// clears `pendingDeleteID`, and a failed one keeps the sheet up with the
+    /// reason (see `pvConfirmSheet`).
     private var isConfirmingDelete: Binding<Bool> {
         Binding(
             get: { model.pendingDeleteField != nil },
@@ -69,35 +75,25 @@ struct SourceFieldsView: View {
         )
     }
 
+    private var deleteCopy: PVConfirmCopy {
+        PVConfirmCopy(
+            title: L10n.SourceFields.deleteConfirmTitle(label: model.pendingDeleteField?.label ?? ""),
+            message: String(localized: L10n.SourceFields.deleteConfirmMessage),
+            confirm: L10n.SourceFields.deleteField,
+            cancel: L10n.SourceFields.deleteKeep
+        )
+    }
+
+    /// The consequence that earns this a sheet rather than a plain alert: the
+    /// mono-set key the delete releases, plus the reason if it failed.
     @ViewBuilder
-    private var deleteConfirmation: some View {
+    private var deleteDetail: some View {
         if let field = model.pendingDeleteField {
-            PVDialog(
-                title: Text(L10n.SourceFields.deleteConfirmTitle(label: field.label)),
-                subtitle: Text(L10n.SourceFields.deleteConfirmSubtitle)
-            ) {
-                Text(L10n.SourceFields.deleteConfirmBody(key: field.key))
-                    .fixedSize(horizontal: false, vertical: true)
-                if let deleteError = model.deleteError {
-                    PVCallout(tone: .danger, message: deleteError)
-                }
-            } footer: {
-                PVButton(L10n.SourceFields.deleteKeep, variant: .ghost) {
-                    model.cancelDelete()
-                }
-                .disabled(model.isDeleting)
-                .accessibilityIdentifier("sourceFields.delete.cancel")
-                PVButton(
-                    L10n.SourceFields.deleteField,
-                    variant: .danger,
-                    icon: .trash,
-                    loading: model.isDeleting
-                ) {
-                    Task { await model.confirmDelete() }
-                }
-                .accessibilityIdentifier("sourceFields.delete.confirm")
-            }
-            .accessibilityIdentifier("sourceFields.deleteConfirm")
+            PVConfirmKeyChip(label: L10n.SourceFields.deleteKeyReleased, value: field.key)
+                .accessibilityIdentifier("sourceFields.delete.key")
+        }
+        if let deleteError = model.deleteError {
+            PVCallout(tone: .danger, message: deleteError)
         }
     }
 

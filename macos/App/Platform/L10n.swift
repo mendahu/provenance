@@ -525,20 +525,17 @@ enum L10n {
             return String(format: format, locale: .current, label)
         }
 
-        static let deleteConfirmSubtitle = LocalizedStringResource(
-            "sourceFields.delete.confirmSubtitle",
-            defaultValue: "Deleting a field removes it from this project's vocabulary. Sources already saved keep their values.",
-            comment: "Subtitle of the delete-field confirmation dialog"
+        static let deleteConfirmMessage = LocalizedStringResource(
+            "sourceFields.delete.confirmMessage",
+            defaultValue: "No source in this project carries a value for this field, so nothing is lost. The key is released and can be minted again by a later field with the same label.",
+            comment: "Message of the delete-field confirmation sheet: what is and is not lost"
         )
 
-        static func deleteConfirmBody(key: String) -> String {
-            let format = String(localized: LocalizedStringResource(
-                "sourceFields.delete.confirmBody",
-                defaultValue: "No source in this project uses %@, so nothing loses data. The key is released and could be minted again by a later field with the same label.",
-                comment: "Body of the delete-field confirmation dialog; argument is the field key"
-            ))
-            return String(format: format, locale: .current, key)
-        }
+        static let deleteKeyReleased = LocalizedStringResource(
+            "sourceFields.delete.keyReleased",
+            defaultValue: "Key released",
+            comment: "Micro-caps label beside the key a field delete releases, in the confirmation sheet"
+        )
 
         static let deleteKeep = LocalizedStringResource(
             "sourceFields.delete.keep",

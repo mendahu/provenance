@@ -140,14 +140,15 @@ red `Text`), plus `Badge`/`EmptyState`/`Callout` (added for the S2-02
 | EmptyState | `Components/Feedback/PVEmptyState.swift` (added for S2-02's empty/no-match states; the web spec's `action` slot isn't ported — see the file's header comment) |
 | Callout | `Components/Feedback/PVCallout.swift` (added for S2-02's "this field is locked" note; only the subset S2-02 needs is ported — see the file's header comment) |
 | Table | `Components/Data/PVTable.swift` (added for S2-22, extracted from the Source fields list; see "The table tradeoff" below) |
-| Dialog | `Components/Feedback/PVDialog.swift` (added for S2-22's delete confirmation; renders the panel only — presentation is a macOS `.sheet` at the call site, see the file's header comment) |
+| Confirm | `Components/Feedback/PVConfirm.swift` (added for S2-22's delete confirmation; the macOS answer to `ConfirmDialog.jsx`, which the web spec says not to port — see "Confirmations are system chrome" below) |
 
-The other 13 design-system components have **no files yet** — add them on
+The other 14 design-system components have **no files yet** — add them on
 demand, following the pattern above, when a screen needs one:
 
 | Component | Category | Purpose |
 |---|---|---|
 | Card | Core | Bordered content container with optional header/footer |
+| Dialog | Feedback | Modal panel. On macOS reach for `.sheet` and let the window draw its own chrome; for confirmations use `PVConfirm` instead |
 | Tag | Core | Removable/interactive pill with a color dot |
 | Tooltip | Core | Hover label — on macOS this is usually SwiftUI's own `.help()`, which is what `PVIconButton` uses; port the web hover card only if a call site needs richer content |
 | Checkbox | Forms | Checkbox control |
@@ -209,6 +210,49 @@ tested without mounting UI (`ProvenenciaTests/PVTableTests.swift`).
 
 Not implemented, deliberately — same scope line as the web component:
 multi-select, column resize/reorder, drag-and-drop, inline editing.
+
+## Confirmations are system chrome
+
+`components/feedback/ConfirmDialog.jsx` is **deliberately not ported**, on its
+own `prompt.md`'s instruction. The web component draws a scrim, a backdrop
+blur, a corner radius and a drop shadow only because a browser gives it none
+of them. On macOS all four belong to the window, and redrawing them is exactly
+what makes a native dialog look off:
+
+- macOS does **not** dim the parent window behind a sheet — the parent's
+  controls simply go inactive. A dark scrim is a web/iOS idiom. The absent
+  scrim is correct, not missing.
+- The sheet window supplies its own corner radius, shadow and material.
+  Setting `.background` / `.cornerRadius` / `.shadow` on sheet *content* is
+  what yields the double-rounded, double-shadowed panel.
+- Sheets are modal to their window, not the app, and slide from the titlebar —
+  all free from `.sheet`.
+
+`Components/Feedback/PVConfirm.swift` carries the web component's **copy
+rules** across without its chrome, and offers the two right answers:
+
+| Modifier | Use |
+|---|---|
+| `.pvConfirm(isPresented:copy:tone:onConfirm:)` | **The default.** A system alert — Apple's own pattern, fully system-drawn, inherits keyboard, VoiceOver and Reduce Motion for free. Plain-text message only. |
+| `.pvConfirmSheet(isPresented:copy:tone:isRunning:onConfirm:detail:)` | When the consequence needs rich content — a mono-set key (`PVConfirmKeyChip`), a list of affected records. Chrome still belongs to the window; only content and the button row are ours. |
+
+The copy rules travel in `PVConfirmCopy`: the title is a question naming the
+record ("Delete Photographer?", never "Are you sure?"), the message says what
+is *and is not* lost, confirm repeats the verb ("Delete field", never "OK"),
+and cancel names the safe outcome ("Keep field"). **Focus starts on cancel** in
+both forms, so Return cannot complete a destructive action by reflex.
+
+Two further rules from the spec: a blocked action never reaches a confirmation
+— disable the control and explain why in its tooltip, the way Source fields'
+delete button does. And a *reversible* action should not confirm at all: act,
+then offer undo in a `PVToast`.
+
+One deviation from the design system's `swift/ProvenenciaConfirm.swift`
+reference: it clears `isPresented` before invoking `onConfirm`, which closes
+the sheet the instant a confirm starts and leaves its own `isRunning` spinner
+nowhere to appear. `pvConfirmSheet` leaves dismissal to the caller's binding
+so an async action can stay on screen while it runs and report a failure in
+`detail`.
 
 ## Fonts
 
