@@ -393,5 +393,10 @@ private struct ThrowingStore: GenealogyStore {
         dataType _: String,
         description _: String
     ) async throws -> CatalogMetadataField { throw StoreBoom.boom }
+    func deleteMetadataField(
+        projectDir _: String,
+        userID _: String,
+        fieldID _: String
+    ) async throws { throw StoreBoom.boom }
     func countFiles(projectDir _: String) async throws -> Int { throw StoreBoom.boom }
 }

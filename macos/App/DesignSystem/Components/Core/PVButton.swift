@@ -4,7 +4,7 @@ import SwiftUI
 /// spec's underlined, no-chrome variant (`Button.jsx`'s `variants.link`) —
 /// added for `PVButton`'s use as an inline text action (e.g. "Reset search").
 enum PVButtonVariant {
-    case primary, secondary, ghost, link
+    case primary, secondary, ghost, danger, link
 }
 
 /// Shared control size for buttons, inputs, and selects.
@@ -141,6 +141,12 @@ private struct PVButtonPalette {
                 foreground: PVColor.textSecondary,
                 border: .clear, hoverBorder: nil
             )
+        case .danger:
+            return PVButtonPalette(
+                background: PVColor.danger, hoverBackground: PVColor.dangerHover,
+                foreground: PVColor.dangerButtonForeground,
+                border: PVColor.danger, hoverBorder: PVColor.dangerHover
+            )
         case .link:
             return PVButtonPalette(
                 background: .clear, hoverBackground: nil,
@@ -155,6 +161,13 @@ private struct PVButtonBody: View {
     let configuration: ButtonStyleConfiguration
     let variant: PVButtonVariant
     let size: PVControlSize
+
+    /// Keyboard focus on the button this style is rendering. Unlike the
+    /// system bordered styles, a custom `ButtonStyle` draws no focus
+    /// indication of its own, so without this a focused `.pv` button is
+    /// invisible to keyboard users (e.g. `PVConfirmSheetContent`, which
+    /// starts focus on its cancel button).
+    @Environment(\.isFocused) private var isFocused
 
     var body: some View {
         let palette = PVButtonPalette.palette(for: variant)
@@ -185,6 +198,11 @@ private struct PVButtonBody: View {
                         RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
                             .stroke(showHover ? (palette.hoverBorder ?? palette.border) : palette.border, lineWidth: 1)
                     )
+                    // Always applied; focus only changes opacity — never wrap
+                    // this in `if isFocused` (README § "Interaction state").
+                    // `link` skips it: a 3pt inner ring on bare underlined
+                    // text would sit on the glyphs.
+                    .pvFocusRing(isFocused, cornerRadius: PVRadius.sm)
             }
         }
     }
@@ -198,6 +216,7 @@ private struct PVButtonBody: View {
         PVButton("Back", variant: .ghost, size: .md) {}
         PVButton("Add field", variant: .primary, icon: .plus) {}
         PVButton("Saving", variant: .primary, loading: true) {}
+        PVButton("Delete field", variant: .danger, icon: .trash) {}
         PVButton("Reset search", variant: .link) {}
     }
     .padding(PVSpacing.space9)

@@ -13,6 +13,42 @@ enum L10n {
             defaultValue: "Dismiss",
             comment: "Accessibility label for a PVToast's dismiss button"
         )
+
+        static let tableSortNone = LocalizedStringResource(
+            "designSystem.table.sortNone",
+            defaultValue: "Not sorted. Activate to sort ascending",
+            comment: "Spoken sort state of an unsorted PVTable column header"
+        )
+
+        static let tableSortAscending = LocalizedStringResource(
+            "designSystem.table.sortAscending",
+            defaultValue: "Sorted ascending. Activate to sort descending",
+            comment: "Spoken sort state of a PVTable column header sorted ascending"
+        )
+
+        static let tableSortDescending = LocalizedStringResource(
+            "designSystem.table.sortDescending",
+            defaultValue: "Sorted descending. Activate to sort ascending",
+            comment: "Spoken sort state of a PVTable column header sorted descending"
+        )
+
+        static func tableFilterColumn(column: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "designSystem.table.filterColumn",
+                defaultValue: "Filter %@",
+                comment: "Accessibility label for a PVTable column's filter menu; argument is the column title"
+            ))
+            return String(format: format, locale: .current, column)
+        }
+
+        static func tableFilterOptionCount(label: String, count: Int) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "designSystem.table.filterOptionCount",
+                defaultValue: "%1$@ (%2$lld)",
+                comment: "A PVTable filter menu option with its row count; arguments are the option label and the count"
+            ))
+            return String(format: format, locale: .current, label, count)
+        }
     }
 
     enum Onboarding {
@@ -420,12 +456,6 @@ enum L10n {
             comment: "Source fields list column header: data type"
         )
 
-        static let columnOrigin = LocalizedStringResource(
-            "sourceFields.list.columnOrigin",
-            defaultValue: "Origin",
-            comment: "Source fields list column header: origin"
-        )
-
         static let dataTypeText = LocalizedStringResource(
             "sourceFields.dataType.text",
             defaultValue: "text",
@@ -449,6 +479,84 @@ enum L10n {
             defaultValue: "you",
             comment: "Origin badge for a field the researcher added"
         )
+
+        static let seededPill = LocalizedStringResource(
+            "sourceFields.list.seededPill",
+            defaultValue: "Seeded by Provenencia",
+            comment: "Accessibility label and tooltip for the pill marking a Provenencia-seeded field in the list"
+        )
+
+        static let deleteField = LocalizedStringResource(
+            "sourceFields.delete.action",
+            defaultValue: "Delete field",
+            comment: "Delete button in the Source fields detail pane, and the confirm dialog's destructive button"
+        )
+
+        static let deleteOwnedByPlugin = LocalizedStringResource(
+            "sourceFields.delete.ownedByPlugin",
+            defaultValue: "Owned by the plugin",
+            comment: "Tooltip on the disabled delete button when the selected field comes from a plugin"
+        )
+
+        static func deleteInUse(count: Int) -> LocalizedStringResource {
+            count == 1 ? deleteInUseOne : deleteInUseOther(count: count)
+        }
+
+        private static let deleteInUseOne = LocalizedStringResource(
+            "sourceFields.delete.inUseOne",
+            defaultValue: "In use on 1 source",
+            comment: "Tooltip on the disabled delete button when exactly one source carries a value for the field"
+        )
+
+        private static func deleteInUseOther(count: Int) -> LocalizedStringResource {
+            LocalizedStringResource(
+                "sourceFields.delete.inUseOther",
+                defaultValue: "In use on \(count) sources",
+                comment: "Tooltip on the disabled delete button; argument is how many sources carry a value for the field"
+            )
+        }
+
+        static func deleteConfirmTitle(label: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceFields.delete.confirmTitle",
+                defaultValue: "Delete %@?",
+                comment: "Title of the delete-field confirmation dialog; argument is the field label"
+            ))
+            return String(format: format, locale: .current, label)
+        }
+
+        static let deleteConfirmMessage = LocalizedStringResource(
+            "sourceFields.delete.confirmMessage",
+            defaultValue: "No source in this project carries a value for this field, so nothing is lost. The key is released and can be minted again by a later field with the same label.",
+            comment: "Message of the delete-field confirmation sheet: what is and is not lost"
+        )
+
+        static let deleteKeyReleased = LocalizedStringResource(
+            "sourceFields.delete.keyReleased",
+            defaultValue: "Key released",
+            comment: "Micro-caps label beside the key a field delete releases, in the confirmation sheet"
+        )
+
+        static let deleteKeep = LocalizedStringResource(
+            "sourceFields.delete.keep",
+            defaultValue: "Keep field",
+            comment: "Button that closes the delete-field confirmation without deleting"
+        )
+
+        static let toastDeletedTitle = LocalizedStringResource(
+            "sourceFields.toast.deletedTitle",
+            defaultValue: "Field deleted",
+            comment: "Toast title after a source field is deleted"
+        )
+
+        static func toastDeletedBody(label: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sourceFields.toast.deletedBody",
+                defaultValue: "%@ is no longer in this project's vocabulary.",
+                comment: "Toast body after a source field is deleted; argument is the field label"
+            ))
+            return String(format: format, locale: .current, label)
+        }
 
         static let emptyProjectTitle = LocalizedStringResource(
             "sourceFields.emptyProject.title",
@@ -518,12 +626,6 @@ enum L10n {
             comment: "Hint under the key on an existing field's detail panel"
         )
 
-        static let lockedNoteSeeded = LocalizedStringResource(
-            "sourceFields.detail.lockedNoteSeeded",
-            defaultValue: "Seeded by Provenencia. Its label, data type, and description are fixed so citations stay comparable between projects.",
-            comment: "Callout explaining why a provenencia-origin field can't be edited"
-        )
-
         static func lockedNotePlugin(pluginID: String) -> String {
             let format = String(localized: LocalizedStringResource(
                 "sourceFields.detail.lockedNotePlugin",
@@ -559,7 +661,7 @@ enum L10n {
 
         static let panelEmptyBody = LocalizedStringResource(
             "sourceFields.detail.panelEmptyBody",
-            defaultValue: "Select a field to read its definition. Fields seeded by Provenencia are fixed; the ones you added stay editable.",
+            defaultValue: "Select a field to read or edit its definition. Fields supplied by a plugin are read-only; the rest of this project's vocabulary stays editable.",
             comment: "Body of the empty state shown in the detail panel before any field is selected"
         )
 

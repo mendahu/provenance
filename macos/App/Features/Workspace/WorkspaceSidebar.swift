@@ -158,11 +158,10 @@ struct WorkspaceSidebar: View {
     }
 
     private func collapseToggle(label: LocalizedStringResource) -> some View {
-        PVIconButton(.sidebarToggle) {
+        // `PVIconButton` now owns the tooltip and accessibility label.
+        PVIconButton(.sidebarToggle, label: label) {
             workspace.toggleSidebarCollapsed()
         }
-        .help(Text(label))
-        .accessibilityLabel(Text(label))
         .accessibilityIdentifier("workspace.sidebar.collapseToggle")
     }
 }

@@ -42,11 +42,13 @@ const (
 		FROM source_metadata_fields WHERE key = ? AND origin = ?`
 	sqlGetByID = `SELECT id, key, origin, label, data_type, COALESCE(description, '')
 		FROM source_metadata_fields WHERE id = ?`
-	sqlList = `SELECT id, key, origin, label, data_type, COALESCE(description, '')
-		FROM source_metadata_fields ORDER BY label COLLATE NOCASE, origin, key`
+	sqlList = `SELECT f.id, f.key, f.origin, f.label, f.data_type, COALESCE(f.description, ''),
+			(SELECT COUNT(*) FROM source_metadata m WHERE m.field_id = f.id)
+		FROM source_metadata_fields f ORDER BY f.label COLLATE NOCASE, f.origin, f.key`
 	sqlUpdate = `UPDATE source_metadata_fields SET label = ?, description = ? WHERE id = ?`
 	sqlDelete = `DELETE FROM source_metadata_fields WHERE id = ?`
 	sqlInUse  = `SELECT 1 FROM source_metadata WHERE field_id = ? LIMIT 1`
+	sqlUsedBy = `SELECT COUNT(*) FROM source_metadata WHERE field_id = ?`
 )
 
 // Field is one source_metadata_fields row.
@@ -57,6 +59,9 @@ type Field struct {
 	Label       string
 	DataType    string
 	Description string
+	// UsedBy is how many source_metadata rows reference this field. Only
+	// List and Update populate it; the other readers leave it 0.
+	UsedBy int
 }
 
 // Upsert inserts or updates by (key, origin). Mints a UUIDv7 id when ID is empty on insert.
@@ -215,12 +220,25 @@ func List(c *database.Catalog) ([]Field, error) {
 	var out []Field
 	for rows.Next() {
 		var f Field
-		if err := rows.Scan(&f.ID, &f.Key, &f.Origin, &f.Label, &f.DataType, &f.Description); err != nil {
+		if err := rows.Scan(&f.ID, &f.Key, &f.Origin, &f.Label, &f.DataType, &f.Description, &f.UsedBy); err != nil {
 			return nil, err
 		}
 		out = append(out, f)
 	}
 	return out, rows.Err()
+}
+
+// UsedBy reports how many source_metadata rows reference the field.
+func UsedBy(c *database.Catalog, id []byte) (int, error) {
+	db, err := c.DB()
+	if err != nil {
+		return 0, err
+	}
+	var n int
+	if err := db.QueryRow(sqlUsedBy, id).Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 // Delete removes a field by id when no source_metadata rows reference it.

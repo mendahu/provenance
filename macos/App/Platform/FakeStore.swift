@@ -391,6 +391,23 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         return list[idx]
     }
 
+    func deleteMetadataField(
+        projectDir: String,
+        userID _: String,
+        fieldID: String
+    ) async throws {
+        var list = fieldsByProject[projectDir] ?? []
+        guard let idx = list.firstIndex(where: { $0.id == fieldID }) else {
+            throw StoreBoom.boom
+        }
+        // The engine refuses a field that sources still reference.
+        guard list[idx].usedBy == 0 else {
+            throw StoreBoom.boom
+        }
+        list.remove(at: idx)
+        fieldsByProject[projectDir] = list
+    }
+
     func countFiles(projectDir: String) async throws -> Int {
         fileCountByProject[projectDir] ?? 0
     }

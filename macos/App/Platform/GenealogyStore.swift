@@ -63,13 +63,18 @@ struct CatalogSourceType: Sendable, Equatable {
     var description: String
 }
 
-struct CatalogMetadataField: Sendable, Equatable {
+struct CatalogMetadataField: Sendable, Equatable, Identifiable {
     var id: String
     var key: String
     var origin: String
     var label: String
     var dataType: String
     var description: String
+    /// How many sources already carry a value for this field. Deleting is
+    /// only allowed at 0 — the engine refuses otherwise
+    /// (`sourcefields.in_use`). Only `listMetadataFields` and
+    /// `updateMetadataField` populate it.
+    var usedBy: Int = 0
 }
 
 struct CatalogMetadataEntry: Sendable, Equatable {
@@ -191,6 +196,12 @@ protocol GenealogyStore: Sendable {
         dataType: String,
         description: String
     ) async throws -> CatalogMetadataField
+
+    func deleteMetadataField(
+        projectDir: String,
+        userID: String,
+        fieldID: String
+    ) async throws
     /// Total content-addressed files rows — distinct files, not the
     /// (larger, per-source) artifact count. No project-wide artifact
     /// listing exists yet (S2-17).

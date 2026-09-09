@@ -19,10 +19,15 @@ enum PVSymbol: String {
     case search = "magnifyingglass"
     case searchEmpty = "text.magnifyingglass"
     case plus = "plus"
-    case sortAscending = "chevron.up"
+    case sortAscending = "arrow.up"
+    case sortDescending = "arrow.down"
+    case sortUnsorted = "chevron.up.chevron.down"
+    case filter = "line.3.horizontal.decrease"
+    case shieldCheck = "checkmark.shield.fill"
     case calendar = "calendar"
     case textType = "textformat"
     case lock = "lock.fill"
+    case trash = "trash"
 }
 
 /// Renders a design-system icon via SF Symbols.

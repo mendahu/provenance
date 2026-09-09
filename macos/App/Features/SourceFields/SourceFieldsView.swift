@@ -53,8 +53,48 @@ struct SourceFieldsView: View {
             }
         }
         .animation(reduceMotion ? nil : PVMotion.easeStandard, value: model.toast)
+        .pvConfirmSheet(
+            item: pendingDelete,
+            copy: deleteCopy(for:),
+            isRunning: model.isDeleting,
+            onConfirm: { Task { await model.confirmDelete() } }
+        ) { field in
+            deleteDetail(for: field)
+        }
         .task { await model.load() }
         .accessibilityIdentifier("sourceFields")
+    }
+
+    /// Dismissal is driven by the model, not by the sheet: a successful delete
+    /// clears `pendingDeleteID`, and a failed one keeps the sheet up with the
+    /// reason (see `pvConfirmSheet`). The sheet renders its copy and detail
+    /// from the field it receives — a snapshot `pvConfirmSheet` holds through
+    /// the dismiss animation — never from `model.pendingDeleteField` live.
+    private var pendingDelete: Binding<CatalogMetadataField?> {
+        Binding(
+            get: { model.pendingDeleteField },
+            set: { if $0 == nil { model.cancelDelete() } }
+        )
+    }
+
+    private func deleteCopy(for field: CatalogMetadataField) -> PVConfirmCopy {
+        PVConfirmCopy(
+            title: L10n.SourceFields.deleteConfirmTitle(label: field.label),
+            message: String(localized: L10n.SourceFields.deleteConfirmMessage),
+            confirm: L10n.SourceFields.deleteField,
+            cancel: L10n.SourceFields.deleteKeep
+        )
+    }
+
+    /// The consequence that earns this a sheet rather than a plain alert: the
+    /// mono-set key the delete releases, plus the reason if it failed.
+    @ViewBuilder
+    private func deleteDetail(for field: CatalogMetadataField) -> some View {
+        PVConfirmKeyChip(label: L10n.SourceFields.deleteKeyReleased, value: field.key)
+            .accessibilityIdentifier("sourceFields.delete.key")
+        if let deleteError = model.deleteError {
+            PVCallout(tone: .danger, message: deleteError)
+        }
     }
 
     private var header: some View {

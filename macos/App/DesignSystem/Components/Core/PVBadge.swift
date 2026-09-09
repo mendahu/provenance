@@ -20,10 +20,12 @@ enum PVBadgeTone {
 /// fill, optional leading icon, uppercase micro caption). `subtle` swaps
 /// the filled background for a bordered outline, same as the web prop.
 struct PVBadge: View {
-    private let label: Text
+    private let label: Text?
     private let tone: PVBadgeTone
     private let icon: PVSymbol?
     private let subtle: Bool
+    /// Only set for the icon-only badge, which has no text to read out.
+    private let iconLabel: LocalizedStringResource?
 
     /// For fixed UI copy (e.g. "provenencia", "you").
     init(_ titleKey: LocalizedStringResource, tone: PVBadgeTone = .neutral, icon: PVSymbol? = nil, subtle: Bool = false) {
@@ -31,6 +33,7 @@ struct PVBadge: View {
         self.tone = tone
         self.icon = icon
         self.subtle = subtle
+        iconLabel = nil
     }
 
     /// For badge content that is data, not UI copy (e.g. a raw `plugin:…` origin id).
@@ -39,6 +42,17 @@ struct PVBadge: View {
         self.tone = tone
         self.icon = icon
         self.subtle = subtle
+        iconLabel = nil
+    }
+
+    /// Glyph-only pill — `PVIcon` is `accessibilityHidden`, so `label` carries
+    /// the meaning for VoiceOver and doubles as the hover tooltip.
+    init(icon: PVSymbol, label: LocalizedStringResource, tone: PVBadgeTone = .neutral, subtle: Bool = false) {
+        self.label = nil
+        self.tone = tone
+        self.icon = icon
+        self.subtle = subtle
+        iconLabel = label
     }
 
     var body: some View {
@@ -47,13 +61,13 @@ struct PVBadge: View {
             if let icon {
                 PVIcon(icon, size: 11)
             }
-            label
+            label?
                 .tracking(PVTypeScale.micro * PVTracking.caps)
                 .textCase(.uppercase)
         }
         .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
         .foregroundStyle(colors.foreground)
-        .padding(.horizontal, PVSpacing.space4)
+        .padding(.horizontal, label == nil ? PVSpacing.space2 : PVSpacing.space4)
         .padding(.vertical, PVSpacing.space1)
         .background(subtle ? Color.clear : colors.background)
         .overlay(
@@ -62,6 +76,24 @@ struct PVBadge: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: PVRadius.xs, style: .continuous))
         .fixedSize()
+        .modifier(PVBadgeIconLabel(label: iconLabel))
+    }
+}
+
+/// Applies the VoiceOver label + tooltip a glyph-only badge needs, and is a
+/// no-op for the text badges (which read out their own label).
+private struct PVBadgeIconLabel: ViewModifier {
+    let label: LocalizedStringResource?
+
+    func body(content: Content) -> some View {
+        if let label {
+            content
+                .accessibilityElement()
+                .accessibilityLabel(Text(label))
+                .help(Text(label))
+        } else {
+            content
+        }
     }
 }
 
@@ -72,6 +104,7 @@ struct PVBadge: View {
         PVBadge("provenencia", tone: .accent)
         PVBadge("you", tone: .warning)
         PVBadge(text: "plugin:findagrave", tone: .info)
+        PVBadge(icon: .shieldCheck, label: "Seeded by Provenencia", tone: .accent, subtle: true)
     }
     .padding(PVSpacing.space9)
     .background(PVColor.surfacePage)

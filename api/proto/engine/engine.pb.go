@@ -1818,13 +1818,17 @@ func (x *SourceType) GetDescription() string {
 }
 
 type MetadataField struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	Origin        string                 `protobuf:"bytes,3,opt,name=origin,proto3" json:"origin,omitempty"`
-	Label         string                 `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
-	DataType      string                 `protobuf:"bytes,5,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"` // text | date
-	Description   string                 `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Key         string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	Origin      string                 `protobuf:"bytes,3,opt,name=origin,proto3" json:"origin,omitempty"`
+	Label       string                 `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
+	DataType    string                 `protobuf:"bytes,5,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"` // text | date
+	Description string                 `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	// How many source_metadata rows reference this field. Deleting is only
+	// allowed at 0 (see sourcefields.ErrInUse); the client uses the count to
+	// disable its delete affordance and say what is holding the field.
+	UsedBy        int32 `protobuf:"varint,7,opt,name=used_by,json=usedBy,proto3" json:"used_by,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1899,6 +1903,13 @@ func (x *MetadataField) GetDescription() string {
 		return x.Description
 	}
 	return ""
+}
+
+func (x *MetadataField) GetUsedBy() int32 {
+	if x != nil {
+		return x.UsedBy
+	}
+	return 0
 }
 
 type MetadataWorkspaceEntry struct {
@@ -4452,14 +4463,15 @@ const file_engine_proto_rawDesc = "" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12\x16\n" +
 	"\x06origin\x18\x03 \x01(\tR\x06origin\x12\x14\n" +
 	"\x05label\x18\x04 \x01(\tR\x05label\x12 \n" +
-	"\vdescription\x18\x05 \x01(\tR\vdescription\"\x9e\x01\n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\"\xb7\x01\n" +
 	"\rMetadataField\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12\x16\n" +
 	"\x06origin\x18\x03 \x01(\tR\x06origin\x12\x14\n" +
 	"\x05label\x18\x04 \x01(\tR\x05label\x12\x1b\n" +
 	"\tdata_type\x18\x05 \x01(\tR\bdataType\x12 \n" +
-	"\vdescription\x18\x06 \x01(\tR\vdescription\"\xf1\x01\n" +
+	"\vdescription\x18\x06 \x01(\tR\vdescription\x12\x17\n" +
+	"\aused_by\x18\a \x01(\x05R\x06usedBy\"\xf1\x01\n" +
 	"\x16MetadataWorkspaceEntry\x12:\n" +
 	"\x05field\x18\x01 \x01(\v2$.provenencia.engine.v1.MetadataFieldR\x05field\x12\x1d\n" +
 	"\n" +

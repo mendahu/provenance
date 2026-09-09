@@ -134,11 +134,13 @@ red `Text`), plus `Badge`/`EmptyState`/`Callout` (added for the S2-02
 | Toast | `Components/Feedback/PVToast.swift` |
 | LogoMark | `Components/Core/PVLogoMark.swift` |
 | SidebarNav | `Components/Navigation/PVSidebarNav.swift` (added for the S2-01 workspace chrome; ports that board's revised `collapsed`-capable `SidebarNav.jsx`) |
-| IconButton | `Components/Core/PVIconButton.swift` (added for the workspace sidebar's collapse toggle, which needed real hover feedback) |
-| Badge | `Components/Core/PVBadge.swift` (added for S2-02's data-type/origin badges) |
+| IconButton | `Components/Core/PVIconButton.swift` (added for the workspace sidebar's collapse toggle, which needed real hover feedback; `label` is required per `IconButton.jsx` and doubles as the `.help` tooltip, and `tone: .danger` tints a destructive action) |
+| Badge | `Components/Core/PVBadge.swift` (added for S2-02's data-type/origin badges; a glyph-only variant carries the S2-22 seeded pill) |
 | Divider | `Components/Core/PVDivider.swift` (1pt hairline; horizontal/vertical) |
 | EmptyState | `Components/Feedback/PVEmptyState.swift` (added for S2-02's empty/no-match states; the web spec's `action` slot isn't ported — see the file's header comment) |
 | Callout | `Components/Feedback/PVCallout.swift` (added for S2-02's "this field is locked" note; only the subset S2-02 needs is ported — see the file's header comment) |
+| Table | `Components/Data/PVTable.swift` (added for S2-22, extracted from the Source fields list; see "The table tradeoff" below) |
+| Confirm | `Components/Feedback/PVConfirm.swift` (added for S2-22's delete confirmation; the macOS answer to `ConfirmDialog.jsx`, which the web spec says not to port — see "Confirmations are system chrome" below) |
 
 The other 14 design-system components have **no files yet** — add them on
 demand, following the pattern above, when a screen needs one:
@@ -146,9 +148,9 @@ demand, following the pattern above, when a screen needs one:
 | Component | Category | Purpose |
 |---|---|---|
 | Card | Core | Bordered content container with optional header/footer |
+| Dialog | Feedback | Modal panel. On macOS reach for `.sheet` and let the window draw its own chrome; for confirmations use `PVConfirm` instead |
 | Tag | Core | Removable/interactive pill with a color dot |
-| Tooltip | Core | Hover label |
-| Dialog | Feedback | Modal dialog |
+| Tooltip | Core | Hover label — on macOS this is usually SwiftUI's own `.help()`, which is what `PVIconButton` uses; port the web hover card only if a call site needs richer content |
 | Checkbox | Forms | Checkbox control |
 | Radio | Forms | Radio control |
 | Switch | Forms | Toggle switch |
@@ -158,6 +160,123 @@ demand, following the pattern above, when a screen needs one:
 | FactRow | Research | One asserted fact: type glyph, date, value, place, grade, conflict note |
 | PersonChip | Research | A person with life dates and a lineage-colored rule |
 | SourceCitation | Research | Citation + repository + scan thumbnail + grade, as one unit |
+
+## The table tradeoff
+
+`PVTable` is custom chrome on purpose. SwiftUI `Table` and AppKit
+`NSTableView` bring their own header, row and selection styling, and none of
+it can be pushed all the way to the design system's look: micro-caps headers,
+a 2pt accent bar on the selected row, hairline `borderSubtle` rules, badge
+cells, the warm hover tint. Visual fidelity won; the cost is that keyboard
+and screen-reader parity had to be built by hand.
+
+**Interaction contract** (mirrors `components/data/Table.prompt.md`):
+
+| Input | Behavior |
+|---|---|
+| ↑ / ↓ | Move selection through the visible rows. Clamps at both ends — does **not** wrap. |
+| ⌥↑ / Home | Select the first row. |
+| ⌥↓ / End | Select the last row. |
+| Page up / Page down | Move ten rows, clamped. |
+| a–z, 0–9 | Type-to-select on `primaryText`. The buffer resets after 800ms; a single keystroke advances to the *next* match, so repeated presses cycle. |
+| Escape | Clears the type-select buffer. |
+
+The row list is one focus stop, so tab order reads: search field → sort
+headers → table → detail pane. Selection always scrolls into view via
+`ScrollViewReader`. Like a native table, the highlight dims when the table
+does not have focus — `surfaceSelected` + accent bar when focused,
+`surfaceSelectedInactive` + `borderStrong` when not. Focus shows
+`pvFocusRing` on the container; the view structure never changes on focus
+(same rule as `PVInput`).
+
+The caller owns the data: `rows` arrive already filtered and sorted, and the
+table reports sort/filter intent through `onSortChange` /
+`PVTableColumnFilter.onChange`. Column definitions are the single source of
+truth for width — never restate a width at the call site. Search bars and
+result footers are feature chrome and stay in the pane.
+
+**Honest accessibility limit.** A custom view cannot claim AppKit's table
+grid role, so VoiceOver will not announce "table, row 3 of 12, column 2".
+Rows are `.accessibilityElement(children: .combine)` instead, so each reads
+as a single element ("Author, author, text") with `.isSelected` on the
+selected one, and sortable headers announce their direction via
+`.accessibilityValue` because `PVIcon` is `accessibilityHidden`. That
+list-like semantic is accepted for single-selection browse lists; do not
+reach for `PVTable` where cell-level navigation matters.
+
+`PVTableSelection.moveIndex` and `PVTableTypeSelectMatcher` are pure and
+sit outside the view so selection movement and prefix matching are unit
+tested without mounting UI (`ProvenenciaTests/PVTableTests.swift`).
+
+Not implemented, deliberately — same scope line as the web component:
+multi-select, column resize/reorder, drag-and-drop, inline editing.
+
+## Confirmations are system chrome
+
+`components/feedback/ConfirmDialog.jsx` is **deliberately not ported**, on its
+own `prompt.md`'s instruction. The web component draws a scrim, a backdrop
+blur, a corner radius and a drop shadow only because a browser gives it none
+of them. On macOS all four belong to the window, and redrawing them is exactly
+what makes a native dialog look off:
+
+- macOS does **not** dim the parent window behind a sheet — the parent's
+  controls simply go inactive. A dark scrim is a web/iOS idiom. The absent
+  scrim is correct, not missing.
+- The sheet window supplies its own corner radius, shadow and material.
+  Setting `.background` / `.cornerRadius` / `.shadow` on sheet *content* is
+  what yields the double-rounded, double-shadowed panel.
+- Sheets are modal to their window, not the app, and slide from the titlebar —
+  all free from `.sheet`.
+
+`Components/Feedback/PVConfirm.swift` carries the web component's **copy
+rules** across without its chrome, and offers the two right answers:
+
+| Modifier | Use |
+|---|---|
+| `.pvConfirm(isPresented:copy:tone:onConfirm:)` | **The default.** A system alert — Apple's own pattern, fully system-drawn, inherits keyboard, VoiceOver and Reduce Motion for free. Plain-text message only. |
+| `.pvConfirmSheet(item:copy:tone:isRunning:onConfirm:detail:)` | When the consequence needs rich content — a mono-set key (`PVConfirmKeyChip`), a list of affected records. Chrome still belongs to the window; only content and the button row are ours. Keyed to the record it names (`item:`, not an `isPresented` Bool) so the copy and detail render from a snapshot and the sheet animates out still showing them, rather than blanking the instant the model clears. |
+
+The action bar keeps `Dialog.jsx`'s footer treatment — `surfaceSunken` with a
+hairline top rule — because that band is *content*, not window chrome. The
+"draw none of it" rule names four things the window owns: scrim, backdrop
+blur, corner radius, drop shadow. Anything inside the panel is still ours to
+style. (`swift/ProvenenciaConfirm.swift` omits the band; we restore it.)
+
+**The sheet's corner radius is not ours; its buttons are.** The panel's
+rounded corners come from the sheet *window* — there is no supported API to
+change them, and redrawing the panel to get square corners means giving up
+`.sheet` entirely. Accept the window radius as platform chrome, the same
+category as the titlebar. The action-bar buttons, though, sit *inside* the
+panel in a band we already paint, so by the content rule above they take
+`.buttonStyle(.pv(…))` — `PVRadius.sm` corners, DS palette — not the system
+`.borderedProminent` pill. Nothing native is lost: shortcuts, focus, roles
+and disabled state live on `Button`, not the style, and the destructive
+tint was already `PVColor.danger` rather than the system role tint. (This
+reverses an earlier decision to keep native buttons in the sheet; the
+system *alert* form still draws its own buttons and stays fully native.)
+In-content shapes keep Provenencia radii as before — `PVConfirmKeyChip`
+uses `PVRadius.xs`, matching the design's square treatment for citable
+values. Because a custom `ButtonStyle` draws no focus indication of its
+own, `PVButtonStyle` shows `pvFocusRing` when focused, so the sheet's
+cancel-first focus stays visible to keyboard users.
+
+The copy rules travel in `PVConfirmCopy`: the title is a question naming the
+record ("Delete Photographer?", never "Are you sure?"), the message says what
+is *and is not* lost, confirm repeats the verb ("Delete field", never "OK"),
+and cancel names the safe outcome ("Keep field"). **Focus starts on cancel** in
+both forms, so Return cannot complete a destructive action by reflex.
+
+Two further rules from the spec: a blocked action never reaches a confirmation
+— disable the control and explain why in its tooltip, the way Source fields'
+delete button does. And a *reversible* action should not confirm at all: act,
+then offer undo in a `PVToast`.
+
+One deviation from the design system's `swift/ProvenenciaConfirm.swift`
+reference: it clears `isPresented` before invoking `onConfirm`, which closes
+the sheet the instant a confirm starts and leaves its own `isRunning` spinner
+nowhere to appear. `pvConfirmSheet` leaves dismissal to the caller's binding
+so an async action can stay on screen while it runs and report a failure in
+`detail`.
 
 ## Fonts
 
