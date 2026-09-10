@@ -31,3 +31,4 @@ Sprint task list (PR sequence, non-design work): [`../README.md`](../README.md).
 - An Artifact has **zero or one** primary File; multiple scans are multiple Artifacts. Derivatives belong to Files.
 - Workspace sidebar destinations for Spike 2: **Sources**, **Source types**, **Source fields**, **Files**.
 - **Sources** uses a **separate Source page** (not master–detail like types/fields): list is S2-04; Source → Artifact → File is S2-23.
+- **Sources list** is **list-style** (thumbnail rows), **not** `PVTable`. Vocabulary (fields/types) keeps the table.

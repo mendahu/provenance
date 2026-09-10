@@ -3,7 +3,7 @@
 **Spike step:** [S2-22 in README](README.md#s2-22--pr-pvtable--custom-chrome-table-with-keyboarda11y)  
 **Kind:** PR (Swift / design system)  
 **Depends on:** S2-15 (Source fields list exists to extract from)  
-**Feeds:** S2-16+ vocabulary/catalog lists should prefer `PVTable`
+**Feeds:** S2-16 (Source types) should prefer `PVTable`; Sources/Files use the S2-04 list-style component instead
 
 This brief is the **source of truth for implementing the PR**. It encodes a deliberate product decision: keep custom Provenencia chrome (not SwiftUI `Table` / AppKit `NSTableView`), but reach **keyboard and accessibility parity** with a native macOS data table for single-selection browse lists.
 
@@ -15,7 +15,7 @@ This brief is the **source of truth for implementing the PR**. It encodes a deli
 | --- | --- |
 | Native `Table` / `List` | **No** — visual fidelity to the design system (micro-caps headers, selected accent bar, hover chrome, badge cells) wins over system table chrome. |
 | Custom design-system component | **Yes** — name it **`PVTable`**, under `macos/App/DesignSystem/Components/Data/`. |
-| Scope of this PR | Extract the Source fields hand-rolled list into `PVTable`, wire Source fields to it, add keyboard + a11y. Do **not** implement Source types / Sources / Files lists here (those come in later PRs and should *consume* `PVTable`). |
+| Scope of this PR | Extract the Source fields hand-rolled list into `PVTable`, wire Source fields to it, add keyboard + a11y. Do **not** implement Source types / Sources / Files lists here (Source types later *consumes* `PVTable`; Sources/Files use a **list-style** component per S2-04 — not this table). |
 | Deployment target | macOS **14.0** — use `.focusable()`, `.onKeyPress`, `.focusEffectDisabled()`, `ScrollViewReader`. No AppKit `NSViewRepresentable` required. |
 
 ---
@@ -132,7 +132,7 @@ Under `macos/ProvenenciaTests/` (Swift Testing; follow [`.cursor/skills/add-swif
 
 ### 7. Out of scope for S2-22
 
-- Rewriting Source types / Sources / Files lists (consume `PVTable` in those PRs).
+- Rewriting Source types / Sources / Files lists (Source types consumes `PVTable` in its PR; Sources/Files follow the S2-04 list-style component, not `PVTable`).
 - Multi-select, column resize, column reorder, drag-and-drop.
 - Switching to SwiftUI `Table` / `NSTableView`.
 - Changing Source fields data model, FFI, or badge vocabulary mapping.

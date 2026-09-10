@@ -14,6 +14,8 @@ Paste this entire document into Claude Design as the requirements for one board/
 
 Design the **Sources** destination **list** — the browse surface researchers land on from the sidebar. Rows identify Sources and open a **separate Source page** (S2-23), not a master–detail split in the same pane the way Source types / Source fields do.
 
+**Presentation is locked:** this is an **evidence list**, not a vocabulary table. Do **not** use **`PVTable`** (that stays for Source fields / Source types). Design a **new list-style component** (or board pattern that implies one): homogeneous rows with a leading thumbnail, primary title, and secondary meta — Finder/Mail density, not spreadsheet columns.
+
 ```text
 Sources list
   ├─ select row ────────────────────────────────────────►  Source page (S2-23)
@@ -41,8 +43,51 @@ Authoritative: [`source-layer-data-model.md`](../../../source-layer-data-model.m
 ### 2.2 What this destination is not
 
 - Not a master–detail split with Source detail beside or under the list (unlike S2-02 / S2-03).
+- Not a **`PVTable`** / columnar admin list (unlike Source fields / Source types).
 - Not Artifacts, primary Files, derivatives, or ingest.
 - Not vocabulary admin (link to Source types / fields destinations OK).
+
+### 2.3 List chrome (locked)
+
+| Rule | UI implication |
+| --- | --- |
+| Component | **New list-style component** in the design system (name TBD in implementation — e.g. `PVList` / media list). Homogeneous row template for every Source. |
+| Not `PVTable` | No column headers, no multi-column grid, no spreadsheet sort-by-header chrome. Vocabulary keeps `PVTable`; Sources does not. |
+| Row skeleton | Leading **thumbnail** (or placeholder) → **title** (primary) → secondary line or trailing meta for **type** + **`SRC-…`**. Same structure every row. |
+| Density | Calm list / document browser — not cards, not a dashboard of tiles. Shared row height; hairline separators OK. |
+| Sort (optional) | If sorting exists, use a toolbar/menu control — not clickable table headers. |
+
+### 2.4 Design system — new vs reuse
+
+Tell Claude Design / engineering what is **shared chrome** vs **compose from existing**. Do not invent parallel controls when a built component already fits.
+
+#### Hoist (new design-system components)
+
+These are first-class DS work — design them as reusable, not Sources-only sketches:
+
+| Piece | Why |
+| --- | --- |
+| **List** (e.g. `PVList`) | Evidence browse shell: homogeneous rows, selection/hover, keyboard. Files (and later similar browsers) reuse it. **Not** `PVTable`. |
+| **Thumbnail** (e.g. `PVThumbnail`) | Fixed tile: image or placeholder, shared size/radius. Sources rows now; Artifacts / Files next. Missing image = placeholder, not error. |
+| **Form dialog** (extend confirm / e.g. `PVDialog`) | Add Source needs **fields** inside centered dimming chrome. `PVConfirm` today is copy + actions (delete-style). Reuse that **presentation**; add a content slot for short forms so every “Add …” does not fork a one-off modal. |
+
+#### Reuse (already built — compose, don’t redraw)
+
+| Need on this board | Use |
+| --- | --- |
+| Search | `PVInput` (same list-search pattern as vocabulary panes) |
+| Empty / no matches | `PVEmptyState` |
+| Type picker | `PVSelect` or `PVComboBox` |
+| Title / description fields | `PVField` + `PVInput` |
+| Primary / secondary actions | `PVButton` |
+| Validation / success feedback | `PVToast` (or inline field errors) |
+| Mono `SRC-…` | `PVFont.mono` (optional tiny shared ref chip later if it keeps repeating — not required for this board) |
+
+#### Leave out of the design system for now
+
+- Source-specific fallback title copy (`type + SRC-…`) — feature logic.
+- “Navigate to Source page” wiring — app navigation, not a component.
+- Full Source page / Artifact chrome — **S2-23**.
 
 ---
 
@@ -52,12 +97,13 @@ Authoritative: [`source-layer-data-model.md`](../../../source-layer-data-model.m
 
 | ID | Requirement |
 | --- | --- |
-| S-1 | List Sources in the **Sources** content host. |
-| S-2 | Each row shows **title** (or fallback), **`SRC-…`**, and **source type name**. |
+| S-1 | List Sources in the **Sources** content host using the **list-style** pattern (§2.3) — **not** `PVTable`. |
+| S-2 | Each row shows **title** (or fallback), **`SRC-…`**, and **source type name** in the homogeneous skeleton (thumb + primary + meta). |
 | S-3 | Each row reserves a **thumbnail** slot (image or placeholder) derived from child Artifact/File data when available. |
 | S-4 | Search/filter recommended (title / ref / type). |
 | S-5 | Empty state + primary **Add Source** CTA. |
 | S-6 | Selecting a row **navigates to a separate Source page** (push / replace content — not in-list expand, not a side-by-side detail pane). Document that pattern on the board; the destination page itself is S2-23. |
+| S-6a | Board must show the **new list component** clearly enough that engineering can extract it (row anatomy, selected/hover, empty, with/without thumb) — not a one-off Sources-only sketch that cannot become shared chrome. |
 
 ### 3.2 Add Source
 
@@ -92,7 +138,7 @@ Create is a **thin** `CreateSource` payload (type + optional title/description).
 
 ## 5. Screen / frame inventory (minimum)
 
-1. Sources **list** with thumbnails, title, ref, type.
+1. Sources **list** (list component: thumbnails, title, ref, type) — not a table.
 2. Sources **empty** + Add Source.
 3. **Add Source** dialog (type, title, description; Create / Cancel) — confirm-dialog chrome.
 4. Annotation: Create and row select both go to the **separate Source page** (do not invent master–detail or create-mode on that page here).
@@ -104,6 +150,7 @@ Create is a **thin** `CreateSource` payload (type + optional title/description).
 - Source page layout (editable title/description, notes, metadata, Artifacts) — **S2-23**.
 - Using the Source page itself as the create form — create stays in this board’s dialog.
 - Trailing inspector / slide-over create chrome.
+- Reusing or extending **`PVTable`** for this destination.
 - Artifact detail, File ingest/replace, derivatives — **S2-23** / PR S2-18.
 - Deleting Sources.
 - Interpretation (citations, people); credibility grades.
@@ -113,7 +160,9 @@ Create is a **thin** `CreateSource` payload (type + optional title/description).
 
 ## 7. Acceptance checklist
 
-- [ ] Sources list: title, `SRC-…`, type name, thumbnail slot.
+- [ ] Sources list uses **list-style** rows (thumb + title + type/`SRC-…`) — **not** `PVTable` / column headers.
+- [ ] Board implies a **reusable list component** (row anatomy documented), not only a Sources one-off.
+- [ ] Thumbnail and form-dialog chrome read as **shared** DS pieces; search/empty/fields/buttons reuse existing components.
 - [ ] Empty + **Add Source** centered dimming dialog (type required; title/description optional).
 - [ ] Dialog chrome matches confirm-dialog presentation (not inspector / not full-page create).
 - [ ] Create navigates to the Source page; Cancel stays on the list.
@@ -127,6 +176,8 @@ Create is a **thin** `CreateSource` payload (type + optional title/description).
 
 | Gap | Status |
 | --- | --- |
+| List chrome | Ship a **new design-system list component** (S2-17); do **not** mount Sources on `PVTable`. Files (S2-20/S2-21) may reuse the same list later. |
+| Thumbnail | Ship a **shared thumbnail** tile with placeholder; don’t inline ad-hoc `Image` framing per feature. |
+| Add Source chrome | **Form dialog** sharing confirm-dialog presentation (`PVConfirm` family / `PVDialog`); fields via existing `PVField`/`PVInput`/`PVSelect`/`PVComboBox`. Do not invent a parallel modal system. |
 | List thumbnail refs | Likely **FFI gap:** ensure/list derivative paths for list cells — fold into S2-18 (or a thin precede PR). Placeholder OK in S2-17. |
 | Source page | Designed in S2-23; shipped in S2-18 (S2-17 may stub navigation). |
-| Add Source chrome | Reuse / extend the existing **dialog** family used by confirmations (`PVConfirm` / related sheet presentation). Form fields inside; do not invent a parallel modal system. |

@@ -202,8 +202,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done); S2-02 / S2-03 (types vocabulary for Add Source / row type name) |
-| **Deliverables** | Board for the **Sources** list only: rows (title, `SRC-…`, type name, thumbnail slot from child data); search; empty + **Add Source** as a **centered dimming dialog** (same family as confirm dialogs; type required; title/description optional) that on Create navigates to the **separate Source page**; row select also opens that page. Not master–detail like S2-02/S2-03. Do not design Artifacts or File ingest here. |
-| **Context** | Source doc §4 (list-facing). Navigation locked: **separate page**. Create locked: **confirm-style dialog on the list**, then land on S2-23 (view/edit). |
+| **Deliverables** | Board for the **Sources** list only: **list-style** rows (thumbnail + title + type/`SRC-…`) via a **new list component** — **not** `PVTable`; search; empty + **Add Source** as a **centered dimming dialog** (same family as confirm dialogs; type required; title/description optional) that on Create navigates to the **separate Source page**; row select also opens that page. Not master–detail like S2-02/S2-03. Do not design Artifacts or File ingest here. |
+| **Context** | Source doc §4 (list-facing). Navigation locked: **separate page**. Create locked: **confirm-style dialog on the list**, then land on S2-23 (view/edit). Presentation locked: **evidence list**, not vocabulary table — `PVTable` remains fields/types only. |
 | **Out** | Source page body, Artifacts, ingest (S2-23 / S2-18); delete; vocabulary admin. |
 | **Feeds** | S2-17 |
 
@@ -377,9 +377,9 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | **Kind** | PR |
 | **Depends on** | S2-15 (Source fields list exists to extract from) |
 | **Deliverables** | Design-system **`PVTable`** under `macos/App/DesignSystem/Components/Data/`: generic single-selection table that keeps Provenencia visual chrome (micro-caps headers, hover/selected row, accent bar, badge cells) rather than SwiftUI `Table` / `NSTableView`. Migrate the Source fields list pane onto it. Add native-parity **keyboard** (focusable table, ↑/↓ + Home/End, scroll-into-view, type-to-select by primary text) and **VoiceOver** (combined row elements, selected trait, sort ascending/descending announced). Unit-test pure helpers (type-select buffer, selection movement). Document the tradeoff + interaction contract in `DesignSystem/README.md`. L10n for any new a11y strings via skill. |
-| **Context** | Tabular browse lists matter less visually than design-system fidelity in this product, but researchers still expect Mac keyboard and accessibility behavior. Extract once here so S2-16+ (Source types, Sources, Files) can reuse `PVTable` instead of copying the hand-rolled `ScrollView` + `LazyVStack` pattern. Deployment target is macOS 14 — prefer `.focusable()` / `.onKeyPress` / `ScrollViewReader`; no AppKit wrap required. |
-| **Out** | Native SwiftUI `Table`; multi-select; column resize/reorder; rewriting Source types / Sources / Files lists (those PRs *consume* `PVTable`); FFI/data-model changes; unrelated DesignSystem cleanup. |
-| **Feeds** | S2-16, S2-17, S2-21 (prefer `PVTable` for list UIs) |
+| **Context** | Tabular browse lists matter less visually than design-system fidelity in this product, but researchers still expect Mac keyboard and accessibility behavior. Extract once here so S2-16 (Source types) can reuse `PVTable` instead of copying the hand-rolled `ScrollView` + `LazyVStack` pattern. **Sources (S2-17) and likely Files use a separate list-style component** — not `PVTable`. Deployment target is macOS 14 — prefer `.focusable()` / `.onKeyPress` / `ScrollViewReader`; no AppKit wrap required. |
+| **Out** | Native SwiftUI `Table`; multi-select; column resize/reorder; rewriting Source types / Sources / Files lists (Source types *consumes* `PVTable`; Sources/Files do **not**); FFI/data-model changes; unrelated DesignSystem cleanup. |
+| **Feeds** | S2-16 (prefer `PVTable` for vocabulary lists) |
 
 ---
 
@@ -401,8 +401,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-04 (design enough), S2-16 (types available to pick), S2-13, S2-14 |
-| **Deliverables** | **Sources** list destination: rows (title, `SRC-…`, type name; thumbnail placeholder OK if S2-18 owns real thumbs) via **`PVTable`** where the list is a multi-column browse table; **Add Source** centered dialog (reuse confirm-dialog chrome; type + optional title/description) that on Create navigates to a **separate Source page** (stub/placeholder page OK until S2-18); row select opens that page. Unit tests with `FakeStore`. L10n via skill. |
-| **Context** | Mount under S2-14 **Sources** pane. Match S2-04: **not** master–detail; create is confirm-style dialog → Source page, not an in-page draft. Do not ship full Artifact/File UI here. |
+| **Deliverables** | **Sources** list destination: homogeneous **list** rows (thumbnail + title + type/`SRC-…`; thumbnail placeholder OK if S2-18 owns real thumbs) via a **new design-system list component** — **do not use `PVTable`**; **Add Source** centered dialog (reuse confirm-dialog chrome; type + optional title/description) that on Create navigates to a **separate Source page** (stub/placeholder page OK until S2-18); row select opens that page. Unit tests with `FakeStore`. L10n via skill. |
+| **Context** | Mount under S2-14 **Sources** pane. Match S2-04: **not** master–detail; create is confirm-style dialog → Source page; presentation is list-not-table. Do not ship full Artifact/File UI here. |
 | **Out** | Source page body, Artifact detail, ingest, derivative/thumbnail ensure (S2-18). |
 
 ---
@@ -424,8 +424,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-20 (design enough), S2-18 (Source page navigation target; thumbnail wiring preferred), **S2-22** (`PVTable` preferred for the list), S2-13, S2-14 |
-| **Deliverables** | **Files** destination: list thumbnail, media type, original filename via **`PVTable`** (or `PVTable`-compatible row chrome); Source link navigates into the Sources **Source page**. Add `ListFiles` (or equivalent) FFI joining current Artifact→Source when present; exclude derivative-only rows from the peer list. Unit tests with `FakeStore`. L10n via skill. |
+| **Depends on** | S2-20 (design enough), S2-18 (Source page navigation target; thumbnail wiring preferred), S2-17 (prefer reusing the Sources **list** component), S2-13, S2-14 |
+| **Deliverables** | **Files** destination: list thumbnail, media type, original filename via the **list-style** component from S2-17 (not `PVTable`); Source link navigates into the Sources **Source page**. Add `ListFiles` (or equivalent) FFI joining current Artifact→Source when present; exclude derivative-only rows from the peer list. Unit tests with `FakeStore`. L10n via skill. |
 | **Context** | Mount under existing S2-14 **Files** pane. Share thumbnail ensure/list helpers with S2-18 where practical. |
 | **Out** | Ingest UI; File delete/GC. |
 
@@ -474,7 +474,7 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | **Core schema / Go** | S2-05…S2-13 (done) |
 | **FFI + Mac** | S2-14 (done) → S2-15 → **S2-22** (`PVTable`) → S2-16 → S2-17 → S2-18 → S2-21 → S2-19 |
 
-Prefer **many small PRs**. Vocabulary admin before Sources. Land **`PVTable` (S2-22)** before Source types so later list UIs reuse it. Split Sources UI: list (S2-17), Source page + Artifact ingest + thumbnails (S2-18), then project Files browser (S2-21). Do not fold the workspace shell into feature destination PRs.
+Prefer **many small PRs**. Vocabulary admin before Sources. Land **`PVTable` (S2-22)** before Source types so vocabulary lists reuse it. Sources list (S2-17) ships a **new list-style component** (not `PVTable`); Source page + Artifact ingest + thumbnails (S2-18); then project Files browser (S2-21 — prefer reusing the Sources list component). Do not fold the workspace shell into feature destination PRs.
 
 ---
 
