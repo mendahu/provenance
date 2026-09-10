@@ -17,6 +17,8 @@ struct WorkspaceView: View {
     /// Destination content waits until nav counts finish so its `.task` load
     /// does not open the catalog concurrently with `refreshAll` (exclusive
     /// SQLite lock — concurrent opens fail and leave empty badges / lists).
+    /// Broader store-level serialization is parked in
+    /// `docs/ideas/catalog-access-serialization.md`.
     @State private var isCatalogReady = false
     @Environment(SignOutCoordinator.self) private var signOutCoordinator
 

@@ -150,7 +150,6 @@ final class SourceFieldsModel {
     // MARK: Actions
 
     func load() async {
-        await catalogCounts?.refreshAll()
         isLoading = true
         loadError = nil
         defer { isLoading = false }

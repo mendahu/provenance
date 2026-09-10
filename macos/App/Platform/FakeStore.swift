@@ -19,11 +19,6 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var fileCountByProject: [String: Int] = [:]
     /// When set, `listSources` throws instead of returning the in-memory list.
     var listSourcesError: Error?
-    /// Test hook: how many times `workspaceNavCounts` has been called.
-    var workspaceNavCountsCallCount = 0
-    /// Test hook: artificial delay inside `workspaceNavCounts` so concurrent
-    /// `CatalogCounts.refreshAll` callers can overlap.
-    var workspaceNavCountsDelayNanoseconds: UInt64 = 0
     var lastResult = OnboardingResult(
         projectDir: "/tmp/robins-family.provenencia",
         userID: "00000000-0000-7000-8000-000000000001",
@@ -510,10 +505,6 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func workspaceNavCounts(projectDir: String) async throws -> WorkspaceNavCounts {
-        workspaceNavCountsCallCount += 1
-        if workspaceNavCountsDelayNanoseconds > 0 {
-            try await Task.sleep(nanoseconds: workspaceNavCountsDelayNanoseconds)
-        }
         let types = sourceTypesByProject[projectDir] ?? []
         let fields = fieldsByProject[projectDir] ?? []
         return WorkspaceNavCounts(

@@ -144,16 +144,12 @@ final class SourcesModel {
     // MARK: Actions
 
     func load() async {
-        // Serialize behind workspace nav-count bootstrap — concurrent catalog
-        // opens fail under the exclusive SQLite lock.
-        await catalogCounts?.refreshAll()
         isLoading = true
         loadError = nil
         defer { isLoading = false }
         // Load independently so a busy catalog on one call does not leave
         // the type pool empty for Add Source when sources already arrived
-        // (or vice versa). Concurrent workspace `.task`s share the SQLite
-        // lock — see `CatalogCounts.refreshAll`.
+        // (or vice versa).
         var firstError: Error?
         do {
             sources = try await store.listSources(projectDir: projectDir)
