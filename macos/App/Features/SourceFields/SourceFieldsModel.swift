@@ -49,11 +49,20 @@ final class SourceFieldsModel {
     private let projectDir: String
     private let userID: String
     private let store: any GenealogyStore
+    /// Shared sidebar / header totals. Nil in isolated unit tests and
+    /// previews that don't mount a workspace.
+    private let catalogCounts: CatalogCounts?
 
-    init(projectDir: String, userID: String, store: any GenealogyStore) {
+    init(
+        projectDir: String,
+        userID: String,
+        store: any GenealogyStore,
+        catalogCounts: CatalogCounts? = nil
+    ) {
         self.projectDir = projectDir
         self.userID = userID
         self.store = store
+        self.catalogCounts = catalogCounts
     }
 
     // MARK: Derived
@@ -129,11 +138,13 @@ final class SourceFieldsModel {
     }
 
     var countLine: String {
-        let (seeded, user, plugin) = (fields.seededCount, fields.userCount, fields.pluginCount)
-        if plugin > 0 {
-            return L10n.SourceFields.countLineWithPlugin(total: fields.count, seeded: seeded, user: user, plugin: plugin)
+        let summary = catalogCounts?.sourceFields ?? .from(fields)
+        if summary.plugin > 0 {
+            return L10n.SourceFields.countLineWithPlugin(
+                total: summary.total, seeded: summary.seeded, user: summary.user, plugin: summary.plugin
+            )
         }
-        return L10n.SourceFields.countLine(total: fields.count, seeded: seeded, user: user)
+        return L10n.SourceFields.countLine(total: summary.total, seeded: summary.seeded, user: summary.user)
     }
 
     // MARK: Actions
@@ -144,6 +155,7 @@ final class SourceFieldsModel {
         defer { isLoading = false }
         do {
             fields = try await store.listMetadataFields(projectDir: projectDir)
+            publishCounts()
         } catch {
             loadError = error
         }
@@ -224,6 +236,7 @@ final class SourceFieldsModel {
                 body: L10n.SourceFields.toastDeletedBody(label: field.label),
                 tone: .success
             )
+            publishCounts()
         } catch {
             deleteError = L10n.Errors.message(for: error)
         }
@@ -259,6 +272,7 @@ final class SourceFieldsModel {
                     body: L10n.SourceFields.toastAddedBody(label: created.label, key: created.key),
                     tone: .success
                 )
+                publishCounts()
             case .editing(let id):
                 let updated = try await store.updateMetadataField(
                     projectDir: projectDir, userID: userID, fieldID: id,
@@ -280,5 +294,9 @@ final class SourceFieldsModel {
         } catch {
             formError = L10n.Errors.message(for: error)
         }
+    }
+
+    private func publishCounts() {
+        catalogCounts?.publishSourceFields(.from(fields))
     }
 }

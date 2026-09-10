@@ -13,29 +13,33 @@ struct WorkspaceView: View {
     let projectDir: String
     let userID: String
     @State private var workspace: WorkspaceModel
+    @State private var catalogCounts: CatalogCounts
     @Environment(SignOutCoordinator.self) private var signOutCoordinator
 
     init(model: OnboardingModel, projectDir: String, userID: String) {
         self.model = model
         self.projectDir = projectDir
         self.userID = userID
-        _workspace = State(initialValue: WorkspaceModel(projectDir: projectDir, store: model.store))
+        _workspace = State(initialValue: WorkspaceModel())
+        _catalogCounts = State(initialValue: CatalogCounts(projectDir: projectDir, store: model.store))
     }
 
     var body: some View {
         HStack(spacing: 0) {
-            WorkspaceSidebar(session: model.session, workspace: workspace)
+            WorkspaceSidebar(session: model.session, workspace: workspace, catalogCounts: catalogCounts)
             WorkspaceContent(
                 section: workspace.selectedSection,
                 project: model.project,
                 projectDir: projectDir,
                 userID: userID,
-                store: model.store
+                store: model.store,
+                catalogCounts: catalogCounts
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .environment(catalogCounts)
         .task {
-            await workspace.refreshCounts()
+            await catalogCounts.refreshAll()
         }
         .onAppear {
             signOutCoordinator.isAvailable = true

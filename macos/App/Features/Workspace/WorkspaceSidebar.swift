@@ -12,6 +12,7 @@ import SwiftUI
 struct WorkspaceSidebar: View {
     let session: InstallIdentity?
     let workspace: WorkspaceModel
+    let catalogCounts: CatalogCounts
 
     /// Matches `PVSpacing.widthSidebar` (264pt, the shared `--width-sidebar`
     /// token).
@@ -37,7 +38,7 @@ struct WorkspaceSidebar: View {
                 label: section.label,
                 icon: section.icon,
                 accessibilityIdentifier: "workspace.nav.\(section.rawValue)",
-                count: workspace.counts[section]
+                count: catalogCounts.badge(for: section)
             )
         }
     }

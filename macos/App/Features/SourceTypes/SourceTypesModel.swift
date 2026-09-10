@@ -74,11 +74,20 @@ final class SourceTypesModel {
     private let projectDir: String
     private let userID: String
     private let store: any GenealogyStore
+    /// Shared sidebar / header totals. Nil in isolated unit tests and
+    /// previews that don't mount a workspace.
+    private let catalogCounts: CatalogCounts?
 
-    init(projectDir: String, userID: String, store: any GenealogyStore) {
+    init(
+        projectDir: String,
+        userID: String,
+        store: any GenealogyStore,
+        catalogCounts: CatalogCounts? = nil
+    ) {
         self.projectDir = projectDir
         self.userID = userID
         self.store = store
+        self.catalogCounts = catalogCounts
     }
 
     // MARK: Derived
@@ -199,13 +208,13 @@ final class SourceTypesModel {
     }
 
     var countLine: String {
-        let (seeded, user, plugin) = (types.seededCount, types.userCount, types.pluginCount)
-        if plugin > 0 {
+        let summary = catalogCounts?.sourceTypes ?? .from(types)
+        if summary.plugin > 0 {
             return L10n.SourceTypes.countLineWithPlugin(
-                total: types.count, seeded: seeded, user: user, plugin: plugin
+                total: summary.total, seeded: summary.seeded, user: summary.user, plugin: summary.plugin
             )
         }
-        return L10n.SourceTypes.countLine(total: types.count, seeded: seeded, user: user)
+        return L10n.SourceTypes.countLine(total: summary.total, seeded: summary.seeded, user: summary.user)
     }
 
     // MARK: Actions
@@ -217,6 +226,7 @@ final class SourceTypesModel {
         do {
             types = try await store.listSourceTypes(projectDir: projectDir)
             fields = try await store.listMetadataFields(projectDir: projectDir)
+            publishCounts()
         } catch {
             loadError = error
         }
@@ -309,6 +319,7 @@ final class SourceTypesModel {
                     body: L10n.SourceTypes.toastAddedBody(label: created.label, key: created.key),
                     tone: .success
                 )
+                publishCounts()
             case .editing(let id):
                 let updated = try await store.updateSourceType(
                     projectDir: projectDir, userID: userID, typeID: id,
@@ -435,12 +446,20 @@ final class SourceTypesModel {
                 body: L10n.SourceTypes.toastDeletedBody(label: type.label),
                 tone: .success
             )
+            publishCounts()
         } catch {
             deleteError = L10n.Errors.message(for: error)
         }
     }
 
     // MARK: Helpers
+
+    /// Types load also lists the fields pool — publish both so the fields
+    /// sidebar badge stays honest without a second round trip.
+    private func publishCounts() {
+        catalogCounts?.publishSourceTypes(.from(types))
+        catalogCounts?.publishSourceFields(.from(fields))
+    }
 
     /// Adopts a suggestion list the engine just returned, keeping the list
     /// row's count column in step without a second round trip.

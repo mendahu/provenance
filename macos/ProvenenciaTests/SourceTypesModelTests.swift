@@ -40,12 +40,18 @@ struct SourceTypesModelTests {
         store: FakeStore = FakeStore(),
         types: [CatalogSourceType] = [],
         fields: [CatalogMetadataField] = [],
-        suggestions: [String: [CatalogTypeSuggestion]] = [:]
+        suggestions: [String: [CatalogTypeSuggestion]] = [:],
+        catalogCounts: CatalogCounts? = nil
     ) -> SourceTypesModel {
         store.sourceTypesByProject[projectDir] = types
         store.fieldsByProject[projectDir] = fields
         store.suggestionsByType = suggestions
-        return SourceTypesModel(projectDir: projectDir, userID: userID, store: store)
+        return SourceTypesModel(
+            projectDir: projectDir,
+            userID: userID,
+            store: store,
+            catalogCounts: catalogCounts
+        )
     }
 
     // MARK: List
@@ -212,7 +218,8 @@ struct SourceTypesModelTests {
     // MARK: Add
 
     @Test func addingMintsTheKeyFromTheLabelAndLandsOnTheNewType() async {
-        let model = makeModel(types: [seededType()])
+        let counts = CatalogCounts(projectDir: projectDir, store: FakeStore())
+        let model = makeModel(types: [seededType()], catalogCounts: counts)
         await model.load()
 
         model.openAdd()
@@ -227,6 +234,8 @@ struct SourceTypesModelTests {
         #expect(model.selectedType?.origin == "user")
         #expect(model.suggestions.isEmpty)
         #expect(model.toast?.title == String(localized: L10n.SourceTypes.toastAddedTitle))
+        #expect(counts.sourceTypes?.total == 2)
+        #expect(counts.sourceTypes?.user == 1)
     }
 
     @Test func addingRefusesABlankLabelWithoutCallingTheStore() async {
@@ -341,11 +350,13 @@ struct SourceTypesModelTests {
     @Test func confirmingDeleteDropsTheTypeAndItsSuggestions() async {
         let author = field(id: "f1", label: "Author")
         let store = FakeStore()
+        let counts = CatalogCounts(projectDir: projectDir, store: store)
         let model = makeModel(
             store: store,
             types: [userType()],
             fields: [author],
-            suggestions: ["t2": [CatalogTypeSuggestion(field: author, sortOrder: 0)]]
+            suggestions: ["t2": [CatalogTypeSuggestion(field: author, sortOrder: 0)]],
+            catalogCounts: counts
         )
         await model.load()
         model.select("t2")
@@ -362,5 +373,7 @@ struct SourceTypesModelTests {
         #expect(model.toast?.title == String(localized: L10n.SourceTypes.toastDeletedTitle))
         // The suggestion join cascades; the field vocabulary row does not.
         #expect(store.fieldsByProject[projectDir]?.map(\.id) == ["f1"])
+        #expect(counts.sourceTypes?.total == 0)
+        #expect(counts.sourceFields?.total == 1)
     }
 }

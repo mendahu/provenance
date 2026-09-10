@@ -12,15 +12,26 @@ struct WorkspaceContent: View {
     let projectDir: String
     let userID: String
     let store: any GenealogyStore
+    let catalogCounts: CatalogCounts
 
     var body: some View {
         VStack(spacing: 0) {
             header
             switch section {
             case .sourceFields:
-                SourceFieldsView(projectDir: projectDir, userID: userID, store: store)
+                SourceFieldsView(
+                    projectDir: projectDir,
+                    userID: userID,
+                    store: store,
+                    catalogCounts: catalogCounts
+                )
             case .sourceTypes:
-                SourceTypesView(projectDir: projectDir, userID: userID, store: store)
+                SourceTypesView(
+                    projectDir: projectDir,
+                    userID: userID,
+                    store: store,
+                    catalogCounts: catalogCounts
+                )
             default:
                 ScrollView {
                     VStack(alignment: .leading, spacing: PVSpacing.space7) {

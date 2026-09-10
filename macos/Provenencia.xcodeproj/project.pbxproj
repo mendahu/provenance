@@ -15,6 +15,8 @@
 		AA0000000000000000000260 /* VocabularyPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000250 /* VocabularyPane.swift */; };
 		AA0000000000000000000261 /* VocabularyListPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000251 /* VocabularyListPane.swift */; };
 		AA0000000000000000000262 /* VocabularyChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000252 /* VocabularyChrome.swift */; };
+		AA0000000000000000000263 /* CatalogCounts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000253 /* CatalogCounts.swift */; };
+		AA0000000000000000000271 /* CatalogCountsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000270 /* CatalogCountsTests.swift */; };
 		AA0000000000000000000212 /* SourceTypesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000202 /* SourceTypesModel.swift */; };
 		AA0000000000000000000213 /* SourceTypesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000203 /* SourceTypesView.swift */; };
 		AA0000000000000000000214 /* SourceTypesListPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000204 /* SourceTypesListPane.swift */; };
@@ -133,6 +135,8 @@
 		AA0000000000000000000250 /* VocabularyPane.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VocabularyPane.swift; sourceTree = "<group>"; };
 		AA0000000000000000000251 /* VocabularyListPane.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VocabularyListPane.swift; sourceTree = "<group>"; };
 		AA0000000000000000000252 /* VocabularyChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VocabularyChrome.swift; sourceTree = "<group>"; };
+		AA0000000000000000000253 /* CatalogCounts.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CatalogCounts.swift; sourceTree = "<group>"; };
+		AA0000000000000000000270 /* CatalogCountsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CatalogCountsTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000202 /* SourceTypesModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceTypesModel.swift; sourceTree = "<group>"; };
 		AA0000000000000000000203 /* SourceTypesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceTypesView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000204 /* SourceTypesListPane.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceTypesListPane.swift; sourceTree = "<group>"; };
@@ -231,6 +235,7 @@
 				AA0000000000000000000250 /* VocabularyPane.swift */,
 				AA0000000000000000000251 /* VocabularyListPane.swift */,
 				AA0000000000000000000252 /* VocabularyChrome.swift */,
+				AA0000000000000000000253 /* CatalogCounts.swift */,
 			);
 			name = Shared;
 			path = Shared;
@@ -470,6 +475,7 @@
 				AA00000000000000000000B1 /* InstallPathsTests.swift */,
 				AA00000000000000000000F2 /* ProjectSlugTests.swift */,
 				164584B2DB70D89A55C4178F /* WorkspaceModelTests.swift */,
+				AA0000000000000000000270 /* CatalogCountsTests.swift */,
 				B567080CA23230E18488F894 /* TrafficLightsTests.swift */,
 				8291342170CC4CB42EFA814C /* FieldSlugTests.swift */,
 				AA00000000000000000000C5 /* PVTableTests.swift */,
@@ -692,6 +698,7 @@
 				AA0000000000000000000260 /* VocabularyPane.swift in Sources */,
 				AA0000000000000000000261 /* VocabularyListPane.swift in Sources */,
 				AA0000000000000000000262 /* VocabularyChrome.swift in Sources */,
+				AA0000000000000000000263 /* CatalogCounts.swift in Sources */,
 				AA0000000000000000000212 /* SourceTypesModel.swift in Sources */,
 				AA0000000000000000000213 /* SourceTypesView.swift in Sources */,
 				AA0000000000000000000214 /* SourceTypesListPane.swift in Sources */,
@@ -710,6 +717,7 @@
 				AA00000000000000000000B4 /* InstallPathsTests.swift in Sources */,
 				AA00000000000000000000F3 /* ProjectSlugTests.swift in Sources */,
 				826574F8CA8D24BE551A88BF /* WorkspaceModelTests.swift in Sources */,
+				AA0000000000000000000271 /* CatalogCountsTests.swift in Sources */,
 				8B20E11A26E9E10EF915519C /* TrafficLightsTests.swift in Sources */,
 				E63D8CEC3F6AC5C7E90EBBFE /* FieldSlugTests.swift in Sources */,
 				AA00000000000000000000C4 /* PVTableTests.swift in Sources */,

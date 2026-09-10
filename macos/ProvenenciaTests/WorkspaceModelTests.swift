@@ -12,12 +12,8 @@ struct WorkspaceModelTests {
         return defaults
     }
 
-    private func makeModel(
-        store: any GenealogyStore = FakeStore(),
-        projectDir: String = "/tmp/test.provenencia",
-        defaults: UserDefaults? = nil
-    ) -> WorkspaceModel {
-        WorkspaceModel(projectDir: projectDir, store: store, defaults: defaults ?? makeDefaults())
+    private func makeModel(defaults: UserDefaults? = nil) -> WorkspaceModel {
+        WorkspaceModel(defaults: defaults ?? makeDefaults())
     }
 
     @Test func defaultsToSourcesExpanded() {
@@ -49,43 +45,5 @@ struct WorkspaceModelTests {
             model.selectedSection = section
             #expect(model.selectedSection == section)
         }
-    }
-
-    @Test func refreshCountsPopulatesEveryDestination() async {
-        let store = FakeStore()
-        let projectDir = "/tmp/counts.provenencia"
-        store.sourcesByProject[projectDir] = [
-            CatalogSource(id: "1", ref: "SRC-1", sourceTypeID: "", title: "A", description: ""),
-            CatalogSource(id: "2", ref: "SRC-2", sourceTypeID: "", title: "B", description: ""),
-        ]
-        store.sourceTypesByProject[projectDir] = [
-            CatalogSourceType(id: "1", key: "photograph", origin: "provenencia", label: "Photograph", description: ""),
-        ]
-        store.fieldsByProject[projectDir] = [
-            CatalogMetadataField(id: "1", key: "date_taken", origin: "provenencia", label: "Date taken", dataType: "date", description: ""),
-            CatalogMetadataField(id: "2", key: "notes", origin: "provenencia", label: "Notes", dataType: "text", description: ""),
-        ]
-        store.fileCountByProject[projectDir] = 4
-
-        let model = makeModel(store: store, projectDir: projectDir)
-        await model.refreshCounts()
-
-        #expect(model.counts[.sources] == 2)
-        #expect(model.counts[.sourceTypes] == 1)
-        #expect(model.counts[.sourceFields] == 2)
-        #expect(model.counts[.files] == 4)
-    }
-
-    @Test func refreshCountsOnEmptyProjectYieldsZero() async {
-        let model = makeModel()
-        await model.refreshCounts()
-        let sourcesCount = model.counts[.sources]
-        let typesCount = model.counts[.sourceTypes]
-        let fieldsCount = model.counts[.sourceFields]
-        let filesCount = model.counts[.files]
-        #expect(sourcesCount == 0)
-        #expect(typesCount == 0)
-        #expect(fieldsCount == 0)
-        #expect(filesCount == 0)
     }
 }

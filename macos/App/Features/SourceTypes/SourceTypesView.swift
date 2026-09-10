@@ -22,8 +22,20 @@ struct SourceTypesView: View {
     /// `frame(maxWidth: 360)`.
     private let detailPaneWidth: CGFloat = 380
 
-    init(projectDir: String, userID: String, store: any GenealogyStore) {
-        _model = State(initialValue: SourceTypesModel(projectDir: projectDir, userID: userID, store: store))
+    init(
+        projectDir: String,
+        userID: String,
+        store: any GenealogyStore,
+        catalogCounts: CatalogCounts? = nil
+    ) {
+        _model = State(
+            initialValue: SourceTypesModel(
+                projectDir: projectDir,
+                userID: userID,
+                store: store,
+                catalogCounts: catalogCounts
+            )
+        )
     }
 
     var body: some View {
