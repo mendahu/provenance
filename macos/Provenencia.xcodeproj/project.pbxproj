@@ -10,7 +10,6 @@
 		01574F7767F9B0AF5550AFAD /* PVMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C355704657FB6A572BF7FD6A /* PVMotion.swift */; };
 		AA0000000000000000000210 /* OriginMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000200 /* OriginMarkers.swift */; };
 		AA0000000000000000000240 /* PVComboBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000230 /* PVComboBox.swift */; };
-		AA0000000000000000000241 /* PVAccessibilityIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000231 /* PVAccessibilityIdentifier.swift */; };
 		AA0000000000000000000242 /* PVComboBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000232 /* PVComboBoxTests.swift */; };
 		AA0000000000000000000211 /* MetadataFieldBadges.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000201 /* MetadataFieldBadges.swift */; };
 		AA0000000000000000000260 /* VocabularyPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000250 /* VocabularyPane.swift */; };
@@ -129,7 +128,6 @@
 		36412B0A6A6851ADB45A7AA8 /* PVIcon.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVIcon.swift; sourceTree = "<group>"; };
 		AA0000000000000000000200 /* OriginMarkers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OriginMarkers.swift; sourceTree = "<group>"; };
 		AA0000000000000000000230 /* PVComboBox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVComboBox.swift; sourceTree = "<group>"; };
-		AA0000000000000000000231 /* PVAccessibilityIdentifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVAccessibilityIdentifier.swift; sourceTree = "<group>"; };
 		AA0000000000000000000232 /* PVComboBoxTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVComboBoxTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000201 /* MetadataFieldBadges.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MetadataFieldBadges.swift; sourceTree = "<group>"; };
 		AA0000000000000000000250 /* VocabularyPane.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VocabularyPane.swift; sourceTree = "<group>"; };
@@ -340,7 +338,6 @@
 				36412B0A6A6851ADB45A7AA8 /* PVIcon.swift */,
 				11ADAF744C32587CD34CDD23 /* PVLogoMark.swift */,
 				68425DFE8D1974D7A4AC5BF8 /* PVIconButton.swift */,
-				AA0000000000000000000231 /* PVAccessibilityIdentifier.swift */,
 				CEC485E7480EE58A01EA9A85 /* PVHoverEffect.swift */,
 				F3E732F3D44BB89512758F85 /* PVBadge.swift */,
 				B2C3D4E5F60718293A4B5E01 /* PVDivider.swift */,
@@ -691,7 +688,6 @@
 				BD1582FF721A5711F38C97A0 /* SourceFieldsModel.swift in Sources */,
 				AA0000000000000000000210 /* OriginMarkers.swift in Sources */,
 				AA0000000000000000000240 /* PVComboBox.swift in Sources */,
-				AA0000000000000000000241 /* PVAccessibilityIdentifier.swift in Sources */,
 				AA0000000000000000000211 /* MetadataFieldBadges.swift in Sources */,
 				AA0000000000000000000260 /* VocabularyPane.swift in Sources */,
 				AA0000000000000000000261 /* VocabularyListPane.swift in Sources */,

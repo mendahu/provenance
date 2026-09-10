@@ -337,7 +337,7 @@ struct PVComboBox<Row: View>: View {
                 if !isOpen { open() }
             })
             .accessibilityLabel(Text(label))
-            .pvAccessibilityIdentifier(accessibilityIdentifierPrefix)
+            .accessibilityIdentifier(accessibilityIdentifierPrefix ?? "")
     }
 
     /// The text binding the field edits. Only the *setter* marks the text as
@@ -379,7 +379,7 @@ struct PVComboBox<Row: View>: View {
             // casts the shadow from the window's alpha — see
             // `DesignSystem/README.md` § "Platform deviations".
             .accessibilityLabel(Text(label))
-            .pvAccessibilityIdentifier(identifier("list"))
+            .accessibilityIdentifier(identifier("list") ?? "")
     }
 
     /// The rows at their natural height. Shared by the scroller and by the
@@ -398,7 +398,7 @@ struct PVComboBox<Row: View>: View {
                     .padding(.leading, Self.checkGutter + PVSpacing.space5)
                     .padding(.trailing, PVSpacing.space5)
                     .padding(.vertical, PVSpacing.space4)
-                    .pvAccessibilityIdentifier(identifier("empty"))
+                    .accessibilityIdentifier(identifier("empty") ?? "")
             }
         }
     }
@@ -486,7 +486,7 @@ struct PVComboBox<Row: View>: View {
         // clicks through untouched.
         .onTapGesture { commit(option) }
         .accessibilityAddTraits(option.value == selection ? [.isSelected] : [])
-        .pvAccessibilityIdentifier(identifier("option.\(option.value)"))
+        .accessibilityIdentifier(identifier("option.\(option.value)") ?? "")
     }
 
     // MARK: Behaviour

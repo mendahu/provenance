@@ -252,7 +252,7 @@ struct PVTable<Row: Identifiable, Content: View>: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel(Text(column.title))
                             .accessibilityValue(Text(sortAccessibilityValue(column)))
-                            .pvAccessibilityIdentifier(sortAccessibilityIdentifier?(column.id))
+                            .accessibilityIdentifier(sortAccessibilityIdentifier?(column.id) ?? "")
                     } else {
                         headerLabel(column)
                     }
@@ -361,7 +361,7 @@ struct PVTable<Row: Identifiable, Content: View>: View {
         .onTapGesture { selection = row.id }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .pvAccessibilityIdentifier(rowAccessibilityIdentifier?(row))
+        .accessibilityIdentifier(rowAccessibilityIdentifier?(row) ?? "")
     }
 
     private func rowBackground(isSelected: Bool, showHover: Bool) -> Color {
