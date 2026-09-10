@@ -78,7 +78,7 @@ Onboarding (Spike 1) → signed in
 1. **Audit atomicity** — domain write + audit revision in one SQLite transaction ([`audit-revision-history.md`](../../audit-revision-history.md) §5).
 2. **No `created_at` / `updated_by` on Source tables** — attribution lives in audit.
 3. **File bytes never travel over protobuf** — ingest use-case; read path returns relative `objects/…` path; Swift reads bytes ([`application-stack.md`](../../application-stack.md)).
-4. **Content-addressed immutability** — `objects/{hh}/{hh}/{full hex}`; replace scan = new File + Artifact pointer update.
+4. **Content-addressed immutability** — `objects/{hh}/{hh}/{full hex}`; File bytes never change in place. Better/clearer scan = **new Artifact** (not pointer-swap under an existing `ART-…`; Citations locate into Artifacts).
 5. **Derivatives belong to Files**, not Artifacts; generation need not audit.
 6. **Swift stays thin** — Go owns schema, ingest, validation; models + `FakeStore` for tests.
 7. **Seed small; grow from use** ([`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1).
@@ -160,9 +160,9 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | --- | --- |
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done); S2-04 (list entry/exit); S2-02 / S2-03 (notes/metadata + type display) |
-| **Deliverables** | Board for the **individual Source page** (view/edit only — no create/draft): identity + editable title/description; notes + metadata; Artifacts list (`ART-…`, display fallback, thumbnail); Artifact detail (description + **one** primary File + that File’s derivatives); add Artifact; add/replace File ingest. Back/breadcrumb to the Sources list. Nested Artifact nav within this page stack is a Design choice — document it. |
-| **Context** | Source doc §§4, 6–8. Artifact has **no label column** — use description / filename / ref fallback. Multiple scans = multiple Artifacts. File association already exists (`IngestArtifactFile`); list thumbnails may need FFI ensure/list wiring in S2-18. Create lives on S2-04’s Add Source dialog. |
-| **Out** | Redesigning the Sources list (S2-04); delete Sources/Artifacts/Files; Interpretation; vocabulary admin; project Files browser (S2-20). |
+| **Deliverables** | Board for the **individual Source page** (view/edit only — no create/draft): identity + editable title/description; **Notes** and **Metadata** as distinct areas (Metadata: all values, dismissible quick-add suggestions, separate **Add** field picker, drag reorder); Artifacts list (**thumbnail of primary File** + `label` + `ART-…`) with **in-place accordion** expand (not a separate Artifact page); expanded row shows label/description + **one** primary File only (**no** derivatives list); activating the File **opens it in an external app** (MVP — no in-app preview); **Add Artifact** centered modal (same pattern as Add Source; label + optional File); **Add file…** only when fileless — **no Replace**. **Breadcrumb** to the Sources list (not a back button). |
+| **Context** | Source doc §§4, 6–8. Design assumes Artifact **`label`**, per-Source **suggestion dismiss**, and metadata **`sort_order`** — S2-18 adds those schema pieces first. Better scan = new Artifact (Citation remapping later). File **first-attach** only. File open MVP = default external app. Create lives on S2-04’s Add Source dialog. |
+| **Out** | Redesigning the Sources list (S2-04); delete Sources/Artifacts/Files; **Replace file**; Interpretation / Citation move-duplicate; **in-app File preview**; vocabulary admin; project Files browser (S2-20). |
 | **Feeds** | S2-18 |
 
 ---
@@ -177,7 +177,7 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | **Depends on** | S2-01 (done — **Files** placeholder already in shell); S2-23 (Source page link target) |
 | **Deliverables** | Board for the **Files** destination: list rows with **thumbnail**, **media type**, **original filename**; **link to associated Source** (via Artifact). No ingest/delete on this board. Prefer not listing derivative-only Files as peer rows. |
 | **Context** | Source doc §§6–8. Association is indirect (`artifacts.file_id` → Source). Sidebar Files destination already exists; only `CountFiles` is wired today. |
-| **Out** | Ingest/replace (S2-23/S2-18); delete; Interpretation. |
+| **Out** | Ingest (S2-23/S2-18); delete; Interpretation. |
 | **Feeds** | S2-21 |
 
 ---
@@ -200,9 +200,9 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-23 (design enough), S2-17, S2-13 (S2-12 done for generation) |
-| **Deliverables** | **Source page** reached from the list: description; notes + metadata editor; Artifacts list (`ART-…` + display fallback); Artifact detail (description; primary File identity; derivatives); **Add Artifact**; **Add / replace file** via NSOpenPanel → `IngestArtifactFile` (path only). Surface thumbnails on Sources/Artifacts list rows (ensure or fetch derivative `rel_path`; Swift reads bytes). Include any thin FFI gap to list/ensure thumbnails for list cells. Tests for model state transitions with `FakeStore`. Confirm file-access usage copy/entitlements. |
-| **Context** | Association mechanism **already exists** (`IngestArtifactFile` / `CreateArtifact`). Do not invent multi-primary-file attach. Stack: Swift must not write `objects/` itself. Back to Sources list per S2-23. |
-| **Out** | Vocabulary admin; delete primary Files; project-wide Files browser (S2-21). |
+| **Deliverables** | **First (schema/FFI/docs):** (1) Artifact **`label`** (required); (2) per-Source **persistent dismiss** of type metadata suggestions; (3) **`sort_order`** (or equivalent) on Source metadata + reorder API; (4) **no primary-File replace** — `IngestArtifactFile` rejects when Artifact already has a File; update Source-layer docs to match (better scan = new Artifact; Citation remapping later). Then **Source page** from the list: description; **Notes** stream; **Metadata** area (all values; dismissible quick-add suggestions; separate **Add** → vocabulary picker → value → save; drag reorder); Artifacts list (**primary-File thumbnail** + `label` + `ART-…`); in-place Artifact expand (label/description; **primary File only** — do not list derivatives); activating the File **opens it in the default external app** (`NSWorkspace`) — **no** in-app preview; **Add Artifact** centered modal (same pattern as Add Source; required label + optional File ingest); **Add file…** on fileless Artifacts only via NSOpenPanel → `IngestArtifactFile` (path only) — **no Replace UI**. Surface thumbnails on Sources/Artifacts list rows (ensure or fetch derivative `rel_path`; Swift reads bytes). Include any thin FFI gap to list/ensure thumbnails for list cells. Tests for model state transitions with `FakeStore` (including ingest rejected when File already set). Confirm file-access usage copy/entitlements. |
+| **Context** | Association for **first attach** exists (`IngestArtifactFile` / `CreateArtifact`). Schema today lacks `artifacts.label`, per-Source suggestion dismiss, and `source_metadata` display order — add those in this PR before UI. Tighten ingest so it cannot pointer-swap. Do not invent multi-primary-file attach. Stack: Swift must not write `objects/` itself. Breadcrumb to Sources list per S2-23. File open MVP = external app. |
+| **Out** | Vocabulary admin; delete primary Files; **Replace file**; Citation move/duplicate; **in-app File preview**; project-wide Files browser (S2-21). |
 
 ---
 
