@@ -12,8 +12,7 @@ That document is the authoritative reference for:
 - offline-first file ingestion
 - content-addressed storage
 - immutable primary files
-- historical file retention
-- replacement/version behavior through the audit log
+- first-attach only (no primary-File pointer-swap; better scan = new Artifact)
 - generated thumbnails and other disposable derivatives
 
 This file is retained only as a pointer so existing references do not lead to a stale duplicate schema.

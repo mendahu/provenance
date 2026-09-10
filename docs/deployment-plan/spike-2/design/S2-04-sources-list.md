@@ -151,7 +151,7 @@ Create is a **thin** `CreateSource` payload (type + **required** title + optiona
 - Using the Source page itself as the create form — create stays in this board’s dialog.
 - Trailing inspector / slide-over create chrome.
 - Reusing or extending **`PVTable`** for this destination.
-- Artifact detail, File ingest/replace, derivatives — **S2-23** / PR S2-18.
+- Artifact detail, File ingest (first attach / Add Artifact), derivatives — **S2-23** / PR S2-18.
 - Deleting Sources.
 - Interpretation (citations, people); credibility grades.
 - Creating types/fields here (link to S2-02 / S2-03 destinations OK).

@@ -47,7 +47,7 @@ Digital evidence added to Provenencia is ingested into application-managed local
 
 ## 1.4 Immutable digital objects
 
-Stored File bytes are immutable and content-addressed. Replacing a scan means ingesting a new File and updating the Artifact reference. Previously referenced primary Files remain preserved for historical reconstruction.
+Stored File bytes are immutable and content-addressed. A different byte stream is always a different File. An Artifact may receive a primary File at most once (create-time or first attach while fileless). A clearer or newer scan of the same document is a **separate Artifact** under the same Source — do not pointer-swap `file_id` under an existing Artifact, because Citations resolve as `artifact_id` + locator into that Artifact’s media.
 
 ## 1.5 Generated derivatives are infrastructure
 
@@ -277,18 +277,26 @@ This keeps projects relocatable and prevents `storage_path` and checksum from be
 
 Generated Files such as thumbnails may have `original_filename = NULL`.
 
-## Immutability and replacement
+## Immutability and first attach
 
 File bytes never change in place. A different byte stream produces a different checksum and therefore a different File.
 
-Replacing an Artifact's scan is:
+An Artifact may gain a primary File while still fileless:
 
 ```text
-CREATE File B
-UPDATE Artifact.file_id: File A -> File B
+CREATE File A
+UPDATE Artifact.file_id: NULL -> File A
 ```
 
-The operation is recorded through the audit system. File A remains stored so historical Artifact state can still be materialized and viewed.
+Once `file_id` is set, it must not be pointer-swapped to another File. A better or clearer digitization is modeled as an additional Artifact under the same Source:
+
+```text
+Source
+  ├── Artifact A -> File (older photocopy)
+  └── Artifact B -> File (newer clear scan)
+```
+
+Interpretation may later offer flows to move or duplicate Citations from Artifact A to Artifact B (and adjust locators). That is outside the Source layer.
 
 The initial implementation does not support destructive deletion of primary Files.
 
@@ -381,26 +389,18 @@ Derivative generation and cache eviction do not need to create research audit ev
 
 The Source-layer tables do not contain generic version columns. The append-only audit system records their mutations.
 
-For an Artifact whose File is replaced:
+For an Artifact that receives a primary File:
 
 ```text
 Revision 100
   Artifact.file_id: NULL -> File A
-
-Revision 145
-  CREATE File B
-  Artifact.file_id: File A -> File B
-
-Revision 212
-  CREATE File C
-  Artifact.file_id: File B -> File C
 ```
 
-The current row points to File C. Previous File versions are derived from audit history and can be presented directly in the Artifact UI.
+The current row points to File A. There is no product path that later updates that Artifact to File B. A newer scan is a second Artifact (and its own first-attach revision).
 
-No separate `artifact_file_versions` table is required initially. If historical-version queries later become performance-sensitive, a derived projection or cache may be introduced without becoming authoritative state.
+Primary Files that remain referenced by any current Artifact (or that must be retained for other product reasons) are not garbage-collected in the initial implementation. Ordinary orphan cleanup must never remove Files that are still referenced.
 
-Primary File retention must account for historical references, not merely current foreign-key references. Ordinary orphan cleanup must never remove File A or File B in the example above.
+No separate `artifact_file_versions` table is required. If historical reconstruction of past Artifact rows from audit ever becomes a product need, present it from the audit stream rather than inventing pointer-swap “versions” on Artifacts.
 
 ---
 
@@ -445,8 +445,8 @@ The audit tables are cross-cutting infrastructure and are defined separately in 
 10. Digital evidence is ingested into application-managed local storage.
 11. Files are content-addressed by SHA-256 and their storage paths are derived rather than persisted.
 12. File bytes are immutable.
-13. Replacing an Artifact File creates/reuses another File and updates the Artifact under audit.
-14. Historically referenced primary Files are retained indefinitely in the initial implementation.
+13. An Artifact’s primary File may be set only while fileless (first attach); better scans are additional Artifacts under the same Source — not `file_id` pointer-swaps (Citations locate into Artifacts).
+14. Primary Files referenced by Artifacts are retained indefinitely in the initial implementation.
 15. Primary File deletion is not supported initially.
 16. Historical Artifact File versions are derived from audit history rather than stored in a separate version table.
 17. Thumbnails and other generated assets are File derivatives, not Artifacts.
