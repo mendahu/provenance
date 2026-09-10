@@ -49,6 +49,18 @@ enum L10n {
             ))
             return String(format: format, locale: .current, label, count)
         }
+
+        static let thumbnailEmpty = LocalizedStringResource(
+            "designSystem.thumbnail.empty",
+            defaultValue: "No preview",
+            comment: "Accessibility label for an empty PVThumbnail placeholder"
+        )
+
+        static let thumbnailLoading = LocalizedStringResource(
+            "designSystem.thumbnail.loading",
+            defaultValue: "Loading preview",
+            comment: "Accessibility label for a PVThumbnail in the loading state"
+        )
     }
 
     enum Onboarding {
@@ -341,7 +353,7 @@ enum L10n {
         static let sourcesPlaceholderNote = LocalizedStringResource(
             "workspace.section.sources.placeholderNote",
             defaultValue: "The Source catalog list and detail arrive in a later update.",
-            comment: "Placeholder note shown in the empty Sources content host"
+            comment: "Legacy placeholder note for Sources; the S2-17 destination replaces it"
         )
 
         static let sourceTypesTitle = LocalizedStringResource(
@@ -423,6 +435,245 @@ enum L10n {
                 comment: "Accessibility label and tooltip for the pill marking a plugin-owned row in a vocabulary list; argument is the plugin id"
             )
         }
+    }
+
+    /// The **Sources** workspace destination (S2-17): browse Sources as an
+    /// evidence list, create via a thin dialog, open a separate Source page
+    /// (stub until S2-18).
+    enum Sources {
+        static let description = LocalizedStringResource(
+            "sources.list.description",
+            defaultValue: "Every record behind this project. Open a source to read its artifacts and citation.",
+            comment: "Explanatory copy under the Sources page title"
+        )
+
+        static func countLine(total: Int) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.list.countLine",
+                defaultValue: "%lld sources",
+                comment: "Sources list count when unfiltered; argument is total"
+            ))
+            return String(format: format, locale: .current, total)
+        }
+
+        static func countLineFiltered(visible: Int, total: Int) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.list.countLineFiltered",
+                defaultValue: "%lld of %lld sources",
+                comment: "Sources list count when search/filter narrows the list; arguments are visible then total"
+            ))
+            return String(format: format, locale: .current, visible, total)
+        }
+
+        static let addSource = LocalizedStringResource(
+            "sources.list.addSource",
+            defaultValue: "Add source",
+            comment: "Button: open the Add Source dialog"
+        )
+
+        static let searchPlaceholder = LocalizedStringResource(
+            "sources.list.searchPlaceholder",
+            defaultValue: "Search title, reference or type",
+            comment: "Placeholder for the Sources list search input"
+        )
+
+        static let clearSearch = LocalizedStringResource(
+            "sources.list.clearSearch",
+            defaultValue: "Clear search",
+            comment: "Button that clears the Sources search query"
+        )
+
+        static let filterAllTypes = LocalizedStringResource(
+            "sources.list.filterAllTypes",
+            defaultValue: "All types",
+            comment: "Sources type filter menu: show every type"
+        )
+
+        static let filterMenu = LocalizedStringResource(
+            "sources.list.filterMenu",
+            defaultValue: "Filter by type",
+            comment: "Accessibility label for the Sources type filter control"
+        )
+
+        static let sortMenu = LocalizedStringResource(
+            "sources.list.sortMenu",
+            defaultValue: "Sort sources",
+            comment: "Accessibility label for the Sources sort control"
+        )
+
+        static let sortAdded = LocalizedStringResource(
+            "sources.list.sort.added",
+            defaultValue: "Date added",
+            comment: "Sources sort option: catalog list order (date added)"
+        )
+
+        static let sortUpdated = LocalizedStringResource(
+            "sources.list.sort.updated",
+            defaultValue: "Date updated",
+            comment: "Sources sort option: reverse catalog order (stand-in until audit timestamps surface)"
+        )
+
+        static let sortAZ = LocalizedStringResource(
+            "sources.list.sort.az",
+            defaultValue: "Alphabetical",
+            comment: "Sources sort option: title A to Z"
+        )
+
+        static let sortZA = LocalizedStringResource(
+            "sources.list.sort.za",
+            defaultValue: "Reverse alphabetical",
+            comment: "Sources sort option: title Z to A"
+        )
+
+        static func sortedBy(_ label: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.list.sortedBy",
+                defaultValue: "Sorted by %@",
+                comment: "Sources sort control label; argument is the active sort option in lowercase"
+            ))
+            return String(format: format, locale: .current, label)
+        }
+
+        static let emptyTitle = LocalizedStringResource(
+            "sources.list.emptyTitle",
+            defaultValue: "No sources yet",
+            comment: "Empty-state title when the project has no Sources"
+        )
+
+        static let emptyMessage = LocalizedStringResource(
+            "sources.list.emptyMessage",
+            defaultValue: "Every fact should trace back to a record. Add the first source, then attach the scans and files it came from.",
+            comment: "Empty-state body when the project has no Sources"
+        )
+
+        static let noMatchesTitle = LocalizedStringResource(
+            "sources.list.noMatchesTitle",
+            defaultValue: "No source matches that search",
+            comment: "Empty-state title when search/filter matches nothing"
+        )
+
+        static func noMatchesMessage(query: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.list.noMatchesMessage",
+                defaultValue: "Try the reference on its own — “%@” matches no title, reference or type in this workspace.",
+                comment: "Empty-state body when search matches nothing; argument is the query"
+            ))
+            return String(format: format, locale: .current, query)
+        }
+
+        static let listAccessibilityLabel = LocalizedStringResource(
+            "sources.list.accessibilityLabel",
+            defaultValue: "Sources",
+            comment: "Accessibility label for the Sources PVList"
+        )
+
+        static let addDialogTitle = LocalizedStringResource(
+            "sources.add.title",
+            defaultValue: "Add source",
+            comment: "Add Source dialog title"
+        )
+
+        static let addDialogSubtitle = LocalizedStringResource(
+            "sources.add.subtitle",
+            defaultValue: "A thin record now — artifacts, notes and metadata live on the Source page.",
+            comment: "Add Source dialog subtitle"
+        )
+
+        static let formType = LocalizedStringResource(
+            "sources.add.formType",
+            defaultValue: "Type",
+            comment: "Add Source form label: source type"
+        )
+
+        static let typePlaceholder = LocalizedStringResource(
+            "sources.add.typePlaceholder",
+            defaultValue: "Search source types",
+            comment: "Placeholder in the Add Source type combo box before a type is chosen"
+        )
+
+        static let typeNoMatch = LocalizedStringResource(
+            "sources.add.typeNoMatch",
+            defaultValue: "No type matches that search",
+            comment: "Empty state in the Add Source type combo box when the query matches nothing"
+        )
+
+        static let typePoolEmpty = LocalizedStringResource(
+            "sources.add.typePoolEmpty",
+            defaultValue: "No source types in this project yet — add one under Source types.",
+            comment: "Empty state in the Add Source type combo when the project has no types loaded"
+        )
+
+        static let formTitle = LocalizedStringResource(
+            "sources.add.formTitle",
+            defaultValue: "Title",
+            comment: "Add Source form label: title"
+        )
+
+        static let formDescription = LocalizedStringResource(
+            "sources.add.formDescription",
+            defaultValue: "Description",
+            comment: "Add Source form label: optional description"
+        )
+
+        static let formDescriptionHint = LocalizedStringResource(
+            "sources.add.formDescriptionHint",
+            defaultValue: "Optional — a short note on what this record is",
+            comment: "Hint under the optional description field on Add Source"
+        )
+
+        static let createAction = LocalizedStringResource(
+            "sources.add.create",
+            defaultValue: "Create source",
+            comment: "Primary button on the Add Source dialog"
+        )
+
+        static let cancelAction = LocalizedStringResource(
+            "sources.add.cancel",
+            defaultValue: "Cancel",
+            comment: "Cancel button on the Add Source dialog"
+        )
+
+        static let typeRequired = LocalizedStringResource(
+            "sources.add.typeRequired",
+            defaultValue: "Choose a source type — it decides which fields the Source page shows.",
+            comment: "Inline validation when Add Source is submitted without a type"
+        )
+
+        static let titleRequired = LocalizedStringResource(
+            "sources.add.titleRequired",
+            defaultValue: "Give the source a title — name the record as it identifies itself.",
+            comment: "Inline validation when Add Source is submitted without a title"
+        )
+
+        static func toastCreatedTitle(ref: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.add.toastCreatedTitle",
+                defaultValue: "%@",
+                comment: "Toast title after creating a Source; argument is the SRC- ref"
+            ))
+            return String(format: format, locale: .current, ref)
+        }
+
+        static func toastCreatedBody(title: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.add.toastCreatedBody",
+                defaultValue: "%@. Opening its Source page.",
+                comment: "Toast body after creating a Source; argument is the title"
+            ))
+            return String(format: format, locale: .current, title)
+        }
+
+        static let stubBack = LocalizedStringResource(
+            "sources.stub.back",
+            defaultValue: "Back to Sources",
+            comment: "Button on the Source page stub returning to the Sources list"
+        )
+
+        static let stubNote = LocalizedStringResource(
+            "sources.stub.note",
+            defaultValue: "The full Source page — notes, metadata, artifacts and file ingest — arrives in a later update.",
+            comment: "Placeholder body on the S2-17 Source page stub"
+        )
     }
 
     enum SourceFields {

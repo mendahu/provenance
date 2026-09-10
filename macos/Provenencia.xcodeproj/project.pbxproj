@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA0000000000000000000301 /* PVThumbnail.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000300 /* PVThumbnail.swift */; };
+		AA0000000000000000000303 /* PVList.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000302 /* PVList.swift */; };
+		AA0000000000000000000305 /* PVDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000304 /* PVDialog.swift */; };
+		AA0000000000000000000307 /* SourcesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000306 /* SourcesModel.swift */; };
+		AA0000000000000000000309 /* SourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000308 /* SourcesView.swift */; };
+		AA0000000000000000000311 /* SourcePageStubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000310 /* SourcePageStubView.swift */; };
+		AA0000000000000000000313 /* SourcesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000312 /* SourcesModelTests.swift */; };
+		AA0000000000000000000315 /* PVListTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000314 /* PVListTests.swift */; };
 		01574F7767F9B0AF5550AFAD /* PVMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C355704657FB6A572BF7FD6A /* PVMotion.swift */; };
 		AA0000000000000000000210 /* OriginMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000200 /* OriginMarkers.swift */; };
 		AA0000000000000000000240 /* PVComboBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000230 /* PVComboBox.swift */; };
@@ -119,6 +127,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA0000000000000000000300 /* PVThumbnail.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVThumbnail.swift; sourceTree = "<group>"; };
+		AA0000000000000000000302 /* PVList.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVList.swift; sourceTree = "<group>"; };
+		AA0000000000000000000304 /* PVDialog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVDialog.swift; sourceTree = "<group>"; };
+		AA0000000000000000000306 /* SourcesModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcesModel.swift; sourceTree = "<group>"; };
+		AA0000000000000000000308 /* SourcesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcesView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000310 /* SourcePageStubView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageStubView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000312 /* SourcesModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcesModelTests.swift; sourceTree = "<group>"; };
+		AA0000000000000000000314 /* PVListTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVListTests.swift; sourceTree = "<group>"; };
 		11ADAF744C32587CD34CDD23 /* PVLogoMark.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVLogoMark.swift; sourceTree = "<group>"; };
 		164584B2DB70D89A55C4178F /* WorkspaceModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceModelTests.swift; sourceTree = "<group>"; };
 		16D4D3531F81FABFCDDE4F84 /* PVField.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVField.swift; sourceTree = "<group>"; };
@@ -251,6 +267,17 @@
 			path = CatalogVocabulary;
 			sourceTree = "<group>";
 		};
+		AA0000000000000000000316 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000306 /* SourcesModel.swift */,
+				AA0000000000000000000308 /* SourcesView.swift */,
+				AA0000000000000000000310 /* SourcePageStubView.swift */,
+			);
+			name = Sources;
+			path = Sources;
+			sourceTree = "<group>";
+		};
 		AA0000000000000000000221 /* SourceTypes */ = {
 			isa = PBXGroup;
 			children = (
@@ -327,6 +354,7 @@
 				8FC0B0A893C7248A08303738 /* PVToast.swift */,
 				3555554CD714B1FD24C2DB2F /* PVEmptyState.swift */,
 				AA00000000000000000000C7 /* PVConfirm.swift */,
+				AA0000000000000000000304 /* PVDialog.swift */,
 				C9B9D94DAB5FD1587C260FE3 /* PVCallout.swift */,
 			);
 			name = Feedback;
@@ -356,6 +384,7 @@
 				CEC485E7480EE58A01EA9A85 /* PVHoverEffect.swift */,
 				F3E732F3D44BB89512758F85 /* PVBadge.swift */,
 				B2C3D4E5F60718293A4B5E01 /* PVDivider.swift */,
+				AA0000000000000000000300 /* PVThumbnail.swift */,
 			);
 			name = Core;
 			path = Core;
@@ -442,6 +471,7 @@
 			children = (
 				AA0000000000000000000048 /* Onboarding */,
 				8D76A01BF603CC419C35EEBD /* Workspace */,
+				AA0000000000000000000316 /* Sources */,
 				423C55925CCDB8118E02BF19 /* SourceFields */,
 				AA0000000000000000000221 /* SourceTypes */,
 				AA0000000000000000000220 /* Catalog */,
@@ -491,8 +521,10 @@
 				B567080CA23230E18488F894 /* TrafficLightsTests.swift */,
 				8291342170CC4CB42EFA814C /* FieldSlugTests.swift */,
 				AA00000000000000000000C5 /* PVTableTests.swift */,
+				AA0000000000000000000314 /* PVListTests.swift */,
 				4F0CB87F6EC5759DF8D0A7AF /* SourceFieldsModelTests.swift */,
 				AA0000000000000000000206 /* SourceTypesModelTests.swift */,
+				AA0000000000000000000312 /* SourcesModelTests.swift */,
 				AA0000000000000000000232 /* PVComboBoxTests.swift */,
 			);
 			path = ProvenenciaTests;
@@ -502,6 +534,7 @@
 			isa = PBXGroup;
 			children = (
 				AA00000000000000000000C2 /* PVTable.swift */,
+				AA0000000000000000000302 /* PVList.swift */,
 			);
 			name = Data;
 			path = Data;
@@ -719,6 +752,12 @@
 				6422592F5C31D8F535B03C6A /* SourceFieldsView.swift in Sources */,
 				D0D0E4841104F1836736A7CD /* SourceFieldsListPane.swift in Sources */,
 				57420D5CDD1330745ACC33FD /* SourceFieldsDetailPane.swift in Sources */,
+				AA0000000000000000000301 /* PVThumbnail.swift in Sources */,
+				AA0000000000000000000303 /* PVList.swift in Sources */,
+				AA0000000000000000000305 /* PVDialog.swift in Sources */,
+				AA0000000000000000000307 /* SourcesModel.swift in Sources */,
+				AA0000000000000000000309 /* SourcesView.swift in Sources */,
+				AA0000000000000000000311 /* SourcePageStubView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -737,6 +776,8 @@
 				CE7E43F00CA602E2794E0ADA /* SourceFieldsModelTests.swift in Sources */,
 				AA0000000000000000000216 /* SourceTypesModelTests.swift in Sources */,
 				AA0000000000000000000242 /* PVComboBoxTests.swift in Sources */,
+				AA0000000000000000000315 /* PVListTests.swift in Sources */,
+				AA0000000000000000000313 /* SourcesModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

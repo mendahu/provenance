@@ -14,6 +14,12 @@ struct WorkspaceView: View {
     let userID: String
     @State private var workspace: WorkspaceModel
     @State private var catalogCounts: CatalogCounts
+    /// Destination content waits until nav counts finish so its `.task` load
+    /// does not open the catalog concurrently with `refreshAll` (exclusive
+    /// SQLite lock — concurrent opens fail and leave empty badges / lists).
+    /// Broader store-level serialization is parked in
+    /// `docs/ideas/catalog-access-serialization.md`.
+    @State private var isCatalogReady = false
     @Environment(SignOutCoordinator.self) private var signOutCoordinator
 
     init(model: OnboardingModel, projectDir: String, userID: String) {
@@ -27,19 +33,29 @@ struct WorkspaceView: View {
     var body: some View {
         HStack(spacing: 0) {
             WorkspaceSidebar(session: model.session, workspace: workspace, catalogCounts: catalogCounts)
-            WorkspaceContent(
-                section: workspace.selectedSection,
-                project: model.project,
-                projectDir: projectDir,
-                userID: userID,
-                store: model.store,
-                catalogCounts: catalogCounts
-            )
+            Group {
+                if isCatalogReady {
+                    WorkspaceContent(
+                        section: workspace.selectedSection,
+                        project: model.project,
+                        projectDir: projectDir,
+                        userID: userID,
+                        store: model.store,
+                        catalogCounts: catalogCounts
+                    )
+                } else {
+                    PVColor.surfacePage
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .overlay { ProgressView().tint(PVColor.accent) }
+                        .accessibilityIdentifier("workspace.content.loading")
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(catalogCounts)
         .task {
             await catalogCounts.refreshAll()
+            isCatalogReady = true
         }
         .onAppear {
             signOutCoordinator.isAvailable = true

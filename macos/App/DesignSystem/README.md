@@ -142,14 +142,16 @@ red `Text`), plus `Badge`/`EmptyState`/`Callout` (added for the S2-02
 | Table | `Components/Data/PVTable.swift` (added for S2-22, extracted from the Source fields list; see "The table tradeoff" below) |
 | Confirm | `Components/Feedback/PVConfirm.swift` (added for S2-22's delete confirmation; the macOS answer to `ConfirmDialog.jsx`, which the web spec says not to port — see "Confirmations are system chrome" below) |
 | ComboBox | `Components/Forms/PVComboBox.swift` (added for S2-16's assign-field control, where the pool is the whole Source fields vocabulary; single-select subset only — see "The combo box subset" below) |
+| Thumbnail | `Components/Core/PVThumbnail.swift` (added for S2-17 Sources list rows; image / glyph / empty / loading tile) |
+| List | `Components/Data/PVList.swift` (added for S2-17 evidence browse — not `PVTable`; Files remounts it in S2-21) |
+| Dialog | `Components/Feedback/PVDialog.swift` (added for S2-17 Add Source; sheet form with content slot + footer — see note below) |
 
-The other 13 design-system components have **no files yet** — add them on
+The other design-system components have **no files yet** — add them on
 demand, following the pattern above, when a screen needs one:
 
 | Component | Category | Purpose |
 |---|---|---|
 | Card | Core | Bordered content container with optional header/footer |
-| Dialog | Feedback | Modal panel. On macOS reach for `.sheet` and let the window draw its own chrome; for confirmations use `PVConfirm` instead |
 | Tag | Core | Removable/interactive pill with a color dot |
 | Tooltip | Core | Hover label — on macOS this is usually SwiftUI's own `.help()`, which is what `PVIconButton` uses; port the web hover card only if a call site needs richer content |
 | Checkbox | Forms | Checkbox control |
@@ -161,6 +163,11 @@ demand, following the pattern above, when a screen needs one:
 | FactRow | Research | One asserted fact: type glyph, date, value, place, grade, conflict note |
 | PersonChip | Research | A person with life dates and a lineage-colored rule |
 | SourceCitation | Research | Citation + repository + scan thumbnail + grade, as one unit |
+
+**Dialog on macOS:** the web `Dialog.jsx` draws a scrim because the browser
+gives it none. Here `PVDialog` is a `.sheet` — same family as `PVConfirm`'s
+rich sheet — and leaves window chrome to the system. Prefer `PVConfirm` for
+destructive confirmations; use `PVDialog` for short create/edit forms.
 
 ## The combo box subset
 
@@ -195,8 +202,9 @@ every clause of it is a decision rather than an accident:
   enclosing sheet can still be dismissed from inside the field.
 - **Clicking away blurs.** A click outside the field and its list doesn't
   just close the list, it resigns the field's focus — outside means done.
-  Clicking the field itself reopens a closed list (after Escape or a commit)
-  without focus having to leave and come back.
+  Clicking the field itself opens (or reopens) the list; focus alone does
+  not, so a sheet that auto-focuses the field on present won't pop the
+  menu. Typing or pressing an arrow / Home / End / Page key also opens it.
 
 **The list is a child window, not an overlay.** This is the part that took two
 passes to get right. A SwiftUI overlay is clipped by any enclosing

@@ -87,9 +87,17 @@ final class CatalogCounts {
         sourceTypes = summary
     }
 
-    /// Initial (and rare full) refresh via one `GetWorkspaceNavCounts`
-    /// open — concurrent section queries fight the catalog's exclusive
-    /// SQLite lock.
+    /// Writes the Sources total the feature model already knows from its
+    /// in-memory list (after load or create).
+    func publishSources(_ count: Int) {
+        sources = count
+    }
+
+    /// Full badge refresh via one `GetWorkspaceNavCounts` open. Workspace
+    /// bootstrap (`WorkspaceView`) awaits this **before** mounting destination
+    /// content so feature `load()` calls do not race the exclusive catalog
+    /// lock. This type does not own app-load state — callers decide when to
+    /// refresh; mutations use `publish*` instead of recounting.
     func refreshAll() async {
         guard let nav = try? await store.workspaceNavCounts(projectDir: projectDir) else {
             return

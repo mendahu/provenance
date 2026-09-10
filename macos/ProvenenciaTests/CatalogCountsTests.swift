@@ -60,10 +60,12 @@ struct CatalogCountsTests {
         let counts = makeCounts()
         counts.publishSourceFields(CatalogCountSummary(total: 5, seeded: 2, user: 2, plugin: 1))
         counts.publishSourceTypes(CatalogCountSummary(total: 3, seeded: 1, user: 2, plugin: 0))
+        counts.publishSources(7)
         #expect(counts.badge(for: .sourceFields) == 5)
         #expect(counts.sourceFields?.plugin == 1)
         #expect(counts.badge(for: .sourceTypes) == 3)
         #expect(counts.sourceTypes?.user == 2)
+        #expect(counts.badge(for: .sources) == 7)
     }
 
     @Test func summaryFromRowsSplitsByOrigin() {
