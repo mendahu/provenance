@@ -16,6 +16,8 @@ Use this folder when something useful pops up mid-work and would otherwise get l
 | Idea | One-liner |
 | --- | --- |
 | [Share packages](share-packages.md) | One-button export of a Source (or later a canonical entity) as a readable, standards-friendly bundle for other researchers. |
+| [Omnibar search](omnibar-search.md) | Project-scoped top search across Sources, vocabulary, Files, and later Interpretation/Conclusion — jump by typing instead of sidebar hunting. |
+| [Navigation history](navigation-history.md) | Browser-like Back/Forward through workspace views (sidebar + deep links), distinct from in-page “up to list.” |
 
 ## Completed
 
