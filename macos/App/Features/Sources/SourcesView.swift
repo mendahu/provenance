@@ -138,22 +138,17 @@ struct SourcesView: View {
     }
 
     private var filterMenu: some View {
+        // Inline `Picker` (same as `PVTable` column filters): AppKit menus drop
+        // custom `HStack` button labels, which left these rows blank.
         Menu {
-            Button {
-                model.typeFilterID = ""
-            } label: {
-                filterRow(
-                    label: String(localized: L10n.Sources.filterAllTypes),
-                    selected: model.typeFilterID.isEmpty
-                )
-            }
-            ForEach(model.types) { type in
-                Button {
-                    model.typeFilterID = type.id
-                } label: {
-                    filterRow(label: type.label, selected: model.typeFilterID == type.id)
+            Picker(String(localized: L10n.Sources.filterMenu), selection: $model.typeFilterID) {
+                Text(L10n.Sources.filterAllTypes).tag("")
+                ForEach(model.types) { type in
+                    Text(type.label).tag(type.id)
                 }
             }
+            .pickerStyle(.inline)
+            .labelsHidden()
         } label: {
             toolbarChip(icon: .filter, label: model.filterLabel)
         }
@@ -164,16 +159,13 @@ struct SourcesView: View {
 
     private var sortMenu: some View {
         Menu {
-            ForEach(SourcesModel.Sort.allCases) { option in
-                Button {
-                    model.sort = option
-                } label: {
-                    filterRow(
-                        label: String(localized: option.label),
-                        selected: model.sort == option
-                    )
+            Picker(String(localized: L10n.Sources.sortMenu), selection: $model.sort) {
+                ForEach(SourcesModel.Sort.allCases) { option in
+                    Text(option.label).tag(option)
                 }
             }
+            .pickerStyle(.inline)
+            .labelsHidden()
         } label: {
             toolbarChip(icon: .sort, label: model.sortControlLabel)
         }
@@ -201,17 +193,6 @@ struct SourcesView: View {
             RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
                 .stroke(PVColor.borderDefault, lineWidth: 1)
         )
-    }
-
-    @ViewBuilder
-    private func filterRow(label: String, selected: Bool) -> some View {
-        HStack {
-            Text(selected ? "✓" : " ")
-                .font(PVFont.mono(size: PVTypeScale.micro))
-                .foregroundStyle(PVColor.accent)
-                .frame(width: 12, alignment: .leading)
-            Text(label)
-        }
     }
 
     @ViewBuilder
