@@ -62,8 +62,8 @@ Onboarding (Spike 1) → signed in
 
 ## Out of scope (later spikes)
 
-- Interpretation (Citations, Observations, Nodes) and Conclusion — do not add sidebar placeholders for them in this spike.
-- Source **credibility** assessments ([`research-judgment-model.md`](../../research-judgment-model.md)).
+- Interpretation beyond Source credibility on the Source page (Citations, Observations, Nodes) and Conclusion — do not add sidebar placeholders for them in this spike.
+- Claim confidence and Citation transcription certainty ([`research-judgment-model.md`](../../research-judgment-model.md)).
 - Full GEDCOM / import adapters.
 - Destructive primary File deletion; orphan GC of historically referenced Files.
 - Rich audit UI / timeline browser (writes must exist; browsing history can wait).
@@ -160,9 +160,9 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | --- | --- |
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done); S2-04 (list entry/exit); S2-02 / S2-03 (notes/metadata + type display) |
-| **Deliverables** | Board for the **individual Source page** (view/edit only — no create/draft): identity + editable title/description; **Notes** and **Metadata** as distinct areas (Metadata: all values, dismissible quick-add suggestions, separate **Add** field picker, drag reorder); Artifacts list (**thumbnail of primary File** + `label` + `ART-…`) with **in-place accordion** expand (not a separate Artifact page); expanded row shows label/description + **one** primary File only (**no** derivatives list); activating the File **opens it in an external app** (MVP — no in-app preview); **Add Artifact** centered modal (same pattern as Add Source; label + optional File); **Add file…** only when fileless — **no Replace**. **Breadcrumb** to the Sources list (not a back button). |
-| **Context** | Source doc §§4, 6–8. Design assumes Artifact **`label`**, per-Source **suggestion dismiss**, and metadata **`sort_order`** — S2-18 adds those schema pieces first. Better scan = new Artifact (Citation remapping later). File **first-attach** only. File open MVP = default external app. Create lives on S2-04’s Add Source dialog. |
-| **Out** | Redesigning the Sources list (S2-04); delete Sources/Artifacts/Files; **Replace file**; Interpretation / Citation move-duplicate; **in-app File preview**; vocabulary admin; project Files browser (S2-20). |
+| **Deliverables** | Board for the **individual Source page** (view/edit only — no create/draft): identity + editable title/description; **Source credibility** (three-point grade + optional argument; Interpretation assessment, edited on this page); **Notes** and **Metadata** as distinct areas (Metadata: all values, dismissible quick-add suggestions, separate **Add** field picker, drag reorder); Artifacts list (**thumbnail of primary File** + `label` + `ART-…`) with **in-place accordion** expand (not a separate Artifact page); expanded row shows label/description + **one** primary File only (**no** derivatives list); activating the File **opens it in an external app** (MVP — no in-app preview); **Add Artifact** centered modal (same pattern as Add Source; label + optional File); **Add file…** only when fileless — **no Replace**. **Breadcrumb** to the Sources list (not a back button). |
+| **Context** | Source doc §§4, 6–8; credibility: [`research-judgment-model.md`](../../research-judgment-model.md) §2. Design assumes Artifact **`label`**, per-Source **suggestion dismiss**, metadata **`sort_order`**, and **credibility grades/assessments** schema — S2-18 adds those first. Better scan = new Artifact (Citation remapping later). File **first-attach** only. File open MVP = default external app. Create lives on S2-04’s Add Source dialog. |
+| **Out** | Redesigning the Sources list (S2-04); delete Sources/Artifacts/Files; **Replace file**; Citations / Observations / Nodes; Citation move-duplicate; Claim confidence; **in-app File preview**; vocabulary admin; project Files browser (S2-20). |
 | **Feeds** | S2-18 |
 
 ---
@@ -200,9 +200,9 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-23 (design enough), S2-17, S2-13 (S2-12 done for generation) |
-| **Deliverables** | **First (schema/FFI/docs):** (1) Artifact **`label`** (required); (2) per-Source **persistent dismiss** of type metadata suggestions; (3) **`sort_order`** (or equivalent) on Source metadata + reorder API; (4) **no primary-File replace** — `IngestArtifactFile` rejects when Artifact already has a File; update Source-layer docs to match (better scan = new Artifact; Citation remapping later). Then **Source page** from the list: description; **Notes** stream; **Metadata** area (all values; dismissible quick-add suggestions; separate **Add** → vocabulary picker → value → save; drag reorder); Artifacts list (**primary-File thumbnail** + `label` + `ART-…`); in-place Artifact expand (label/description; **primary File only** — do not list derivatives); activating the File **opens it in the default external app** (`NSWorkspace`) — **no** in-app preview; **Add Artifact** centered modal (same pattern as Add Source; required label + optional File ingest); **Add file…** on fileless Artifacts only via NSOpenPanel → `IngestArtifactFile` (path only) — **no Replace UI**. Surface thumbnails on Sources/Artifacts list rows (ensure or fetch derivative `rel_path`; Swift reads bytes). Include any thin FFI gap to list/ensure thumbnails for list cells. Tests for model state transitions with `FakeStore` (including ingest rejected when File already set). Confirm file-access usage copy/entitlements. |
-| **Context** | Association for **first attach** exists (`IngestArtifactFile` / `CreateArtifact`). Schema today lacks `artifacts.label`, per-Source suggestion dismiss, and `source_metadata` display order — add those in this PR before UI. Tighten ingest so it cannot pointer-swap. Do not invent multi-primary-file attach. Stack: Swift must not write `objects/` itself. Breadcrumb to Sources list per S2-23. File open MVP = external app. |
-| **Out** | Vocabulary admin; delete primary Files; **Replace file**; Citation move/duplicate; **in-app File preview**; project-wide Files browser (S2-21). |
+| **Deliverables** | **First (schema/FFI/docs):** (1) Artifact **`label`** (required); (2) per-Source **persistent dismiss** of type metadata suggestions; (3) **`sort_order`** (or equivalent) on Source metadata + reorder API; (4) **no primary-File replace** — `IngestArtifactFile` rejects when Artifact already has a File; (5) **Source credibility** — migrate `source_credibility_grades` + `source_credibility_assessments`, seed `provenencia` grades (`low_trust` / `standard` / `high_trust`), audited get/upsert assessment + list grades, include in Source workspace FFI (do **not** add a column on `sources`); update Source-layer docs for first-attach-only. Then **Source page** from the list: description; **credibility** control (grade + optional argument); **Notes** stream; **Metadata** area (all values; dismissible quick-add suggestions; separate **Add** → vocabulary picker → value → save; drag reorder); Artifacts list (**primary-File thumbnail** + `label` + `ART-…`); in-place Artifact expand (label/description; **primary File only** — do not list derivatives); activating the File **opens it in the default external app** (`NSWorkspace`) — **no** in-app preview; **Add Artifact** centered modal (same pattern as Add Source; required label + optional File ingest); **Add file…** on fileless Artifacts only via NSOpenPanel → `IngestArtifactFile` (path only) — **no Replace UI**. Surface thumbnails on Sources/Artifacts list rows (ensure or fetch derivative `rel_path`; Swift reads bytes). Include any thin FFI gap to list/ensure thumbnails for list cells. Tests for model state transitions with `FakeStore` (including ingest rejected when File already set; credibility upsert). Confirm file-access usage copy/entitlements. |
+| **Context** | Association for **first attach** exists (`IngestArtifactFile` / `CreateArtifact`). Schema today lacks `artifacts.label`, suggestion dismiss, `source_metadata` display order, and credibility tables — add those in this PR before UI. Tighten ingest so it cannot pointer-swap. Do not invent multi-primary-file attach. Stack: Swift must not write `objects/` itself. Breadcrumb to Sources list per S2-23. File open MVP = external app. Credibility semantics: [`research-judgment-model.md`](../../research-judgment-model.md) §2. |
+| **Out** | Vocabulary admin; delete primary Files; **Replace file**; Citations / Observations / Nodes; Citation move/duplicate; Claim confidence; **in-app File preview**; project-wide Files browser (S2-21). |
 
 ---
 
@@ -234,7 +234,7 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | Step | Title sketch |
 | --- | --- |
 | S2-17 | Add a Sources list inside the app workspace |
-| S2-18 | Open a Source page with Artifacts, ingest, and thumbnails |
+| S2-18 | Open a Source page with Artifacts, ingest, thumbnails, and Source credibility |
 | S2-21 | Browse project Files and jump to their Source |
 | S2-19 | Harden the Source catalog for first dogfood |
 
@@ -254,11 +254,11 @@ Prefer **many small PRs**. Sources list (S2-17) ships a **new list-style compone
 
 ## Explicit non-goals checklist (keep PRs honest)
 
-- [ ] No Interpretation tables or RPCs (sidebar stubs only)
-- [ ] No Source credibility UI
+- [ ] No Citation / Observation / Node tables or RPCs (sidebar stubs only) — **except** Source credibility grades/assessments shipped with S2-18 for the Source page
+- [ ] No Claim confidence UI
 - [ ] No File bytes in protobuf
 - [ ] No deletion of primary Files
-- [ ] No full vocabulary dump from `seeded-vocabulary.md`
+- [ ] No full vocabulary dump from `seeded-vocabulary.md` (credibility grades seed is the three-point set only)
 - [ ] No audit history browser required for done
 
 ---

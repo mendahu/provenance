@@ -4,7 +4,8 @@
 **Spike:** Provenencia Spike 2 (Source layer validation)  
 **Implements later as:** PR S2-18  
 **Depends on:** S2-01 workspace chrome (done); S2-04 Sources list (how researchers arrive here); S2-02 / S2-03 vocabulary (metadata editor + type display)  
-**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`archive/S2-02-source-fields.md`](archive/S2-02-source-fields.md), [`archive/S2-03-source-types.md`](archive/S2-03-source-types.md), [`S2-20-files-list.md`](S2-20-files-list.md)
+**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`archive/S2-02-source-fields.md`](archive/S2-02-source-fields.md), [`archive/S2-03-source-types.md`](archive/S2-03-source-types.md), [`S2-20-files-list.md`](S2-20-files-list.md)  
+**Judgment model:** [`research-judgment-model.md`](../../../research-judgment-model.md) §2 (Source credibility assessments)
 
 Paste this entire document into Claude Design as the requirements for one board/flow.
 
@@ -12,7 +13,7 @@ Paste this entire document into Claude Design as the requirements for one board/
 
 ## 1. Objective
 
-Design the **individual Source page** — a separate destination from the Sources list (S2-04), not a master–detail pane beside that list. Researchers open it by selecting a list row, or after **Add Source** succeeds (create dialog lives on S2-04). This page is **view/edit only** for an already-persisted Source: always-editable identity fields, notes, metadata, the Artifacts list, and File **attach** (not replace). **No create/draft mode** on this board.
+Design the **individual Source page** — a separate destination from the Sources list (S2-04), not a master–detail pane beside that list. Researchers open it by selecting a list row, or after **Add Source** succeeds (create dialog lives on S2-04). This page is **view/edit only** for an already-persisted Source: always-editable identity fields, **Source credibility** (Interpretation assessment, edited here), notes, metadata, the Artifacts list, and File **attach** (not replace). **No create/draft mode** on this board.
 
 The Source page is the **lowest navigation level** in this flow — there is no further page push for an Artifact. Artifacts appear as a **list on this page**; “Artifact detail” is an **in-place expand** (accordion-style) on a list row. Expanding shows more Artifact fields plus detail for the single associated primary File (when present). Do **not** surface File derivatives in that expand — they are generated for the app (e.g. list thumbnails), not something researchers should interact with. The researcher stays on the Source page the whole time.
 
@@ -21,7 +22,7 @@ Sources list (S2-04)
   ├─ Add Source dialog → Create
   └─ select row
          └─ Source page (this board) — view/edit; leaf destination
-              ├─ identity + description + notes + metadata (editable)
+              ├─ identity + description + credibility + notes + metadata (editable)
               └─ Artifacts list (on this page)
                    └─ row expand (accordion) — not a separate page
                         ├─ Artifact detail (e.g. label, description)
@@ -34,7 +35,7 @@ Include **add flows** on this page: **Add Artifact** (same centered dimming moda
 
 ## 2. Domain model (UI must reflect)
 
-Authoritative: [`source-layer-data-model.md`](../../../source-layer-data-model.md) §§4, 6–8; stack rules for ingest (bytes never in protobuf).
+Authoritative: [`source-layer-data-model.md`](../../../source-layer-data-model.md) §§4, 6–8; stack rules for ingest (bytes never in protobuf). Source **credibility** is Interpretation judgment ([`research-judgment-model.md`](../../../research-judgment-model.md) §2) — **not** a column on `sources` — but the **Source page is the right UI** to set it during intake.
 
 ### 2.1 Source
 
@@ -46,6 +47,7 @@ Authoritative: [`source-layer-data-model.md`](../../../source-layer-data-model.m
 | `description` | Catalog text about the Source — editable on this page (same as title: always editable). |
 | Notes | Distinct area on the Source page: a **stream** of researcher commentary — multi-entry add/edit/delete over time, not a single text field. Keep secondary to the evidence tree if the board gets crowded, but do not omit. |
 | Metadata | Distinct area on the Source page (separate from Notes): a **collection of properties**. Show all `source_metadata` values for this Source. **Type suggestions** (not yet filled) are quick-add rows — type a value and save; each is **permanently dismissible** (e.g. X) with dismiss **persisted** per Source. Separately, an **Add** control opens a field picker over the full vocabulary, then value entry + save (not the same as accepting a suggestion). Rows are **user-orderable** (drag). Design assumes schema support for dismiss + order — S2-18 adds it. |
+| Credibility | Distinct control on this page (near identity — not buried in Notes/Metadata): the researcher’s reusable **three-point trust** of this Source as evidence (`low_trust` / `standard` / `high_trust`). Backed by `source_credibility_assessments` (at most one row per Source) + `source_credibility_grades` vocabulary — **not** a `sources` column. Optional free-text **argument**. Missing assessment may **display** as Standard without inserting a row. Do **not** conflate with Claim confidence or Citation transcription certainty. |
 
 ### 2.2 Artifact
 
@@ -86,6 +88,7 @@ Tell Claude Design / engineering what is **shared chrome** vs **compose from exi
 | Add Artifact modal | `PVDialog` (same centered form-dialog pattern as Add Source) |
 | Title / description / Artifact label | `PVField` + `PVInput` (always editable — no separate read-only mode) |
 | Source type change | `PVSelect` or `PVComboBox` |
+| Credibility grade | `PVSelect` or segmented control over the three seeded grades; optional `PVField` for argument. Do **not** use a five-grade EvidenceBadge — that is a different (later) concept. |
 | Metadata field picker (D-5d) | `PVComboBox` (vocabulary pool) inside `PVDialog` or inline form |
 | Primary / secondary actions | `PVButton` (use loading state for ingest) |
 | Dismiss suggestion (X) | `PVIconButton` |
@@ -119,8 +122,9 @@ Design these as reusable, not Source-page-only sketches:
 
 #### Leave out of the design system for now (feature-owned)
 
-- Source page layout composition (identity + notes + metadata + artifacts as one page).
+- Source page layout composition (identity + credibility + notes + metadata + artifacts as one page).
 - Source identity header assembly (title + type + ref under breadcrumb).
+- **Credibility** control layout (grade + argument) — compose from `PVSelect` / `PVField`; hoist only if a second surface needs the same pattern.
 - **Notes stream** UI (multi-entry commentary timeline) — wait for a second notes-like surface before hoisting.
 - Expanded Artifact body (label/description editors + primary File identity + open-externally affordance + fileless CTA).
 - Ingest busy gating / duplicate-submit disable (model + `PVButton` loading).
@@ -144,6 +148,7 @@ Design these as reusable, not Source-page-only sketches:
 | ID | Requirement |
 | --- | --- |
 | D-4 | **Title** (required, non-empty) and **description** (optional) are editable in place (view = edit). Empty title must fail validation — same rule as the Add Source dialog. |
+| D-4a | **Source credibility:** show and edit the working assessment for this Source — three-point grade (`low_trust` / `standard` / `high_trust` labels from vocabulary) plus optional **argument** text. Place it with Source identity (not inside Notes or Metadata). Persist via `source_credibility_assessments` (upsert/update the single row). Missing assessment may display as Standard without writing a row until the researcher explicitly sets or confirms a grade. Copy must not call this Claim confidence. |
 | D-5 | **Notes** are a **distinct** page area: multi-entry stream (add/edit/delete). Not combined visually with Metadata. Keep layout one composition with the rest of the page, not a dashboard of cards. |
 | D-5a | **Metadata** is a **distinct** page area: show **all** associated `source_metadata` values for this Source. Not the same UI as Notes. |
 | D-5b | **Type suggestions:** for fields suggested by the Source’s type that are not yet filled, show them as empty/suggested rows (especially useful right after create). Filling is a **quick add** — enter a value and save in place. Each suggestion has a dismiss control (e.g. **X**). Dismiss is **permanent and persistent** for this Source — dismissed suggestions must not reappear after reload. |
@@ -192,6 +197,7 @@ Design these as reusable, not Source-page-only sketches:
 - One Source with two Artifacts (two scans) + one fileless Artifact.
 - One Artifact expanded showing the primary File only (no derivatives list).
 - Source with zero Artifacts + Add Artifact.
+- Credibility control at `standard` (no row yet) and one Source with `high_trust` + short argument.
 - Notes stream + Metadata area with filled values, dismissible quick-add suggestions, **Add** field picker, and reorder.
 - Breadcrumb to the Sources list annotated.
 
@@ -199,7 +205,7 @@ Design these as reusable, not Source-page-only sketches:
 
 ## 5. Screen / frame inventory (minimum)
 
-1. **Source page** — identity + description + notes + metadata + Artifacts list (collapsed and one row expanded).
+1. **Source page** — identity + credibility + description + notes + metadata + Artifacts list (collapsed and one row expanded).
 2. **Add Artifact** modal (same pattern as Add Source: label + optional description + optional File).
 3. **Expanded Artifact row** — label + description + primary File only (same page as #1; not a separate destination; no derivatives list).
 4. **Add file…** on a fileless Artifact (picker → success; optional failure). **No** replace-file frame.
@@ -215,7 +221,7 @@ Design these as reusable, not Source-page-only sketches:
 - **Replace file** / pointer-swap of an Artifact’s primary File (better scan = new Artifact; Citation move/duplicate later).
 - **In-app File preview** (Quick Look embed, PDFKit/AVKit zoom/transport, universal preview window) — MVP is **open in external app** only; rich in-app preview can come later (likely a hoistable DS piece shared with Files).
 - Orphan File GC / historical File version browser.
-- Interpretation (citations, people); credibility grades; Citation remapping across Artifacts.
+- Broader Interpretation (citations, people, Observations, Nodes); Citation remapping across Artifacts; Claim confidence.
 - Creating types/fields here (link to S2-02 / S2-03 destinations OK).
 - Project-wide Files browser (S2-20).
 - Surfacing File **derivatives** as user-visible objects under an Artifact (thumbnails may still use them internally).
@@ -225,6 +231,7 @@ Design these as reusable, not Source-page-only sketches:
 ## 7. Acceptance checklist
 
 - [ ] Separate Source page with **breadcrumb** to list — not master–detail with the list; **no create mode**; **no** standalone back button.
+- [ ] **Credibility** grade (+ optional argument) editable on the page; not a `sources` column; not Claim confidence.
 - [ ] **Notes** as a distinct stream area (add/edit/delete).
 - [ ] **Metadata** as a distinct area: all associated values; type suggestions as **quick add** with **persistent dismiss**; separate **Add** (vocabulary picker → value → save); **drag reorder**.
 - [ ] Artifacts sublist with **thumbnail** (primary File), **`label`**, `ART-…`.
@@ -245,4 +252,5 @@ Design these as reusable, not Source-page-only sketches:
 | Metadata display order | **Schema gap:** `source_metadata` has no `sort_order` (type-join order is not per-Source). **S2-18 must add** `sort_order` (or equivalent) on Source metadata + reorder FFI. |
 | List / workspace thumbnail refs | Likely **FFI gap:** ensure/list derivative paths for list cells — fold into S2-18 (or a thin precede PR). |
 | Open primary File | **MVP:** Swift opens the `objects/…` URL with **`NSWorkspace`** (default app). No in-app preview in S2-18. |
+| Source credibility assessments | **Schema/FFI gap.** Tables not migrated yet. **S2-18 must add:** `source_credibility_grades` + `source_credibility_assessments` (per [`research-judgment-model.md`](../../../research-judgment-model.md) §2); seed `provenencia` grades (`low_trust` / `standard` / `high_trust`); audited upsert/get for the single assessment per Source; list/get grades; wire into `GetSourceWorkspace` (or equivalent) + Swift. Do **not** add a credibility column on `sources`. |
 | Sources list | Shipped earlier as S2-17 from S2-04; this board feeds S2-18 only. |
