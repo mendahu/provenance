@@ -87,6 +87,12 @@ final class CatalogCounts {
         sourceTypes = summary
     }
 
+    /// Writes the Sources total the feature model already knows from its
+    /// in-memory list (after load or create).
+    func publishSources(_ count: Int) {
+        sources = count
+    }
+
     /// Initial (and rare full) refresh via one `GetWorkspaceNavCounts`
     /// open — concurrent section queries fight the catalog's exclusive
     /// SQLite lock.

@@ -2,10 +2,10 @@ import SwiftUI
 
 /// The workspace's single content host (W-3): a slim header carrying page
 /// context plus project identity (W-9, W-10), and the active
-/// destination's content below it. **Source fields** (S2-15) and **Source
-/// types** (S2-16) mount their own full-height views below that header;
-/// every other destination still shows the labeled empty placeholder until
-/// its own PR (S2-17, S2-21) lands.
+/// destination's content below it. **Sources** (S2-17), **Source fields**
+/// (S2-15), and **Source types** (S2-16) mount their own full-height views
+/// below that header; Files still shows the labeled empty placeholder until
+/// S2-21 lands.
 struct WorkspaceContent: View {
     let section: WorkspaceModel.Section
     let project: ProjectInfo?
@@ -27,6 +27,13 @@ struct WorkspaceContent: View {
                 )
             case .sourceTypes:
                 SourceTypesView(
+                    projectDir: projectDir,
+                    userID: userID,
+                    store: store,
+                    catalogCounts: catalogCounts
+                )
+            case .sources:
+                SourcesView(
                     projectDir: projectDir,
                     userID: userID,
                     store: store,

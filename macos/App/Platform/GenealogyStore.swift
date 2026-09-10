@@ -24,7 +24,7 @@ struct OnboardingResult: Sendable, Equatable {
     var project: ProjectInfo
 }
 
-struct CatalogSource: Sendable, Equatable {
+struct CatalogSource: Sendable, Equatable, Identifiable {
     var id: String
     var ref: String
     var sourceTypeID: String

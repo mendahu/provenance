@@ -17,6 +17,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var fieldsByProject: [String: [CatalogMetadataField]] = [:]
     var metadataBySource: [String: [CatalogMetadataEntry]] = [:]
     var fileCountByProject: [String: Int] = [:]
+    /// When set, `listSources` throws instead of returning the in-memory list.
+    var listSourcesError: Error?
     var lastResult = OnboardingResult(
         projectDir: "/tmp/robins-family.provenencia",
         userID: "00000000-0000-7000-8000-000000000001",
@@ -173,7 +175,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func listSources(projectDir: String) async throws -> [CatalogSource] {
-        sourcesByProject[projectDir] ?? []
+        if let listSourcesError { throw listSourcesError }
+        return sourcesByProject[projectDir] ?? []
     }
 
     func getSourceWorkspace(projectDir: String, sourceID: String) async throws -> CatalogSourceWorkspace {
