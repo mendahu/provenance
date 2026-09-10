@@ -119,22 +119,34 @@ struct SourcesView: View {
     }
 
     private var toolbar: some View {
+        // Same search chrome as `VocabularyListPane.searchBar` (Source fields /
+        // Source types): default `PVInput` size, card strip, bottom hairline.
         HStack(spacing: PVSpacing.space5) {
             PVInput(
                 text: $model.query,
-                size: .sm,
                 prompt: L10n.Sources.searchPlaceholder,
                 icon: .search
             )
-            .frame(width: 340)
+            .frame(maxWidth: 420)
             .accessibilityIdentifier("sources.search")
+
+            if !model.query.isEmpty {
+                PVButton(L10n.Sources.clearSearch, variant: .ghost, size: .sm) {
+                    model.query = ""
+                }
+                .accessibilityIdentifier("sources.clearSearch")
+            }
 
             filterMenu
             sortMenu
             Spacer(minLength: 0)
         }
         .padding(.horizontal, PVSpacing.gutterPage)
-        .padding(.bottom, PVSpacing.space5)
+        .padding(.vertical, PVSpacing.space6)
+        .background(PVColor.surfaceCard)
+        .overlay(alignment: .bottom) {
+            PVDivider()
+        }
     }
 
     private var filterMenu: some View {
@@ -184,7 +196,7 @@ struct SourcesView: View {
         .font(PVFont.body(size: PVTypeScale.caption, weight: PVFontWeight.medium))
         .foregroundStyle(PVColor.textPrimary)
         .padding(.horizontal, PVSpacing.space4)
-        .frame(height: PVSpacing.controlHeightSmall)
+        .frame(height: PVSpacing.controlHeightMedium)
         .background(
             RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
                 .fill(PVColor.surfaceRaised)
