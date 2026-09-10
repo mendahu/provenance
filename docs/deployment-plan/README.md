@@ -12,8 +12,9 @@ Authoritative domain and stack decisions remain in the sibling docs under [`docs
 
 Spike 2 contents:
 
-- [`spike-2/README.md`](spike-2/README.md) — task list (S2-01…S2-22; IDs are sparse — see dependency sketch)
-- [`spike-2/design/`](spike-2/design/) — Claude Design requirement briefs for S2-01…S2-04
+- [`spike-2/README.md`](spike-2/README.md) — open task list
+- [`spike-2/completed.md`](spike-2/completed.md) — finished Spike 2 steps
+- [`spike-2/design/`](spike-2/design/) — open Claude Design briefs; completed briefs in [`spike-2/design/archive/`](spike-2/design/archive/)
 
 ## Completed
 

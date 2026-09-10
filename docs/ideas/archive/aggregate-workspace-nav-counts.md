@@ -1,6 +1,6 @@
 # Aggregate workspace nav counts RPC
 
-**Status:** implemented — `METHOD_GET_WORKSPACE_NAV_COUNTS` / `GetWorkspaceNavCounts`. `CatalogCounts.refreshAll()` uses one store call; Fields/Types still publish on mutate.
+**Status:** done — archived after `METHOD_GET_WORKSPACE_NAV_COUNTS` / `GetWorkspaceNavCounts`. `CatalogCounts.refreshAll()` uses one store call; Fields/Types still publish on mutate.
 
 ## Problem
 

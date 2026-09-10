@@ -4,7 +4,7 @@
 **Spike:** Provenencia Spike 2 (Source layer validation)  
 **Implements later as:** PR S2-16  
 **Depends on:** S2-01 workspace chrome (done); S2-02 Source fields vocabulary (fields must exist to assign)  
-**Related briefs:** [`S2-02-source-fields.md`](S2-02-source-fields.md); [`S2-04-sources-catalog.md`](S2-04-sources-catalog.md)
+**Related briefs:** [`S2-02-source-fields.md`](S2-02-source-fields.md); [`S2-04-sources-list.md`](../S2-04-sources-list.md); [`S2-23-source-detail.md`](../S2-23-source-detail.md)
 
 Paste this entire document into Claude Design as the requirements for one board/flow.
 
@@ -20,7 +20,7 @@ Assume S2-01 chrome exists. **Do not redraw a second window shell.** Mount only 
 
 ## 2. Domain model (UI must reflect)
 
-Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-model.md) §§3, 5.2; origin rules: [`seeded-vocabulary.md`](../../../seeded-vocabulary.md) §1.1.
+Authoritative schema: [`source-layer-data-model.md`](../../../../source-layer-data-model.md) §§3, 5.2; origin rules: [`seeded-vocabulary.md`](../../../../seeded-vocabulary.md) §1.1.
 
 ### 2.1 `source_types`
 
@@ -47,7 +47,7 @@ Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-
 
 - Not creating/editing field vocabulary definitions (that is S2-02) — except navigating or picking existing fields.
 - Not editing metadata **values** on a Source instance.
-- Not the Sources catalog list/detail.
+- Not the Sources list or Source page (S2-04 / S2-23).
 - Not force-deleting a type that still has Sources (delete is gated like Source fields).
 
 ---
