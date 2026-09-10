@@ -4,7 +4,7 @@ import Observation
 /// State for the post-onboarding app workspace: which top-level
 /// destination is selected, and whether the sidebar is showing labels or
 /// collapsed to an icon rail. See
-/// `docs/deployment-plan/spike-2/design/S2-01-workspace-chrome.md`.
+/// `docs/deployment-plan/spike-2/design/archive/S2-01-workspace-chrome.md`.
 ///
 /// Nav-row counts live on `CatalogCounts` (environment), not here — so
 /// vocabulary panes can publish totals without talking to workspace chrome.

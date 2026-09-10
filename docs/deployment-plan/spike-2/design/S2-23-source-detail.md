@@ -4,7 +4,7 @@
 **Spike:** Provenencia Spike 2 (Source layer validation)  
 **Implements later as:** PR S2-18  
 **Depends on:** S2-01 workspace chrome (done); S2-04 Sources list (how researchers arrive here); S2-02 / S2-03 vocabulary (metadata editor + type display)  
-**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`S2-02-source-fields.md`](S2-02-source-fields.md), [`S2-03-source-types.md`](S2-03-source-types.md), [`S2-20-files-list.md`](S2-20-files-list.md)
+**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`archive/S2-02-source-fields.md`](archive/S2-02-source-fields.md), [`archive/S2-03-source-types.md`](archive/S2-03-source-types.md), [`S2-20-files-list.md`](S2-20-files-list.md)
 
 Paste this entire document into Claude Design as the requirements for one board/flow.
 

@@ -4,7 +4,7 @@
 **Spike:** Provenencia Spike 2 (Source layer validation)  
 **Implements later as:** PR S2-15  
 **Depends on:** S2-01 workspace chrome (content mounts in the **Source fields** destination) — already shipped  
-**Related briefs:** later S2-03 (Source types — associations use this field pool); [`S2-04-sources-list.md`](S2-04-sources-list.md); [`S2-23-source-detail.md`](S2-23-source-detail.md)
+**Related briefs:** later S2-03 (Source types — associations use this field pool); [`S2-04-sources-list.md`](../S2-04-sources-list.md); [`S2-23-source-detail.md`](../S2-23-source-detail.md)
 
 Paste this entire document into Claude Design as the requirements for one board/flow.
 
@@ -20,7 +20,7 @@ Assume S2-01 chrome exists. **Do not redraw a second window shell.** Mount only 
 
 ## 2. Domain model (UI must reflect)
 
-Authoritative schema: [`source-layer-data-model.md`](../../../source-layer-data-model.md) §5.1; origin rules: [`seeded-vocabulary.md`](../../../seeded-vocabulary.md) §1.1.
+Authoritative schema: [`source-layer-data-model.md`](../../../../source-layer-data-model.md) §5.1; origin rules: [`seeded-vocabulary.md`](../../../../seeded-vocabulary.md) §1.1.
 
 ### 2.1 `source_metadata_fields`
 
