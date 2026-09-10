@@ -7,7 +7,8 @@ Hand these files to Claude Design **one at a time**. Each brief is self-containe
 | S2-01 | [`S2-01-workspace-chrome.md`](S2-01-workspace-chrome.md) | PR S2-14 (done) |
 | S2-02 | [`S2-02-source-fields.md`](S2-02-source-fields.md) | PR S2-15 |
 | S2-03 | [`S2-03-source-types.md`](S2-03-source-types.md) | PR S2-16 |
-| S2-04 | [`S2-04-sources-catalog.md`](S2-04-sources-catalog.md) | PRs S2-17, S2-18 |
+| S2-04 | [`S2-04-sources-list.md`](S2-04-sources-list.md) | PR S2-17 |
+| S2-23 | [`S2-23-source-detail.md`](S2-23-source-detail.md) | PR S2-18 |
 | S2-20 | [`S2-20-files-list.md`](S2-20-files-list.md) | PR S2-21 |
 
 Sprint task list (PR sequence, non-design work): [`../README.md`](../README.md).
@@ -29,3 +30,4 @@ Sprint task list (PR sequence, non-design work): [`../README.md`](../README.md).
 - Vocabulary rows use `origin` (`provenencia` / `user` / `plugin:…`) — surface origin in admin UIs; do not invent a separate “builtin” flag.
 - An Artifact has **zero or one** primary File; multiple scans are multiple Artifacts. Derivatives belong to Files.
 - Workspace sidebar destinations for Spike 2: **Sources**, **Source types**, **Source fields**, **Files**.
+- **Sources** uses a **separate Source page** (not master–detail like types/fields): list is S2-04; Source → Artifact → File is S2-23.

@@ -15,7 +15,7 @@ Authoritative models:
 - [`application-stack.md`](../../application-stack.md) (FFI granularity, `objects/` ingest)
 - [`macos-client-patterns.md`](../../macos-client-patterns.md)
 
-Claude Design handoffs live in [`design/`](design/) — self-contained requirement briefs, not the task list below. Design sequence: **S2-02** Source fields → **S2-03** Source types → **S2-04** Sources catalog → **S2-20** Files list (**S2-01** chrome done).
+Claude Design handoffs live in [`design/`](design/) — self-contained requirement briefs, not the task list below. Design sequence: **S2-02** Source fields → **S2-03** Source types → **S2-04** Sources list → **S2-23** Source page → **S2-20** Files list (**S2-01** chrome done).
 
 Spike 1 left an explicit gate: **the first researched mutation must write audit**, not decorative empty tables without a write path. This spike owns that gate.
 
@@ -36,7 +36,7 @@ That is enough to **validate** the Source-layer schema and storage rules before 
 ```text
 Onboarding (Spike 1) → signed in
   → App workspace (sidebar + content)
-       ├── Sources (catalog → Source detail)
+       ├── Sources (list → separate Source page)
        │     ├── type + title + notes + metadata
        │     ├── extend types / fields (project-local)
        │     └── Artifacts
@@ -57,7 +57,7 @@ Onboarding (Spike 1) → signed in
 - Full Source-layer table set from the Source doc: `source_types`, `sources`, `source_notes`, `source_metadata_fields`, `source_type_metadata_fields`, `source_metadata`, `artifacts`, `files`, `file_derivatives`.
 - Small **seed** of types/fields (not the entire [`seeded-vocabulary.md`](../../seeded-vocabulary.md) horizon list). Create-time starter today: `birth_certificate` plus a few suggested fields; opens do not heal or expand the set.
 - Go domain packages for CRUD + ingest; FFI use-cases (coarse verbs); SwiftUI Source catalog UI inside the workspace, consuming `GenealogyStore`.
-- Claude Design boards for workspace chrome, Source fields, Source types, Sources catalog (Source → Artifact → File), and the Files list.
+- Claude Design boards for workspace chrome, Source fields, Source types, Sources list, Source page (Source → Artifact → File), and the Files list.
 - Refs: mint `SRC-…` / `ART-…` via `core/ref` on insert ([`catalog-refs.md`](../../catalog-refs.md)).
 
 ## Out of scope (later spikes)
@@ -119,7 +119,8 @@ IDs stay stable even if order of *starting* work shifts; **Depends on** is the m
 S2-01 Design — App workspace chrome (sidebar + content host) (done)
 S2-02 Design — Source fields (metadata field vocabulary)
 S2-03 Design — Source types (types + suggested field associations)
-S2-04 Design — Sources catalog (list → Source → Artifact → File)
+S2-04 Design — Sources list (browse + Add Source → separate Source page)
+S2-23 Design — Source page (Artifacts + File ingest)
 S2-20 Design — Files list (project file browser)
         │
         ▼
@@ -136,13 +137,13 @@ S2-14 PR — Swift app workspace layout (sidebar shell) (done)
 S2-15 PR — Swift Source fields (list + create/edit)
 S2-22 PR — PVTable (custom-chrome table + keyboard/a11y)
 S2-16 PR — Swift Source types (list + associations) (done)
-S2-17 PR — Swift Sources catalog (list + Source detail)
-S2-18 PR — Swift Artifacts + file ingest + list thumbnails
+S2-17 PR — Swift Sources list (+ Add Source; navigate to Source page)
+S2-18 PR — Swift Source page (Artifacts + file ingest + list thumbnails)
 S2-21 PR — Swift Files list (+ Source link)
 S2-19 PR — Dogfood polish (copy, empty states, errors, tests)
 ```
 
-Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **S2-03** → **S2-04** → **S2-20**. Feature UI: **S2-15** → **S2-22** → **S2-16** → **S2-17** → **S2-18** → **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
+Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **S2-03** → **S2-04** → **S2-23** → **S2-20**. Feature UI: **S2-15** → **S2-22** → **S2-16** → **S2-17** → **S2-18** → **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
 
 ---
 
@@ -193,18 +194,33 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 
 ---
 
-### S2-04 — Design: Sources catalog (list → Source → Artifact → File)
+### S2-04 — Design: Sources list
 
-**Claude Design brief:** [`design/S2-04-sources-catalog.md`](design/S2-04-sources-catalog.md)
+**Claude Design brief:** [`design/S2-04-sources-list.md`](design/S2-04-sources-list.md)
 
 | | |
 | --- | --- |
 | **Kind** | Design (Claude Design) |
-| **Depends on** | S2-01 (done); S2-02 / S2-03 (types + fields vocabulary for classification and metadata) |
-| **Deliverables** | Board for the **Sources** destination: list (title, `SRC-…`, type name, thumbnail slot from child data); Source detail (description + Artifacts sublist with `ART-…`, display fallback, thumbnail; notes + metadata placement); Artifact detail (description + **one** primary File + that File’s derivatives); add flows for Source, Artifact, and ingest/replace File. **Open Design question:** expand-in-list vs breadcrumb/push across three levels. |
-| **Context** | Source doc §§4, 6–8. Artifact has **no label column** — use description / filename / ref fallback. Multiple scans = multiple Artifacts. File association already exists (`IngestArtifactFile`); list thumbnails may need FFI ensure/list wiring in S2-18. |
-| **Out** | Delete Sources/Artifacts/Files; Interpretation; vocabulary admin (S2-02/03). |
-| **Feeds** | S2-17, S2-18 |
+| **Depends on** | S2-01 (done); S2-02 / S2-03 (types vocabulary for Add Source / row type name) |
+| **Deliverables** | Board for the **Sources** list only: rows (title, `SRC-…`, type name, thumbnail slot from child data); search; empty + **Add Source** as a **centered dimming dialog** (same family as confirm dialogs; type required; title/description optional) that on Create navigates to the **separate Source page**; row select also opens that page. Not master–detail like S2-02/S2-03. Do not design Artifacts or File ingest here. |
+| **Context** | Source doc §4 (list-facing). Navigation locked: **separate page**. Create locked: **confirm-style dialog on the list**, then land on S2-23 (view/edit). |
+| **Out** | Source page body, Artifacts, ingest (S2-23 / S2-18); delete; vocabulary admin. |
+| **Feeds** | S2-17 |
+
+---
+
+### S2-23 — Design: Source page (Artifacts + Files)
+
+**Claude Design brief:** [`design/S2-23-source-detail.md`](design/S2-23-source-detail.md)
+
+| | |
+| --- | --- |
+| **Kind** | Design (Claude Design) |
+| **Depends on** | S2-01 (done); S2-04 (list entry/exit); S2-02 / S2-03 (notes/metadata + type display) |
+| **Deliverables** | Board for the **individual Source page** (view/edit only — no create/draft): identity + editable title/description; notes + metadata; Artifacts list (`ART-…`, display fallback, thumbnail); Artifact detail (description + **one** primary File + that File’s derivatives); add Artifact; add/replace File ingest. Back/breadcrumb to the Sources list. Nested Artifact nav within this page stack is a Design choice — document it. |
+| **Context** | Source doc §§4, 6–8. Artifact has **no label column** — use description / filename / ref fallback. Multiple scans = multiple Artifacts. File association already exists (`IngestArtifactFile`); list thumbnails may need FFI ensure/list wiring in S2-18. Create lives on S2-04’s Add Source dialog. |
+| **Out** | Redesigning the Sources list (S2-04); delete Sources/Artifacts/Files; Interpretation; vocabulary admin; project Files browser (S2-20). |
+| **Feeds** | S2-18 |
 
 ---
 
@@ -215,10 +231,10 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | | |
 | --- | --- |
 | **Kind** | Design (Claude Design) |
-| **Depends on** | S2-01 (done — **Files** placeholder already in shell); S2-04 (Source link target) |
+| **Depends on** | S2-01 (done — **Files** placeholder already in shell); S2-23 (Source page link target) |
 | **Deliverables** | Board for the **Files** destination: list rows with **thumbnail**, **media type**, **original filename**; **link to associated Source** (via Artifact). No ingest/delete on this board. Prefer not listing derivative-only Files as peer rows. |
 | **Context** | Source doc §§6–8. Association is indirect (`artifacts.file_id` → Source). Sidebar Files destination already exists; only `CountFiles` is wired today. |
-| **Out** | Ingest/replace (S2-04/S2-18); delete; Interpretation. |
+| **Out** | Ingest/replace (S2-23/S2-18); delete; Interpretation. |
 | **Feeds** | S2-21 |
 
 ---
@@ -379,26 +395,26 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 
 ---
 
-### S2-17 — PR: Swift Sources catalog (list + Source detail)
+### S2-17 — PR: Swift Sources list
 
 | | |
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-04 (design enough), S2-16 (types available to pick), S2-13, S2-14 |
-| **Deliverables** | **Sources** destination: list rows (title, `SRC-…`, type name; thumbnail placeholder OK if S2-18 owns real thumbs) via **`PVTable`** where the list is a multi-column browse table; navigate into Source detail (description; Artifacts list with `ART-…` + display fallback; notes + metadata editor driven by type suggestions). **Add Source** flow. Unit tests with `FakeStore`. L10n via skill. |
-| **Context** | Mount under S2-14 **Sources** pane. Prefer matching S2-04 navigation pattern. Artifact file ingest can stub “Add file” until S2-18 if needed — prefer wiring create-fileless Artifact here. |
-| **Out** | Full ingest UI; derivative/thumbnail ensure on lists (S2-18). |
+| **Deliverables** | **Sources** list destination: rows (title, `SRC-…`, type name; thumbnail placeholder OK if S2-18 owns real thumbs) via **`PVTable`** where the list is a multi-column browse table; **Add Source** centered dialog (reuse confirm-dialog chrome; type + optional title/description) that on Create navigates to a **separate Source page** (stub/placeholder page OK until S2-18); row select opens that page. Unit tests with `FakeStore`. L10n via skill. |
+| **Context** | Mount under S2-14 **Sources** pane. Match S2-04: **not** master–detail; create is confirm-style dialog → Source page, not an in-page draft. Do not ship full Artifact/File UI here. |
+| **Out** | Source page body, Artifact detail, ingest, derivative/thumbnail ensure (S2-18). |
 
 ---
 
-### S2-18 — PR: Swift Artifacts + file ingest + list thumbnails
+### S2-18 — PR: Swift Source page (Artifacts + file ingest + thumbnails)
 
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-04, S2-17, S2-13 (S2-12 done for generation) |
-| **Deliverables** | Artifact detail under a Source: description; primary File identity; derivatives list; **Add / replace file** via NSOpenPanel → `IngestArtifactFile` (path only). Surface thumbnails on Sources/Artifacts list rows (ensure or fetch derivative `rel_path`; Swift reads bytes). Include any thin FFI gap to list/ensure thumbnails for list cells. Tests for model state transitions with `FakeStore`. Confirm file-access usage copy/entitlements. |
-| **Context** | Association mechanism **already exists** (`IngestArtifactFile` / `CreateArtifact`). Do not invent multi-primary-file attach. Stack: Swift must not write `objects/` itself. |
+| **Depends on** | S2-23 (design enough), S2-17, S2-13 (S2-12 done for generation) |
+| **Deliverables** | **Source page** reached from the list: description; notes + metadata editor; Artifacts list (`ART-…` + display fallback); Artifact detail (description; primary File identity; derivatives); **Add Artifact**; **Add / replace file** via NSOpenPanel → `IngestArtifactFile` (path only). Surface thumbnails on Sources/Artifacts list rows (ensure or fetch derivative `rel_path`; Swift reads bytes). Include any thin FFI gap to list/ensure thumbnails for list cells. Tests for model state transitions with `FakeStore`. Confirm file-access usage copy/entitlements. |
+| **Context** | Association mechanism **already exists** (`IngestArtifactFile` / `CreateArtifact`). Do not invent multi-primary-file attach. Stack: Swift must not write `objects/` itself. Back to Sources list per S2-23. |
 | **Out** | Vocabulary admin; delete primary Files; project-wide Files browser (S2-21). |
 
 ---
@@ -408,8 +424,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-20 (design enough), S2-17 (Sources navigation target), S2-18 (thumbnail wiring preferred), **S2-22** (`PVTable` preferred for the list), S2-13, S2-14 |
-| **Deliverables** | **Files** destination: list thumbnail, media type, original filename via **`PVTable`** (or `PVTable`-compatible row chrome); Source link navigates into Sources detail. Add `ListFiles` (or equivalent) FFI joining current Artifact→Source when present; exclude derivative-only rows from the peer list. Unit tests with `FakeStore`. L10n via skill. |
+| **Depends on** | S2-20 (design enough), S2-18 (Source page navigation target; thumbnail wiring preferred), **S2-22** (`PVTable` preferred for the list), S2-13, S2-14 |
+| **Deliverables** | **Files** destination: list thumbnail, media type, original filename via **`PVTable`** (or `PVTable`-compatible row chrome); Source link navigates into the Sources **Source page**. Add `ListFiles` (or equivalent) FFI joining current Artifact→Source when present; exclude derivative-only rows from the peer list. Unit tests with `FakeStore`. L10n via skill. |
 | **Context** | Mount under existing S2-14 **Files** pane. Share thumbnail ensure/list helpers with S2-18 where practical. |
 | **Out** | Ingest UI; File delete/GC. |
 
@@ -443,8 +459,8 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | S2-15 | Let researchers browse and define Source metadata fields |
 | S2-22 | Extract a design-system table with keyboard and VoiceOver parity |
 | S2-16 | Let researchers define Source types and suggested fields |
-| S2-17 | Add a Source catalog inside the app workspace |
-| S2-18 | Let researchers attach Artifacts and ingest Files with thumbnails |
+| S2-17 | Add a Sources list inside the app workspace |
+| S2-18 | Open a Source page with Artifacts, ingest, and thumbnails |
 | S2-21 | Browse project Files and jump to their Source |
 | S2-19 | Harden the Source catalog for first dogfood |
 
@@ -454,11 +470,11 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 
 | Track | Steps |
 | --- | --- |
-| **Design (Claude Design)** | S2-01 (done) → S2-02 (fields) → S2-03 (types) → S2-04 (Sources) → S2-20 (Files) |
+| **Design (Claude Design)** | S2-01 (done) → S2-02 (fields) → S2-03 (types) → S2-04 (Sources list) → S2-23 (Source page) → S2-20 (Files) |
 | **Core schema / Go** | S2-05…S2-13 (done) |
 | **FFI + Mac** | S2-14 (done) → S2-15 → **S2-22** (`PVTable`) → S2-16 → S2-17 → S2-18 → S2-21 → S2-19 |
 
-Prefer **many small PRs**. Vocabulary admin before Sources catalog. Land **`PVTable` (S2-22)** before Source types so later list UIs reuse it. Split catalog UI: Source list/detail (S2-17), Artifact ingest + thumbnails (S2-18), then project Files browser (S2-21). Do not fold the workspace shell into feature destination PRs.
+Prefer **many small PRs**. Vocabulary admin before Sources. Land **`PVTable` (S2-22)** before Source types so later list UIs reuse it. Split Sources UI: list (S2-17), Source page + Artifact ingest + thumbnails (S2-18), then project Files browser (S2-21). Do not fold the workspace shell into feature destination PRs.
 
 ---
 

@@ -3,8 +3,8 @@
 **Kind:** Claude Design board  
 **Spike:** Provenencia Spike 2 (Source layer validation)  
 **Implements later as:** PR S2-21  
-**Depends on:** S2-01 workspace chrome (done — **Files** destination already shipped as a placeholder); S2-04 Sources catalog (link target for “open Source”)  
-**Related briefs:** [`S2-04-sources-catalog.md`](S2-04-sources-catalog.md)
+**Depends on:** S2-01 workspace chrome (done — **Files** destination already shipped as a placeholder); S2-23 Source page (link target for “open Source”)  
+**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`S2-23-source-detail.md`](S2-23-source-detail.md)
 
 Paste this entire document into Claude Design as the requirements for one board/flow.
 
@@ -44,7 +44,7 @@ Prefer listing Files that are (or were) **primary Artifact files** — the resea
 
 ### 2.3 Not this destination
 
-- Not ingest / replace (that lives under Source → Artifact in S2-04).
+- Not ingest / replace (that lives under Source → Artifact on the Source page, S2-23).
 - Not Artifact detail.
 - Not File byte management / GC / delete.
 
@@ -58,7 +58,7 @@ Prefer listing Files that are (or were) **primary Artifact files** — the resea
 | --- | --- |
 | L-1 | List project Files inside the S2-01 **Files** content host. |
 | L-2 | Each row shows **thumbnail** (or placeholder), **media type**, and **original filename** (fallback if null: short checksum / “Untitled file”). |
-| L-3 | Each row includes a **link to the associated Source** when one exists (navigate to that Source in the Sources destination / detail — match S2-04 navigation). |
+| L-3 | Each row includes a **link to the associated Source** when one exists (navigate to that Source’s **separate page** — match S2-23 navigation). |
 | L-4 | Search/filter by filename (and optionally media type) recommended. |
 | L-5 | Empty state when the project has no listable Files — calm copy; no forced ingest CTA here (ingest remains under Sources). |
 | L-6 | No delete; no multi-select bulk actions required. |
@@ -67,7 +67,7 @@ Prefer listing Files that are (or were) **primary Artifact files** — the resea
 
 | ID | Requirement |
 | --- | --- |
-| L-7 | Activating the Source link switches context to that Source (sidebar may move to **Sources**; deep-link into Source detail per S2-04). |
+| L-7 | Activating the Source link switches context to that Source (sidebar may move to **Sources**; deep-link into the Source page per S2-23). |
 | L-8 | Missing thumbnail / missing Source link are non-errors (placeholder / muted affordance). |
 | L-9 | Optional: opening the File itself (Quick Look / reveal) is nice-to-have, not required for this board. |
 
