@@ -52,6 +52,48 @@ func TestSources(t *testing.T) {
 		run  func(t *testing.T, c *database.Catalog)
 	}{
 		{
+			name: "title column is not null at current format",
+			run: func(t *testing.T, c *database.Catalog) {
+				db, err := c.DB()
+				if err != nil {
+					t.Fatal(err)
+				}
+				var ver int
+				if err := db.QueryRow(`PRAGMA user_version`).Scan(&ver); err != nil {
+					t.Fatal(err)
+				}
+				if ver < 11 {
+					t.Fatalf("user_version %d want >= 11", ver)
+				}
+				rows, err := db.Query(`PRAGMA table_info(sources)`)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer rows.Close()
+				found := false
+				for rows.Next() {
+					var cid, notnull, pk int
+					var name, ctype string
+					var dflt any
+					if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+						t.Fatal(err)
+					}
+					if name == "title" {
+						found = true
+						if notnull != 1 {
+							t.Fatalf("title notnull=%d want 1", notnull)
+						}
+					}
+				}
+				if err := rows.Err(); err != nil {
+					t.Fatal(err)
+				}
+				if !found {
+					t.Fatal("title column missing")
+				}
+			},
+		},
+		{
 			name: "create get and get by ref",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
@@ -216,7 +258,7 @@ func TestSources(t *testing.T) {
 			},
 		},
 		{
-			name: "rejects bad type and blank note",
+			name: "rejects bad type and blank title or note",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
 				badType := make([]byte, 16)
@@ -225,9 +267,19 @@ func TestSources(t *testing.T) {
 					t.Fatalf("bad type %v", err)
 				}
 				typeID := mustType(t, c)
-				s, err := Create(c, userID, CreateInput{SourceTypeID: typeID})
+				if _, err := Create(c, userID, CreateInput{SourceTypeID: typeID}); !errors.Is(err, ErrInvalid) {
+					t.Fatalf("blank title %v", err)
+				}
+				if _, err := Create(c, userID, CreateInput{SourceTypeID: typeID, Title: "  "}); !errors.Is(err, ErrInvalid) {
+					t.Fatalf("whitespace title %v", err)
+				}
+				s, err := Create(c, userID, CreateInput{SourceTypeID: typeID, Title: "Photo"})
 				if err != nil {
 					t.Fatal(err)
+				}
+				s.Title = ""
+				if err := Update(c, userID, s); !errors.Is(err, ErrInvalid) {
+					t.Fatalf("clear title %v", err)
 				}
 				if _, err := AddNote(c, userID, s.ID, "  "); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("blank note %v", err)

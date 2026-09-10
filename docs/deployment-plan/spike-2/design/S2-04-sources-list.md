@@ -34,7 +34,7 @@ Authoritative: [`source-layer-data-model.md`](../../../source-layer-data-model.m
 
 | Field / concept | UI implication |
 | --- | --- |
-| `title` | Primary list headline (fallback when empty: type label + `SRC-…`). |
+| `title` | Required primary list headline (non-empty). |
 | `ref` (`SRC-…`) | Always visible on the row; mono; not editable. |
 | Type (`source_types.label`) | Show type **name** on the row; Add Source picker uses S2-03 vocabulary. |
 | List thumbnail | **Derived from child data** (typically a thumbnail of an Artifact’s primary File). Reserve a consistent thumbnail slot even when missing (placeholder). Real thumbnail bytes may land in S2-18 — Design still shows the slot. |
@@ -85,7 +85,7 @@ These are first-class DS work — design them as reusable, not Sources-only sket
 
 #### Leave out of the design system for now
 
-- Source-specific fallback title copy (`type + SRC-…`) — feature logic.
+- Source-specific list row composition (title + type + ref) — feature logic.
 - “Navigate to Source page” wiring — app navigation, not a component.
 - Full Source page / Artifact chrome — **S2-23**.
 
@@ -98,7 +98,7 @@ These are first-class DS work — design them as reusable, not Sources-only sket
 | ID | Requirement |
 | --- | --- |
 | S-1 | List Sources in the **Sources** content host using the **list-style** pattern (§2.3) — **not** `PVTable`. |
-| S-2 | Each row shows **title** (or fallback), **`SRC-…`**, and **source type name** in the homogeneous skeleton (thumb + primary + meta). |
+| S-2 | Each row shows **title**, **`SRC-…`**, and **source type name** in the homogeneous skeleton (thumb + primary + meta). |
 | S-3 | Each row reserves a **thumbnail** slot (image or placeholder) derived from child Artifact/File data when available. |
 | S-4 | Search/filter recommended (title / ref / type). |
 | S-5 | Empty state + primary **Add Source** CTA. |
@@ -107,12 +107,12 @@ These are first-class DS work — design them as reusable, not Sources-only sket
 
 ### 3.2 Add Source
 
-Create is a **thin** `CreateSource` payload (type + optional title/description). Do **not** open the full Source page in a draft/create mode — that page is view/edit only (S2-23).
+Create is a **thin** `CreateSource` payload (type + **required** title + optional description). Do **not** open the full Source page in a draft/create mode — that page is view/edit only (S2-23).
 
 | ID | Requirement |
 | --- | --- |
 | S-7 | **Add Source** opens a **centered, dimming dialog** — same presentation family as Source fields/types **confirm** dialogs (`PVConfirm` / dialog chrome): modal to the window, parent dimmed, short panel in the center. **Not** a trailing inspector, **not** an in-list draft pane, **not** a second full page. |
-| S-8 | Form fields: **type** (required), **title** (optional), **description** (optional). No notes, metadata, Artifacts, or file pickers here. |
+| S-8 | Form fields: **type** (required), **title** (required, non-empty), **description** (optional). No notes, metadata, Artifacts, or file pickers here. |
 | S-9 | Type picker uses existing Source types vocabulary (S2-03); do not create types inline on this board. |
 | S-10 | Primary action **Create** calls create, dismisses the dialog, and **navigates to the new Source page** (S2-23) where `SRC-…` and further editing live. Cancel dismisses without navigating. |
 
@@ -128,7 +128,7 @@ Create is a **thin** `CreateSource` payload (type + optional title/description).
 
 ## 4. Suggested mock content
 
-- Several Sources mixed types (Photograph, Book, custom), one untitled fallback.
+- Several Sources mixed types (Photograph, Book, custom), each with a real title.
 - Empty Sources list + Add Source.
 - **Add Source** dialog (centered, dimmed parent): type + title + description; Create → annotate navigation to Source page.
 - One row with a real-looking thumbnail; one with placeholder only.
@@ -163,7 +163,7 @@ Create is a **thin** `CreateSource` payload (type + optional title/description).
 - [ ] Sources list uses **list-style** rows (thumb + title + type/`SRC-…`) — **not** `PVTable` / column headers.
 - [ ] Board implies a **reusable list component** (row anatomy documented), not only a Sources one-off.
 - [ ] Thumbnail and form-dialog chrome read as **shared** DS pieces; search/empty/fields/buttons reuse existing components.
-- [ ] Empty + **Add Source** centered dimming dialog (type required; title/description optional).
+- [ ] Empty + **Add Source** centered dimming dialog (type + title required; description optional).
 - [ ] Dialog chrome matches confirm-dialog presentation (not inspector / not full-page create).
 - [ ] Create navigates to the Source page; Cancel stays on the list.
 - [ ] Navigation is explicitly **separate page**, not master–detail / in-list expand.
