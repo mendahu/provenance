@@ -27,19 +27,26 @@ enum PVIconButtonTone {
 struct PVIconButton: View {
     private let icon: PVSymbol
     private let label: LocalizedStringResource
+    private let accessibilityLabel: LocalizedStringResource?
     private let size: PVControlSize
     private let tone: PVIconButtonTone
     private let action: () -> Void
 
+    /// `label` is both the tooltip and, by default, what VoiceOver reads.
+    /// Pass `accessibilityLabel` only when the two should differ — a tooltip
+    /// can lean on what the user is already looking at ("Assign Author to
+    /// this type"), where a spoken label has to name its target in full.
     init(
         _ icon: PVSymbol,
         label: LocalizedStringResource,
+        accessibilityLabel: LocalizedStringResource? = nil,
         size: PVControlSize = .md,
         tone: PVIconButtonTone = .neutral,
         action: @escaping () -> Void
     ) {
         self.icon = icon
         self.label = label
+        self.accessibilityLabel = accessibilityLabel
         self.size = size
         self.tone = tone
         self.action = action
@@ -50,7 +57,7 @@ struct PVIconButton: View {
             PVIcon(icon, size: size.iconGlyphSize)
         }
         .buttonStyle(PVIconButtonStyle(size: size, tone: tone))
-        .accessibilityLabel(Text(label))
+        .accessibilityLabel(Text(accessibilityLabel ?? label))
         // `.help` on the button itself stops firing once it is disabled, and
         // the disabled tooltip is exactly where the reason lives — so the
         // hit area carries it instead.

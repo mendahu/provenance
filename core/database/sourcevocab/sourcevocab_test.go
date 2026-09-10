@@ -153,3 +153,94 @@ func TestInstall(t *testing.T) {
 		})
 	}
 }
+
+func TestAppendSuggestion(t *testing.T) {
+	tests := []struct {
+		name string
+		run  func(t *testing.T, c *database.Catalog)
+	}{
+		{
+			name: "appends in call order and is idempotent",
+			run: func(t *testing.T, c *database.Catalog) {
+				typeID, err := sourcetypes.Upsert(c, sourcetypes.Type{
+					Key: "book", Origin: sourcetypes.OriginUser, Label: "Book",
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				var fieldIDs [][]byte
+				for _, label := range []string{"Author", "Publisher"} {
+					f, err := sourcefields.Create(c, label, sourcefields.DataTypeText, "")
+					if err != nil {
+						t.Fatal(err)
+					}
+					fieldIDs = append(fieldIDs, f.ID)
+				}
+				// Assigned second first, so a plain label sort would disagree
+				// with the stored order the UI has to preserve.
+				for _, id := range [][]byte{fieldIDs[1], fieldIDs[0]} {
+					if err := AppendSuggestion(c, typeID, id); err != nil {
+						t.Fatal(err)
+					}
+				}
+				// Re-assigning an existing pair must not move it to the end.
+				if err := AppendSuggestion(c, typeID, fieldIDs[1]); err != nil {
+					t.Fatal(err)
+				}
+				got, err := ListSuggestions(c, typeID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(got) != 2 || got[0].Field.Label != "Publisher" || got[1].Field.Label != "Author" {
+					t.Fatalf("got %+v", got)
+				}
+			},
+		},
+		{
+			name: "removing a suggestion leaves the field in the vocabulary",
+			run: func(t *testing.T, c *database.Catalog) {
+				typeID, err := sourcetypes.Upsert(c, sourcetypes.Type{
+					Key: "book", Origin: sourcetypes.OriginUser, Label: "Book",
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				f, err := sourcefields.Create(c, "Author", sourcefields.DataTypeText, "")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := AppendSuggestion(c, typeID, f.ID); err != nil {
+					t.Fatal(err)
+				}
+				if err := DeleteSuggestion(c, typeID, f.ID); err != nil {
+					t.Fatal(err)
+				}
+				got, err := ListSuggestions(c, typeID)
+				if err != nil || len(got) != 0 {
+					t.Fatalf("suggestions %+v %v", got, err)
+				}
+				if _, err := sourcefields.GetByID(c, f.ID); err != nil {
+					t.Fatalf("field should survive: %v", err)
+				}
+			},
+		},
+		{
+			name: "bad ids are rejected",
+			run: func(t *testing.T, c *database.Catalog) {
+				if err := AppendSuggestion(c, []byte{1}, []byte{2}); !errors.Is(err, ErrInvalid) {
+					t.Fatalf("got %v", err)
+				}
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := database.Create(t.TempDir(), "t.provenencia")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer c.Close()
+			tt.run(t, c)
+		})
+	}
+}

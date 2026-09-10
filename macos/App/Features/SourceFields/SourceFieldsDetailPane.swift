@@ -59,41 +59,18 @@ struct SourceFieldsDetailPane: View {
     // MARK: Header (shared by add / locked / editable)
 
     private var panelHeader: some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space5) {
-            HStack(alignment: .top, spacing: PVSpacing.space5) {
-                Text(model.isAdding ? L10n.SourceFields.detailEyebrowNewField : L10n.SourceFields.detailEyebrowField)
-                    .pvMicroCaps()
-                    .foregroundStyle(PVColor.textMuted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if model.showsDelete {
-                    deleteButton
-                }
-            }
-            Text(panelTitle)
-                .font(PVFont.display(size: PVTypeScale.h2))
-                .foregroundStyle(PVColor.textDisplay)
-            HStack(spacing: PVSpacing.space5) {
-                originBadge
-                Text(panelKey)
-                    .font(PVFont.mono(size: PVTypeScale.micro))
-                    .foregroundStyle(PVColor.textSecondary)
-                    .accessibilityIdentifier("sourceFields.detail.key")
-            }
-            Text(model.isAdding ? L10n.SourceFields.keyHintAdd : L10n.SourceFields.keyHintEdit)
-                .font(PVFont.body(size: PVTypeScale.micro, italic: true))
-                .foregroundStyle(PVColor.textMuted)
-        }
-    }
-
-    /// Disabled rather than hidden when the field cannot be deleted — the
-    /// tooltip is where the reason lives (a plugin owns it, or sources still
-    /// carry values for it).
-    private var deleteButton: some View {
-        PVIconButton(.trash, label: model.deleteTooltip, size: .sm, tone: .danger) {
-            model.askDelete()
-        }
-        .disabled(!model.canDeleteSelectedField)
-        .accessibilityIdentifier("sourceFields.delete")
+        VocabularyPanelHeader(
+            eyebrow: model.isAdding ? L10n.SourceFields.detailEyebrowNewField : L10n.SourceFields.detailEyebrowField,
+            title: panelTitle,
+            origin: model.isAdding ? CatalogOrigin.user : (model.selectedField?.origin ?? CatalogOrigin.user),
+            keyText: panelKey,
+            keyHint: model.isAdding ? L10n.SourceFields.keyHintAdd : L10n.SourceFields.keyHintEdit,
+            showsDelete: model.showsDelete,
+            canDelete: model.canDeleteSelectedField,
+            deleteTooltip: model.deleteTooltip,
+            identifierPrefix: "sourceFields",
+            onDelete: { model.askDelete() }
+        )
     }
 
     private var panelTitle: String {
@@ -112,12 +89,6 @@ struct SourceFieldsDetailPane: View {
         return model.selectedField?.key ?? ""
     }
 
-    private var originBadge: some View {
-        SourceFieldOriginBadge(
-            origin: model.isAdding ? SourceFieldOrigin.user : (model.selectedField?.origin ?? SourceFieldOrigin.user)
-        )
-    }
-
     // MARK: Locked (plugin) detail
 
     @ViewBuilder
@@ -125,12 +96,12 @@ struct SourceFieldsDetailPane: View {
         if let field = model.selectedField {
             VStack(alignment: .leading, spacing: PVSpacing.space7) {
                 PVCallout(tone: .neutral, icon: .lock, message: lockedNote(for: field), compact: true)
-                labeledSection(L10n.SourceFields.dataTypeSectionLabel) {
+                VocabularyLabeledSection(label: L10n.SourceFields.dataTypeSectionLabel) {
                     Text(SourceFieldDataType.label(for: field.dataType))
                         .font(PVFont.body(size: PVTypeScale.bodySmall))
                         .foregroundStyle(PVColor.textPrimary)
                 }
-                labeledSection(L10n.SourceFields.descriptionSectionLabel) {
+                VocabularyLabeledSection(label: L10n.SourceFields.descriptionSectionLabel) {
                     Text(field.description.isEmpty ? String(localized: L10n.SourceFields.descriptionEmptyPlaceholder) : field.description)
                         .font(PVFont.body(size: PVTypeScale.bodySmall))
                         .foregroundStyle(PVColor.textSecondary)
@@ -144,16 +115,7 @@ struct SourceFieldsDetailPane: View {
     }
 
     private func lockedNote(for field: CatalogMetadataField) -> String {
-        L10n.SourceFields.lockedNotePlugin(pluginID: SourceFieldOrigin.pluginID(from: field.origin))
-    }
-
-    private func labeledSection(_ label: LocalizedStringResource, @ViewBuilder content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space2) {
-            Text(label)
-                .pvMicroCaps()
-                .foregroundStyle(PVColor.textMuted)
-            content()
-        }
+        L10n.SourceFields.lockedNotePlugin(pluginID: CatalogOrigin.pluginID(from: field.origin))
     }
 
     // MARK: Add / editable form
@@ -192,18 +154,16 @@ struct SourceFieldsDetailPane: View {
                 PVField(label: L10n.SourceFields.formDescription, hint: L10n.SourceFields.formDescriptionHint) {
                     PVInput(text: draft.description, prompt: model.isAdding ? L10n.SourceFields.formDescriptionPlaceholder : nil)
                 }
-                HStack(spacing: PVSpacing.space5) {
-                    PVButton(primaryLabel, variant: .primary, loading: model.isSaving) {
-                        Task { await model.submit() }
-                    }
-                    .disabled(!model.canSubmit)
-                    .accessibilityIdentifier("sourceFields.form.submit")
-                    PVButton(secondaryLabel, variant: .ghost) {
-                        secondaryAction()
-                    }
-                    .disabled(model.isSaving || (!model.isAdding && !model.isDirty))
-                    .accessibilityIdentifier("sourceFields.form.secondary")
-                }
+                VocabularyFormActions(
+                    primaryLabel: primaryLabel,
+                    secondaryLabel: secondaryLabel,
+                    isSaving: model.isSaving,
+                    canSubmit: model.canSubmit,
+                    isSecondaryDisabled: model.isSaving || (!model.isAdding && !model.isDirty),
+                    identifierPrefix: "sourceFields",
+                    onPrimary: { Task { await model.submit() } },
+                    onSecondary: { secondaryAction() }
+                )
             }
             .padding(.top, PVSpacing.space7)
             .overlay(alignment: .top) {

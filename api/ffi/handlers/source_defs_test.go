@@ -5,6 +5,7 @@ import (
 
 	"github.com/mendahu/provenencia/api/proto/engine"
 	"github.com/mendahu/provenencia/core/database/sourcefields"
+	"github.com/mendahu/provenencia/core/database/sourcetypes"
 	"github.com/mendahu/provenencia/core/onboarding"
 	"google.golang.org/protobuf/proto"
 )
@@ -17,7 +18,7 @@ func TestSourceDefs(t *testing.T) {
 			reqFn: func(t *testing.T) proto.Message {
 				dir, userID, _ := sourceFixture(t)
 				return &engine.CreateSourceTypeRequest{
-					ProjectDir: dir, UserId: userID, Key: "deed", Label: "Deed",
+					ProjectDir: dir, UserId: userID, Label: "Deed",
 				}
 			},
 			want: nil,
@@ -44,6 +45,47 @@ func TestSourceDefs(t *testing.T) {
 					t.Fatalf("%+v", field.Field)
 				}
 			},
+		},
+	})
+}
+
+func TestCreateSourceTypeMintsKeyFromLabel(t *testing.T) {
+	runRPC(t, CreateSourceType, []rpcTest{
+		{name: "bad proto", raw: []byte{0xff}, wantErr: true},
+		{
+			name: "mints slug key",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				return &engine.CreateSourceTypeRequest{
+					ProjectDir: dir, UserId: userID, Label: "Grandma's scrapbook",
+				}
+			},
+			after: func(t *testing.T, out []byte, _ proto.Message) {
+				var resp engine.CreateSourceTypeResponse
+				if err := proto.Unmarshal(out, &resp); err != nil {
+					t.Fatal(err)
+				}
+				if resp.Type.GetKey() != "grandmas-scrapbook" || resp.Type.GetOrigin() != "user" {
+					t.Fatalf("%+v", resp.Type)
+				}
+			},
+		},
+		{
+			name: "rejects unslugifiable label",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				return &engine.CreateSourceTypeRequest{ProjectDir: dir, UserId: userID, Label: "..."}
+			},
+			wantErr: true,
+		},
+		{
+			name: "rejects duplicate key under user origin",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				return &engine.CreateSourceTypeRequest{ProjectDir: dir, UserId: userID, Label: "Deed"}
+			},
+			calls:   2,
+			wantErr: true,
 		},
 	})
 }
@@ -214,7 +256,7 @@ func TestDeleteSourceType(t *testing.T) {
 			reqFn: func(t *testing.T) proto.Message {
 				dir, userID, _ := sourceFixture(t)
 				out, err := CreateSourceType(marshalProto(t, &engine.CreateSourceTypeRequest{
-					ProjectDir: dir, UserId: userID, Key: "deed", Label: "Deed",
+					ProjectDir: dir, UserId: userID, Label: "Deed",
 				}))
 				if err != nil {
 					t.Fatal(err)
@@ -315,6 +357,213 @@ func TestDeleteMetadataField(t *testing.T) {
 				}
 			},
 			wantErr: true,
+		},
+	})
+}
+
+// newUserType creates a user-origin type through the RPC and returns its id.
+func newUserType(t *testing.T, dir, userID, label string) string {
+	t.Helper()
+	out, err := CreateSourceType(marshalProto(t, &engine.CreateSourceTypeRequest{
+		ProjectDir: dir, UserId: userID, Label: label,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var created engine.CreateSourceTypeResponse
+	if err := proto.Unmarshal(out, &created); err != nil {
+		t.Fatal(err)
+	}
+	return created.Type.GetId()
+}
+
+// newUserField creates a user-origin metadata field through the RPC and
+// returns its id.
+func newUserField(t *testing.T, dir, userID, label string) string {
+	t.Helper()
+	out, err := CreateMetadataField(marshalProto(t, &engine.CreateMetadataFieldRequest{
+		ProjectDir: dir, UserId: userID, Label: label, DataType: "text",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var created engine.CreateMetadataFieldResponse
+	if err := proto.Unmarshal(out, &created); err != nil {
+		t.Fatal(err)
+	}
+	return created.Field.GetId()
+}
+
+func TestUpdateSourceType(t *testing.T) {
+	runRPC(t, UpdateSourceType, []rpcTest{
+		{name: "bad proto", raw: []byte{0xff}, wantErr: true},
+		{
+			name: "edits a seeded type and reports its use count",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, typeID := sourceFixture(t)
+				if _, err := CreateSource(marshalProto(t, &engine.CreateSourceRequest{
+					ProjectDir: dir, UserId: userID, SourceTypeId: typeID, Title: "One",
+				})); err != nil {
+					t.Fatal(err)
+				}
+				return &engine.UpdateSourceTypeRequest{
+					ProjectDir: dir, UserId: userID, TypeId: typeID,
+					Label: "Renamed starter", Description: "edited",
+				}
+			},
+			after: func(t *testing.T, out []byte, req proto.Message) {
+				var resp engine.UpdateSourceTypeResponse
+				if err := proto.Unmarshal(out, &resp); err != nil {
+					t.Fatal(err)
+				}
+				if resp.Type.GetOrigin() != "provenencia" || resp.Type.GetLabel() != "Renamed starter" ||
+					resp.Type.GetDescription() != "edited" || resp.Type.GetUsedBy() != 1 {
+					t.Fatalf("%+v", resp.Type)
+				}
+				// The update reply also refreshes the suggested-field count
+				// — the seeded starter ships with suggestions, so it must
+				// agree with what ListTypeSuggestions reads.
+				ur := req.(*engine.UpdateSourceTypeRequest)
+				lout, err := ListTypeSuggestions(marshalProto(t, &engine.ListTypeSuggestionsRequest{
+					ProjectDir: ur.ProjectDir, TypeId: ur.TypeId,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var list engine.ListTypeSuggestionsResponse
+				if err := proto.Unmarshal(lout, &list); err != nil {
+					t.Fatal(err)
+				}
+				if len(list.Suggestions) == 0 || int(resp.Type.GetSuggestedFieldCount()) != len(list.Suggestions) {
+					t.Fatalf("suggested_field_count %d, suggestions %d", resp.Type.GetSuggestedFieldCount(), len(list.Suggestions))
+				}
+			},
+		},
+		{
+			name: "rejects editing a plugin type",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				c, err := onboarding.OpenCatalog(dir)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer c.Close()
+				id, err := sourcetypes.Upsert(c, sourcetypes.Type{
+					Key: "grave_memorial", Origin: "plugin:findagrave", Label: "Grave memorial",
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				return &engine.UpdateSourceTypeRequest{
+					ProjectDir: dir, UserId: userID, TypeId: uuidString(id), Label: "Changed",
+				}
+			},
+			wantErr: true,
+		},
+	})
+}
+
+func TestAssignAndRemoveTypeField(t *testing.T) {
+	runRPC(t, AssignTypeField, []rpcTest{
+		{name: "bad proto", raw: []byte{0xff}, wantErr: true},
+		{
+			name: "assigns in order, is idempotent, and detaches without deleting the field",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				typeID := newUserType(t, dir, userID, "Parish register")
+				second := newUserField(t, dir, userID, "Folio")
+				first := newUserField(t, dir, userID, "Officiant")
+				// Assign Folio first so stored order and label order disagree.
+				for _, fieldID := range []string{second, first} {
+					if _, err := AssignTypeField(marshalProto(t, &engine.AssignTypeFieldRequest{
+						ProjectDir: dir, UserId: userID, TypeId: typeID, FieldId: fieldID,
+					})); err != nil {
+						t.Fatal(err)
+					}
+				}
+				// Re-assigning must not reorder.
+				return &engine.AssignTypeFieldRequest{
+					ProjectDir: dir, UserId: userID, TypeId: typeID, FieldId: second,
+				}
+			},
+			after: func(t *testing.T, out []byte, req proto.Message) {
+				var resp engine.AssignTypeFieldResponse
+				if err := proto.Unmarshal(out, &resp); err != nil {
+					t.Fatal(err)
+				}
+				if len(resp.Suggestions) != 2 ||
+					resp.Suggestions[0].Field.GetLabel() != "Folio" ||
+					resp.Suggestions[1].Field.GetLabel() != "Officiant" {
+					t.Fatalf("%+v", resp.Suggestions)
+				}
+				ar := req.(*engine.AssignTypeFieldRequest)
+				rout, err := RemoveTypeField(marshalProto(t, &engine.RemoveTypeFieldRequest{
+					ProjectDir: ar.ProjectDir, UserId: ar.UserId, TypeId: ar.TypeId, FieldId: ar.FieldId,
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var removed engine.RemoveTypeFieldResponse
+				if err := proto.Unmarshal(rout, &removed); err != nil {
+					t.Fatal(err)
+				}
+				if len(removed.Suggestions) != 1 || removed.Suggestions[0].Field.GetLabel() != "Officiant" {
+					t.Fatalf("%+v", removed.Suggestions)
+				}
+				// The detached field stays in the vocabulary.
+				lout, err := ListMetadataFields(marshalProto(t, &engine.ListMetadataFieldsRequest{ProjectDir: ar.ProjectDir}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var list engine.ListMetadataFieldsResponse
+				if err := proto.Unmarshal(lout, &list); err != nil {
+					t.Fatal(err)
+				}
+				var found bool
+				for _, f := range list.Fields {
+					found = found || f.GetId() == ar.FieldId
+				}
+				if !found {
+					t.Fatal("removing a suggestion must not delete the field")
+				}
+			},
+		},
+	})
+}
+
+func TestListTypeSuggestions(t *testing.T) {
+	runRPC(t, ListTypeSuggestions, []rpcTest{
+		{name: "bad proto", raw: []byte{0xff}, wantErr: true},
+		{
+			name: "reads the seeded starter's suggestions",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, _, typeID := sourceFixture(t)
+				return &engine.ListTypeSuggestionsRequest{ProjectDir: dir, TypeId: typeID}
+			},
+			after: func(t *testing.T, out []byte, _ proto.Message) {
+				var resp engine.ListTypeSuggestionsResponse
+				if err := proto.Unmarshal(out, &resp); err != nil {
+					t.Fatal(err)
+				}
+				if len(resp.Suggestions) == 0 {
+					t.Fatal("expected the seeded starter to suggest fields")
+				}
+				for _, s := range resp.Suggestions {
+					if s.Field.GetKey() == "" || s.Field.GetDataType() == "" {
+						t.Fatalf("%+v", s)
+					}
+				}
+			},
+		},
+		{
+			name: "a type with no suggestions reads empty",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, _ := sourceFixture(t)
+				return &engine.ListTypeSuggestionsRequest{
+					ProjectDir: dir, TypeId: newUserType(t, dir, userID, "Letter"),
+				}
+			},
+			want: &engine.ListTypeSuggestionsResponse{},
 		},
 	})
 }

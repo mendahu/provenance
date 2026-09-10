@@ -319,14 +319,12 @@ struct GoStore: GenealogyStore {
     func createSourceType(
         projectDir: String,
         userID: String,
-        key: String,
         label: String,
         description: String
     ) async throws -> CatalogSourceType {
         var req = Provenencia_Engine_V1_CreateSourceTypeRequest()
         req.projectDir = projectDir
         req.userID = userID
-        req.key = key
         req.label = label
         req.description_p = description
         let resp: Provenencia_Engine_V1_CreateSourceTypeResponse = try await provenenciaCall(
@@ -334,6 +332,88 @@ struct GoStore: GenealogyStore {
             request: req
         )
         return Self.mapSourceType(resp.type)
+    }
+
+    func updateSourceType(
+        projectDir: String,
+        userID: String,
+        typeID: String,
+        label: String,
+        description: String
+    ) async throws -> CatalogSourceType {
+        var req = Provenencia_Engine_V1_UpdateSourceTypeRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.typeID = typeID
+        req.label = label
+        req.description_p = description
+        let resp: Provenencia_Engine_V1_UpdateSourceTypeResponse = try await provenenciaCall(
+            method: CoreMethod.updateSourceType,
+            request: req
+        )
+        return Self.mapSourceType(resp.type)
+    }
+
+    func deleteSourceType(
+        projectDir: String,
+        userID: String,
+        typeID: String
+    ) async throws {
+        var req = Provenencia_Engine_V1_DeleteSourceTypeRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.typeID = typeID
+        let _: Provenencia_Engine_V1_DeleteSourceTypeResponse = try await provenenciaCall(
+            method: CoreMethod.deleteSourceType,
+            request: req
+        )
+    }
+
+    func listTypeSuggestions(projectDir: String, typeID: String) async throws -> [CatalogTypeSuggestion] {
+        var req = Provenencia_Engine_V1_ListTypeSuggestionsRequest()
+        req.projectDir = projectDir
+        req.typeID = typeID
+        let resp: Provenencia_Engine_V1_ListTypeSuggestionsResponse = try await provenenciaCall(
+            method: CoreMethod.listTypeSuggestions,
+            request: req
+        )
+        return resp.suggestions.map(Self.mapTypeSuggestion)
+    }
+
+    func assignTypeField(
+        projectDir: String,
+        userID: String,
+        typeID: String,
+        fieldID: String
+    ) async throws -> [CatalogTypeSuggestion] {
+        var req = Provenencia_Engine_V1_AssignTypeFieldRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.typeID = typeID
+        req.fieldID = fieldID
+        let resp: Provenencia_Engine_V1_AssignTypeFieldResponse = try await provenenciaCall(
+            method: CoreMethod.assignTypeField,
+            request: req
+        )
+        return resp.suggestions.map(Self.mapTypeSuggestion)
+    }
+
+    func removeTypeField(
+        projectDir: String,
+        userID: String,
+        typeID: String,
+        fieldID: String
+    ) async throws -> [CatalogTypeSuggestion] {
+        var req = Provenencia_Engine_V1_RemoveTypeFieldRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.typeID = typeID
+        req.fieldID = fieldID
+        let resp: Provenencia_Engine_V1_RemoveTypeFieldResponse = try await provenenciaCall(
+            method: CoreMethod.removeTypeField,
+            request: req
+        )
+        return resp.suggestions.map(Self.mapTypeSuggestion)
     }
 
     func listMetadataFields(projectDir: String) async throws -> [CatalogMetadataField] {
@@ -466,8 +546,14 @@ struct GoStore: GenealogyStore {
             key: t.key,
             origin: t.origin,
             label: t.label,
-            description: t.description_p
+            description: t.description_p,
+            usedBy: Int(t.usedBy),
+            suggestedFieldCount: Int(t.suggestedFieldCount)
         )
+    }
+
+    private static func mapTypeSuggestion(_ s: Provenencia_Engine_V1_TypeSuggestion) -> CatalogTypeSuggestion {
+        CatalogTypeSuggestion(field: Self.mapMetadataField(s.field), sortOrder: Int(s.sortOrder))
     }
 
     private static func mapMetadataField(_ f: Provenencia_Engine_V1_MetadataField) -> CatalogMetadataField {

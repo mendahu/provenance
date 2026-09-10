@@ -112,6 +112,13 @@ enum PVColor {
     static let recordDNA = Color.pvDynamic(light: PVPalette.madder500, dark: PVPalette.hex("#DE8271"))
 
     // MARK: Lineage lines
+    // Search-match highlighter. Deliberately *not* theme-aware: a
+    // highlighter pen lays the same ochre over the page in either theme, so
+    // the pair carries its own contrast rather than inverting (mirrors the
+    // `--ochre-100` / `--paper-900` literals in `ComboBoxRows.jsx`).
+    static let markBackground = PVPalette.ochre100
+    static let markForeground = PVPalette.paper900
+
     static let linePaternal = Color.pvDynamic(light: PVPalette.iron500, dark: PVPalette.iron300)
     static let lineMaternal = Color.pvDynamic(light: PVPalette.plum500, dark: PVPalette.hex("#C08FB2"))
     static let lineInferred = Color.pvDynamic(light: PVPalette.paper400, dark: PVPalette.paper600)

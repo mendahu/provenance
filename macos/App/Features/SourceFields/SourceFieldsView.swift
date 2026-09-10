@@ -11,7 +11,6 @@ import SwiftUI
 /// the density of the rest of the workspace.
 struct SourceFieldsView: View {
     @State private var model: SourceFieldsModel
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Detail pane width — between the web board's `minmax(360px, 420px)`
     /// column and `PVSpacing.widthInspector` (340pt); no shared token
@@ -19,8 +18,20 @@ struct SourceFieldsView: View {
     /// `PVToast`'s own `frame(maxWidth: 360)`.
     private let detailPaneWidth: CGFloat = 380
 
-    init(projectDir: String, userID: String, store: any GenealogyStore) {
-        _model = State(initialValue: SourceFieldsModel(projectDir: projectDir, userID: userID, store: store))
+    init(
+        projectDir: String,
+        userID: String,
+        store: any GenealogyStore,
+        catalogCounts: CatalogCounts? = nil
+    ) {
+        _model = State(
+            initialValue: SourceFieldsModel(
+                projectDir: projectDir,
+                userID: userID,
+                store: store,
+                catalogCounts: catalogCounts
+            )
+        )
     }
 
     var body: some View {
@@ -38,21 +49,7 @@ struct SourceFieldsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PVColor.surfacePage)
-        .overlay(alignment: .bottomTrailing) {
-            if let toast = model.toast {
-                PVToast(
-                    tone: .success,
-                    title: toast.title,
-                    message: toast.body,
-                    onDismiss: { model.toast = nil }
-                )
-                .id(toast)
-                .padding(PVSpacing.space8)
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-                .accessibilityIdentifier("sourceFields.toast")
-            }
-        }
-        .animation(reduceMotion ? nil : PVMotion.easeStandard, value: model.toast)
+        .vocabularyToastOverlay($model.toast, identifier: "sourceFields.toast")
         .pvConfirmSheet(
             item: pendingDelete,
             copy: deleteCopy(for:),
@@ -98,32 +95,15 @@ struct SourceFieldsView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .bottom, spacing: PVSpacing.space8) {
-            VStack(alignment: .leading, spacing: PVSpacing.space2) {
-                Text(L10n.Workspace.sourceFieldsTitle)
-                    .font(PVFont.display(size: PVTypeScale.h1))
-                    .foregroundStyle(PVColor.textDisplay)
-                Text(L10n.SourceFields.description)
-                    .font(PVFont.body(size: PVTypeScale.bodySmall))
-                    .foregroundStyle(PVColor.textMuted)
-                    .frame(maxWidth: PVSpacing.measureProse, alignment: .leading)
-            }
-            Spacer(minLength: PVSpacing.space6)
-            HStack(spacing: PVSpacing.space6) {
-                Text(model.countLine)
-                    .font(PVFont.mono(size: PVTypeScale.micro))
-                    .foregroundStyle(PVColor.textMuted)
-                    .accessibilityIdentifier("sourceFields.countLine")
-                PVButton(L10n.SourceFields.addField, variant: .primary, icon: .plus) {
-                    model.openAdd()
-                }
-                .disabled(model.isAdding)
-                .accessibilityIdentifier("sourceFields.addField")
-            }
-        }
-        .padding(.horizontal, PVSpacing.gutterPage)
-        .padding(.top, PVSpacing.space8)
-        .padding(.bottom, PVSpacing.space6)
+        VocabularyHeader(
+            title: L10n.Workspace.sourceFieldsTitle,
+            description: L10n.SourceFields.description,
+            countLine: model.countLine,
+            addLabel: L10n.SourceFields.addField,
+            isAddDisabled: model.isAdding,
+            identifierPrefix: "sourceFields",
+            onAdd: { model.openAdd() }
+        )
     }
 }
 

@@ -9,9 +9,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
+	"github.com/mendahu/provenencia/core/slug"
 )
 
 var ErrInvalid = apperr.New(apperr.CodeSourceTypesInvalid, apperr.KindUser)
+
+// ErrDuplicateKey is returned by Create when the label-derived key already
+// names a user-origin type. Carries the colliding key as a param.
+var ErrDuplicateKey = apperr.New(apperr.CodeSourceTypesDuplicateKey, apperr.KindConflict)
+
+// ErrLocked is returned by Update when the target type is plugin-origin
+// (project types — user and provenencia starters — are editable).
+var ErrLocked = apperr.New(apperr.CodeSourceTypesInvalid, apperr.KindUser)
 
 // ErrInUse is returned by Delete when sources still reference the type.
 var ErrInUse = apperr.New(apperr.CodeSourceTypesInUse, apperr.KindConflict)
@@ -27,10 +36,16 @@ const (
 			description = excluded.description`
 	sqlLookup = `SELECT id, key, origin, label, COALESCE(description, '')
 		FROM source_types WHERE key = ? AND origin = ?`
-	sqlList = `SELECT id, key, origin, label, COALESCE(description, '')
-		FROM source_types ORDER BY label COLLATE NOCASE, origin, key`
+	sqlGetByID = `SELECT id, key, origin, label, COALESCE(description, '')
+		FROM source_types WHERE id = ?`
+	sqlList = `SELECT t.id, t.key, t.origin, t.label, COALESCE(t.description, ''),
+			(SELECT COUNT(*) FROM sources s WHERE s.source_type_id = t.id),
+			(SELECT COUNT(*) FROM source_type_metadata_fields j WHERE j.source_type_id = t.id)
+		FROM source_types t ORDER BY t.label COLLATE NOCASE, t.origin, t.key`
+	sqlUpdate = `UPDATE source_types SET label = ?, description = ? WHERE id = ?`
 	sqlDelete = `DELETE FROM source_types WHERE id = ?`
 	sqlInUse  = `SELECT 1 FROM sources WHERE source_type_id = ? LIMIT 1`
+	sqlUsedBy = `SELECT COUNT(*) FROM sources WHERE source_type_id = ?`
 )
 
 // Type is one source_types row.
@@ -40,6 +55,12 @@ type Type struct {
 	Origin      string
 	Label       string
 	Description string
+	// UsedBy is how many sources reference this type. Only List and
+	// Update populate it; the other readers leave it 0.
+	UsedBy int
+	// SuggestedFields is how many metadata fields this type suggests. Only
+	// List and Update populate it; the other readers leave it 0.
+	SuggestedFields int
 }
 
 // Upsert inserts or updates by (key, origin). Mints a UUIDv7 id when ID is empty on insert.
@@ -117,12 +138,97 @@ func List(c *database.Catalog) ([]Type, error) {
 	var out []Type
 	for rows.Next() {
 		var t Type
-		if err := rows.Scan(&t.ID, &t.Key, &t.Origin, &t.Label, &t.Description); err != nil {
+		if err := rows.Scan(&t.ID, &t.Key, &t.Origin, &t.Label, &t.Description, &t.UsedBy, &t.SuggestedFields); err != nil {
 			return nil, err
 		}
 		out = append(out, t)
 	}
 	return out, rows.Err()
+}
+
+// Create mints a kebab-case key from label (see core/slug.Kebab) and
+// inserts a new user-origin type. Returns ErrInvalid if the label cannot
+// form a key, or ErrDuplicateKey (params: the colliding key) if a
+// user-origin type with that key already exists.
+func Create(c *database.Catalog, label, description string) (Type, error) {
+	key := slug.Kebab(label)
+	if key == "" {
+		return Type{}, ErrInvalid
+	}
+	if _, err := Lookup(c, key, OriginUser); err == nil {
+		return Type{}, ErrDuplicateKey.WithParams(key)
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return Type{}, err
+	}
+	if _, err := Upsert(c, Type{
+		Key: key, Origin: OriginUser, Label: label, Description: description,
+	}); err != nil {
+		return Type{}, err
+	}
+	return Lookup(c, key, OriginUser)
+}
+
+// Update patches label and description for a project type (user or
+// provenencia) by id. Key and origin are immutable after create, so a
+// rename keeps existing sources attached. Returns ErrLocked for
+// plugin-origin types.
+func Update(c *database.Catalog, id []byte, label, description string) (Type, error) {
+	db, err := c.DB()
+	if err != nil {
+		return Type{}, err
+	}
+	label = strings.TrimSpace(label)
+	description = strings.TrimSpace(description)
+	if len(id) != 16 || label == "" {
+		return Type{}, ErrInvalid
+	}
+	existing, err := GetByID(c, id)
+	if err != nil {
+		return Type{}, err
+	}
+	if existing.Origin != OriginUser && existing.Origin != OriginProvenencia {
+		return Type{}, ErrLocked
+	}
+	var desc any
+	if description == "" {
+		desc = nil
+	} else {
+		desc = description
+	}
+	if _, err := db.Exec(sqlUpdate, label, desc, id); err != nil {
+		return Type{}, err
+	}
+	return GetByID(c, id)
+}
+
+// GetByID returns the type with the given id, or sql.ErrNoRows.
+func GetByID(c *database.Catalog, id []byte) (Type, error) {
+	db, err := c.DB()
+	if err != nil {
+		return Type{}, err
+	}
+	if len(id) != 16 {
+		return Type{}, ErrInvalid
+	}
+	var t Type
+	err = db.QueryRow(sqlGetByID, id).Scan(&t.ID, &t.Key, &t.Origin, &t.Label, &t.Description)
+	if err != nil {
+		return Type{}, err
+	}
+	return t, nil
+}
+
+// UsedBy reports how many sources reference the type.
+func UsedBy(c *database.Catalog, id []byte) (int, error) {
+	db, err := c.DB()
+	if err != nil {
+		return 0, err
+	}
+	var n int
+	if err := db.QueryRow(sqlUsedBy, id).Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 // Delete removes a type by id when no sources reference it.

@@ -18,24 +18,6 @@ final class SourceFieldsModel {
         var description: String
     }
 
-    struct Toast: Equatable, Hashable {
-        var title: String
-        var body: String
-    }
-
-    /// Detail-pane mode. Illegal combinations of the old flags
-    /// (`isAdding` + `selectedFieldID` + `resumeSelectionID`) are
-    /// unrepresentable here. `draft` is set for `.adding` / `.editing`
-    /// (form bindings) and also for `.viewing` (unused by the UI, but
-    /// kept non-nil so tearing down `Binding($model.draft)` projections
-    /// does not trap when leaving the form).
-    enum Mode: Equatable {
-        case empty
-        case viewing(id: String)
-        case adding(resumeID: String?)
-        case editing(id: String)
-    }
-
     private(set) var fields: [CatalogMetadataField] = []
     private(set) var isLoading = false
     var loadError: Error?
@@ -43,7 +25,8 @@ final class SourceFieldsModel {
     var query = ""
     private(set) var sortAscending = true
 
-    private(set) var mode: Mode = .empty
+    /// Detail-pane mode — see `VocabularyPaneMode` for the invariants.
+    private(set) var mode: VocabularyPaneMode = .empty
     /// Non-nil whenever a field is selected or the add form is open.
     /// Cleared only for `.empty`. Do not nil this while the edit/add form
     /// may still be in the hierarchy — `@Bindable` projections into an
@@ -51,7 +34,7 @@ final class SourceFieldsModel {
     var draft: Draft?
     private(set) var isSaving = false
     var formError: String?
-    var toast: Toast?
+    var toast: VocabularyToast?
 
     /// The field the delete confirmation is open for. Held as an id (not a
     /// `Bool`) so the dialog keeps naming the right field even if selection
@@ -66,19 +49,26 @@ final class SourceFieldsModel {
     private let projectDir: String
     private let userID: String
     private let store: any GenealogyStore
+    /// Shared sidebar / header totals. Nil in isolated unit tests and
+    /// previews that don't mount a workspace.
+    private let catalogCounts: CatalogCounts?
 
-    init(projectDir: String, userID: String, store: any GenealogyStore) {
+    init(
+        projectDir: String,
+        userID: String,
+        store: any GenealogyStore,
+        catalogCounts: CatalogCounts? = nil
+    ) {
         self.projectDir = projectDir
         self.userID = userID
         self.store = store
+        self.catalogCounts = catalogCounts
     }
 
     // MARK: Derived
 
     var visibleFields: [CatalogMetadataField] {
-        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let filtered = q.isEmpty ? fields : fields.filter { matches($0, query: q) }
-        return filtered.sorted { a, b in
+        fields.matching(query).sorted { a, b in
             let order = a.label.localizedCaseInsensitiveCompare(b.label)
             return sortAscending ? order == .orderedAscending : order == .orderedDescending
         }
@@ -129,14 +119,14 @@ final class SourceFieldsModel {
     /// enforces the second rule too (`sourcefields.in_use`).
     var canDeleteSelectedField: Bool {
         guard let field = selectedField else { return false }
-        return !SourceFieldOrigin.isPlugin(field.origin) && field.usedBy == 0
+        return !CatalogOrigin.isPlugin(field.origin) && field.usedBy == 0
     }
 
     /// Tooltip on the delete button — the action when it is available, the
     /// reason it is not when it is disabled.
     var deleteTooltip: LocalizedStringResource {
         guard let field = selectedField else { return L10n.SourceFields.deleteField }
-        if SourceFieldOrigin.isPlugin(field.origin) { return L10n.SourceFields.deleteOwnedByPlugin }
+        if CatalogOrigin.isPlugin(field.origin) { return L10n.SourceFields.deleteOwnedByPlugin }
         if field.usedBy > 0 { return L10n.SourceFields.deleteInUse(count: field.usedBy) }
         return L10n.SourceFields.deleteField
     }
@@ -147,15 +137,14 @@ final class SourceFieldsModel {
         return fields.first { $0.id == pendingDeleteID }
     }
 
-    var seededCount: Int { fields.filter { $0.origin == SourceFieldOrigin.provenencia }.count }
-    var userCount: Int { fields.filter { $0.origin == SourceFieldOrigin.user }.count }
-    var pluginCount: Int { fields.filter { $0.origin != SourceFieldOrigin.provenencia && $0.origin != SourceFieldOrigin.user }.count }
-
     var countLine: String {
-        if pluginCount > 0 {
-            return L10n.SourceFields.countLineWithPlugin(total: fields.count, seeded: seededCount, user: userCount, plugin: pluginCount)
+        let summary = catalogCounts?.sourceFields ?? .from(fields)
+        if summary.plugin > 0 {
+            return L10n.SourceFields.countLineWithPlugin(
+                total: summary.total, seeded: summary.seeded, user: summary.user, plugin: summary.plugin
+            )
         }
-        return L10n.SourceFields.countLine(total: fields.count, seeded: seededCount, user: userCount)
+        return L10n.SourceFields.countLine(total: summary.total, seeded: summary.seeded, user: summary.user)
     }
 
     // MARK: Actions
@@ -166,6 +155,7 @@ final class SourceFieldsModel {
         defer { isLoading = false }
         do {
             fields = try await store.listMetadataFields(projectDir: projectDir)
+            publishCounts()
         } catch {
             loadError = error
         }
@@ -182,11 +172,7 @@ final class SourceFieldsModel {
         // not bind it, but going edit/add → view with `draft = nil` in the
         // same turn tears down `Binding($model.draft)` and traps.
         draft = Draft(label: field.label, dataType: field.dataType, description: field.description)
-        if field.origin == SourceFieldOrigin.user || field.origin == SourceFieldOrigin.provenencia {
-            mode = .editing(id: id)
-        } else {
-            mode = .viewing(id: id)
-        }
+        mode = CatalogOrigin.isPlugin(field.origin) ? .viewing(id: id) : .editing(id: id)
     }
 
     func openAdd() {
@@ -245,10 +231,12 @@ final class SourceFieldsModel {
             // in the same turn the form leaves the hierarchy races
             // `@Bindable` optional projections.
             mode = .empty
-            toast = Toast(
+            toast = VocabularyToast(
                 title: String(localized: L10n.SourceFields.toastDeletedTitle),
-                body: L10n.SourceFields.toastDeletedBody(label: field.label)
+                body: L10n.SourceFields.toastDeletedBody(label: field.label),
+                tone: .success
             )
+            publishCounts()
         } catch {
             deleteError = L10n.Errors.message(for: error)
         }
@@ -279,10 +267,12 @@ final class SourceFieldsModel {
                 query = ""
                 mode = .editing(id: created.id)
                 self.draft = Draft(label: created.label, dataType: created.dataType, description: created.description)
-                toast = Toast(
+                toast = VocabularyToast(
                     title: String(localized: L10n.SourceFields.toastAddedTitle),
-                    body: L10n.SourceFields.toastAddedBody(label: created.label, key: created.key)
+                    body: L10n.SourceFields.toastAddedBody(label: created.label, key: created.key),
+                    tone: .success
                 )
+                publishCounts()
             case .editing(let id):
                 let updated = try await store.updateMetadataField(
                     projectDir: projectDir, userID: userID, fieldID: id,
@@ -293,9 +283,10 @@ final class SourceFieldsModel {
                 }
                 mode = .editing(id: updated.id)
                 self.draft = Draft(label: updated.label, dataType: updated.dataType, description: updated.description)
-                toast = Toast(
+                toast = VocabularyToast(
                     title: String(localized: L10n.SourceFields.toastUpdatedTitle),
-                    body: L10n.SourceFields.toastUpdatedBody(label: updated.label, key: updated.key)
+                    body: L10n.SourceFields.toastUpdatedBody(label: updated.label, key: updated.key),
+                    tone: .success
                 )
             case .empty, .viewing:
                 break
@@ -305,36 +296,7 @@ final class SourceFieldsModel {
         }
     }
 
-    private func matches(_ field: CatalogMetadataField, query: String) -> Bool {
-        field.label.lowercased().contains(query)
-            || field.key.lowercased().contains(query)
-            || field.description.lowercased().contains(query)
+    private func publishCounts() {
+        catalogCounts?.publishSourceFields(.from(fields))
     }
-}
-
-/// `CatalogMetadataField.origin` / `.dataType` namespaces — mirrors
-/// `core/database/sourcefields`'s `Origin…`/`DataType…` constants (the FFI
-/// layer carries these as plain strings, not an enum).
-enum SourceFieldOrigin {
-    static let provenencia = "provenencia"
-    static let user = "user"
-
-    private static let pluginPrefix = "plugin:"
-
-    /// Anything that is neither seeded nor researcher-authored is owned by a
-    /// plugin — the same open-vocabulary stance the badges take.
-    static func isPlugin(_ origin: String) -> Bool {
-        origin != provenencia && origin != user
-    }
-
-    /// The id after `plugin:` (e.g. `"plugin:findagrave"` → `"findagrave"`),
-    /// or the raw origin unchanged when it has no such prefix.
-    static func pluginID(from origin: String) -> String {
-        origin.hasPrefix(pluginPrefix) ? String(origin.dropFirst(pluginPrefix.count)) : origin
-    }
-}
-
-enum SourceFieldDataType {
-    static let text = "text"
-    static let date = "date"
 }

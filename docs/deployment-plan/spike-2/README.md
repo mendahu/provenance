@@ -135,7 +135,7 @@ S2-13 PR — FFI Source use-cases (done)
 S2-14 PR — Swift app workspace layout (sidebar shell) (done)
 S2-15 PR — Swift Source fields (list + create/edit)
 S2-22 PR — PVTable (custom-chrome table + keyboard/a11y)
-S2-16 PR — Swift Source types (list + associations)
+S2-16 PR — Swift Source types (list + associations) (done)
 S2-17 PR — Swift Sources catalog (list + Source detail)
 S2-18 PR — Swift Artifacts + file ingest + list thumbnails
 S2-21 PR — Swift Files list (+ Source link)
@@ -186,9 +186,9 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done); S2-02 (Source fields vocabulary — association picker pool) |
-| **Deliverables** | Board for the **Source types** destination: list (label + key; origin visible); detail/expanded view with description + associated metadata fields from `source_type_metadata_fields`; assign associations from existing Source fields; **remove associations** (not delete types); add/create type flow. No delete Source type. **Open Design question:** in-list expand vs nested detail with breadcrumb/back. |
+| **Deliverables** | Board for the **Source types** destination: list (label + key; origin visible); detail/expanded view with description + associated metadata fields from `source_type_metadata_fields`; assign associations from existing Source fields; **remove associations**; add/create type flow; **delete a type** only while unused and not plugin-owned (added when the brief was refined — T-12). **Design decision:** master–detail split, not in-list expand or a breadcrumb push. |
 | **Context** | Source doc §§3, 5.2; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1.1. One complexity step above S2-02 because suggestions join fields. Prefer `provenencia` type rows view-only for label/description; association edit on seeded types OK for dogfood. |
-| **Out** | Delete Source types; field vocabulary CRUD (S2-02); Source instance UI; Artifacts. |
+| **Out** | Force-deleting a Source type sources still use; field vocabulary CRUD (S2-02); Source instance UI; Artifacts. |
 | **Feeds** | S2-16 |
 
 ---
@@ -373,9 +373,9 @@ Design **S2-01** / chrome **S2-14** are done. Remaining Design: **S2-02** → **
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-03 (design enough), S2-15 (fields exist to assign), **S2-22** (`PVTable` for the types list), S2-13, S2-14 |
-| **Deliverables** | **Source types** destination: list (label + key, origin) via **`PVTable`**; detail/expanded per S2-03 (description + suggested fields); assign/remove `source_type_metadata_fields` associations from the Source fields pool; add/create type; no delete type. Unit tests with `FakeStore`. L10n via skill. Include thin FFI for list suggestions + attach/detach (and update type if needed) — Go already has `sourcevocab.EnsureSuggestion` / `DeleteSuggestion` / `ListSuggestions`; wire them if not yet exposed. |
+| **Deliverables** | Done. **Source types** destination: master–detail split (S2-03 T-13) mounted in the S2-14 pane — list (label + origin pill, key, suggested-field count) via **`PVTable`**, detail with description + suggested fields, assign/remove `source_type_metadata_fields` associations from the Source fields pool, add/create type, and delete gated on `usedBy == 0` and non-plugin origin (S2-03 T-12, added when the brief was refined). Origin markers hoisted out of Source fields into shared `OriginBadge` / `OriginPill` (plus the new plugin in-list pill). The assign control is a new design-system **`PVComboBox`** (searchable on field label *or* key, rich rows with the data-type badge, macOS key handling) with the assign action as an icon button beside it — the board switched from a plain `Select` after the first pass; single-select subset only, documented in `DesignSystem/README.md`. FFI added: `UpdateSourceType`, `ListTypeSuggestions`, `AssignTypeField`, `RemoveTypeField`; `CreateSourceType` now mints its key from the label like `CreateMetadataField`, and `SourceType` carries `used_by` + `suggested_field_count`. Unit tests with `FakeStore`; Go tests for `sourcetypes.Create`/`Update`/`UsedBy` and `sourcevocab.AppendSuggestion`. |
 | **Context** | Mount under S2-14 **Source types** pane. Removing a suggestion must not delete field vocabulary or Source metadata values. Reuse `PVTable` from S2-22 — do not reintroduce a hand-rolled column list. |
-| **Out** | Source catalog UI; delete types; field definition CRUD (S2-15). |
+| **Out** | Source catalog UI; field definition CRUD (S2-15); reordering suggestions; force-deleting a type sources still use. |
 
 ---
 

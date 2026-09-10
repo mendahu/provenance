@@ -38,6 +38,10 @@ enum Method {
   METHOD_UPDATE_METADATA_FIELD = 28;
   METHOD_DELETE_SOURCE_TYPE = 29;
   METHOD_DELETE_METADATA_FIELD = 30;
+  METHOD_UPDATE_SOURCE_TYPE = 31;
+  METHOD_LIST_TYPE_SUGGESTIONS = 32;
+  METHOD_ASSIGN_TYPE_FIELD = 33;
+  METHOD_REMOVE_TYPE_FIELD = 34;
 }
 
 message PingRequest {
@@ -193,6 +197,21 @@ message SourceType {
   string origin = 3;
   string label = 4;
   string description = 5;
+  // How many sources classify as this type. Deleting is only allowed at 0
+  // (see sourcetypes.ErrInUse); the client uses the count to disable its
+  // delete affordance and say what is holding the type.
+  int32 used_by = 6;
+  // How many metadata fields this type suggests — the list's third column,
+  // so browsing does not have to fetch every type's join rows.
+  int32 suggested_field_count = 7;
+}
+
+// TypeSuggestion is one source_type_metadata_fields join row: a field this
+// type suggests, in its stored order. Suggestions are not a schema — a
+// source of the type may leave any of them blank.
+message TypeSuggestion {
+  MetadataField field = 1;
+  int32 sort_order = 2;
 }
 
 message MetadataField {
@@ -375,7 +394,8 @@ message ListSourceTypesResponse {
 message CreateSourceTypeRequest {
   string project_dir = 1;
   string user_id = 2;
-  string key = 3;
+  reserved 3; // key: minted server-side from label (core/slug.Kebab), never client-supplied
+  reserved "key";
   string label = 4;
   string description = 5;
 }
@@ -417,6 +437,56 @@ message UpdateMetadataFieldRequest {
 
 message UpdateMetadataFieldResponse {
   MetadataField field = 1;
+}
+
+message UpdateSourceTypeRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string type_id = 3;
+  string label = 4;
+  string description = 5;
+}
+
+message UpdateSourceTypeResponse {
+  SourceType type = 1;
+}
+
+message ListTypeSuggestionsRequest {
+  string project_dir = 1;
+  string type_id = 2;
+}
+
+message ListTypeSuggestionsResponse {
+  repeated TypeSuggestion suggestions = 1;
+}
+
+// AssignTypeField attaches an existing metadata field to a type at the end
+// of its order. Assigning a field the type already suggests is a no-op, not
+// an error. Both replies carry the type's whole suggestion list back so the
+// client never has to re-derive sort_order.
+message AssignTypeFieldRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string type_id = 3;
+  string field_id = 4;
+}
+
+message AssignTypeFieldResponse {
+  repeated TypeSuggestion suggestions = 1;
+}
+
+// RemoveTypeField detaches a field from a type. It deletes only the join —
+// the field stays in the vocabulary and sources already carrying a value
+// for it keep that value.
+message RemoveTypeFieldRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string type_id = 3;
+  string field_id = 4;
+}
+
+message RemoveTypeFieldResponse {
+  repeated TypeSuggestion suggestions = 1;
 }
 
 message DeleteSourceTypeRequest {

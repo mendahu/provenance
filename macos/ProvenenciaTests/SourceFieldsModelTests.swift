@@ -20,18 +20,27 @@ struct SourceFieldsModelTests {
         CatalogMetadataField(id: id, key: "memorial-id", origin: "plugin:findagrave", label: label, dataType: "text", description: "From the plugin.")
     }
 
-    private func makeModel(store: FakeStore = FakeStore(), fields: [CatalogMetadataField] = []) -> SourceFieldsModel {
+    private func makeModel(
+        store: FakeStore = FakeStore(),
+        fields: [CatalogMetadataField] = [],
+        catalogCounts: CatalogCounts? = nil
+    ) -> SourceFieldsModel {
         store.fieldsByProject[projectDir] = fields
-        return SourceFieldsModel(projectDir: projectDir, userID: userID, store: store)
+        return SourceFieldsModel(
+            projectDir: projectDir,
+            userID: userID,
+            store: store,
+            catalogCounts: catalogCounts
+        )
     }
 
     @Test func loadPopulatesFieldsAndCounts() async {
         let model = makeModel(fields: [seededField(), userField()])
         await model.load()
         #expect(model.fields.count == 2)
-        #expect(model.seededCount == 1)
-        #expect(model.userCount == 1)
-        #expect(model.pluginCount == 0)
+        #expect(model.fields.seededCount == 1)
+        #expect(model.fields.userCount == 1)
+        #expect(model.fields.pluginCount == 0)
     }
 
     @Test func searchFiltersByLabelKeyAndDescription() async {
@@ -134,7 +143,8 @@ struct SourceFieldsModelTests {
     }
 
     @Test func submitAddCreatesFieldAndMintsKeyFromLabel() async {
-        let model = makeModel(fields: [])
+        let counts = CatalogCounts(projectDir: projectDir, store: FakeStore())
+        let model = makeModel(fields: [], catalogCounts: counts)
         await model.load()
         model.openAdd()
         model.draft?.label = "Grandma's album code"
@@ -145,6 +155,8 @@ struct SourceFieldsModelTests {
         #expect(model.fields.first?.origin == "user")
         #expect(model.toast?.title == String(localized: L10n.SourceFields.toastAddedTitle))
         #expect(model.selectedField?.key == "grandmas-album-code")
+        #expect(counts.sourceFields?.total == 1)
+        #expect(counts.sourceFields?.user == 1)
     }
 
     @Test func submitAddWithBlankLabelSetsFormError() async {
@@ -178,8 +190,10 @@ struct SourceFieldsModelTests {
     }
 
     @Test func submitEditUpdatesFieldButKeepsKey() async {
-        let model = makeModel(fields: [userField()])
+        let counts = CatalogCounts(projectDir: projectDir, store: FakeStore())
+        let model = makeModel(fields: [userField()], catalogCounts: counts)
         await model.load()
+        let totalBefore = counts.sourceFields?.total
         model.select("2")
         model.draft?.label = "Grandma's photo album code"
         model.draft?.description = "Updated."
@@ -188,6 +202,7 @@ struct SourceFieldsModelTests {
         #expect(model.fields.first?.label == "Grandma's photo album code")
         #expect(model.fields.first?.key == "grandmas-album-code")
         #expect(model.toast?.title == String(localized: L10n.SourceFields.toastUpdatedTitle))
+        #expect(counts.sourceFields?.total == totalBefore)
     }
 
     @Test func isDirtyTracksUnsavedEditsAndRevertClearsThem() async {
@@ -306,8 +321,10 @@ struct SourceFieldsModelTests {
 
     @Test func confirmDeleteRemovesTheFieldClearsSelectionAndToasts() async {
         let store = FakeStore()
-        let model = makeModel(store: store, fields: [seededField(), userField()])
+        let counts = CatalogCounts(projectDir: projectDir, store: store)
+        let model = makeModel(store: store, fields: [seededField(), userField()], catalogCounts: counts)
         await model.load()
+        #expect(counts.sourceFields?.total == 2)
         model.select("2")
         model.askDelete()
         await model.confirmDelete()
@@ -318,6 +335,9 @@ struct SourceFieldsModelTests {
         #expect(model.pendingDeleteField == nil)
         #expect(!model.isDeleting)
         #expect(model.toast?.title == String(localized: L10n.SourceFields.toastDeletedTitle))
+        #expect(counts.sourceFields?.total == 1)
+        #expect(counts.sourceFields?.seeded == 1)
+        #expect(counts.sourceFields?.user == 0)
     }
 
     @Test func confirmDeleteKeepsTheConfirmationOpenWhenTheStoreRefuses() async {

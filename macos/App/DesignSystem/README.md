@@ -134,15 +134,16 @@ red `Text`), plus `Badge`/`EmptyState`/`Callout` (added for the S2-02
 | Toast | `Components/Feedback/PVToast.swift` |
 | LogoMark | `Components/Core/PVLogoMark.swift` |
 | SidebarNav | `Components/Navigation/PVSidebarNav.swift` (added for the S2-01 workspace chrome; ports that board's revised `collapsed`-capable `SidebarNav.jsx`) |
-| IconButton | `Components/Core/PVIconButton.swift` (added for the workspace sidebar's collapse toggle, which needed real hover feedback; `label` is required per `IconButton.jsx` and doubles as the `.help` tooltip, and `tone: .danger` tints a destructive action) |
+| IconButton | `Components/Core/PVIconButton.swift` (added for the workspace sidebar's collapse toggle, which needed real hover feedback; `label` is required per `IconButton.jsx` and doubles as the `.help` tooltip; pass `accessibilityLabel` when the spoken label has to name a target the tooltip can leave implicit; `tone: .danger` tints a destructive action) |
 | Badge | `Components/Core/PVBadge.swift` (added for S2-02's data-type/origin badges; a glyph-only variant carries the S2-22 seeded pill) |
 | Divider | `Components/Core/PVDivider.swift` (1pt hairline; horizontal/vertical) |
 | EmptyState | `Components/Feedback/PVEmptyState.swift` (added for S2-02's empty/no-match states; the web spec's `action` slot isn't ported — see the file's header comment) |
 | Callout | `Components/Feedback/PVCallout.swift` (added for S2-02's "this field is locked" note; only the subset S2-02 needs is ported — see the file's header comment) |
 | Table | `Components/Data/PVTable.swift` (added for S2-22, extracted from the Source fields list; see "The table tradeoff" below) |
 | Confirm | `Components/Feedback/PVConfirm.swift` (added for S2-22's delete confirmation; the macOS answer to `ConfirmDialog.jsx`, which the web spec says not to port — see "Confirmations are system chrome" below) |
+| ComboBox | `Components/Forms/PVComboBox.swift` (added for S2-16's assign-field control, where the pool is the whole Source fields vocabulary; single-select subset only — see "The combo box subset" below) |
 
-The other 14 design-system components have **no files yet** — add them on
+The other 13 design-system components have **no files yet** — add them on
 demand, following the pattern above, when a screen needs one:
 
 | Component | Category | Purpose |
@@ -160,6 +161,106 @@ demand, following the pattern above, when a screen needs one:
 | FactRow | Research | One asserted fact: type glyph, date, value, place, grade, conflict note |
 | PersonChip | Research | A person with life dates and a lineage-colored rule |
 | SourceCitation | Research | Citation + repository + scan thumbnail + grade, as one unit |
+
+## The combo box subset
+
+`PVComboBox` ports `components/forms/ComboBox.jsx`, but only the
+**single-select** half of it. The token/multi-select field, the "use what you
+typed" create row, the `person` row kind and async `loading` are all in the
+web component and none of them have a call site here yet — add them the way
+`PVSidebarNav` was added, rather than porting speculatively.
+
+What is ported is the interaction contract, and it is worth restating because
+every clause of it is a decision rather than an accident:
+
+- **Seeded text is not typed text.** The field shows the committed option's
+  label, so re-opening it must show the whole list, not just the row already
+  chosen. An `isDirty` flag separates the two, and only the text binding's
+  *setter* raises it — code that assigns the query (mirroring a label,
+  reverting on Escape, restoring on blur) leaves it alone.
+- **Spotlight rule.** With a query, the top hit is pre-highlighted so Return
+  takes it. With no query nothing is highlighted: it is a browse list, and
+  Return falls through to whatever is behind it.
+- **Arrow keys clamp, they do not cycle** — `NSMenu` does not wrap, and
+  neither does this. `PVTable`'s list *does* wrap, which is right for a browse
+  table and wrong for a menu; the two are deliberately different. The
+  jump-to-end modifier is **not** yet consistent between them, though:
+  `ComboBox.jsx` specifies `⌘↑/⌘↓` and this port follows it, while `PVTable`
+  shipped `⌥↑/⌥↓`. Both also accept Home/End. Worth settling on one before a
+  third list component copies whichever it meets first.
+- **One highlight, two drivers.** The pointer and the arrow keys move the same
+  `active` row, so there is no second hover state competing with it.
+- **Escape is two-stage** — close the list, then abandon the typed text — and
+  once there is nothing left to undo it stops consuming the key, so an
+  enclosing sheet can still be dismissed from inside the field.
+- **Clicking away blurs.** A click outside the field and its list doesn't
+  just close the list, it resigns the field's focus — outside means done.
+  Clicking the field itself reopens a closed list (after Escape or a commit)
+  without focus having to leave and come back.
+
+**The list is a child window, not an overlay.** This is the part that took two
+passes to get right. A SwiftUI overlay is clipped by any enclosing
+`ScrollView` and by the app window, so for a field near the bottom of a
+scrolling inspector — which is exactly where the first call site puts it — the
+list was cut off at the window edge and had nowhere legal to go. Flipping it
+upward only moves the problem.
+
+`NSMenu`, `NSComboBox` and Spotlight all draw into their own borderless window
+for this reason, and so does this. `PVComboBoxPlacement.popupFrame` positions
+a non-activating `NSPanel` in **screen** coordinates against the field, which
+buys three things at once: it clips to the display rather than to any view, it
+may extend past the app window's edge, and it is placed strictly *outside* the
+anchor so it can never cover what is being typed. Height is trimmed to the
+room actually available on whichever side it lands, and the list scrolls
+inside that. The panel returns `false` from `canBecomeKey`, so the text field
+keeps focus and keeps handling arrows, Return and Escape while it is open.
+
+Two things the window costs us, both deliberate:
+
+- **Sizing is the caller's job.** The window has to know its height *before*
+  it is shown, and neither a `ScrollView` inside it nor
+  `NSHostingView.fittingSize` can be trusted to say. `PVComboBox` lays a
+  hidden copy of the rows out behind the field purely to measure them, hands
+  that number to the window, and lets the scroller simply fill whatever it
+  gets. An earlier version made one view both report an ideal height *and*
+  lay out inside the resulting window; any disagreement between the two clips
+  a row, and it did.
+- **Dismissal converges on focus.** SwiftUI does not resign a `TextField`'s
+  focus when you click inert content, so "clicked away" is observed at the
+  event level: a local mouse-down monitor treats anything that is neither in
+  the popup nor on the field as a click away, and — rather than merely hiding
+  the list — resigns the field's focus. Losing focus is the one close path
+  everything funnels into, whether the click moved first responder by itself
+  or the monitor had to do it. The panel itself never decides to be visible:
+  the coordinator mirrors a `wantsPresented` flag that SwiftUI state (and the
+  monitor's dismissal) writes synchronously, so a deferred show can never
+  race a dismissal and re-open the list. The coordinator also follows the
+  field on window move/resize and on scroll, and dismisses when the parent
+  window resigns key — which is also what covers a click in another app, so
+  there is no global event monitor.
+- **Clicks on rows are ordinary tap gestures.** The popup never becomes key,
+  but mouse events are still delivered to the window under the pointer, so
+  the row's `.onTapGesture` is the one commit path; the mouse monitor passes
+  panel clicks through untouched. What *had* made gestures inside the popup
+  undependable was re-framing: an early version had the active-row index in
+  the token that triggers re-measurement, so every mouse move resized the
+  window and reassigned the hosting view's root, which tore down click
+  handling mid-gesture and made rows unclickable. Hence the rule that
+  **nothing that changes on mouse move may re-frame the window** — the
+  coordinator re-frames only when the row count or measured height actually
+  changed.
+- **The shadow is AppKit's, not `--shadow-overlay`.** A transparent window
+  casts its shadow from its own alpha, so the rounded list gets the native
+  popup shadow for free and correctly shaped. Transcribing the CSS shadow
+  would mean padding the window out to make room for it; the native shadow is
+  the more Mac-like answer anyway.
+
+The pure parts — filtering, movement, placement, match highlighting — live in
+`PVComboBoxMatch` / `PVComboBoxPlacement` / `PVComboBoxHighlight` so they can
+be unit-tested without a view, the same split `PVTable` uses for its
+type-select matcher. `popupFrame` in particular is worth the test: the
+"never overlaps the field" and "never escapes the screen" properties are
+swept across anchor positions rather than spot-checked.
 
 ## The table tradeoff
 
@@ -335,8 +436,8 @@ palette) lives in two places:
 
 ## Platform deviations
 
-Two are deliberate, matching what the source design system's own readme
-documents as the intended macOS port:
+Three are deliberate; the first two match what the source design system's own
+readme documents as the intended macOS port:
 
 - **Control heights**: `PVSpacing.controlHeightSmall/Medium/Large` are
   22/28/36pt (AppKit-native metrics), not the web `--control-h-sm/md/lg`
@@ -344,6 +445,9 @@ documents as the intended macOS port:
 - **Icons**: `PVIcon` wraps SF Symbols, not the web's Lucide set — Lucide is
   itself a web-only substitution (no icon set was supplied to the original
   brief), so this is a second substitution, not a compromise.
+- **`PVComboBox`'s popup shadow** is AppKit's window shadow rather than
+  `--shadow-overlay`. The list lives in its own transparent window, which
+  casts a correctly-shaped shadow from its alpha; see "The combo box subset".
 
 ## Xcode project registration
 

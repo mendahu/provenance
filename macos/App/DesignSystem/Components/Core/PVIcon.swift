@@ -28,6 +28,7 @@ enum PVSymbol: String {
     case textType = "textformat"
     case lock = "lock.fill"
     case trash = "trash"
+    case plug = "powerplug.fill"
 }
 
 /// Renders a design-system icon via SF Symbols.
