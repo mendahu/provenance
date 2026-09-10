@@ -11,8 +11,10 @@ import SwiftUI
 /// the bottom via the `GeometryReader`-driven `minHeight`.
 struct WorkspaceSidebar: View {
     let session: InstallIdentity?
-    let workspace: WorkspaceModel
-    let catalogCounts: CatalogCounts
+    @Bindable var workspace: WorkspaceModel
+    /// `@Bindable` so badge publishes from Fields/Types invalidate this
+    /// column — a plain `let` does not subscribe to `@Observable` writes.
+    @Bindable var catalogCounts: CatalogCounts
 
     /// Matches `PVSpacing.widthSidebar` (264pt, the shared `--width-sidebar`
     /// token).

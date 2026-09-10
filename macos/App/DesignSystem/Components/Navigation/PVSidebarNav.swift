@@ -21,10 +21,6 @@ struct PVSidebarNavItem: Identifiable, Equatable {
     /// the badge entirely — used for a destination with no backing count
     /// query yet, not to mean zero.
     var count: Int? = nil
-
-    static func == (lhs: PVSidebarNavItem, rhs: PVSidebarNavItem) -> Bool {
-        lhs.id == rhs.id
-    }
 }
 
 /// Provenencia's leading sidebar navigation list. Expanded mode shows an
