@@ -32,7 +32,11 @@ struct OnboardingView: View {
                 WorkspaceView(model: model, projectDir: projectDir, userID: userID)
             }
         }
-        .frame(minWidth: minWindowSize.width, minHeight: minWindowSize.height)
+        // Hard resize floor only. Preferred opening size is
+        // `WindowSizing.fittedDefaultSize` on the `WindowGroup` scene —
+        // not an ideal frame here, which `.contentMinSize` would ignore
+        // as a lock and `.contentSize` would collapse to during `.loading`.
+        .frame(minWidth: PVSpacing.widthWindowMin, minHeight: PVSpacing.heightWindowMin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PVColor.surfacePage)
         .overlay(alignment: .topTrailing) {
@@ -51,20 +55,6 @@ struct OnboardingView: View {
         .animation(reduceMotion ? nil : PVMotion.easeStandard, value: model.error?.localizedDescription)
         .task {
             await model.load()
-        }
-    }
-
-    /// `.windowResizability(.contentSize)` (set in `ProvenenciaApp`) derives
-    /// the window's allowed size range from this frame, so the minimum
-    /// needs to grow once we're past onboarding: the workspace's two-pane
-    /// destinations (e.g. Source fields) need real room, while onboarding's
-    /// single-column forms would look lost at that size.
-    private var minWindowSize: CGSize {
-        switch model.phase {
-        case .home:
-            CGSize(width: PVSpacing.widthWorkspaceMin, height: PVSpacing.heightWorkspaceMin)
-        case .loading, .chooseFile, .identify:
-            CGSize(width: PVSpacing.widthWindowMin, height: PVSpacing.heightWindowMin)
         }
     }
 

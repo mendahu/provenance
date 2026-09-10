@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import Provenencia
 
@@ -162,7 +163,12 @@ struct PVComboBoxTests {
 
     @Test func highlightMarksTheMatchedSpanOnly() {
         let marked = PVComboBoxHighlight.attributed("Publication date", query: "date")
-        let runs = marked.runs.map { (String(marked[$0.range].characters), $0.backgroundColor) }
+        let runs = marked.runs.map { run in
+            (
+                String(marked[run.range].characters),
+                run[AttributeScopes.SwiftUIAttributes.BackgroundColorAttribute.self]
+            )
+        }
         #expect(runs.map(\.0) == ["Publication ", "date"])
         #expect(runs[0].1 == nil)
         #expect(runs[1].1 == PVColor.markBackground)

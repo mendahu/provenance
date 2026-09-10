@@ -23,7 +23,12 @@ struct ProvenenciaApp: App {
                 .ignoresSafeArea(.container, edges: .top)
                 .pvAlignsTrafficLights()
         }
-        .windowResizability(.contentSize)
+        // `contentMinSize` keeps the hard floor from the root view's
+        // min frame, but lets `.defaultSize` open larger than content
+        // ideal — unlike `.contentSize`, which hugs the loading-phase
+        // minimum and never grows to the workspace default.
+        .windowResizability(.contentMinSize)
+        .defaultSize(WindowSizing.fittedDefaultSize)
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(after: .appInfo) {

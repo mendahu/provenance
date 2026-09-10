@@ -78,6 +78,7 @@
 		AA0000000000000000000105 /* OnboardingFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* OnboardingFooter.swift */; };
 		AA0000000000000000000107 /* OnboardingContributorRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000106 /* OnboardingContributorRow.swift */; };
 		B2C3D4E5F60718293A4B5C6D /* WindowDragRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */; };
+		327D9751467546DCB56EC478 /* WindowSizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F69681C808F487B9BD6E7AA /* WindowSizing.swift */; };
 		BD1582FF721A5711F38C97A0 /* SourceFieldsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7791238B5C7C6F0C5BE388 /* SourceFieldsModel.swift */; };
 		BE57602FF7EBA86C1DEE63FF /* PVBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E732F3D44BB89512758F85 /* PVBadge.swift */; };
 		A1B2C3D4E5F60718293A4B5E /* PVDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5E01 /* PVDivider.swift */; };
@@ -159,6 +160,7 @@
 		9BEB8D3B3D1A6C08B3733B13 /* PVSpacing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVSpacing.swift; sourceTree = "<group>"; };
 		A0AE6B1748FA280F95478205 /* PVButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVButton.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WindowDragRegion.swift; sourceTree = "<group>"; };
+		7F69681C808F487B9BD6E7AA /* WindowSizing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WindowSizing.swift; sourceTree = "<group>"; };
 		A5B33345A1FE839C1516B4FC /* WorkspaceChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceChrome.swift; sourceTree = "<group>"; };
 		AA0000000000000000000010 /* ProvenenciaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvenenciaApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000011 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -428,6 +430,7 @@
 				F56B617548A3EF65699270F8 /* SignOutCoordinator.swift */,
 				85C0991FB99984CAEB385DA4 /* TrafficLights.swift */,
 				A1B2C3D4E5F60718293A4B5C /* WindowDragRegion.swift */,
+				7F69681C808F487B9BD6E7AA /* WindowSizing.swift */,
 				F10C63066463B02E05808F78 /* PreviewFixtures.swift */,
 				E07E52EC527189A4A377F9AD /* FieldSlug.swift */,
 			);
@@ -690,6 +693,7 @@
 				13208FE0B57739DECCA156C7 /* WorkspaceChrome.swift in Sources */,
 				840A56FF5DC13597C1DFDDF9 /* TrafficLights.swift in Sources */,
 				B2C3D4E5F60718293A4B5C6D /* WindowDragRegion.swift in Sources */,
+				327D9751467546DCB56EC478 /* WindowSizing.swift in Sources */,
 				563FA9B6FA344585CE32B2A7 /* PVIconButton.swift in Sources */,
 				E3D046BD80595D1F07691D1F /* PVHoverEffect.swift in Sources */,
 				A790E2993DB9D42163403BA3 /* PreviewFixtures.swift in Sources */,

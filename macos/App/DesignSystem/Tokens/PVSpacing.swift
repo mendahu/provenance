@@ -38,17 +38,17 @@ enum PVSpacing {
     static let widthSidebar: CGFloat = 264
     static let widthInspector: CGFloat = 340
     static let widthContentMax: CGFloat = 1180
-    /// Minimum window size for the onboarding phases (`.chooseFile` /
-    /// `.identify`) — those forms are a single narrow column and look
-    /// lost in a much larger window.
+    /// Hard resize floor for every phase (onboarding and workspace). Kept
+    /// modest so smaller displays can still shrink the window; two-pane
+    /// destinations may squeeze below the workspace default.
     static let widthWindowMin: CGFloat = 700
     static let heightWindowMin: CGFloat = 460
-    /// Minimum window size once past onboarding, in the app workspace
-    /// (`.home` — sidebar + Source catalog/vocabulary content). Two-pane
-    /// destinations like Source fields need real room; below this they
-    /// clip and squeeze rather than just looking sparse.
-    static let widthWorkspaceMin: CGFloat = 1200
-    static let heightWorkspaceMin: CGFloat = 800
+    /// Preferred first-open window size (sidebar + catalog/vocabulary).
+    /// Applied via `WindowGroup.defaultSize` / `WindowSizing.fittedDefaultSize`
+    /// (clamped to the screen). Not a locked minimum — users can resize
+    /// down to `widthWindowMin` / `heightWindowMin`.
+    static let widthWorkspaceDefault: CGFloat = 1366
+    static let heightWorkspaceDefault: CGFloat = 900
 
     /// Control heights. **Deliberately not the web `--control-h-*` pixel
     /// values (28/34/42)** — the source design system's own readme

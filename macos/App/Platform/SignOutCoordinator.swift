@@ -11,7 +11,7 @@ import Observation
 ///
 /// Deliberately shaped for one open session in one window — a single
 /// `action`/`isAvailable` pair, owned once by `ProvenenciaApp` — matching
-/// the app's current `.windowResizability(.contentSize)` single-window
+/// the app's current `.windowResizability(.contentMinSize)` single-window
 /// scope. If a future spike adds multiple project windows, this needs to
 /// become per-window state rather than one shared coordinator.
 @MainActor
