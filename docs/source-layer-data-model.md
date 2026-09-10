@@ -123,12 +123,12 @@ CREATE TABLE sources (
     id              BLOB PRIMARY KEY,          -- UUIDv7, 16 bytes
     ref             TEXT UNIQUE NOT NULL,      -- e.g. SRC-F4N2P
     source_type_id  BLOB NOT NULL REFERENCES source_types(id),
-    title           TEXT,
+    title           TEXT NOT NULL,
     description     TEXT
 ) STRICT;
 ```
 
-`source_type_id` provides the broad user-facing classification. More variable catalog information belongs in Source metadata. All Sources have a `ref` with prefix `SRC`; Source *type* (`birth_certificate`, `census`, …) does not change the prefix.
+`source_type_id` provides the broad user-facing classification. `title` is the required human headline for lists and search (always non-empty after trim). More variable catalog information belongs in Source metadata. All Sources have a `ref` with prefix `SRC`; Source *type* (`birth_certificate`, `census`, …) does not change the prefix.
 
 `description` is catalog text about the Source itself. Researcher commentary that may accumulate over time belongs in `source_notes` rather than a single inline notes field.
 

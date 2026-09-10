@@ -145,7 +145,7 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | --- | --- |
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done); S2-02 / S2-03 (types vocabulary for Add Source / row type name) |
-| **Deliverables** | Board for the **Sources** list only: **list-style** rows (thumbnail + title + type/`SRC-…`) via a **new list component** — **not** `PVTable`; search; empty + **Add Source** as a **centered dimming dialog** (same family as confirm dialogs; type required; title/description optional) that on Create navigates to the **separate Source page**; row select also opens that page. Not master–detail like S2-02/S2-03. Do not design Artifacts or File ingest here. |
+| **Deliverables** | Board for the **Sources** list only: **list-style** rows (thumbnail + title + type/`SRC-…`) via a **new list component** — **not** `PVTable`; search; empty + **Add Source** as a **centered dimming dialog** (same family as confirm dialogs; type + **title** required; description optional) that on Create navigates to the **separate Source page**; row select also opens that page. Not master–detail like S2-02/S2-03. Do not design Artifacts or File ingest here. |
 | **Context** | Source doc §4 (list-facing). Navigation locked: **separate page**. Create locked: **confirm-style dialog on the list**, then land on S2-23 (view/edit). Presentation locked: **evidence list**, not vocabulary table — `PVTable` remains fields/types only. |
 | **Out** | Source page body, Artifacts, ingest (S2-23 / S2-18); delete; vocabulary admin. |
 | **Feeds** | S2-17 |
@@ -188,7 +188,7 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-04 (design enough), S2-16 (types available to pick), S2-13, S2-14 |
-| **Deliverables** | **Sources** list destination: homogeneous **list** rows (thumbnail + title + type/`SRC-…`; thumbnail placeholder OK if S2-18 owns real thumbs) via a **new design-system list component** — **do not use `PVTable`**; **Add Source** centered dialog (reuse confirm-dialog chrome; type + optional title/description) that on Create navigates to a **separate Source page** (stub/placeholder page OK until S2-18); row select opens that page. Unit tests with `FakeStore`. L10n via skill. |
+| **Deliverables** | **Sources** list destination: homogeneous **list** rows (thumbnail + title + type/`SRC-…`; thumbnail placeholder OK if S2-18 owns real thumbs) via a **new design-system list component** — **do not use `PVTable`**; **Add Source** centered dialog (reuse confirm-dialog chrome; type + **required** title + optional description) that on Create navigates to a **separate Source page** (stub/placeholder page OK until S2-18); row select opens that page. Unit tests with `FakeStore`. L10n via skill. |
 | **Context** | Mount under S2-14 **Sources** pane. Match S2-04: **not** master–detail; create is confirm-style dialog → Source page; presentation is list-not-table. Do not ship full Artifact/File UI here. |
 | **Out** | Source page body, Artifact detail, ingest, derivative/thumbnail ensure (S2-18). |
 

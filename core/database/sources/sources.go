@@ -21,11 +21,11 @@ const (
 		VALUES (?, ?, ?, ?, ?)`
 	sqlUpdate = `UPDATE sources SET source_type_id = ?, title = ?, description = ?
 		WHERE id = ?`
-	sqlGet = `SELECT id, ref, source_type_id, COALESCE(title, ''), COALESCE(description, '')
+	sqlGet = `SELECT id, ref, source_type_id, title, COALESCE(description, '')
 		FROM sources WHERE id = ?`
-	sqlGetByRef = `SELECT id, ref, source_type_id, COALESCE(title, ''), COALESCE(description, '')
+	sqlGetByRef = `SELECT id, ref, source_type_id, title, COALESCE(description, '')
 		FROM sources WHERE ref = ?`
-	sqlList = `SELECT id, ref, source_type_id, COALESCE(title, ''), COALESCE(description, '')
+	sqlList = `SELECT id, ref, source_type_id, title, COALESCE(description, '')
 		FROM sources
 		ORDER BY title COLLATE NOCASE, ref COLLATE NOCASE`
 	sqlCount      = `SELECT COUNT(*) FROM sources`
@@ -57,7 +57,7 @@ func Create(c *database.Catalog, userID []byte, in CreateInput) (Source, error) 
 	}
 	in.Title = strings.TrimSpace(in.Title)
 	in.Description = strings.TrimSpace(in.Description)
-	if len(in.SourceTypeID) != 16 {
+	if len(in.SourceTypeID) != 16 || in.Title == "" {
 		return Source{}, ErrInvalid
 	}
 	if err := requireUserID(userID); err != nil {
@@ -86,7 +86,7 @@ func Create(c *database.Catalog, userID []byte, in CreateInput) (Source, error) 
 		if err != nil {
 			return Source{}, err
 		}
-		_, err = tx.Exec(sqlInsert, idBytes, sourceRef, in.SourceTypeID, nullStr(in.Title), nullStr(in.Description))
+		_, err = tx.Exec(sqlInsert, idBytes, sourceRef, in.SourceTypeID, in.Title, nullStr(in.Description))
 		if err == nil {
 			break
 		}
@@ -102,9 +102,7 @@ func Create(c *database.Catalog, userID []byte, in CreateInput) (Source, error) 
 		"id":             {Old: nil, New: id.String()},
 		"ref":            {Old: nil, New: sourceRef},
 		"source_type_id": {Old: nil, New: uuidString(in.SourceTypeID)},
-	}
-	if in.Title != "" {
-		fields["title"] = audit.FieldDiff{Old: nil, New: in.Title}
+		"title":          {Old: nil, New: in.Title},
 	}
 	if in.Description != "" {
 		fields["description"] = audit.FieldDiff{Old: nil, New: in.Description}
@@ -142,7 +140,7 @@ func Update(c *database.Catalog, userID []byte, s Source) error {
 	}
 	s.Title = strings.TrimSpace(s.Title)
 	s.Description = strings.TrimSpace(s.Description)
-	if len(s.ID) != 16 || len(s.SourceTypeID) != 16 {
+	if len(s.ID) != 16 || len(s.SourceTypeID) != 16 || s.Title == "" {
 		return ErrInvalid
 	}
 	if err := requireUserID(userID); err != nil {
@@ -174,7 +172,7 @@ func Update(c *database.Catalog, userID []byte, s Source) error {
 		}
 	}
 	if prev.Title != s.Title {
-		fields["title"] = audit.FieldDiff{Old: nullJSON(prev.Title), New: nullJSON(s.Title)}
+		fields["title"] = audit.FieldDiff{Old: prev.Title, New: s.Title}
 	}
 	if prev.Description != s.Description {
 		fields["description"] = audit.FieldDiff{Old: nullJSON(prev.Description), New: nullJSON(s.Description)}
@@ -183,7 +181,7 @@ func Update(c *database.Catalog, userID []byte, s Source) error {
 		return tx.Commit()
 	}
 
-	if _, err := tx.Exec(sqlUpdate, s.SourceTypeID, nullStr(s.Title), nullStr(s.Description), s.ID); err != nil {
+	if _, err := tx.Exec(sqlUpdate, s.SourceTypeID, s.Title, nullStr(s.Description), s.ID); err != nil {
 		return mapConstraint(err)
 	}
 	if _, err := audit.Record(tx, audit.Revision{
