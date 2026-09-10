@@ -40,6 +40,6 @@ Spike 2 only has a handful of destinations; serial refresh is acceptable. The pa
 
 ## Related code / docs
 
-- `macos/App/Features/Shared/CatalogCounts.swift`
+- `macos/App/Features/Catalog/CatalogCounts.swift`
 - `docs/deployment-plan/spike-2/design/S2-01-workspace-chrome.md` (sidebar counts)
 - Catalog exclusive lock notes in historical `WorkspaceModel.refreshCounts` / `CatalogCounts.refreshAll`
