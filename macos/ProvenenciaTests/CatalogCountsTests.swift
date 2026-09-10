@@ -68,6 +68,30 @@ struct CatalogCountsTests {
         #expect(counts.badge(for: .sources) == 7)
     }
 
+    @Test func refreshAllIsIdempotentAfterSuccess() async {
+        let store = FakeStore()
+        store.fileCountByProject[projectDir] = 1
+        let counts = makeCounts(store: store)
+        await counts.refreshAll()
+        await counts.refreshAll()
+        #expect(store.workspaceNavCountsCallCount == 1)
+        #expect(counts.files == 1)
+    }
+
+    @Test func concurrentRefreshAllCoalescesToOneRoundTrip() async {
+        let store = FakeStore()
+        store.workspaceNavCountsDelayNanoseconds = 80_000_000
+        store.fileCountByProject[projectDir] = 3
+        let counts = makeCounts(store: store)
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { @MainActor in await counts.refreshAll() }
+            group.addTask { @MainActor in await counts.refreshAll() }
+            group.addTask { @MainActor in await counts.refreshAll() }
+        }
+        #expect(store.workspaceNavCountsCallCount == 1)
+        #expect(counts.files == 3)
+    }
+
     @Test func summaryFromRowsSplitsByOrigin() {
         let rows = [
             CatalogMetadataField(id: "1", key: "a", origin: "provenencia", label: "A", dataType: "text", description: ""),

@@ -202,8 +202,9 @@ every clause of it is a decision rather than an accident:
   enclosing sheet can still be dismissed from inside the field.
 - **Clicking away blurs.** A click outside the field and its list doesn't
   just close the list, it resigns the field's focus — outside means done.
-  Clicking the field itself reopens a closed list (after Escape or a commit)
-  without focus having to leave and come back.
+  Clicking the field itself opens (or reopens) the list; focus alone does
+  not, so a sheet that auto-focuses the field on present won't pop the
+  menu. Typing or pressing an arrow / Home / End / Page key also opens it.
 
 **The list is a child window, not an overlay.** This is the part that took two
 passes to get right. A SwiftUI overlay is clipped by any enclosing

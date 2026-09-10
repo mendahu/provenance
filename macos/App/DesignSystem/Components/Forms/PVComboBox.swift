@@ -304,13 +304,15 @@ struct PVComboBox<Row: View>: View {
                 isDirty = false
             }
             .onChange(of: isFocused) { _, focused in
-                // Focus is the umbrella: gaining it opens the list, losing it
-                // closes the list and restores the field. The popup's mouse
-                // monitor catches clicks on things that take no focus at all
-                // (a button, a label, empty chrome) and resolves them to the
-                // same thing — `dismissAndBlur` resigns focus, which lands
-                // back here.
-                if focused { open() } else { closeAndRestore() }
+                // Losing focus closes the list and restores the field. Gaining
+                // focus alone does **not** open — a sheet that lands first
+                // responder on this field (Add Source) would otherwise pop the
+                // list immediately. Open comes from a click, a keystroke, or
+                // an arrow / Home / End / Page key. The popup's mouse monitor
+                // still catches clicks on things that take no focus (a button,
+                // a label, empty chrome) and resolves them via `dismissAndBlur`,
+                // which resigns focus and lands back here.
+                if !focused { closeAndRestore() }
             }
             .onChange(of: isOpen) { _, open in
                 if !open { activeIndex = -1 }

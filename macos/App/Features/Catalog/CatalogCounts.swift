@@ -95,8 +95,29 @@ final class CatalogCounts {
 
     /// Initial (and rare full) refresh via one `GetWorkspaceNavCounts`
     /// open — concurrent section queries fight the catalog's exclusive
-    /// SQLite lock.
+    /// SQLite lock. Callers that need the catalog next (`SourcesModel.load`,
+    /// …) must `await refreshAll()` first so they serialize behind this
+    /// open rather than racing it. Concurrent `refreshAll` awaits share one
+    /// in-flight round trip; later calls are no-ops once it has finished.
     func refreshAll() async {
+        if hasCompletedInitialRefresh { return }
+        if let refreshTask {
+            await refreshTask.value
+            return
+        }
+        let task = Task { @MainActor in
+            await self.performRefresh()
+            self.hasCompletedInitialRefresh = true
+            self.refreshTask = nil
+        }
+        refreshTask = task
+        await task.value
+    }
+
+    private var hasCompletedInitialRefresh = false
+    private var refreshTask: Task<Void, Never>?
+
+    private func performRefresh() async {
         guard let nav = try? await store.workspaceNavCounts(projectDir: projectDir) else {
             return
         }

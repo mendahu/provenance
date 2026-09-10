@@ -144,6 +144,9 @@ final class SourcesModel {
     // MARK: Actions
 
     func load() async {
+        // Serialize behind workspace nav-count bootstrap — concurrent catalog
+        // opens fail under the exclusive SQLite lock.
+        await catalogCounts?.refreshAll()
         isLoading = true
         loadError = nil
         defer { isLoading = false }
