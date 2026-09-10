@@ -500,6 +500,36 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     func countFiles(projectDir: String) async throws -> Int {
         fileCountByProject[projectDir] ?? 0
     }
+
+    func workspaceNavCounts(projectDir: String) async throws -> WorkspaceNavCounts {
+        let types = sourceTypesByProject[projectDir] ?? []
+        let fields = fieldsByProject[projectDir] ?? []
+        return WorkspaceNavCounts(
+            sources: (sourcesByProject[projectDir] ?? []).count,
+            sourceTypes: Self.originCounts(from: types.map(\.origin)),
+            sourceFields: Self.originCounts(from: fields.map(\.origin)),
+            files: fileCountByProject[projectDir] ?? 0
+        )
+    }
+
+    private static func originCounts(from origins: [String]) -> WorkspaceNavOriginCounts {
+        var seeded = 0
+        var user = 0
+        var plugin = 0
+        for origin in origins {
+            switch origin {
+            case CatalogOrigin.provenencia: seeded += 1
+            case CatalogOrigin.user: user += 1
+            default: plugin += 1
+            }
+        }
+        return WorkspaceNavOriginCounts(
+            total: origins.count,
+            seeded: seeded,
+            user: user,
+            plugin: plugin
+        )
+    }
 }
 
 private enum StoreBoom: Error { case boom }

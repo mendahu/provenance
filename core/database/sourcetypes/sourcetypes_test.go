@@ -357,6 +357,32 @@ func TestCreateUpdateGetByID(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "CountByOrigin splits seeded user and plugin",
+			run: func(t *testing.T, c *database.Catalog) {
+				got, err := CountByOrigin(c)
+				if err != nil || got != (OriginCounts{}) {
+					t.Fatalf("empty %+v %v", got, err)
+				}
+				if _, err := Upsert(c, Type{Key: "book", Origin: OriginProvenencia, Label: "Book"}); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := Upsert(c, Type{Key: "letter", Origin: OriginUser, Label: "Letter"}); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := Upsert(c, Type{Key: "grave", Origin: "plugin:findagrave", Label: "Grave"}); err != nil {
+					t.Fatal(err)
+				}
+				got, err = CountByOrigin(c)
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := OriginCounts{Total: 3, Seeded: 1, User: 1, Plugin: 1}
+				if got != want {
+					t.Fatalf("got %+v want %+v", got, want)
+				}
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -46,6 +46,7 @@ const (
 	sqlDelete = `DELETE FROM source_types WHERE id = ?`
 	sqlInUse  = `SELECT 1 FROM sources WHERE source_type_id = ? LIMIT 1`
 	sqlUsedBy = `SELECT COUNT(*) FROM sources WHERE source_type_id = ?`
+	sqlCountByOrigin = `SELECT origin, COUNT(*) FROM source_types GROUP BY origin`
 )
 
 // Type is one source_types row.
@@ -61,6 +62,15 @@ type Type struct {
 	// SuggestedFields is how many metadata fields this type suggests. Only
 	// List and Update populate it; the other readers leave it 0.
 	SuggestedFields int
+}
+
+// OriginCounts is the workspace nav / vocabulary-header split for this
+// vocabulary. Total is always Seeded + User + Plugin.
+type OriginCounts struct {
+	Total  int
+	Seeded int
+	User   int
+	Plugin int
 }
 
 // Upsert inserts or updates by (key, origin). Mints a UUIDv7 id when ID is empty on insert.
@@ -229,6 +239,41 @@ func UsedBy(c *database.Catalog, id []byte) (int, error) {
 		return 0, err
 	}
 	return n, nil
+}
+
+// CountByOrigin returns vocabulary counts for the workspace sidebar without
+// materializing every type row.
+func CountByOrigin(c *database.Catalog) (OriginCounts, error) {
+	db, err := c.DB()
+	if err != nil {
+		return OriginCounts{}, err
+	}
+	rows, err := db.Query(sqlCountByOrigin)
+	if err != nil {
+		return OriginCounts{}, err
+	}
+	defer rows.Close()
+	var out OriginCounts
+	for rows.Next() {
+		var origin string
+		var n int
+		if err := rows.Scan(&origin, &n); err != nil {
+			return OriginCounts{}, err
+		}
+		switch {
+		case origin == OriginProvenencia:
+			out.Seeded += n
+		case origin == OriginUser:
+			out.User += n
+		default:
+			out.Plugin += n
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return OriginCounts{}, err
+	}
+	out.Total = out.Seeded + out.User + out.Plugin
+	return out, nil
 }
 
 // Delete removes a type by id when no sources reference it.

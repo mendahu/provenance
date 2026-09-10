@@ -16,4 +16,4 @@ Use this folder when something useful pops up mid-work and would otherwise get l
 | Idea | One-liner |
 | --- | --- |
 | [Share packages](share-packages.md) | One-button export of a Source (or later a canonical entity) as a readable, standards-friendly bundle for other researchers. |
-| [Aggregate workspace nav counts](aggregate-workspace-nav-counts.md) | One FFI RPC for all sidebar badge counts (plus vocabulary origin splits) instead of N serial list/count calls. |
+| [Aggregate workspace nav counts](aggregate-workspace-nav-counts.md) | **Implemented** — `GetWorkspaceNavCounts` for sidebar badge counts (plus vocabulary origin splits) in one FFI open. |
