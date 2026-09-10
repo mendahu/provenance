@@ -132,8 +132,15 @@ enum PVComboBoxHighlight {
         ), let attributed = Range(range, in: full) else {
             return full
         }
-        full[attributed].backgroundColor = PVColor.markBackground
-        full[attributed].foregroundColor = PVColor.markForeground
+        // Typed `AttributeContainer` subscripts — not `.backgroundColor` /
+        // `.foregroundColor` dynamic members — avoid Swift 6 key-path
+        // Sendable warnings that otherwise spam every `PVComboBox` call site.
+        var mark = AttributeContainer()
+        mark[AttributeScopes.SwiftUIAttributes.BackgroundColorAttribute.self] =
+            PVColor.markBackground
+        mark[AttributeScopes.SwiftUIAttributes.ForegroundColorAttribute.self] =
+            PVColor.markForeground
+        full[attributed].mergeAttributes(mark)
         return full
     }
 }

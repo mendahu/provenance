@@ -64,7 +64,7 @@ struct WorkspaceView: View {
         userID: PreviewFixture.identity.userID
     )
     .environment(SignOutCoordinator())
-    .frame(width: PVSpacing.widthWorkspaceMin, height: PVSpacing.heightWorkspaceMin)
+    .frame(width: PVSpacing.widthWorkspaceDefault, height: PVSpacing.heightWorkspaceDefault)
 }
 
 extension WorkspaceView {
