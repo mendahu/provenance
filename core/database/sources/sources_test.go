@@ -196,6 +196,26 @@ func TestSources(t *testing.T) {
 			},
 		},
 		{
+			name: "count reports how many sources exist",
+			run: func(t *testing.T, c *database.Catalog) {
+				n, err := Count(c)
+				if err != nil || n != 0 {
+					t.Fatalf("empty %d %v", n, err)
+				}
+				mustUser(t, c)
+				typeID := mustType(t, c)
+				for _, title := range []string{"One", "Two", "Three"} {
+					if _, err := Create(c, userID, CreateInput{SourceTypeID: typeID, Title: title}); err != nil {
+						t.Fatal(err)
+					}
+				}
+				n, err = Count(c)
+				if err != nil || n != 3 {
+					t.Fatalf("got %d %v", n, err)
+				}
+			},
+		},
+		{
 			name: "rejects bad type and blank note",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)

@@ -44,6 +44,7 @@ const (
 	MethodListTypeSuggestions   = int32(engine.Method_METHOD_LIST_TYPE_SUGGESTIONS)
 	MethodAssignTypeField       = int32(engine.Method_METHOD_ASSIGN_TYPE_FIELD)
 	MethodRemoveTypeField       = int32(engine.Method_METHOD_REMOVE_TYPE_FIELD)
+	MethodGetWorkspaceNavCounts = int32(engine.Method_METHOD_GET_WORKSPACE_NAV_COUNTS)
 )
 
 // Call routes one coarse FFI operation to api/ffi/handlers.
@@ -117,6 +118,8 @@ func Call(method int32, in []byte) ([]byte, error) {
 		return handlers.AssignTypeField(in)
 	case MethodRemoveTypeField:
 		return handlers.RemoveTypeField(in)
+	case MethodGetWorkspaceNavCounts:
+		return handlers.GetWorkspaceNavCounts(in)
 	default:
 		return nil, apperr.New(apperr.CodeInternalUnknownMethod, apperr.KindInternal, strconv.Itoa(int(method)))
 	}

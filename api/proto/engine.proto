@@ -42,6 +42,7 @@ enum Method {
   METHOD_LIST_TYPE_SUGGESTIONS = 32;
   METHOD_ASSIGN_TYPE_FIELD = 33;
   METHOD_REMOVE_TYPE_FIELD = 34;
+  METHOD_GET_WORKSPACE_NAV_COUNTS = 35;
 }
 
 message PingRequest {
@@ -514,6 +515,30 @@ message CountFilesRequest {
 
 message CountFilesResponse {
   int32 count = 1;
+}
+
+// VocabularyOriginCounts is the sidebar / vocabulary-header split for a
+// catalog vocabulary (source_types or source_metadata_fields). total is
+// always seeded + user + plugin.
+message VocabularyOriginCounts {
+  int32 total = 1;
+  int32 seeded = 2;
+  int32 user = 3;
+  int32 plugin = 4;
+}
+
+// GetWorkspaceNavCounts opens the project catalog once and returns COUNT(*)
+// badges for every workspace sidebar destination, including origin splits
+// for vocabulary rows. Prefer this over N serial list/count RPCs on appear.
+message GetWorkspaceNavCountsRequest {
+  string project_dir = 1;
+}
+
+message GetWorkspaceNavCountsResponse {
+  int32 sources = 1;
+  VocabularyOriginCounts source_types = 2;
+  VocabularyOriginCounts source_fields = 3;
+  int32 files = 4;
 }
 
 // ErrorKind classifies a failure for client UX (tone, retry hints). Copy still

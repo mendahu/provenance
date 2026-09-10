@@ -28,6 +28,7 @@ const (
 	sqlList = `SELECT id, ref, source_type_id, COALESCE(title, ''), COALESCE(description, '')
 		FROM sources
 		ORDER BY title COLLATE NOCASE, ref COLLATE NOCASE`
+	sqlCount      = `SELECT COUNT(*) FROM sources`
 	sqlTypeExists = `SELECT 1 FROM source_types WHERE id = ?`
 	maxRefRetries = 8
 )
@@ -246,6 +247,20 @@ func List(c *database.Catalog) ([]Source, error) {
 		out = append(out, s)
 	}
 	return out, rows.Err()
+}
+
+// Count returns how many Sources are in the catalog — used by the workspace
+// sidebar badge, not the Sources list itself.
+func Count(c *database.Catalog) (int, error) {
+	db, err := c.DB()
+	if err != nil {
+		return 0, err
+	}
+	var n int
+	if err := db.QueryRow(sqlCount).Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 type rowScanner interface {

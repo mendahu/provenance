@@ -13,6 +13,22 @@ struct CatalogCountSummary: Equatable {
 
     static let zero = CatalogCountSummary(total: 0, seeded: 0, user: 0, plugin: 0)
 
+    init(total: Int, seeded: Int, user: Int, plugin: Int) {
+        self.total = total
+        self.seeded = seeded
+        self.user = user
+        self.plugin = plugin
+    }
+
+    init(_ counts: WorkspaceNavOriginCounts) {
+        self.init(
+            total: counts.total,
+            seeded: counts.seeded,
+            user: counts.user,
+            plugin: counts.plugin
+        )
+    }
+
     /// Derives the summary from rows the caller already loaded — no extra
     /// catalog round trip.
     static func from<Row: CatalogVocabularyRow>(_ rows: [Row]) -> CatalogCountSummary {
@@ -71,37 +87,16 @@ final class CatalogCounts {
         sourceTypes = summary
     }
 
-    /// Initial (and rare full) refresh. Runs section queries **sequentially**
-    /// — concurrent FFI opens fight the catalog's exclusive SQLite lock
-    /// (see the historical note on the old `WorkspaceModel.refreshCounts`).
+    /// Initial (and rare full) refresh via one `GetWorkspaceNavCounts`
+    /// open — concurrent section queries fight the catalog's exclusive
+    /// SQLite lock.
     func refreshAll() async {
-        await refreshSources()
-        await refreshSourceTypes()
-        await refreshSourceFields()
-        await refreshFiles()
-    }
-
-    func refreshSources() async {
-        if let rows = try? await store.listSources(projectDir: projectDir) {
-            sources = rows.count
+        guard let nav = try? await store.workspaceNavCounts(projectDir: projectDir) else {
+            return
         }
-    }
-
-    func refreshSourceTypes() async {
-        if let rows = try? await store.listSourceTypes(projectDir: projectDir) {
-            sourceTypes = .from(rows)
-        }
-    }
-
-    func refreshSourceFields() async {
-        if let rows = try? await store.listMetadataFields(projectDir: projectDir) {
-            sourceFields = .from(rows)
-        }
-    }
-
-    func refreshFiles() async {
-        if let n = try? await store.countFiles(projectDir: projectDir) {
-            files = n
-        }
+        sources = nav.sources
+        sourceTypes = CatalogCountSummary(nav.sourceTypes)
+        sourceFields = CatalogCountSummary(nav.sourceFields)
+        files = nav.files
     }
 }

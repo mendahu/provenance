@@ -493,6 +493,32 @@ struct GoStore: GenealogyStore {
         return Int(resp.count)
     }
 
+    func workspaceNavCounts(projectDir: String) async throws -> WorkspaceNavCounts {
+        var req = Provenencia_Engine_V1_GetWorkspaceNavCountsRequest()
+        req.projectDir = projectDir
+        let resp: Provenencia_Engine_V1_GetWorkspaceNavCountsResponse = try await provenenciaCall(
+            method: CoreMethod.getWorkspaceNavCounts,
+            request: req
+        )
+        return WorkspaceNavCounts(
+            sources: Int(resp.sources),
+            sourceTypes: Self.mapOriginCounts(resp.sourceTypes),
+            sourceFields: Self.mapOriginCounts(resp.sourceFields),
+            files: Int(resp.files)
+        )
+    }
+
+    private static func mapOriginCounts(
+        _ c: Provenencia_Engine_V1_VocabularyOriginCounts
+    ) -> WorkspaceNavOriginCounts {
+        WorkspaceNavOriginCounts(
+            total: Int(c.total),
+            seeded: Int(c.seeded),
+            user: Int(c.user),
+            plugin: Int(c.plugin)
+        )
+    }
+
     private static func mapProject(_ p: Provenencia_Engine_V1_ProjectInfo) -> ProjectInfo {
         ProjectInfo(
             label: p.label,

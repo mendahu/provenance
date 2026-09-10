@@ -59,6 +59,7 @@ public nonisolated enum Provenencia_Engine_V1_Method: SwiftProtobuf.Enum, Swift.
   case listTypeSuggestions // = 32
   case assignTypeField // = 33
   case removeTypeField // = 34
+  case getWorkspaceNavCounts // = 35
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -102,6 +103,7 @@ public nonisolated enum Provenencia_Engine_V1_Method: SwiftProtobuf.Enum, Swift.
     case 32: self = .listTypeSuggestions
     case 33: self = .assignTypeField
     case 34: self = .removeTypeField
+    case 35: self = .getWorkspaceNavCounts
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -143,6 +145,7 @@ public nonisolated enum Provenencia_Engine_V1_Method: SwiftProtobuf.Enum, Swift.
     case .listTypeSuggestions: return 32
     case .assignTypeField: return 33
     case .removeTypeField: return 34
+    case .getWorkspaceNavCounts: return 35
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -184,6 +187,7 @@ public nonisolated enum Provenencia_Engine_V1_Method: SwiftProtobuf.Enum, Swift.
     .listTypeSuggestions,
     .assignTypeField,
     .removeTypeField,
+    .getWorkspaceNavCounts,
   ]
 
 }
@@ -1772,6 +1776,77 @@ public nonisolated struct Provenencia_Engine_V1_CountFilesResponse: Sendable {
   public init() {}
 }
 
+/// VocabularyOriginCounts is the sidebar / vocabulary-header split for a
+/// catalog vocabulary (source_types or source_metadata_fields). total is
+/// always seeded + user + plugin.
+public nonisolated struct Provenencia_Engine_V1_VocabularyOriginCounts: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var total: Int32 = 0
+
+  public var seeded: Int32 = 0
+
+  public var user: Int32 = 0
+
+  public var plugin: Int32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// GetWorkspaceNavCounts opens the project catalog once and returns COUNT(*)
+/// badges for every workspace sidebar destination, including origin splits
+/// for vocabulary rows. Prefer this over N serial list/count RPCs on appear.
+public nonisolated struct Provenencia_Engine_V1_GetWorkspaceNavCountsRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var projectDir: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Provenencia_Engine_V1_GetWorkspaceNavCountsResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var sources: Int32 = 0
+
+  public var sourceTypes: Provenencia_Engine_V1_VocabularyOriginCounts {
+    get {_sourceTypes ?? Provenencia_Engine_V1_VocabularyOriginCounts()}
+    set {_sourceTypes = newValue}
+  }
+  /// Returns true if `sourceTypes` has been explicitly set.
+  public var hasSourceTypes: Bool {self._sourceTypes != nil}
+  /// Clears the value of `sourceTypes`. Subsequent reads from it will return its default value.
+  public mutating func clearSourceTypes() {self._sourceTypes = nil}
+
+  public var sourceFields: Provenencia_Engine_V1_VocabularyOriginCounts {
+    get {_sourceFields ?? Provenencia_Engine_V1_VocabularyOriginCounts()}
+    set {_sourceFields = newValue}
+  }
+  /// Returns true if `sourceFields` has been explicitly set.
+  public var hasSourceFields: Bool {self._sourceFields != nil}
+  /// Clears the value of `sourceFields`. Subsequent reads from it will return its default value.
+  public mutating func clearSourceFields() {self._sourceFields = nil}
+
+  public var files: Int32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _sourceTypes: Provenencia_Engine_V1_VocabularyOriginCounts? = nil
+  fileprivate var _sourceFields: Provenencia_Engine_V1_VocabularyOriginCounts? = nil
+}
+
 /// Error is the protobuf payload on provenencia_call status 1 (failure).
 /// Success payloads remain method-specific response messages.
 public nonisolated struct Provenencia_Engine_V1_Error: Sendable {
@@ -1797,7 +1872,7 @@ public nonisolated struct Provenencia_Engine_V1_Error: Sendable {
 fileprivate nonisolated let _protobuf_package = "provenencia.engine.v1"
 
 nonisolated extension Provenencia_Engine_V1_Method: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0METHOD_UNSPECIFIED\0\u{1}METHOD_PING\0\u{1}METHOD_GET_VERSION\0\u{1}METHOD_GET_INSTALL_IDENTITY\0\u{1}METHOD_COMPLETE_ONBOARDING\0\u{1}METHOD_REMOVE_INSTALL_IDENTITY\0\u{1}METHOD_GET_ACTIVE_PROJECT\0\u{1}METHOD_OPEN_PROJECT\0\u{1}METHOD_REMOVE_ACTIVE_PROJECT\0\u{1}METHOD_LIST_PROJECT_USERS\0\u{1}METHOD_SIGN_OUT\0\u{1}METHOD_GET_PROJECT_INFO\0\u{1}METHOD_LIST_SOURCES\0\u{1}METHOD_GET_SOURCE_WORKSPACE\0\u{1}METHOD_CREATE_SOURCE\0\u{1}METHOD_UPDATE_SOURCE\0\u{1}METHOD_ADD_SOURCE_NOTE\0\u{1}METHOD_UPDATE_SOURCE_NOTE\0\u{1}METHOD_DELETE_SOURCE_NOTE\0\u{1}METHOD_SET_SOURCE_METADATA\0\u{1}METHOD_CLEAR_SOURCE_METADATA\0\u{1}METHOD_CREATE_ARTIFACT\0\u{1}METHOD_INGEST_ARTIFACT_FILE\0\u{1}METHOD_LIST_SOURCE_TYPES\0\u{1}METHOD_CREATE_SOURCE_TYPE\0\u{1}METHOD_LIST_METADATA_FIELDS\0\u{1}METHOD_CREATE_METADATA_FIELD\0\u{1}METHOD_COUNT_FILES\0\u{1}METHOD_UPDATE_METADATA_FIELD\0\u{1}METHOD_DELETE_SOURCE_TYPE\0\u{1}METHOD_DELETE_METADATA_FIELD\0\u{1}METHOD_UPDATE_SOURCE_TYPE\0\u{1}METHOD_LIST_TYPE_SUGGESTIONS\0\u{1}METHOD_ASSIGN_TYPE_FIELD\0\u{1}METHOD_REMOVE_TYPE_FIELD\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0METHOD_UNSPECIFIED\0\u{1}METHOD_PING\0\u{1}METHOD_GET_VERSION\0\u{1}METHOD_GET_INSTALL_IDENTITY\0\u{1}METHOD_COMPLETE_ONBOARDING\0\u{1}METHOD_REMOVE_INSTALL_IDENTITY\0\u{1}METHOD_GET_ACTIVE_PROJECT\0\u{1}METHOD_OPEN_PROJECT\0\u{1}METHOD_REMOVE_ACTIVE_PROJECT\0\u{1}METHOD_LIST_PROJECT_USERS\0\u{1}METHOD_SIGN_OUT\0\u{1}METHOD_GET_PROJECT_INFO\0\u{1}METHOD_LIST_SOURCES\0\u{1}METHOD_GET_SOURCE_WORKSPACE\0\u{1}METHOD_CREATE_SOURCE\0\u{1}METHOD_UPDATE_SOURCE\0\u{1}METHOD_ADD_SOURCE_NOTE\0\u{1}METHOD_UPDATE_SOURCE_NOTE\0\u{1}METHOD_DELETE_SOURCE_NOTE\0\u{1}METHOD_SET_SOURCE_METADATA\0\u{1}METHOD_CLEAR_SOURCE_METADATA\0\u{1}METHOD_CREATE_ARTIFACT\0\u{1}METHOD_INGEST_ARTIFACT_FILE\0\u{1}METHOD_LIST_SOURCE_TYPES\0\u{1}METHOD_CREATE_SOURCE_TYPE\0\u{1}METHOD_LIST_METADATA_FIELDS\0\u{1}METHOD_CREATE_METADATA_FIELD\0\u{1}METHOD_COUNT_FILES\0\u{1}METHOD_UPDATE_METADATA_FIELD\0\u{1}METHOD_DELETE_SOURCE_TYPE\0\u{1}METHOD_DELETE_METADATA_FIELD\0\u{1}METHOD_UPDATE_SOURCE_TYPE\0\u{1}METHOD_LIST_TYPE_SUGGESTIONS\0\u{1}METHOD_ASSIGN_TYPE_FIELD\0\u{1}METHOD_REMOVE_TYPE_FIELD\0\u{1}METHOD_GET_WORKSPACE_NAV_COUNTS\0")
 }
 
 nonisolated extension Provenencia_Engine_V1_ErrorKind: SwiftProtobuf._ProtoNameProviding {
@@ -4951,6 +5026,130 @@ nonisolated extension Provenencia_Engine_V1_CountFilesResponse: SwiftProtobuf.Me
 
   public static func ==(lhs: Provenencia_Engine_V1_CountFilesResponse, rhs: Provenencia_Engine_V1_CountFilesResponse) -> Bool {
     if lhs.count != rhs.count {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_VocabularyOriginCounts: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".VocabularyOriginCounts"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}total\0\u{1}seeded\0\u{1}user\0\u{1}plugin\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.total) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.seeded) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.user) }()
+      case 4: try { try decoder.decodeSingularInt32Field(value: &self.plugin) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.total != 0 {
+      try visitor.visitSingularInt32Field(value: self.total, fieldNumber: 1)
+    }
+    if self.seeded != 0 {
+      try visitor.visitSingularInt32Field(value: self.seeded, fieldNumber: 2)
+    }
+    if self.user != 0 {
+      try visitor.visitSingularInt32Field(value: self.user, fieldNumber: 3)
+    }
+    if self.plugin != 0 {
+      try visitor.visitSingularInt32Field(value: self.plugin, fieldNumber: 4)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_VocabularyOriginCounts, rhs: Provenencia_Engine_V1_VocabularyOriginCounts) -> Bool {
+    if lhs.total != rhs.total {return false}
+    if lhs.seeded != rhs.seeded {return false}
+    if lhs.user != rhs.user {return false}
+    if lhs.plugin != rhs.plugin {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_GetWorkspaceNavCountsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetWorkspaceNavCountsRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}project_dir\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.projectDir) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.projectDir.isEmpty {
+      try visitor.visitSingularStringField(value: self.projectDir, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_GetWorkspaceNavCountsRequest, rhs: Provenencia_Engine_V1_GetWorkspaceNavCountsRequest) -> Bool {
+    if lhs.projectDir != rhs.projectDir {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_GetWorkspaceNavCountsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetWorkspaceNavCountsResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}sources\0\u{3}source_types\0\u{3}source_fields\0\u{1}files\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularInt32Field(value: &self.sources) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._sourceTypes) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._sourceFields) }()
+      case 4: try { try decoder.decodeSingularInt32Field(value: &self.files) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.sources != 0 {
+      try visitor.visitSingularInt32Field(value: self.sources, fieldNumber: 1)
+    }
+    try { if let v = self._sourceTypes {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    try { if let v = self._sourceFields {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    if self.files != 0 {
+      try visitor.visitSingularInt32Field(value: self.files, fieldNumber: 4)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_GetWorkspaceNavCountsResponse, rhs: Provenencia_Engine_V1_GetWorkspaceNavCountsResponse) -> Bool {
+    if lhs.sources != rhs.sources {return false}
+    if lhs._sourceTypes != rhs._sourceTypes {return false}
+    if lhs._sourceFields != rhs._sourceFields {return false}
+    if lhs.files != rhs.files {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

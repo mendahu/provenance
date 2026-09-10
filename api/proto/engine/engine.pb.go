@@ -26,41 +26,42 @@ const (
 type Method int32
 
 const (
-	Method_METHOD_UNSPECIFIED             Method = 0
-	Method_METHOD_PING                    Method = 1
-	Method_METHOD_GET_VERSION             Method = 2
-	Method_METHOD_GET_INSTALL_IDENTITY    Method = 3
-	Method_METHOD_COMPLETE_ONBOARDING     Method = 4
-	Method_METHOD_REMOVE_INSTALL_IDENTITY Method = 5
-	Method_METHOD_GET_ACTIVE_PROJECT      Method = 6
-	Method_METHOD_OPEN_PROJECT            Method = 7
-	Method_METHOD_REMOVE_ACTIVE_PROJECT   Method = 8
-	Method_METHOD_LIST_PROJECT_USERS      Method = 9
-	Method_METHOD_SIGN_OUT                Method = 10
-	Method_METHOD_GET_PROJECT_INFO        Method = 11
-	Method_METHOD_LIST_SOURCES            Method = 12
-	Method_METHOD_GET_SOURCE_WORKSPACE    Method = 13
-	Method_METHOD_CREATE_SOURCE           Method = 14
-	Method_METHOD_UPDATE_SOURCE           Method = 15
-	Method_METHOD_ADD_SOURCE_NOTE         Method = 16
-	Method_METHOD_UPDATE_SOURCE_NOTE      Method = 17
-	Method_METHOD_DELETE_SOURCE_NOTE      Method = 18
-	Method_METHOD_SET_SOURCE_METADATA     Method = 19
-	Method_METHOD_CLEAR_SOURCE_METADATA   Method = 20
-	Method_METHOD_CREATE_ARTIFACT         Method = 21
-	Method_METHOD_INGEST_ARTIFACT_FILE    Method = 22
-	Method_METHOD_LIST_SOURCE_TYPES       Method = 23
-	Method_METHOD_CREATE_SOURCE_TYPE      Method = 24
-	Method_METHOD_LIST_METADATA_FIELDS    Method = 25
-	Method_METHOD_CREATE_METADATA_FIELD   Method = 26
-	Method_METHOD_COUNT_FILES             Method = 27
-	Method_METHOD_UPDATE_METADATA_FIELD   Method = 28
-	Method_METHOD_DELETE_SOURCE_TYPE      Method = 29
-	Method_METHOD_DELETE_METADATA_FIELD   Method = 30
-	Method_METHOD_UPDATE_SOURCE_TYPE      Method = 31
-	Method_METHOD_LIST_TYPE_SUGGESTIONS   Method = 32
-	Method_METHOD_ASSIGN_TYPE_FIELD       Method = 33
-	Method_METHOD_REMOVE_TYPE_FIELD       Method = 34
+	Method_METHOD_UNSPECIFIED              Method = 0
+	Method_METHOD_PING                     Method = 1
+	Method_METHOD_GET_VERSION              Method = 2
+	Method_METHOD_GET_INSTALL_IDENTITY     Method = 3
+	Method_METHOD_COMPLETE_ONBOARDING      Method = 4
+	Method_METHOD_REMOVE_INSTALL_IDENTITY  Method = 5
+	Method_METHOD_GET_ACTIVE_PROJECT       Method = 6
+	Method_METHOD_OPEN_PROJECT             Method = 7
+	Method_METHOD_REMOVE_ACTIVE_PROJECT    Method = 8
+	Method_METHOD_LIST_PROJECT_USERS       Method = 9
+	Method_METHOD_SIGN_OUT                 Method = 10
+	Method_METHOD_GET_PROJECT_INFO         Method = 11
+	Method_METHOD_LIST_SOURCES             Method = 12
+	Method_METHOD_GET_SOURCE_WORKSPACE     Method = 13
+	Method_METHOD_CREATE_SOURCE            Method = 14
+	Method_METHOD_UPDATE_SOURCE            Method = 15
+	Method_METHOD_ADD_SOURCE_NOTE          Method = 16
+	Method_METHOD_UPDATE_SOURCE_NOTE       Method = 17
+	Method_METHOD_DELETE_SOURCE_NOTE       Method = 18
+	Method_METHOD_SET_SOURCE_METADATA      Method = 19
+	Method_METHOD_CLEAR_SOURCE_METADATA    Method = 20
+	Method_METHOD_CREATE_ARTIFACT          Method = 21
+	Method_METHOD_INGEST_ARTIFACT_FILE     Method = 22
+	Method_METHOD_LIST_SOURCE_TYPES        Method = 23
+	Method_METHOD_CREATE_SOURCE_TYPE       Method = 24
+	Method_METHOD_LIST_METADATA_FIELDS     Method = 25
+	Method_METHOD_CREATE_METADATA_FIELD    Method = 26
+	Method_METHOD_COUNT_FILES              Method = 27
+	Method_METHOD_UPDATE_METADATA_FIELD    Method = 28
+	Method_METHOD_DELETE_SOURCE_TYPE       Method = 29
+	Method_METHOD_DELETE_METADATA_FIELD    Method = 30
+	Method_METHOD_UPDATE_SOURCE_TYPE       Method = 31
+	Method_METHOD_LIST_TYPE_SUGGESTIONS    Method = 32
+	Method_METHOD_ASSIGN_TYPE_FIELD        Method = 33
+	Method_METHOD_REMOVE_TYPE_FIELD        Method = 34
+	Method_METHOD_GET_WORKSPACE_NAV_COUNTS Method = 35
 )
 
 // Enum value maps for Method.
@@ -101,43 +102,45 @@ var (
 		32: "METHOD_LIST_TYPE_SUGGESTIONS",
 		33: "METHOD_ASSIGN_TYPE_FIELD",
 		34: "METHOD_REMOVE_TYPE_FIELD",
+		35: "METHOD_GET_WORKSPACE_NAV_COUNTS",
 	}
 	Method_value = map[string]int32{
-		"METHOD_UNSPECIFIED":             0,
-		"METHOD_PING":                    1,
-		"METHOD_GET_VERSION":             2,
-		"METHOD_GET_INSTALL_IDENTITY":    3,
-		"METHOD_COMPLETE_ONBOARDING":     4,
-		"METHOD_REMOVE_INSTALL_IDENTITY": 5,
-		"METHOD_GET_ACTIVE_PROJECT":      6,
-		"METHOD_OPEN_PROJECT":            7,
-		"METHOD_REMOVE_ACTIVE_PROJECT":   8,
-		"METHOD_LIST_PROJECT_USERS":      9,
-		"METHOD_SIGN_OUT":                10,
-		"METHOD_GET_PROJECT_INFO":        11,
-		"METHOD_LIST_SOURCES":            12,
-		"METHOD_GET_SOURCE_WORKSPACE":    13,
-		"METHOD_CREATE_SOURCE":           14,
-		"METHOD_UPDATE_SOURCE":           15,
-		"METHOD_ADD_SOURCE_NOTE":         16,
-		"METHOD_UPDATE_SOURCE_NOTE":      17,
-		"METHOD_DELETE_SOURCE_NOTE":      18,
-		"METHOD_SET_SOURCE_METADATA":     19,
-		"METHOD_CLEAR_SOURCE_METADATA":   20,
-		"METHOD_CREATE_ARTIFACT":         21,
-		"METHOD_INGEST_ARTIFACT_FILE":    22,
-		"METHOD_LIST_SOURCE_TYPES":       23,
-		"METHOD_CREATE_SOURCE_TYPE":      24,
-		"METHOD_LIST_METADATA_FIELDS":    25,
-		"METHOD_CREATE_METADATA_FIELD":   26,
-		"METHOD_COUNT_FILES":             27,
-		"METHOD_UPDATE_METADATA_FIELD":   28,
-		"METHOD_DELETE_SOURCE_TYPE":      29,
-		"METHOD_DELETE_METADATA_FIELD":   30,
-		"METHOD_UPDATE_SOURCE_TYPE":      31,
-		"METHOD_LIST_TYPE_SUGGESTIONS":   32,
-		"METHOD_ASSIGN_TYPE_FIELD":       33,
-		"METHOD_REMOVE_TYPE_FIELD":       34,
+		"METHOD_UNSPECIFIED":              0,
+		"METHOD_PING":                     1,
+		"METHOD_GET_VERSION":              2,
+		"METHOD_GET_INSTALL_IDENTITY":     3,
+		"METHOD_COMPLETE_ONBOARDING":      4,
+		"METHOD_REMOVE_INSTALL_IDENTITY":  5,
+		"METHOD_GET_ACTIVE_PROJECT":       6,
+		"METHOD_OPEN_PROJECT":             7,
+		"METHOD_REMOVE_ACTIVE_PROJECT":    8,
+		"METHOD_LIST_PROJECT_USERS":       9,
+		"METHOD_SIGN_OUT":                 10,
+		"METHOD_GET_PROJECT_INFO":         11,
+		"METHOD_LIST_SOURCES":             12,
+		"METHOD_GET_SOURCE_WORKSPACE":     13,
+		"METHOD_CREATE_SOURCE":            14,
+		"METHOD_UPDATE_SOURCE":            15,
+		"METHOD_ADD_SOURCE_NOTE":          16,
+		"METHOD_UPDATE_SOURCE_NOTE":       17,
+		"METHOD_DELETE_SOURCE_NOTE":       18,
+		"METHOD_SET_SOURCE_METADATA":      19,
+		"METHOD_CLEAR_SOURCE_METADATA":    20,
+		"METHOD_CREATE_ARTIFACT":          21,
+		"METHOD_INGEST_ARTIFACT_FILE":     22,
+		"METHOD_LIST_SOURCE_TYPES":        23,
+		"METHOD_CREATE_SOURCE_TYPE":       24,
+		"METHOD_LIST_METADATA_FIELDS":     25,
+		"METHOD_CREATE_METADATA_FIELD":    26,
+		"METHOD_COUNT_FILES":              27,
+		"METHOD_UPDATE_METADATA_FIELD":    28,
+		"METHOD_DELETE_SOURCE_TYPE":       29,
+		"METHOD_DELETE_METADATA_FIELD":    30,
+		"METHOD_UPDATE_SOURCE_TYPE":       31,
+		"METHOD_LIST_TYPE_SUGGESTIONS":    32,
+		"METHOD_ASSIGN_TYPE_FIELD":        33,
+		"METHOD_REMOVE_TYPE_FIELD":        34,
+		"METHOD_GET_WORKSPACE_NAV_COUNTS": 35,
 	}
 )
 
@@ -4811,6 +4814,192 @@ func (x *CountFilesResponse) GetCount() int32 {
 	return 0
 }
 
+// VocabularyOriginCounts is the sidebar / vocabulary-header split for a
+// catalog vocabulary (source_types or source_metadata_fields). total is
+// always seeded + user + plugin.
+type VocabularyOriginCounts struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Total         int32                  `protobuf:"varint,1,opt,name=total,proto3" json:"total,omitempty"`
+	Seeded        int32                  `protobuf:"varint,2,opt,name=seeded,proto3" json:"seeded,omitempty"`
+	User          int32                  `protobuf:"varint,3,opt,name=user,proto3" json:"user,omitempty"`
+	Plugin        int32                  `protobuf:"varint,4,opt,name=plugin,proto3" json:"plugin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VocabularyOriginCounts) Reset() {
+	*x = VocabularyOriginCounts{}
+	mi := &file_engine_proto_msgTypes[79]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VocabularyOriginCounts) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VocabularyOriginCounts) ProtoMessage() {}
+
+func (x *VocabularyOriginCounts) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[79]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VocabularyOriginCounts.ProtoReflect.Descriptor instead.
+func (*VocabularyOriginCounts) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{79}
+}
+
+func (x *VocabularyOriginCounts) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *VocabularyOriginCounts) GetSeeded() int32 {
+	if x != nil {
+		return x.Seeded
+	}
+	return 0
+}
+
+func (x *VocabularyOriginCounts) GetUser() int32 {
+	if x != nil {
+		return x.User
+	}
+	return 0
+}
+
+func (x *VocabularyOriginCounts) GetPlugin() int32 {
+	if x != nil {
+		return x.Plugin
+	}
+	return 0
+}
+
+// GetWorkspaceNavCounts opens the project catalog once and returns COUNT(*)
+// badges for every workspace sidebar destination, including origin splits
+// for vocabulary rows. Prefer this over N serial list/count RPCs on appear.
+type GetWorkspaceNavCountsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectDir    string                 `protobuf:"bytes,1,opt,name=project_dir,json=projectDir,proto3" json:"project_dir,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWorkspaceNavCountsRequest) Reset() {
+	*x = GetWorkspaceNavCountsRequest{}
+	mi := &file_engine_proto_msgTypes[80]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWorkspaceNavCountsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWorkspaceNavCountsRequest) ProtoMessage() {}
+
+func (x *GetWorkspaceNavCountsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[80]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWorkspaceNavCountsRequest.ProtoReflect.Descriptor instead.
+func (*GetWorkspaceNavCountsRequest) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{80}
+}
+
+func (x *GetWorkspaceNavCountsRequest) GetProjectDir() string {
+	if x != nil {
+		return x.ProjectDir
+	}
+	return ""
+}
+
+type GetWorkspaceNavCountsResponse struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Sources       int32                   `protobuf:"varint,1,opt,name=sources,proto3" json:"sources,omitempty"`
+	SourceTypes   *VocabularyOriginCounts `protobuf:"bytes,2,opt,name=source_types,json=sourceTypes,proto3" json:"source_types,omitempty"`
+	SourceFields  *VocabularyOriginCounts `protobuf:"bytes,3,opt,name=source_fields,json=sourceFields,proto3" json:"source_fields,omitempty"`
+	Files         int32                   `protobuf:"varint,4,opt,name=files,proto3" json:"files,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWorkspaceNavCountsResponse) Reset() {
+	*x = GetWorkspaceNavCountsResponse{}
+	mi := &file_engine_proto_msgTypes[81]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWorkspaceNavCountsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWorkspaceNavCountsResponse) ProtoMessage() {}
+
+func (x *GetWorkspaceNavCountsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[81]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWorkspaceNavCountsResponse.ProtoReflect.Descriptor instead.
+func (*GetWorkspaceNavCountsResponse) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{81}
+}
+
+func (x *GetWorkspaceNavCountsResponse) GetSources() int32 {
+	if x != nil {
+		return x.Sources
+	}
+	return 0
+}
+
+func (x *GetWorkspaceNavCountsResponse) GetSourceTypes() *VocabularyOriginCounts {
+	if x != nil {
+		return x.SourceTypes
+	}
+	return nil
+}
+
+func (x *GetWorkspaceNavCountsResponse) GetSourceFields() *VocabularyOriginCounts {
+	if x != nil {
+		return x.SourceFields
+	}
+	return nil
+}
+
+func (x *GetWorkspaceNavCountsResponse) GetFiles() int32 {
+	if x != nil {
+		return x.Files
+	}
+	return 0
+}
+
 // Error is the protobuf payload on provenencia_call status 1 (failure).
 // Success payloads remain method-specific response messages.
 type Error struct {
@@ -4824,7 +5013,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_engine_proto_msgTypes[79]
+	mi := &file_engine_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4836,7 +5025,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[79]
+	mi := &file_engine_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4849,7 +5038,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{79}
+	return file_engine_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *Error) GetCode() string {
@@ -5238,11 +5427,24 @@ const file_engine_proto_rawDesc = "" +
 	"\vproject_dir\x18\x01 \x01(\tR\n" +
 	"projectDir\"*\n" +
 	"\x12CountFilesResponse\x12\x14\n" +
-	"\x05count\x18\x01 \x01(\x05R\x05count\"i\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\"r\n" +
+	"\x16VocabularyOriginCounts\x12\x14\n" +
+	"\x05total\x18\x01 \x01(\x05R\x05total\x12\x16\n" +
+	"\x06seeded\x18\x02 \x01(\x05R\x06seeded\x12\x12\n" +
+	"\x04user\x18\x03 \x01(\x05R\x04user\x12\x16\n" +
+	"\x06plugin\x18\x04 \x01(\x05R\x06plugin\"?\n" +
+	"\x1cGetWorkspaceNavCountsRequest\x12\x1f\n" +
+	"\vproject_dir\x18\x01 \x01(\tR\n" +
+	"projectDir\"\xf5\x01\n" +
+	"\x1dGetWorkspaceNavCountsResponse\x12\x18\n" +
+	"\asources\x18\x01 \x01(\x05R\asources\x12P\n" +
+	"\fsource_types\x18\x02 \x01(\v2-.provenencia.engine.v1.VocabularyOriginCountsR\vsourceTypes\x12R\n" +
+	"\rsource_fields\x18\x03 \x01(\v2-.provenencia.engine.v1.VocabularyOriginCountsR\fsourceFields\x12\x14\n" +
+	"\x05files\x18\x04 \x01(\x05R\x05files\"i\n" +
 	"\x05Error\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x124\n" +
 	"\x04kind\x18\x02 \x01(\x0e2 .provenencia.engine.v1.ErrorKindR\x04kind\x12\x16\n" +
-	"\x06params\x18\x03 \x03(\tR\x06params*\x98\b\n" +
+	"\x06params\x18\x03 \x03(\tR\x06params*\xbd\b\n" +
 	"\x06Method\x12\x16\n" +
 	"\x12METHOD_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vMETHOD_PING\x10\x01\x12\x16\n" +
@@ -5279,7 +5481,8 @@ const file_engine_proto_rawDesc = "" +
 	"\x19METHOD_UPDATE_SOURCE_TYPE\x10\x1f\x12 \n" +
 	"\x1cMETHOD_LIST_TYPE_SUGGESTIONS\x10 \x12\x1c\n" +
 	"\x18METHOD_ASSIGN_TYPE_FIELD\x10!\x12\x1c\n" +
-	"\x18METHOD_REMOVE_TYPE_FIELD\x10\"*\x88\x01\n" +
+	"\x18METHOD_REMOVE_TYPE_FIELD\x10\"\x12#\n" +
+	"\x1fMETHOD_GET_WORKSPACE_NAV_COUNTS\x10#*\x88\x01\n" +
 	"\tErrorKind\x12\x1a\n" +
 	"\x16ERROR_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fERROR_KIND_USER\x10\x01\x12\x17\n" +
@@ -5300,7 +5503,7 @@ func file_engine_proto_rawDescGZIP() []byte {
 }
 
 var file_engine_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 80)
+var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 83)
 var file_engine_proto_goTypes = []any{
 	(Method)(0),                           // 0: provenencia.engine.v1.Method
 	(ErrorKind)(0),                        // 1: provenencia.engine.v1.ErrorKind
@@ -5383,7 +5586,10 @@ var file_engine_proto_goTypes = []any{
 	(*DeleteMetadataFieldResponse)(nil),   // 78: provenencia.engine.v1.DeleteMetadataFieldResponse
 	(*CountFilesRequest)(nil),             // 79: provenencia.engine.v1.CountFilesRequest
 	(*CountFilesResponse)(nil),            // 80: provenencia.engine.v1.CountFilesResponse
-	(*Error)(nil),                         // 81: provenencia.engine.v1.Error
+	(*VocabularyOriginCounts)(nil),        // 81: provenencia.engine.v1.VocabularyOriginCounts
+	(*GetWorkspaceNavCountsRequest)(nil),  // 82: provenencia.engine.v1.GetWorkspaceNavCountsRequest
+	(*GetWorkspaceNavCountsResponse)(nil), // 83: provenencia.engine.v1.GetWorkspaceNavCountsResponse
+	(*Error)(nil),                         // 84: provenencia.engine.v1.Error
 }
 var file_engine_proto_depIdxs = []int32{
 	24, // 0: provenencia.engine.v1.CompleteOnboardingResponse.project:type_name -> provenencia.engine.v1.ProjectInfo
@@ -5415,12 +5621,14 @@ var file_engine_proto_depIdxs = []int32{
 	31, // 26: provenencia.engine.v1.ListTypeSuggestionsResponse.suggestions:type_name -> provenencia.engine.v1.TypeSuggestion
 	31, // 27: provenencia.engine.v1.AssignTypeFieldResponse.suggestions:type_name -> provenencia.engine.v1.TypeSuggestion
 	31, // 28: provenencia.engine.v1.RemoveTypeFieldResponse.suggestions:type_name -> provenencia.engine.v1.TypeSuggestion
-	1,  // 29: provenencia.engine.v1.Error.kind:type_name -> provenencia.engine.v1.ErrorKind
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	81, // 29: provenencia.engine.v1.GetWorkspaceNavCountsResponse.source_types:type_name -> provenencia.engine.v1.VocabularyOriginCounts
+	81, // 30: provenencia.engine.v1.GetWorkspaceNavCountsResponse.source_fields:type_name -> provenencia.engine.v1.VocabularyOriginCounts
+	1,  // 31: provenencia.engine.v1.Error.kind:type_name -> provenencia.engine.v1.ErrorKind
+	32, // [32:32] is the sub-list for method output_type
+	32, // [32:32] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_engine_proto_init() }
@@ -5435,7 +5643,7 @@ func file_engine_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_engine_proto_rawDesc), len(file_engine_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   80,
+			NumMessages:   83,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

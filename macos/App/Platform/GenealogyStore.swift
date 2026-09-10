@@ -121,6 +121,25 @@ struct CatalogDateValueInput: Sendable, Equatable {
     var phrase: String
 }
 
+/// Origin split returned by `GetWorkspaceNavCounts` for vocabulary
+/// destinations. `total` is always `seeded + user + plugin`.
+struct WorkspaceNavOriginCounts: Sendable, Equatable {
+    var total: Int
+    var seeded: Int
+    var user: Int
+    var plugin: Int
+
+    static let zero = WorkspaceNavOriginCounts(total: 0, seeded: 0, user: 0, plugin: 0)
+}
+
+/// Aggregate workspace chrome counts from one catalog open.
+struct WorkspaceNavCounts: Sendable, Equatable {
+    var sources: Int
+    var sourceTypes: WorkspaceNavOriginCounts
+    var sourceFields: WorkspaceNavOriginCounts
+    var files: Int
+}
+
 protocol GenealogyStore: Sendable {
     func installIdentity(identityDir: String) async throws -> InstallIdentity?
     func completeOnboarding(
@@ -260,4 +279,7 @@ protocol GenealogyStore: Sendable {
     /// (larger, per-source) artifact count. No project-wide artifact
     /// listing exists yet (S2-17).
     func countFiles(projectDir: String) async throws -> Int
+    /// One catalog open: sidebar / vocabulary-header totals for sources,
+    /// types, fields, and files.
+    func workspaceNavCounts(projectDir: String) async throws -> WorkspaceNavCounts
 }
