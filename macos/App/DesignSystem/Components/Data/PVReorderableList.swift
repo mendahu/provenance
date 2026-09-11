@@ -41,7 +41,7 @@ struct PVReorderHandle: View {
 }
 
 private struct PVReorderRowHeightsKey: PreferenceKey {
-    static var defaultValue: [AnyHashable: CGFloat] = [:]
+    static let defaultValue: [AnyHashable: CGFloat] = [:]
 
     static func reduce(
         value: inout [AnyHashable: CGFloat],
