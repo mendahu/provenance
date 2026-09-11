@@ -57,7 +57,7 @@ func TestSourceMetadata(t *testing.T) {
 		t.Helper()
 		y := year
 		id, err := datevalues.Insert(c, datevalues.Value{
-			Kind: datevalues.KindYear, Qualifier: qual, StartYear: &y,
+			Kind: datevalues.KindPoint, Qualifier: qual, StartYear: &y,
 		})
 		if err != nil {
 			t.Fatal(err)

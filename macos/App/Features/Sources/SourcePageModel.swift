@@ -424,7 +424,7 @@ final class SourcePageModel {
             return nil
         }
         return CatalogDateValueInput(
-            kind: "year",
+            kind: "point",
             qualifier: "",
             calendar: "gregorian",
             startYear: year,

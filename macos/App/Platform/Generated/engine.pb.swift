@@ -885,7 +885,7 @@ public nonisolated struct Provenencia_Engine_V1_MetadataWorkspaceEntry: Sendable
   fileprivate var _field: Provenencia_Engine_V1_MetadataField? = nil
 }
 
-/// DateValueInput is the dogfood subset for SetSourceMetadata (maps to datevalues.Insert).
+/// DateValueInput maps to datevalues.Insert (kind point|range; see docs/structured-date-model.md).
 public nonisolated struct Provenencia_Engine_V1_DateValueInput: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for

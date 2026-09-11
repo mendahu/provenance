@@ -1,20 +1,21 @@
 // Package datevalues stores shared genealogical DateValue rows.
 //
-// Dogfood kinds validated by Insert (DDL stays flexible for later kinds):
+// Kinds validated by Insert (DDL stays flexible for later kinds):
 //
-//   - kind "exact": calendar day required (Y/M/D); optional cascading time
-//     (hour→minute→second→millisecond); optional start_tz; qualifier "" /
-//     "ABT" / "BEF" / "AFT"; no end_* (including end_tz)
-//   - kind "year":  start_year only; optional start_tz; qualifier "" /
-//     "ABT" / "BEF" / "AFT"
-//   - kind "range": start and end each cascading from year through optional
-//     time; optional start_tz / end_tz; start <= end; qualifier empty only
+//   - kind "point": one date; precision = which start_* components are set
+//     (year→month→day→hour→minute→second→millisecond, no gaps); optional
+//     start_tz; qualifier "" / "ABT" / "BEF" / "AFT"; no end_* (including
+//     end_tz). Phrase-only points are allowed when no civil components are set.
+//   - kind "range": one date in a bounded uncertainty window (BET); start and
+//     end each cascading from year through optional time; optional start_tz /
+//     end_tz; start <= end; qualifier empty only
 //
 // Finer components require all coarser ones (no gaps). Missing time means
 // unknown/not asserted, not midnight.
 //
-// Qualifiers on point kinds: ABT ≈ about; BEF = before / no later than;
+// Qualifiers on point: ABT ≈ about; BEF = before / no later than;
 // AFT = after / no earlier than. The bound is the start_* civil components.
+// Between is kind "range", not a qualifier.
 //
 // start_tz / end_tz are free-text zone labels as stated (IANA id, offset,
 // historical name, or "local time"). Empty means unspecified. They are not
@@ -33,8 +34,7 @@ import (
 var ErrInvalid = apperr.New(apperr.CodeDateValuesInvalid, apperr.KindUser)
 
 const (
-	KindExact = "exact"
-	KindYear  = "year"
+	KindPoint = "point"
 	KindRange = "range"
 
 	QualifierABT = "ABT" // about / approximately
@@ -90,7 +90,7 @@ type side struct {
 	millisecond          *int
 }
 
-// Insert mints a UUIDv7 id, validates the dogfood subset, inserts, and returns the id.
+// Insert mints a UUIDv7 id, validates, inserts, and returns the id.
 func Insert(c *database.Catalog, v Value) ([]byte, error) {
 	db, err := c.DB()
 	if err != nil {
@@ -204,35 +204,29 @@ func validate(v Value) error {
 	qual := v.Qualifier
 
 	switch v.Kind {
-	case KindExact:
+	case KindPoint:
 		if !pointQualifierOK(qual) {
 			return ErrInvalid
 		}
 		if !end.empty() || v.EndTZ != "" {
 			return ErrInvalid
 		}
-		if err := validateCascade(start, true); err != nil {
-			return err
+		if start.empty() {
+			// Phrase-forward point: no civil components. Timezone alone is not enough.
+			if v.Phrase == "" || v.StartTZ != "" {
+				return ErrInvalid
+			}
+			return nil
 		}
-	case KindYear:
-		if !pointQualifierOK(qual) {
-			return ErrInvalid
-		}
-		if !end.empty() || v.EndTZ != "" {
-			return ErrInvalid
-		}
-		if start.year == nil || start.month != nil || start.day != nil ||
-			start.hour != nil || start.minute != nil || start.second != nil || start.millisecond != nil {
-			return ErrInvalid
-		}
+		return validateCascade(start)
 	case KindRange:
 		if qual != "" {
 			return ErrInvalid
 		}
-		if err := validateCascade(start, false); err != nil {
+		if err := validateCascade(start); err != nil {
 			return err
 		}
-		if err := validateCascade(end, false); err != nil {
+		if err := validateCascade(end); err != nil {
 			return err
 		}
 		if !sideLessOrEqual(start, end) {
@@ -254,8 +248,8 @@ func pointQualifierOK(qual string) bool {
 }
 
 // validateCascade requires year, optional finer fields with no gaps, and
-// valid ranges. If requireDay, month and day must be present (exact points).
-func validateCascade(s side, requireDay bool) error {
+// valid component ranges.
+func validateCascade(s side) error {
 	levels := []*int{s.year, s.month, s.day, s.hour, s.minute, s.second, s.millisecond}
 	if levels[0] == nil {
 		return ErrInvalid
@@ -269,9 +263,6 @@ func validateCascade(s side, requireDay bool) error {
 		if seenNil {
 			return ErrInvalid
 		}
-	}
-	if requireDay && (s.month == nil || s.day == nil) {
-		return ErrInvalid
 	}
 	if s.month != nil && !monthOK(*s.month) {
 		return ErrInvalid

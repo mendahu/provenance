@@ -230,10 +230,10 @@ Date metadata may preserve both the entered/source wording and a structured repr
 ```text
 publication_date
   value_text = "about the year 1890"
-  date_value_id = DateValue(ABT 1890)
+  date_value_id = DateValue(point, ABT, 1890)
 ```
 
-The text remains useful for fidelity even when a structured date exists.
+The text remains useful for fidelity even when a structured date exists. `date_values.phrase` is optional wording on the DateValue itself (verbal/seasonal dates), not a substitute for this `value_text`.
 
 The schema and semantics of `date_values` are defined in [`structured-date-model.md`](structured-date-model.md).
 

@@ -2310,7 +2310,7 @@ func (x *MetadataWorkspaceEntry) GetSortOrder() int32 {
 	return 0
 }
 
-// DateValueInput is the dogfood subset for SetSourceMetadata (maps to datevalues.Insert).
+// DateValueInput maps to datevalues.Insert (kind point|range; see docs/structured-date-model.md).
 type DateValueInput struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Kind             string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
