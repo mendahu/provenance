@@ -312,11 +312,14 @@ CREATE TABLE artifacts (
     ref             TEXT UNIQUE NOT NULL,      -- e.g. ART-3K9M2
     source_id       BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
     file_id         BLOB REFERENCES files(id),
+    label           TEXT NOT NULL,             -- required list headline
     description     TEXT
 ) STRICT;
 ```
 
 `ref` is required so Artifacts can be named in discussion independently of their Source (`ART-3K9M2` under `SRC-F4N2P`).
+
+`label` is the required researcher-facing list headline (distinct from optional `description`).
 
 An Artifact has zero or one primary File.
 

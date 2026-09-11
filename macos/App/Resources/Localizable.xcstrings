@@ -132,6 +132,30 @@
         }
       }
     },
+    "error.artifacts.file_already_attached" : {
+      "comment" : "FFI error artifacts.file_already_attached",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This artifact already has a file. Add a new artifact for a better scan."
+          }
+        }
+      }
+    },
+    "error.sourcecredibility.invalid" : {
+      "comment" : "FFI error sourcecredibility.invalid",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid source credibility assessment."
+          }
+        }
+      }
+    },
     "error.catalog.already_exists" : {
       "comment" : "FFI error catalog.already_exists",
       "extractionState" : "manual",

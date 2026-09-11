@@ -10,6 +10,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var sourcesByProject: [String: [CatalogSource]] = [:]
     var notesBySource: [String: [CatalogSourceNote]] = [:]
     var artifactsBySource: [String: [CatalogArtifact]] = [:]
+    var credibilityBySource: [String: CatalogCredibilityAssessment] = [:]
+    var credibilityGradesByProject: [String: [CatalogCredibilityGrade]] = [:]
     var sourceTypesByProject: [String: [CatalogSourceType]] = [:]
     /// Type↔field suggestion joins, keyed by source type id and held in the
     /// order they were assigned — the engine's `sort_order`.
@@ -186,7 +188,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
             source: source,
             notes: notesBySource[sourceID] ?? [],
             metadata: metadataBySource[sourceID] ?? [],
-            artifacts: artifactsBySource[sourceID] ?? []
+            artifacts: artifactsBySource[sourceID] ?? [],
+            credibility: credibilityBySource[sourceID]
         )
     }
 
@@ -282,6 +285,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         userID _: String,
         sourceID: String,
         fileID: String,
+        label: String,
         description: String
     ) async throws -> CatalogArtifact {
         let art = CatalogArtifact(
@@ -289,11 +293,31 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
             ref: "ART-FAKE1",
             sourceID: sourceID,
             fileID: fileID,
+            label: label,
             description: description,
             file: nil
         )
         artifactsBySource[sourceID, default: []].append(art)
         return art
+    }
+
+    func updateArtifact(
+        projectDir _: String,
+        userID _: String,
+        artifactID: String,
+        label: String,
+        description: String
+    ) async throws -> CatalogArtifact {
+        for (sourceID, arts) in artifactsBySource {
+            if let idx = arts.firstIndex(where: { $0.id == artifactID }) {
+                var copy = arts
+                copy[idx].label = label
+                copy[idx].description = description
+                artifactsBySource[sourceID] = copy
+                return copy[idx]
+            }
+        }
+        throw StoreBoom.boom
     }
 
     func ingestArtifactFile(
@@ -311,6 +335,14 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         )
         for (sourceID, arts) in artifactsBySource {
             if let idx = arts.firstIndex(where: { $0.id == artifactID }) {
+                if !arts[idx].fileID.isEmpty {
+                    throw CoreInvokeError.coded(
+                        status: 1,
+                        code: "artifacts.file_already_attached",
+                        kind: .conflict,
+                        params: []
+                    )
+                }
                 var copy = arts
                 copy[idx].fileID = file.id
                 copy[idx].file = file
@@ -319,6 +351,38 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
             }
         }
         throw StoreBoom.boom
+    }
+
+    func listSourceCredibilityGrades(projectDir: String) async throws -> [CatalogCredibilityGrade] {
+        if let grades = credibilityGradesByProject[projectDir], !grades.isEmpty {
+            return grades
+        }
+        return [
+            CatalogCredibilityGrade(id: "g-low", key: "low_trust", origin: "provenencia", label: "Low trust", sortOrder: 1),
+            CatalogCredibilityGrade(id: "g-std", key: "standard", origin: "provenencia", label: "Standard", sortOrder: 2),
+            CatalogCredibilityGrade(id: "g-high", key: "high_trust", origin: "provenencia", label: "High trust", sortOrder: 3),
+        ]
+    }
+
+    func upsertSourceCredibilityAssessment(
+        projectDir _: String,
+        userID _: String,
+        sourceID: String,
+        gradeID: String,
+        argument: String
+    ) async throws -> CatalogCredibilityAssessment {
+        let grades = try await listSourceCredibilityGrades(projectDir: "")
+        let grade = grades.first { $0.id == gradeID } ?? grades[1]
+        let assessment = CatalogCredibilityAssessment(
+            id: credibilityBySource[sourceID]?.id ?? UUID().uuidString.lowercased(),
+            sourceID: sourceID,
+            gradeID: grade.id,
+            gradeKey: grade.key,
+            gradeLabel: grade.label,
+            argument: argument
+        )
+        credibilityBySource[sourceID] = assessment
+        return assessment
     }
 
     func listSourceTypes(projectDir: String) async throws -> [CatalogSourceType] {

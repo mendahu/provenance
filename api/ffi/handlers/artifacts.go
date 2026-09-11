@@ -37,6 +37,7 @@ func CreateArtifact(in []byte) ([]byte, error) {
 	a, err := artifacts.Create(c, userID, artifacts.CreateInput{
 		SourceID:    sourceID,
 		FileID:      fileID,
+		Label:       req.GetLabel(),
 		Description: req.GetDescription(),
 	})
 	if err != nil {
@@ -47,6 +48,51 @@ func CreateArtifact(in []byte) ([]byte, error) {
 		return nil, err
 	}
 	return proto.Marshal(&engine.CreateArtifactResponse{Artifact: ap})
+}
+
+func UpdateArtifact(in []byte) ([]byte, error) {
+	var req engine.UpdateArtifactRequest
+	if err := proto.Unmarshal(in, &req); err != nil {
+		return nil, unmarshalErr("update_artifact", err)
+	}
+	userID, err := parseUserID(req.GetUserId())
+	if err != nil {
+		return nil, err
+	}
+	artifactID, err := parseID(req.GetArtifactId())
+	if err != nil {
+		return nil, err
+	}
+	c, err := openProjectCatalog(req.GetProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+
+	prev, err := artifacts.Get(c, artifactID)
+	if err != nil {
+		return nil, err
+	}
+	updated := artifacts.Artifact{
+		ID:          prev.ID,
+		Ref:         prev.Ref,
+		SourceID:    prev.SourceID,
+		FileID:      prev.FileID,
+		Label:       req.GetLabel(),
+		Description: req.GetDescription(),
+	}
+	if err := artifacts.Update(c, userID, updated); err != nil {
+		return nil, err
+	}
+	got, err := artifacts.Get(c, artifactID)
+	if err != nil {
+		return nil, err
+	}
+	ap, err := artifactProto(c, got)
+	if err != nil {
+		return nil, err
+	}
+	return proto.Marshal(&engine.UpdateArtifactResponse{Artifact: ap})
 }
 
 func IngestArtifactFile(in []byte) ([]byte, error) {
@@ -72,6 +118,9 @@ func IngestArtifactFile(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(prev.FileID) == 16 {
+		return nil, artifacts.ErrFileAlreadyAttached
+	}
 	res, err := ingest.File(c, req.GetPath(), userID)
 	if err != nil {
 		return nil, err
@@ -81,6 +130,7 @@ func IngestArtifactFile(in []byte) ([]byte, error) {
 		Ref:         prev.Ref,
 		SourceID:    prev.SourceID,
 		FileID:      res.File.ID,
+		Label:       prev.Label,
 		Description: prev.Description,
 	}
 	if err := artifacts.Update(c, userID, updated); err != nil {
@@ -123,6 +173,7 @@ func artifactProto(c *database.Catalog, a artifacts.Artifact) (*engine.Artifact,
 		Ref:         a.Ref,
 		SourceId:    uuidString(a.SourceID),
 		FileId:      uuidString(a.FileID),
+		Label:       a.Label,
 		Description: a.Description,
 	}
 	if len(a.FileID) == 16 {

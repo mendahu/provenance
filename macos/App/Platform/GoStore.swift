@@ -137,7 +137,8 @@ struct GoStore: GenealogyStore {
             source: Self.mapSource(resp.source),
             notes: resp.notes.map(Self.mapNote),
             metadata: resp.metadata.map(Self.mapMetadataEntry),
-            artifacts: resp.artifacts.map(Self.mapArtifact)
+            artifacts: resp.artifacts.map(Self.mapArtifact),
+            credibility: resp.hasCredibility ? Self.mapCredibility(resp.credibility) : nil
         )
     }
 
@@ -273,6 +274,7 @@ struct GoStore: GenealogyStore {
         userID: String,
         sourceID: String,
         fileID: String,
+        label: String,
         description: String
     ) async throws -> CatalogArtifact {
         var req = Provenencia_Engine_V1_CreateArtifactRequest()
@@ -280,9 +282,30 @@ struct GoStore: GenealogyStore {
         req.userID = userID
         req.sourceID = sourceID
         req.fileID = fileID
+        req.label = label
         req.description_p = description
         let resp: Provenencia_Engine_V1_CreateArtifactResponse = try await provenenciaCall(
             method: CoreMethod.createArtifact,
+            request: req
+        )
+        return Self.mapArtifact(resp.artifact)
+    }
+
+    func updateArtifact(
+        projectDir: String,
+        userID: String,
+        artifactID: String,
+        label: String,
+        description: String
+    ) async throws -> CatalogArtifact {
+        var req = Provenencia_Engine_V1_UpdateArtifactRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.artifactID = artifactID
+        req.label = label
+        req.description_p = description
+        let resp: Provenencia_Engine_V1_UpdateArtifactResponse = try await provenenciaCall(
+            method: CoreMethod.updateArtifact,
             request: req
         )
         return Self.mapArtifact(resp.artifact)
@@ -304,6 +327,36 @@ struct GoStore: GenealogyStore {
             request: req
         )
         return (Self.mapArtifact(resp.artifact), Self.mapFile(resp.file), resp.reused)
+    }
+
+    func listSourceCredibilityGrades(projectDir: String) async throws -> [CatalogCredibilityGrade] {
+        var req = Provenencia_Engine_V1_ListSourceCredibilityGradesRequest()
+        req.projectDir = projectDir
+        let resp: Provenencia_Engine_V1_ListSourceCredibilityGradesResponse = try await provenenciaCall(
+            method: CoreMethod.listSourceCredibilityGrades,
+            request: req
+        )
+        return resp.grades.map(Self.mapCredibilityGrade)
+    }
+
+    func upsertSourceCredibilityAssessment(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        gradeID: String,
+        argument: String
+    ) async throws -> CatalogCredibilityAssessment {
+        var req = Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.sourceID = sourceID
+        req.gradeID = gradeID
+        req.argument = argument
+        let resp: Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentResponse = try await provenenciaCall(
+            method: CoreMethod.upsertSourceCredibilityAssessment,
+            request: req
+        )
+        return Self.mapCredibility(resp.assessment)
     }
 
     func listSourceTypes(projectDir: String) async throws -> [CatalogSourceType] {
@@ -561,8 +614,30 @@ struct GoStore: GenealogyStore {
             ref: a.ref,
             sourceID: a.sourceID,
             fileID: a.fileID,
+            label: a.label,
             description: a.description_p,
             file: a.hasFile ? Self.mapFile(a.file) : nil
+        )
+    }
+
+    private static func mapCredibilityGrade(_ g: Provenencia_Engine_V1_SourceCredibilityGrade) -> CatalogCredibilityGrade {
+        CatalogCredibilityGrade(
+            id: g.id,
+            key: g.key,
+            origin: g.origin,
+            label: g.label,
+            sortOrder: Int(g.sortOrder)
+        )
+    }
+
+    private static func mapCredibility(_ a: Provenencia_Engine_V1_SourceCredibilityAssessment) -> CatalogCredibilityAssessment {
+        CatalogCredibilityAssessment(
+            id: a.id,
+            sourceID: a.sourceID,
+            gradeID: a.gradeID,
+            gradeKey: a.gradeKey,
+            gradeLabel: a.gradeLabel,
+            argument: a.argument
         )
     }
 

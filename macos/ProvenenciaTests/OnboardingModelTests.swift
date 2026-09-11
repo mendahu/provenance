@@ -361,6 +361,14 @@ private struct ThrowingStore: GenealogyStore {
         userID _: String,
         sourceID _: String,
         fileID _: String,
+        label _: String,
+        description _: String
+    ) async throws -> CatalogArtifact { throw StoreBoom.boom }
+    func updateArtifact(
+        projectDir _: String,
+        userID _: String,
+        artifactID _: String,
+        label _: String,
         description _: String
     ) async throws -> CatalogArtifact { throw StoreBoom.boom }
     func ingestArtifactFile(
@@ -369,6 +377,16 @@ private struct ThrowingStore: GenealogyStore {
         artifactID _: String,
         path _: String
     ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool) { throw StoreBoom.boom }
+    func listSourceCredibilityGrades(projectDir _: String) async throws -> [CatalogCredibilityGrade] {
+        throw StoreBoom.boom
+    }
+    func upsertSourceCredibilityAssessment(
+        projectDir _: String,
+        userID _: String,
+        sourceID _: String,
+        gradeID _: String,
+        argument _: String
+    ) async throws -> CatalogCredibilityAssessment { throw StoreBoom.boom }
     func listSourceTypes(projectDir _: String) async throws -> [CatalogSourceType] { throw StoreBoom.boom }
     func createSourceType(
         projectDir _: String,

@@ -41,6 +41,8 @@ const (
 	CodeSourcesInvalid              = "sources.invalid"
 	CodeFilesInvalid                = "files.invalid"
 	CodeArtifactsInvalid            = "artifacts.invalid"
+	CodeArtifactsFileAlreadyAttached = "artifacts.file_already_attached"
+	CodeSourceCredibilityInvalid    = "sourcecredibility.invalid"
 	CodeSourceMetadataInvalid       = "sourcemetadata.invalid"
 	CodeFileDerivativesInvalid      = "filederivatives.invalid"
 	CodeIngestInvalid               = "ingest.invalid"

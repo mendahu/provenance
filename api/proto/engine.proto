@@ -43,6 +43,9 @@ enum Method {
   METHOD_ASSIGN_TYPE_FIELD = 33;
   METHOD_REMOVE_TYPE_FIELD = 34;
   METHOD_GET_WORKSPACE_NAV_COUNTS = 35;
+  METHOD_UPDATE_ARTIFACT = 36;
+  METHOD_LIST_SOURCE_CREDIBILITY_GRADES = 37;
+  METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT = 38;
 }
 
 message PingRequest {
@@ -190,6 +193,26 @@ message Artifact {
   string file_id = 4; // empty when fileless
   string description = 5;
   SourceFileRef file = 6; // set when file_id present
+  string label = 7; // required list headline
+}
+
+// SourceCredibilityGrade is one source_credibility_grades vocabulary row.
+message SourceCredibilityGrade {
+  string id = 1;
+  string key = 2;
+  string origin = 3;
+  string label = 4;
+  int32 sort_order = 5;
+}
+
+// SourceCredibilityAssessment is the working Interpretation assessment for a Source.
+message SourceCredibilityAssessment {
+  string id = 1;
+  string source_id = 2;
+  string grade_id = 3;
+  string grade_key = 4;
+  string grade_label = 5;
+  string argument = 6;
 }
 
 message SourceType {
@@ -279,6 +302,8 @@ message GetSourceWorkspaceResponse {
   repeated SourceNote notes = 2;
   repeated MetadataWorkspaceEntry metadata = 3;
   repeated Artifact artifacts = 4;
+  // Omitted when no assessment row (UI may display Standard without a row).
+  SourceCredibilityAssessment credibility = 5;
 }
 
 message CreateSourceRequest {
@@ -365,9 +390,24 @@ message CreateArtifactRequest {
   string source_id = 3;
   string file_id = 4; // empty = fileless
   string description = 5;
+  string label = 6; // required
 }
 
 message CreateArtifactResponse {
+  Artifact artifact = 1;
+}
+
+// UpdateArtifactRequest patches label and/or description only.
+// File attach stays IngestArtifactFile (first-attach only).
+message UpdateArtifactRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string artifact_id = 3;
+  string label = 4;
+  string description = 5;
+}
+
+message UpdateArtifactResponse {
   Artifact artifact = 1;
 }
 
@@ -382,6 +422,28 @@ message IngestArtifactFileResponse {
   Artifact artifact = 1;
   SourceFileRef file = 2;
   bool reused = 3;
+}
+
+message ListSourceCredibilityGradesRequest {
+  string project_dir = 1;
+}
+
+message ListSourceCredibilityGradesResponse {
+  repeated SourceCredibilityGrade grades = 1;
+}
+
+message UpsertSourceCredibilityAssessmentRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  string grade_id = 4; // preferred when set
+  string grade_key = 5; // with grade_origin when grade_id empty
+  string grade_origin = 6;
+  string argument = 7;
+}
+
+message UpsertSourceCredibilityAssessmentResponse {
+  SourceCredibilityAssessment assessment = 1;
 }
 
 message ListSourceTypesRequest {

@@ -63,7 +63,7 @@ func TestSources(t *testing.T) {
 					t.Fatal(err)
 				}
 				if ver < 11 {
-					t.Fatalf("user_version %d want >= 11", ver)
+					t.Fatalf("user_version %d want >= 12", ver)
 				}
 				rows, err := db.Query(`PRAGMA table_info(sources)`)
 				if err != nil {
