@@ -1552,12 +1552,15 @@ func (x *Source) GetDescription() string {
 }
 
 type SourceNote struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	SourceId      string                 `protobuf:"bytes,2,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
-	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Id       string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	SourceId string                 `protobuf:"bytes,2,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
+	Body     string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	// Create attribution from audit (not domain columns on source_notes).
+	AuthorDisplayName string `protobuf:"bytes,4,opt,name=author_display_name,json=authorDisplayName,proto3" json:"author_display_name,omitempty"`
+	CreatedAt         string `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // RFC3339 UTC
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *SourceNote) Reset() {
@@ -1607,6 +1610,20 @@ func (x *SourceNote) GetSourceId() string {
 func (x *SourceNote) GetBody() string {
 	if x != nil {
 		return x.Body
+	}
+	return ""
+}
+
+func (x *SourceNote) GetAuthorDisplayName() string {
+	if x != nil {
+		return x.AuthorDisplayName
+	}
+	return ""
+}
+
+func (x *SourceNote) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
 	}
 	return ""
 }
@@ -5929,12 +5946,15 @@ const file_engine_proto_rawDesc = "" +
 	"\x03ref\x18\x02 \x01(\tR\x03ref\x12$\n" +
 	"\x0esource_type_id\x18\x03 \x01(\tR\fsourceTypeId\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x05 \x01(\tR\vdescription\"M\n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\"\x9c\x01\n" +
 	"\n" +
 	"SourceNote\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tsource_id\x18\x02 \x01(\tR\bsourceId\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\tR\x04body\"\xa3\x01\n" +
+	"\x04body\x18\x03 \x01(\tR\x04body\x12.\n" +
+	"\x13author_display_name\x18\x04 \x01(\tR\x11authorDisplayName\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\tR\tcreatedAt\"\xa3\x01\n" +
 	"\rSourceFileRef\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\brel_path\x18\x02 \x01(\tR\arelPath\x12+\n" +

@@ -43,8 +43,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         catalogUsers: [InstallIdentity] = [
             InstallIdentity(
                 userID: "00000000-0000-7000-8000-000000000001",
-                displayName: "Jane Smith",
-                ref: "USR-A1B2C"
+                displayName: "Jake Robins",
+                ref: "USR-F4N2P"
             )
         ]
     ) {
@@ -230,10 +230,21 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         return list[idx]
     }
 
-    func addSourceNote(projectDir _: String, userID _: String, sourceID: String, body: String) async throws
+    func addSourceNote(projectDir _: String, userID: String, sourceID: String, body: String) async throws
         -> CatalogSourceNote
     {
-        let note = CatalogSourceNote(id: UUID().uuidString.lowercased(), sourceID: sourceID, body: body)
+        let author = catalogUsers.first { $0.userID == userID }?.displayName
+            ?? identity?.displayName
+            ?? ""
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        let note = CatalogSourceNote(
+            id: UUID().uuidString.lowercased(),
+            sourceID: sourceID,
+            body: body,
+            authorDisplayName: author,
+            createdAt: formatter.string(from: Date())
+        )
         notesBySource[sourceID, default: []].append(note)
         return note
     }

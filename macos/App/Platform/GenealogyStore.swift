@@ -36,6 +36,10 @@ struct CatalogSourceNote: Sendable, Equatable {
     var id: String
     var sourceID: String
     var body: String
+    /// Create attribution from audit (not a domain column).
+    var authorDisplayName: String
+    /// RFC3339 UTC create time from audit.
+    var createdAt: String
 }
 
 struct CatalogFileRef: Sendable, Equatable {

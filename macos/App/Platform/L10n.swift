@@ -688,6 +688,12 @@ enum L10n {
             comment: "Placeholder for the Source description field"
         )
 
+        static let descriptionHeading = LocalizedStringResource(
+            "sources.page.descriptionHeading",
+            defaultValue: "Description",
+            comment: "Section heading above Source description"
+        )
+
         static let credibilityHeading = LocalizedStringResource(
             "sources.page.credibilityHeading",
             defaultValue: "Credibility",
@@ -703,7 +709,7 @@ enum L10n {
         static let credibilityHint = LocalizedStringResource(
             "sources.page.credibilityHint",
             defaultValue: "Trust in this source as evidence — not claim confidence or citation certainty.",
-            comment: "Helper under the credibility control"
+            comment: "Italic aside next to the Credibility section heading"
         )
 
         static let metadataHeading = LocalizedStringResource(
@@ -714,8 +720,14 @@ enum L10n {
 
         static let addMetadata = LocalizedStringResource(
             "sources.page.addMetadata",
-            defaultValue: "Add",
+            defaultValue: "Add field",
             comment: "Button to open Add metadata field dialog"
+        )
+
+        static let metadataIntro = LocalizedStringResource(
+            "sources.page.metadataIntro",
+            defaultValue: "Metadata describes the source itself — what the record says about its own making: a registration number, a call number, the reel it sits on. Facts the record asserts about people or events are not metadata; those become citations and asserted facts, so they can move on to the entities they describe.",
+            comment: "Prose under the Metadata section heading"
         )
 
         static let metadataEmptyMessage = LocalizedStringResource(
@@ -788,6 +800,18 @@ enum L10n {
             "sources.page.metadataSuggestionPlaceholder",
             defaultValue: "Add a value…",
             comment: "Placeholder on an empty type-suggestion metadata row"
+        )
+
+        static let metadataSuggestionsHeading = LocalizedStringResource(
+            "sources.page.metadataSuggestionsHeading",
+            defaultValue: "Suggested by this type",
+            comment: "Subheading above type-suggested metadata fields without values"
+        )
+
+        static let saveMetadataSuggestion = LocalizedStringResource(
+            "sources.page.saveMetadataSuggestion",
+            defaultValue: "Save",
+            comment: "Button to save a value on a type-suggested metadata row"
         )
 
         static let artifactsHeading = LocalizedStringResource(
@@ -886,11 +910,33 @@ enum L10n {
             comment: "Heading for the Notes stream on the Source page"
         )
 
+        static let notesEmptyTitle = LocalizedStringResource(
+            "sources.page.notesEmptyTitle",
+            defaultValue: "No notes yet — record what the record itself cannot say.",
+            comment: "Empty-state title when a Source has no notes"
+        )
+
+        static let notesEmptyMessage = LocalizedStringResource(
+            "sources.page.notesEmptyMessage",
+            defaultValue: "Legibility, gaps in the film, what to order on the next visit.",
+            comment: "Empty-state body under Notes"
+        )
+
         static let notePlaceholder = LocalizedStringResource(
             "sources.page.notePlaceholder",
             defaultValue: "Add a note about this source",
             comment: "Placeholder for the new-note composer"
         )
+
+        /// Composer byline beside the draft field (`Jake Robins · now`).
+        static func noteComposerAttribution(displayName: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.noteComposerAttribution",
+                defaultValue: "%@ · now",
+                comment: "Note composer byline; argument is the session display name"
+            ))
+            return String(format: format, locale: .current, displayName)
+        }
 
         static let addNote = LocalizedStringResource(
             "sources.page.addNote",

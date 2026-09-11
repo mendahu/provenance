@@ -2436,7 +2436,7 @@
       }
     },
     "sources.page.credibilityHint": {
-      "comment": "Helper under the credibility control",
+      "comment": "Italic aside next to the Credibility section heading",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -2539,6 +2539,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add a note about this source"
+          }
+        }
+      }
+    },
+    "sources.page.notesEmptyTitle": {
+      "comment": "Empty-state title when a Source has no notes",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No notes yet — record what the record itself cannot say."
+          }
+        }
+      }
+    },
+    "sources.page.notesEmptyMessage": {
+      "comment": "Empty-state body under Notes",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legibility, gaps in the film, what to order on the next visit."
+          }
+        }
+      }
+    },
+    "sources.page.noteComposerAttribution": {
+      "comment": "Note composer byline; argument is the session display name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · now"
           }
         }
       }
@@ -3750,7 +3786,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add"
+            "value": "Add field"
           }
         }
       }
@@ -3895,6 +3931,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add a value…"
+          }
+        }
+      }
+    },
+    "sources.page.metadataSuggestionsHeading": {
+      "comment": "Subheading above type-suggested metadata fields without values",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggested by this type"
+          }
+        }
+      }
+    },
+    "sources.page.saveMetadataSuggestion": {
+      "comment": "Button to save a value on a type-suggested metadata row",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        }
+      }
+    },
+    "sources.page.descriptionHeading": {
+      "comment": "Section heading above Source description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        }
+      }
+    },
+    "sources.page.metadataIntro": {
+      "comment": "Prose under the Metadata section heading",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metadata describes the source itself — what the record says about its own making: a registration number, a call number, the reel it sits on. Facts the record asserts about people or events are not metadata; those become citations and asserted facts, so they can move on to the entities they describe."
           }
         }
       }

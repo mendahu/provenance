@@ -631,7 +631,13 @@ struct GoStore: GenealogyStore {
     }
 
     private static func mapNote(_ n: Provenencia_Engine_V1_SourceNote) -> CatalogSourceNote {
-        CatalogSourceNote(id: n.id, sourceID: n.sourceID, body: n.body)
+        CatalogSourceNote(
+            id: n.id,
+            sourceID: n.sourceID,
+            body: n.body,
+            authorDisplayName: n.authorDisplayName,
+            createdAt: n.createdAt
+        )
     }
 
     private static func mapFile(_ f: Provenencia_Engine_V1_SourceFileRef) -> CatalogFileRef {

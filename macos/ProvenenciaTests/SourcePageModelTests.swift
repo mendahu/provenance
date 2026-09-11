@@ -55,6 +55,7 @@ struct SourcePageModelTests {
             sourceID: sourceID,
             projectDir: projectDir,
             userID: userID,
+            sessionDisplayName: "Jake Robins",
             store: store
         )
     }
@@ -117,8 +118,11 @@ struct SourcePageModelTests {
         #expect(model.noteDraft.isEmpty)
 
         let noteID = try #require(model.notes.first?.id)
+        #expect(model.notes.first?.authorDisplayName == "Jake Robins")
+        #expect(!(model.notes.first?.createdAt.isEmpty ?? true))
         await model.updateNote(id: noteID, body: "Updated look")
         #expect(model.notes.first?.body == "Updated look")
+        #expect(model.notes.first?.authorDisplayName == "Jake Robins")
 
         await model.deleteNote(id: noteID)
         #expect(model.notes.isEmpty)
@@ -225,8 +229,8 @@ struct SourcePageModelTests {
         let model = makeModel(store: store)
         await model.load()
         #expect(model.metadata.count == 2)
-        #expect(model.metadata.first?.field.key == "author")
-        #expect(model.metadata[1].hasValue)
+        #expect(model.savedMetadata.map(\.field.key) == ["repository"])
+        #expect(model.suggestedMetadata.map(\.field.key) == ["author"])
     }
 
     @Test func saveMetadataValueFillsSuggestion() async {
@@ -242,10 +246,11 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
+        #expect(model.suggestedMetadata.count == 1)
         model.metadataDrafts[author.id] = "Mary Robins"
         await model.saveMetadataValue(fieldID: author.id)
-        #expect(model.metadata.first?.hasValue == true)
-        #expect(model.metadata.first?.valueText == "Mary Robins")
+        #expect(model.savedMetadata.map(\.valueText) == ["Mary Robins"])
+        #expect(model.suggestedMetadata.isEmpty)
     }
 
     @Test func dismissSuggestionRemovesEmptyRow() async {
@@ -263,11 +268,16 @@ struct SourcePageModelTests {
         await model.load()
         await model.dismissMetadataSuggestion(fieldID: author.id)
         #expect(model.metadata.isEmpty)
+        #expect(model.suggestedMetadata.isEmpty)
     }
 
-    @Test func reorderMetadataPersistsOrder() async {
+    @Test func reorderSavedMetadataLeavesSuggestions() async {
         let author = authorField()
         let repo = repositoryField()
+        let issue = CatalogMetadataField(
+            id: "f-issue", key: "issue", origin: "provenencia",
+            label: "Issue", dataType: "text", description: ""
+        )
         let store = makeStore(
             metadata: [
                 CatalogMetadataEntry(
@@ -275,16 +285,22 @@ struct SourcePageModelTests {
                     hasValue: true, suggested: true, sortOrder: 0
                 ),
                 CatalogMetadataEntry(
+                    field: issue, valueText: "", dateValueID: "",
+                    hasValue: false, suggested: true, sortOrder: 1
+                ),
+                CatalogMetadataEntry(
                     field: repo, valueText: "B", dateValueID: "",
-                    hasValue: true, suggested: true, sortOrder: 1
+                    hasValue: true, suggested: true, sortOrder: 2
                 ),
             ],
-            fields: [author, repo]
+            fields: [author, repo, issue]
         )
         let model = makeModel(store: store)
         await model.load()
-        await model.moveMetadata(from: IndexSet(integer: 0), to: 2)
-        #expect(model.metadata.map(\.field.id) == [repo.id, author.id])
+        await model.moveSavedMetadata(from: IndexSet(integer: 0), to: 2)
+        #expect(model.savedMetadata.map(\.field.id) == [repo.id, author.id])
+        #expect(model.suggestedMetadata.map(\.field.id) == [issue.id])
+        #expect(model.metadata.map(\.field.id) == [repo.id, author.id, issue.id])
     }
 
     @Test func addMetadataFromDialog() async {

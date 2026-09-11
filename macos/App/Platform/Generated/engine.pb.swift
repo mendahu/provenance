@@ -650,6 +650,12 @@ public nonisolated struct Provenencia_Engine_V1_SourceNote: Sendable {
 
   public var body: String = String()
 
+  /// Create attribution from audit (not domain columns on source_notes).
+  public var authorDisplayName: String = String()
+
+  /// RFC3339 UTC
+  public var createdAt: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -3011,7 +3017,7 @@ nonisolated extension Provenencia_Engine_V1_Source: SwiftProtobuf.Message, Swift
 
 nonisolated extension Provenencia_Engine_V1_SourceNote: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SourceNote"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}source_id\0\u{1}body\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}source_id\0\u{1}body\0\u{3}author_display_name\0\u{3}created_at\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -3022,6 +3028,8 @@ nonisolated extension Provenencia_Engine_V1_SourceNote: SwiftProtobuf.Message, S
       case 1: try { try decoder.decodeSingularStringField(value: &self.id) }()
       case 2: try { try decoder.decodeSingularStringField(value: &self.sourceID) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.body) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.authorDisplayName) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.createdAt) }()
       default: break
       }
     }
@@ -3037,6 +3045,12 @@ nonisolated extension Provenencia_Engine_V1_SourceNote: SwiftProtobuf.Message, S
     if !self.body.isEmpty {
       try visitor.visitSingularStringField(value: self.body, fieldNumber: 3)
     }
+    if !self.authorDisplayName.isEmpty {
+      try visitor.visitSingularStringField(value: self.authorDisplayName, fieldNumber: 4)
+    }
+    if !self.createdAt.isEmpty {
+      try visitor.visitSingularStringField(value: self.createdAt, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -3044,6 +3058,8 @@ nonisolated extension Provenencia_Engine_V1_SourceNote: SwiftProtobuf.Message, S
     if lhs.id != rhs.id {return false}
     if lhs.sourceID != rhs.sourceID {return false}
     if lhs.body != rhs.body {return false}
+    if lhs.authorDisplayName != rhs.authorDisplayName {return false}
+    if lhs.createdAt != rhs.createdAt {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

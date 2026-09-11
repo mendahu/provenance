@@ -11,6 +11,7 @@ struct WorkspaceContent: View {
     let project: ProjectInfo?
     let projectDir: String
     let userID: String
+    let sessionDisplayName: String
     let store: any GenealogyStore
     let catalogCounts: CatalogCounts
 
@@ -36,6 +37,7 @@ struct WorkspaceContent: View {
                 SourcesView(
                     projectDir: projectDir,
                     userID: userID,
+                    sessionDisplayName: sessionDisplayName,
                     store: store,
                     catalogCounts: catalogCounts
                 )

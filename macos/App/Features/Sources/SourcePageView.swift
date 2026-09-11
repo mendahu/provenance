@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Individual Source page (S2-18): breadcrumb, identity, credibility, Artifacts
-/// accordion, Notes. Metadata editor is S2-25.
+/// Individual Source page (S2-18 / S2-25): breadcrumb, identity, Description +
+/// Credibility beside Metadata, Artifacts accordion, Notes.
 struct SourcePageView: View {
     @State private var model: SourcePageModel
     let onBackToList: () -> Void
@@ -10,6 +10,7 @@ struct SourcePageView: View {
         sourceID: String,
         projectDir: String,
         userID: String,
+        sessionDisplayName: String = "",
         store: any GenealogyStore,
         onBackToList: @escaping () -> Void,
         onSourceUpdated: ((CatalogSource) -> Void)? = nil
@@ -19,6 +20,7 @@ struct SourcePageView: View {
                 sourceID: sourceID,
                 projectDir: projectDir,
                 userID: userID,
+                sessionDisplayName: sessionDisplayName,
                 store: store,
                 onSourceUpdated: onSourceUpdated
             )
@@ -38,8 +40,7 @@ struct SourcePageView: View {
                     PVCallout(tone: .danger, message: L10n.Errors.message(for: loadError))
                 } else {
                     identitySection
-                    credibilitySection
-                    metadataSection
+                    overviewColumns
                     artifactsSection
                     notesSection
                 }
@@ -173,7 +174,41 @@ struct SourcePageView: View {
                         .accessibilityIdentifier("sources.page.ref")
                 }
             }
+        }
+        .onChange(of: model.title) { _, _ in
+            Task {
+                try? await Task.sleep(for: .milliseconds(800))
+                await model.saveIdentity()
+            }
+        }
+    }
 
+    /// Board: Description + Credibility | Metadata.
+    /// LazyVGrid wraps below ~900pt (sidebar + gutters leave ~1060 at a 1366 window).
+    private var overviewColumns: some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(minimum: 400), spacing: PVSpacing.space11, alignment: .top),
+                GridItem(.flexible(minimum: 480), spacing: PVSpacing.space11, alignment: .top),
+            ],
+            alignment: .leading,
+            spacing: PVSpacing.space10
+        ) {
+            descriptionAndCredibility
+            metadataSection
+        }
+    }
+
+    private var descriptionAndCredibility: some View {
+        VStack(alignment: .leading, spacing: PVSpacing.space10) {
+            descriptionSection
+            credibilitySection
+        }
+    }
+
+    private var descriptionSection: some View {
+        VStack(alignment: .leading, spacing: PVSpacing.space6) {
+            sectionHeader(title: L10n.Sources.descriptionHeading)
             TextField(
                 "",
                 text: $model.description,
@@ -186,17 +221,11 @@ struct SourcePageView: View {
             .lineLimit(2...8)
             .accessibilityIdentifier("sources.page.description")
             .onSubmit { Task { await model.saveIdentity() } }
-        }
-        .onChange(of: model.title) { _, _ in
-            Task {
-                try? await Task.sleep(for: .milliseconds(800))
-                await model.saveIdentity()
-            }
-        }
-        .onChange(of: model.description) { _, _ in
-            Task {
-                try? await Task.sleep(for: .milliseconds(800))
-                await model.saveIdentity()
+            .onChange(of: model.description) { _, _ in
+                Task {
+                    try? await Task.sleep(for: .milliseconds(800))
+                    await model.saveIdentity()
+                }
             }
         }
     }
@@ -205,9 +234,15 @@ struct SourcePageView: View {
 
     private var credibilitySection: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space5) {
-            Text(L10n.Sources.credibilityHeading)
-                .font(PVFont.display(size: PVTypeScale.h3, weight: PVFontWeight.semibold))
-                .foregroundStyle(PVColor.textDisplay)
+            sectionHeader(
+                title: L10n.Sources.credibilityHeading,
+                aside: {
+                    Text(L10n.Sources.credibilityHint)
+                        .font(PVFont.body(size: PVTypeScale.caption, italic: true))
+                        .foregroundStyle(PVColor.textMuted)
+                        .lineLimit(2)
+                }
+            )
 
             HStack(spacing: PVSpacing.space4) {
                 ForEach(model.grades, id: \.id) { grade in
@@ -229,11 +264,6 @@ struct SourcePageView: View {
                     await model.saveCredibilityArgument()
                 }
             }
-
-            Text(L10n.Sources.credibilityHint)
-                .font(PVFont.body(size: PVTypeScale.caption))
-                .foregroundStyle(PVColor.textMuted)
-                .frame(maxWidth: PVSpacing.measureProse, alignment: .leading)
         }
     }
 
@@ -276,36 +306,61 @@ struct SourcePageView: View {
 
     private var metadataSection: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
-            HStack(alignment: .center) {
-                Text(L10n.Sources.metadataHeading)
-                    .font(PVFont.display(size: PVTypeScale.h3, weight: PVFontWeight.semibold))
-                    .foregroundStyle(PVColor.textDisplay)
-                Spacer(minLength: 0)
-                PVButton(L10n.Sources.addMetadata, variant: .primary, size: .sm, icon: .plus) {
-                    model.openAddMetadata()
+            sectionHeader(
+                title: L10n.Sources.metadataHeading,
+                meta: model.savedMetadata.isEmpty
+                    ? nil
+                    : "\(model.savedMetadata.count)",
+                actions: {
+                    PVButton(L10n.Sources.addMetadata, variant: .primary, size: .sm, icon: .plus) {
+                        model.openAddMetadata()
+                    }
+                    .accessibilityIdentifier("sources.page.addMetadata")
                 }
-                .accessibilityIdentifier("sources.page.addMetadata")
-            }
+            )
 
-            if model.metadata.isEmpty {
+            Text(L10n.Sources.metadataIntro)
+                .font(PVFont.body(size: PVTypeScale.caption))
+                .foregroundStyle(PVColor.textMuted)
+                .frame(maxWidth: PVSpacing.measureProse, alignment: .leading)
+
+            if model.savedMetadata.isEmpty, model.suggestedMetadata.isEmpty {
                 Text(L10n.Sources.metadataEmptyMessage)
                     .font(PVFont.body(size: PVTypeScale.caption))
                     .foregroundStyle(PVColor.textMuted)
                     .accessibilityIdentifier("sources.page.metadata.empty")
             } else {
-                PVReorderableList(items: model.metadata, onMove: { source, destination in
-                    Task { await model.moveMetadata(from: source, to: destination) }
-                }) { entry in
-                    metadataRow(entry)
+                if !model.savedMetadata.isEmpty {
+                    PVReorderableList(items: model.savedMetadata, onMove: { source, destination in
+                        Task { await model.moveSavedMetadata(from: source, to: destination) }
+                    }) { entry in
+                        savedMetadataRow(entry)
+                    }
+                    .frame(height: CGFloat(model.savedMetadata.count) * 44)
+                    .scrollDisabled(true)
+                    .accessibilityIdentifier("sources.page.metadata.list")
                 }
-                .frame(height: CGFloat(model.metadata.count) * 48)
-                .scrollDisabled(true)
-                .accessibilityIdentifier("sources.page.metadata.list")
+
+                if !model.suggestedMetadata.isEmpty {
+                    VStack(alignment: .leading, spacing: PVSpacing.space4) {
+                        Text(L10n.Sources.metadataSuggestionsHeading)
+                            .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
+                            .tracking(PVTypeScale.micro * PVTracking.caps)
+                            .textCase(.uppercase)
+                            .foregroundStyle(PVColor.textFaint)
+                            .padding(.top, model.savedMetadata.isEmpty ? 0 : PVSpacing.space7)
+
+                        ForEach(model.suggestedMetadata) { entry in
+                            suggestionMetadataRow(entry)
+                        }
+                    }
+                    .accessibilityIdentifier("sources.page.metadata.suggestions")
+                }
             }
         }
     }
 
-    private func metadataRow(_ entry: CatalogMetadataEntry) -> some View {
+    private func savedMetadataRow(_ entry: CatalogMetadataEntry) -> some View {
         let fieldID = entry.field.id
         return HStack(spacing: PVSpacing.space5) {
             PVReorderHandle()
@@ -319,25 +374,75 @@ struct SourcePageView: View {
                     set: { model.metadataDrafts[fieldID] = $0 }
                 ),
                 size: .sm,
-                mono: true,
-                prompt: entry.hasValue ? nil : L10n.Sources.metadataSuggestionPlaceholder
+                mono: true
             )
             .onSubmit { Task { await model.saveMetadataValue(fieldID: fieldID) } }
             .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
 
-            if entry.field.dataType == "date" {
-                PVBadge(L10n.SourceFields.dataTypeDate, tone: .neutral)
-            }
-
-            if !entry.hasValue, entry.suggested {
-                PVIconButton(.dismiss, label: L10n.Sources.dismissMetadataSuggestion, size: .sm) {
-                    Task { await model.dismissMetadataSuggestion(fieldID: fieldID) }
-                }
-                .accessibilityIdentifier("sources.page.metadata.\(fieldID).dismiss")
-            }
+            metadataTypeBadge(entry.field.dataType)
         }
         .padding(.vertical, PVSpacing.space3)
         .padding(.horizontal, PVSpacing.space4)
+    }
+
+    private func suggestionMetadataRow(_ entry: CatalogMetadataEntry) -> some View {
+        let fieldID = entry.field.id
+        return HStack(spacing: PVSpacing.space5) {
+            Text(entry.field.label)
+                .font(PVFont.body(size: PVTypeScale.caption))
+                .foregroundStyle(PVColor.textMuted)
+                .frame(width: 170, alignment: .leading)
+                .padding(.leading, 20)
+            PVInput(
+                text: Binding(
+                    get: { model.metadataDrafts[fieldID] ?? "" },
+                    set: { model.metadataDrafts[fieldID] = $0 }
+                ),
+                size: .sm,
+                mono: true,
+                prompt: L10n.Sources.metadataSuggestionPlaceholder
+            )
+            .onSubmit { Task { await model.saveMetadataValue(fieldID: fieldID) } }
+            .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
+
+            PVButton(
+                L10n.Sources.saveMetadataSuggestion,
+                variant: .ghost,
+                size: .sm,
+                loading: model.savingMetadataFieldID == fieldID
+            ) {
+                Task { await model.saveMetadataValue(fieldID: fieldID) }
+            }
+            .disabled(
+                (model.metadataDrafts[fieldID] ?? "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .isEmpty
+            )
+            .accessibilityIdentifier("sources.page.metadata.\(fieldID).save")
+
+            PVIconButton(.dismiss, label: L10n.Sources.dismissMetadataSuggestion, size: .sm) {
+                Task { await model.dismissMetadataSuggestion(fieldID: fieldID) }
+            }
+            .accessibilityIdentifier("sources.page.metadata.\(fieldID).dismiss")
+        }
+        .padding(.vertical, PVSpacing.space4)
+        .padding(.horizontal, PVSpacing.space5)
+        .background(PVColor.surfaceCard)
+        .clipShape(RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                .foregroundStyle(PVColor.borderDefault)
+        )
+    }
+
+    @ViewBuilder
+    private func metadataTypeBadge(_ dataType: String) -> some View {
+        if dataType == "date" {
+            PVBadge(L10n.SourceFields.dataTypeDate, tone: .info, icon: .calendar, subtle: true)
+        } else {
+            PVBadge(L10n.SourceFields.dataTypeText, tone: .neutral, icon: .textType, subtle: true)
+        }
     }
 
     private var addMetadataForm: some View {
@@ -378,20 +483,49 @@ struct SourcePageView: View {
         }
     }
 
+    // MARK: Section chrome
+
+    private func sectionHeader<Aside: View, Actions: View>(
+        title: LocalizedStringResource,
+        meta: String? = nil,
+        @ViewBuilder aside: () -> Aside = { EmptyView() },
+        @ViewBuilder actions: () -> Actions = { EmptyView() }
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: PVSpacing.space5) {
+            Text(title)
+                .font(PVFont.display(size: PVTypeScale.h3, weight: PVFontWeight.semibold))
+                .foregroundStyle(PVColor.textDisplay)
+            if let meta {
+                Text(meta)
+                    .font(PVFont.mono(size: PVTypeScale.caption))
+                    .foregroundStyle(PVColor.textMuted)
+            }
+            aside()
+            Spacer(minLength: 0)
+            actions()
+        }
+        .padding(.bottom, PVSpacing.space4)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(PVColor.borderDefault)
+                .frame(height: 1)
+        }
+    }
+
     // MARK: Artifacts
 
     private var artifactsSection: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
-            HStack(alignment: .center) {
-                Text(L10n.Sources.artifactsHeading)
-                    .font(PVFont.display(size: PVTypeScale.h3, weight: PVFontWeight.semibold))
-                    .foregroundStyle(PVColor.textDisplay)
-                Spacer(minLength: 0)
-                PVButton(L10n.Sources.addArtifact, variant: .primary, size: .sm, icon: .plus) {
-                    model.openAddArtifact()
+            sectionHeader(
+                title: L10n.Sources.artifactsHeading,
+                meta: model.artifacts.isEmpty ? nil : "\(model.artifacts.count)",
+                actions: {
+                    PVButton(L10n.Sources.addArtifact, variant: .primary, size: .sm, icon: .plus) {
+                        model.openAddArtifact()
+                    }
+                    .accessibilityIdentifier("sources.page.addArtifact")
                 }
-                .accessibilityIdentifier("sources.page.addArtifact")
-            }
+            )
 
             if model.artifacts.isEmpty {
                 PVEmptyState(
@@ -419,6 +553,7 @@ struct SourcePageView: View {
                 .accessibilityIdentifier("sources.page.artifacts.list")
             }
         }
+        .padding(.top, PVSpacing.space11 - PVSpacing.space9)
     }
 
     private func artifactRow(_ art: CatalogArtifact) -> some View {
@@ -608,42 +743,78 @@ struct SourcePageView: View {
 
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
-            Text(L10n.Sources.notesHeading)
-                .font(PVFont.display(size: PVTypeScale.h3, weight: PVFontWeight.semibold))
-                .foregroundStyle(PVColor.textDisplay)
+            sectionHeader(
+                title: L10n.Sources.notesHeading,
+                meta: model.notes.isEmpty ? nil : "\(model.notes.count)"
+            )
 
-            ForEach(model.notes, id: \.id) { note in
-                SourcePageNoteRow(
-                    note: note,
-                    onCommit: { body in
-                        Task { await model.updateNote(id: note.id, body: body) }
-                    },
-                    onDelete: {
-                        Task { await model.deleteNote(id: note.id) }
-                    }
+            if model.notes.isEmpty {
+                PVEmptyState(
+                    icon: .penLine,
+                    title: L10n.Sources.notesEmptyTitle,
+                    message: String(localized: L10n.Sources.notesEmptyMessage),
+                    compact: true
                 )
-            }
-
-            VStack(alignment: .trailing, spacing: PVSpacing.space4) {
-                PVInput(
-                    text: $model.noteDraft,
-                    size: .sm,
-                    prompt: L10n.Sources.notePlaceholder
-                )
-                .accessibilityIdentifier("sources.page.noteDraft")
-                PVButton(
-                    L10n.Sources.addNote,
-                    variant: .secondary,
-                    size: .sm,
-                    icon: .plus,
-                    loading: model.isSavingNote
-                ) {
-                    Task { await model.addNote() }
+                .accessibilityIdentifier("sources.page.notes.empty")
+            } else {
+                ForEach(model.notes, id: \.id) { note in
+                    SourcePageNoteRow(
+                        note: note,
+                        onCommit: { body in
+                            Task { await model.updateNote(id: note.id, body: body) }
+                        },
+                        onDelete: {
+                            Task { await model.deleteNote(id: note.id) }
+                        }
+                    )
                 }
-                .disabled(model.noteDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityIdentifier("sources.page.addNote")
             }
+
+            HStack(alignment: .top, spacing: PVSpacing.space6) {
+                Text(L10n.Sources.noteComposerAttribution(displayName: model.sessionDisplayName))
+                    .font(PVFont.body(size: PVTypeScale.caption, italic: true))
+                    .foregroundStyle(PVColor.textFaint)
+                    .frame(width: 150, alignment: .leading)
+
+                VStack(alignment: .trailing, spacing: PVSpacing.space4) {
+                    TextField(
+                        "",
+                        text: $model.noteDraft,
+                        prompt: Text(L10n.Sources.notePlaceholder),
+                        axis: .vertical
+                    )
+                    .font(PVFont.body(size: PVTypeScale.bodySmall))
+                    .foregroundStyle(PVColor.textPrimary)
+                    .textFieldStyle(.plain)
+                    .lineLimit(2...8)
+                    .padding(PVSpacing.space3)
+                    .background(
+                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                            .fill(PVColor.surfaceSunken)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                            .strokeBorder(PVColor.borderSubtle, lineWidth: 1)
+                    )
+                    .accessibilityIdentifier("sources.page.noteDraft")
+
+                    PVButton(
+                        L10n.Sources.addNote,
+                        variant: .secondary,
+                        size: .sm,
+                        icon: .plus,
+                        loading: model.isSavingNote
+                    ) {
+                        Task { await model.addNote() }
+                    }
+                    .disabled(model.noteDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityIdentifier("sources.page.addNote")
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .padding(.top, model.notes.isEmpty ? PVSpacing.space7 : 0)
         }
+        .padding(.top, PVSpacing.space11 - PVSpacing.space9)
     }
 
     // MARK: Add Artifact form
@@ -698,12 +869,26 @@ private struct SourcePageNoteRow: View {
     @State private var bodyText: String = ""
 
     var body: some View {
-        HStack(alignment: .top, spacing: PVSpacing.space4) {
+        HStack(alignment: .top, spacing: PVSpacing.space6) {
+            VStack(alignment: .leading, spacing: PVSpacing.space1) {
+                Text(note.authorDisplayName)
+                    .font(PVFont.body(size: PVTypeScale.caption))
+                    .foregroundStyle(PVColor.textSecondary)
+                if !note.createdAt.isEmpty {
+                    Text(Self.formatStamp(note.createdAt))
+                        .font(PVFont.mono(size: PVTypeScale.micro))
+                        .foregroundStyle(PVColor.textFaint)
+                }
+            }
+            .frame(width: 150, alignment: .leading)
+
             TextField("", text: $bodyText, axis: .vertical)
                 .font(PVFont.body(size: PVTypeScale.bodySmall))
                 .foregroundStyle(PVColor.textSecondary)
                 .textFieldStyle(.plain)
                 .lineLimit(1...12)
+                .padding(.vertical, PVSpacing.space3)
+                .padding(.horizontal, PVSpacing.space4)
                 .accessibilityIdentifier("sources.page.note.\(note.id)")
                 .onAppear { bodyText = note.body }
                 .onChange(of: note.body) { _, newValue in
@@ -725,6 +910,25 @@ private struct SourcePageNoteRow: View {
             }
             .accessibilityIdentifier("sources.page.note.\(note.id).delete")
         }
-        .padding(.vertical, PVSpacing.space3)
+        .padding(.vertical, PVSpacing.space6)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(PVColor.borderSubtle)
+                .frame(height: 1)
+        }
+    }
+
+    /// Board stamp: `04 Mar 2026 · 7:22 PM MST`.
+    private static func formatStamp(_ rfc3339: String) -> String {
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        guard let date = withFraction.date(from: rfc3339) ?? plain.date(from: rfc3339) else {
+            return rfc3339
+        }
+        let datePart = date.formatted(.dateTime.day(.twoDigits).month(.abbreviated).year())
+        let timePart = date.formatted(.dateTime.hour().minute().timeZone(.specificName(.short)))
+        return "\(datePart) · \(timePart)"
     }
 }

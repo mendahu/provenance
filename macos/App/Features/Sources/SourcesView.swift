@@ -5,13 +5,16 @@ import SwiftUI
 /// Mounts inside the S2-01 workspace content host.
 struct SourcesView: View {
     @State private var model: SourcesModel
+    private let sessionDisplayName: String
 
     init(
         projectDir: String,
         userID: String,
+        sessionDisplayName: String = "",
         store: any GenealogyStore,
         catalogCounts: CatalogCounts? = nil
     ) {
+        self.sessionDisplayName = sessionDisplayName
         _model = State(
             initialValue: SourcesModel(
                 projectDir: projectDir,
@@ -29,6 +32,7 @@ struct SourcesView: View {
                     sourceID: opened,
                     projectDir: model.pageProjectDir,
                     userID: model.pageUserID,
+                    sessionDisplayName: sessionDisplayName,
                     store: model.pageStore,
                     onBackToList: { model.closeSource() },
                     onSourceUpdated: { model.applyUpdatedSource($0) }

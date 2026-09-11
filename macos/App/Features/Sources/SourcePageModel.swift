@@ -66,6 +66,8 @@ final class SourcePageModel {
     private let sourceID: String
     private let projectDir: String
     private let userID: String
+    /// Session contributor name for the note composer byline.
+    let sessionDisplayName: String
     private let store: any GenealogyStore
     private let onSourceUpdated: ((CatalogSource) -> Void)?
 
@@ -73,12 +75,14 @@ final class SourcePageModel {
         sourceID: String,
         projectDir: String,
         userID: String,
+        sessionDisplayName: String = "",
         store: any GenealogyStore,
         onSourceUpdated: ((CatalogSource) -> Void)? = nil
     ) {
         self.sourceID = sourceID
         self.projectDir = projectDir
         self.userID = userID
+        self.sessionDisplayName = sessionDisplayName
         self.store = store
         self.onSourceUpdated = onSourceUpdated
     }
@@ -107,6 +111,16 @@ final class SourcePageModel {
     var canSubmitArtifact: Bool {
         !isSavingArtifact
             && !artifactDraft.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Saved values only — drag-reorderable in the Metadata section.
+    var savedMetadata: [CatalogMetadataEntry] {
+        metadata.filter(\.hasValue)
+    }
+
+    /// Type suggestions without a value — separate from the reorderable list.
+    var suggestedMetadata: [CatalogMetadataEntry] {
+        metadata.filter { !$0.hasValue && $0.suggested }
     }
 
     var metadataFieldComboOptions: [PVComboBoxOption] {
@@ -323,10 +337,13 @@ final class SourcePageModel {
         }
     }
 
-    func moveMetadata(from source: IndexSet, to destination: Int) async {
-        metadata.move(fromOffsets: source, toOffset: destination)
-        let ids = metadata.map(\.field.id)
-        await commitMetadataOrder(ids)
+    /// Reorders saved fields only; suggestions stay below in their current order.
+    func moveSavedMetadata(from source: IndexSet, to destination: Int) async {
+        var saved = savedMetadata
+        saved.move(fromOffsets: source, toOffset: destination)
+        let ordered = saved + suggestedMetadata
+        metadata = ordered
+        await commitMetadataOrder(ordered.map(\.field.id))
     }
 
     private func commitMetadataOrder(_ fieldIDs: [String]) async {

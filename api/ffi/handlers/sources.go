@@ -196,20 +196,11 @@ func UpdateSourceNote(in []byte) ([]byte, error) {
 	if err := sources.UpdateNote(c, userID, noteID, req.GetBody()); err != nil {
 		return nil, err
 	}
-	db, err := c.DB()
+	n, err := sources.GetNote(c, noteID)
 	if err != nil {
 		return nil, err
 	}
-	var sourceID []byte
-	var body string
-	if err := db.QueryRow(`SELECT source_id, body FROM source_notes WHERE id = ?`, noteID).Scan(&sourceID, &body); err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.UpdateSourceNoteResponse{Note: &engine.SourceNote{
-		Id:       uuidString(noteID),
-		SourceId: uuidString(sourceID),
-		Body:     body,
-	}})
+	return proto.Marshal(&engine.UpdateSourceNoteResponse{Note: noteProto(n)})
 }
 
 func DeleteSourceNote(in []byte) ([]byte, error) {
@@ -398,9 +389,11 @@ func sourceProto(s sources.Source) *engine.Source {
 
 func noteProto(n sources.Note) *engine.SourceNote {
 	return &engine.SourceNote{
-		Id:       uuidString(n.ID),
-		SourceId: uuidString(n.SourceID),
-		Body:     n.Body,
+		Id:                uuidString(n.ID),
+		SourceId:          uuidString(n.SourceID),
+		Body:              n.Body,
+		AuthorDisplayName: n.AuthorDisplayName,
+		CreatedAt:         n.CreatedAt,
 	}
 }
 

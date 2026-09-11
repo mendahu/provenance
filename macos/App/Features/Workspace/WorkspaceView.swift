@@ -40,6 +40,7 @@ struct WorkspaceView: View {
                         project: model.project,
                         projectDir: projectDir,
                         userID: userID,
+                        sessionDisplayName: model.session?.displayName ?? "",
                         store: model.store,
                         catalogCounts: catalogCounts
                     )

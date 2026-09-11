@@ -178,6 +178,9 @@ message SourceNote {
   string id = 1;
   string source_id = 2;
   string body = 3;
+  // Create attribution from audit (not domain columns on source_notes).
+  string author_display_name = 4;
+  string created_at = 5; // RFC3339 UTC
 }
 
 message SourceFileRef {
