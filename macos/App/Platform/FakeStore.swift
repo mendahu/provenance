@@ -259,25 +259,76 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func setSourceMetadata(
-        projectDir _: String,
+        projectDir: String,
         userID _: String,
         sourceID: String,
         fieldID: String,
         valueText: String,
         date _: CatalogDateValueInput?
     ) async throws -> (valueText: String, dateValueID: String) {
-        let field = CatalogMetadataField(
-            id: fieldID, key: "field", origin: "user", label: "Field", dataType: "text", description: ""
-        )
-        let entry = CatalogMetadataEntry(
-            field: field, valueText: valueText, dateValueID: "", hasValue: true, suggested: false, sortOrder: 0
-        )
-        metadataBySource[sourceID, default: []].append(entry)
+        var list = metadataBySource[sourceID] ?? []
+        if let idx = list.firstIndex(where: { $0.field.id == fieldID }) {
+            list[idx].valueText = valueText
+            list[idx].hasValue = true
+            list[idx].dateValueID = ""
+        } else {
+            let field = (fieldsByProject[projectDir] ?? []).first { $0.id == fieldID }
+                ?? CatalogMetadataField(
+                    id: fieldID, key: "field", origin: "user", label: "Field", dataType: "text", description: ""
+                )
+            let order = Int32(list.count)
+            list.append(
+                CatalogMetadataEntry(
+                    field: field,
+                    valueText: valueText,
+                    dateValueID: "",
+                    hasValue: true,
+                    suggested: false,
+                    sortOrder: order
+                )
+            )
+        }
+        metadataBySource[sourceID] = list
         return (valueText, "")
     }
 
     func clearSourceMetadata(projectDir _: String, userID _: String, sourceID: String, fieldID: String) async throws {
         metadataBySource[sourceID] = (metadataBySource[sourceID] ?? []).filter { $0.field.id != fieldID }
+    }
+
+    func dismissSourceMetadataSuggestion(
+        projectDir _: String,
+        userID _: String,
+        sourceID: String,
+        fieldID: String
+    ) async throws -> [CatalogMetadataEntry] {
+        var list = metadataBySource[sourceID] ?? []
+        list.removeAll { $0.field.id == fieldID && !$0.hasValue }
+        metadataBySource[sourceID] = list
+        return list
+    }
+
+    func reorderSourceMetadata(
+        projectDir _: String,
+        userID _: String,
+        sourceID: String,
+        fieldIDs: [String]
+    ) async throws -> [CatalogMetadataEntry] {
+        let current = metadataBySource[sourceID] ?? []
+        var byID = Dictionary(uniqueKeysWithValues: current.map { ($0.field.id, $0) })
+        var next: [CatalogMetadataEntry] = []
+        for (i, id) in fieldIDs.enumerated() {
+            guard var entry = byID.removeValue(forKey: id) else { continue }
+            entry.sortOrder = Int32(i)
+            next.append(entry)
+        }
+        for (_, leftover) in byID {
+            var entry = leftover
+            entry.sortOrder = Int32(next.count)
+            next.append(entry)
+        }
+        metadataBySource[sourceID] = next
+        return next
     }
 
     func createArtifact(

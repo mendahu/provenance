@@ -121,7 +121,6 @@ Open work only (completed steps: [`completed.md`](completed.md)):
 S2-20 Design — Files list (project file browser)
         │
         ▼
-S2-25 PR — Source metadata editor (suggestions / dismiss / reorder)
 S2-26 PR — Evidence list thumbnails (Sources + Artifacts)   ← can parallel after S2-18
                 │
                 ▼
@@ -129,7 +128,7 @@ S2-21 PR — Swift Files list (+ Source link)
 S2-19 PR — Dogfood polish (copy, empty states, errors, tests)
 ```
 
-Core schema / Go, workspace chrome, Source fields/types UI, Sources list (S2-17), Source page schema (S2-24), Source page UI (S2-18), and Design **S2-01…S2-04** / **S2-23** are **done** — see [`completed.md`](completed.md) and [`design/archive/`](design/archive/). Remaining Design: **S2-20**. Remaining feature UI: **S2-25** ∥ **S2-26**, then **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
+Core schema / Go, workspace chrome, Source fields/types UI, Sources list (S2-17), Source page schema (S2-24), Source page UI (S2-18 / S2-25), and Design **S2-01…S2-04** / **S2-23** are **done** — see [`completed.md`](completed.md) and [`design/archive/`](design/archive/). Remaining Design: **S2-20**. Remaining feature UI: **S2-26** → **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
 
 ---
 
@@ -149,18 +148,6 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | **Context** | Source doc §§6–8. Association is indirect (`artifacts.file_id` → Source). Sidebar Files destination already exists; only `CountFiles` is wired today. |
 | **Out** | Ingest (S2-18); delete; Interpretation. |
 | **Feeds** | S2-21 |
-
----
-
-### S2-25 — PR: Source metadata editor (suggestions, dismiss, reorder)
-
-| | |
-| --- | --- |
-| **Kind** | PR |
-| **Depends on** | S2-18, S2-23 (done) |
-| **Deliverables** | **Schema/FFI:** per-Source **persistent dismiss** of type metadata suggestions; **`sort_order`** (or equivalent) on `source_metadata` + reorder API. **UI** on the Source page Metadata area: all associated values; type suggestions as quick-add (in-place value + save) with dismiss (X); separate **Add** → vocabulary picker → value → save; **drag reorder**. Reorderable-row DS if not already present. `FakeStore` tests. |
-| **Context** | Completes the Metadata half of S2-23. Keep Notes/Artifacts/credibility out of this PR unless a tiny glue change is required. |
-| **Out** | Thumbnail wiring (S2-26); vocabulary admin; Claim confidence. |
 
 ---
 
@@ -204,7 +191,6 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 
 | Step | Title sketch |
 | --- | --- |
-| S2-25 | Edit Source metadata with dismissible suggestions and reorder |
 | S2-26 | Show real thumbnails on Sources and Artifact lists |
 | S2-21 | Browse project Files and jump to their Source |
 | S2-19 | Harden the Source catalog for first dogfood |
@@ -216,8 +202,8 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | Track | Steps |
 | --- | --- |
 | **Design (Claude Design)** | S2-01…S2-04 / S2-23 done; remaining **S2-20** |
-| **Core schema / Go** | S2-05…S2-13 / **S2-24** — done ([`completed.md`](completed.md)); S2-25 schema still opens a thin migration |
-| **FFI + Mac** | S2-14…S2-18 / S2-22 / S2-24 — done; remaining **S2-25** ∥ **S2-26** → **S2-21** → **S2-19** |
+| **Core schema / Go** | S2-05…S2-13 / **S2-24** / **S2-25** layout — done ([`completed.md`](completed.md)) |
+| **FFI + Mac** | S2-14…S2-18 / S2-22 / S2-24 / **S2-25** — done; remaining **S2-26** → **S2-21** → **S2-19** |
 
 Prefer **many small PRs**. Do not recombine S2-25…S2-26 into one Source-page mega-PR. Do not fold the workspace shell into feature destination PRs.
 

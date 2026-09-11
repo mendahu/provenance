@@ -29,6 +29,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | [S2-17](#s2-17--pr-swift-sources-list) | PR | Swift Sources list |
 | [S2-24](#s2-24--pr-source-page-schema-precede-label-first-attach-credibility) | PR | Artifact label, first-attach, credibility schema |
 | [S2-18](#s2-18--pr-source-page-shell--artifacts--ingest) | PR | Source page + Notes, credibility, Artifact ingest |
+| [S2-25](#s2-25--pr-source-metadata-editor-suggestions-dismiss-reorder) | PR | Metadata dismiss, order, Source page editor |
 
 ---
 
@@ -301,6 +302,19 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Context** | Thin vertical slice of S2-23. Swift does not write `objects/` itself. |
 | **Out** | Metadata suggestions / dismiss / drag reorder (S2-25); derivative thumbnail ensure/list UI (S2-26); in-app File preview; Replace file; Citations / Observations / Nodes; project Files browser (S2-21). |
 | **Feeds** | S2-25, S2-26, S2-21 |
+
+---
+
+### S2-25 — PR: Source metadata editor (suggestions, dismiss, reorder)
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-18 (done), S2-23 (done) |
+| **Deliverables** | Done. **`source_metadata_layout`** migration for per-Source suggestion **dismiss** + display **order**; `ListWorkspace` filters dismissed empty suggestions and orders by layout; FFI `DismissSourceMetadataSuggestion` / `ReorderSourceMetadata`; Source page **Metadata** section (values, quick-add suggestions with X, **Add** vocabulary dialog, drag reorder via **`PVReorderableList`**); Artifact accordion expand matched to board (two-column sunken panel). `FakeStore` model tests. |
+| **Context** | Completes the Metadata half of S2-23. |
+| **Out** | Thumbnail wiring (S2-26); vocabulary admin; Claim confidence. |
+| **Feeds** | S2-26, S2-21, S2-19 |
 
 ---
 

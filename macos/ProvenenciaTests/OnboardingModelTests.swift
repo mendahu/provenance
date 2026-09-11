@@ -356,6 +356,18 @@ private struct ThrowingStore: GenealogyStore {
     ) async throws -> (valueText: String, dateValueID: String) { throw StoreBoom.boom }
     func clearSourceMetadata(projectDir _: String, userID _: String, sourceID _: String, fieldID _: String)
         async throws { throw StoreBoom.boom }
+    func dismissSourceMetadataSuggestion(
+        projectDir _: String,
+        userID _: String,
+        sourceID _: String,
+        fieldID _: String
+    ) async throws -> [CatalogMetadataEntry] { throw StoreBoom.boom }
+    func reorderSourceMetadata(
+        projectDir _: String,
+        userID _: String,
+        sourceID _: String,
+        fieldIDs _: [String]
+    ) async throws -> [CatalogMetadataEntry] { throw StoreBoom.boom }
     func createArtifact(
         projectDir _: String,
         userID _: String,

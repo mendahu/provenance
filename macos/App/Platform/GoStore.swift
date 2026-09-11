@@ -269,6 +269,42 @@ struct GoStore: GenealogyStore {
         )
     }
 
+    func dismissSourceMetadataSuggestion(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        fieldID: String
+    ) async throws -> [CatalogMetadataEntry] {
+        var req = Provenencia_Engine_V1_DismissSourceMetadataSuggestionRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.sourceID = sourceID
+        req.fieldID = fieldID
+        let resp: Provenencia_Engine_V1_DismissSourceMetadataSuggestionResponse = try await provenenciaCall(
+            method: CoreMethod.dismissSourceMetadataSuggestion,
+            request: req
+        )
+        return resp.metadata.map(Self.mapMetadataEntry)
+    }
+
+    func reorderSourceMetadata(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        fieldIDs: [String]
+    ) async throws -> [CatalogMetadataEntry] {
+        var req = Provenencia_Engine_V1_ReorderSourceMetadataRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.sourceID = sourceID
+        req.fieldIds = fieldIDs
+        let resp: Provenencia_Engine_V1_ReorderSourceMetadataResponse = try await provenenciaCall(
+            method: CoreMethod.reorderSourceMetadata,
+            request: req
+        )
+        return resp.metadata.map(Self.mapMetadataEntry)
+    }
+
     func createArtifact(
         projectDir: String,
         userID: String,

@@ -42,6 +42,23 @@ final class SourcePageModel {
     var artifactDraft = ArtifactDraft()
     var artifactLabelError: String?
     private(set) var isSavingArtifact = false
+    /// Artifact id currently saving label/description from the accordion.
+    private(set) var savingArtifactID: String?
+    /// Per-artifact validation for expanded edit fields.
+    var artifactFieldErrors: [String: String] = [:]
+
+    /// Working copy of workspace metadata (reorderable).
+    var metadata: [CatalogMetadataEntry] = []
+    /// Edit buffers keyed by field id.
+    var metadataDrafts: [String: String] = [:]
+    private(set) var savingMetadataFieldID: String?
+    var isAddingMetadata = false
+    var addMetadataFieldID = ""
+    var addMetadataValue = ""
+    var addMetadataFieldError: String?
+    var addMetadataValueError: String?
+    private(set) var isSavingMetadataAdd = false
+    private(set) var vocabularyFields: [CatalogMetadataField] = []
 
     var toast: VocabularyToast?
     var pageError: String?
@@ -92,6 +109,19 @@ final class SourcePageModel {
             && !artifactDraft.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    var metadataFieldComboOptions: [PVComboBoxOption] {
+        let used = Set(metadata.map(\.field.id))
+        return vocabularyFields
+            .filter { !used.contains($0.id) }
+            .map { PVComboBoxOption(value: $0.id, label: $0.label, subtext: $0.key) }
+    }
+
+    var canSubmitMetadataAdd: Bool {
+        !isSavingMetadataAdd
+            && !addMetadataFieldID.isEmpty
+            && !addMetadataValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     // MARK: Load
 
     func load() async {
@@ -99,12 +129,15 @@ final class SourcePageModel {
         loadError = nil
         defer { isLoading = false }
         do {
-            async let ws = store.getSourceWorkspace(projectDir: projectDir, sourceID: sourceID)
-            async let g = store.listSourceCredibilityGrades(projectDir: projectDir)
-            async let t = store.listSourceTypes(projectDir: projectDir)
-            let workspace = try await ws
-            grades = try await g
-            types = try await t
+            // Catalog RPCs take an exclusive open; do not fan out concurrently
+            // (catalog.already_open). See docs/ideas/catalog-access-serialization.md.
+            let workspace = try await store.getSourceWorkspace(
+                projectDir: projectDir,
+                sourceID: sourceID
+            )
+            grades = try await store.listSourceCredibilityGrades(projectDir: projectDir)
+            types = try await store.listSourceTypes(projectDir: projectDir)
+            vocabularyFields = try await store.listMetadataFields(projectDir: projectDir)
             applyWorkspace(workspace)
         } catch {
             loadError = error
@@ -116,6 +149,7 @@ final class SourcePageModel {
         title = workspace.source.title
         description = workspace.source.description
         sourceTypeID = workspace.source.sourceTypeID
+        applyMetadata(workspace.metadata)
         if let cred = workspace.credibility {
             credibilityKey = cred.gradeKey
             credibilityArgument = cred.argument
@@ -130,6 +164,21 @@ final class SourcePageModel {
             if artifactDescriptions[art.id] == nil {
                 artifactDescriptions[art.id] = art.description
             }
+        }
+    }
+
+    private func applyMetadata(_ entries: [CatalogMetadataEntry]) {
+        metadata = entries
+        for e in entries {
+            if metadataDrafts[e.field.id] == nil || e.hasValue {
+                metadataDrafts[e.field.id] = e.valueText
+            }
+        }
+        let ids = Set(entries.map(\.field.id))
+        metadataDrafts = metadataDrafts.filter { ids.contains($0.key) }
+        if var ws = workspace {
+            ws.metadata = entries
+            workspace = ws
         }
     }
 
@@ -225,6 +274,146 @@ final class SourcePageModel {
         }
     }
 
+    // MARK: Metadata
+
+    func saveMetadataValue(fieldID: String) async {
+        guard let entry = metadata.first(where: { $0.field.id == fieldID }) else { return }
+        guard savingMetadataFieldID == nil else { return }
+        let value = (metadataDrafts[fieldID] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return }
+        if entry.hasValue, value == entry.valueText { return }
+        savingMetadataFieldID = fieldID
+        defer { savingMetadataFieldID = nil }
+        do {
+            let date = dateInput(for: entry.field, valueText: value)
+            let result = try await store.setSourceMetadata(
+                projectDir: projectDir,
+                userID: userID,
+                sourceID: sourceID,
+                fieldID: fieldID,
+                valueText: value,
+                date: date
+            )
+            if let idx = metadata.firstIndex(where: { $0.field.id == fieldID }) {
+                metadata[idx].valueText = result.valueText
+                metadata[idx].dateValueID = result.dateValueID
+                metadata[idx].hasValue = true
+                metadataDrafts[fieldID] = result.valueText
+                if var ws = workspace {
+                    ws.metadata = metadata
+                    workspace = ws
+                }
+            }
+        } catch {
+            pageError = L10n.Errors.message(for: error)
+        }
+    }
+
+    func dismissMetadataSuggestion(fieldID: String) async {
+        do {
+            let updated = try await store.dismissSourceMetadataSuggestion(
+                projectDir: projectDir,
+                userID: userID,
+                sourceID: sourceID,
+                fieldID: fieldID
+            )
+            applyMetadata(updated)
+        } catch {
+            pageError = L10n.Errors.message(for: error)
+        }
+    }
+
+    func moveMetadata(from source: IndexSet, to destination: Int) async {
+        metadata.move(fromOffsets: source, toOffset: destination)
+        let ids = metadata.map(\.field.id)
+        await commitMetadataOrder(ids)
+    }
+
+    private func commitMetadataOrder(_ fieldIDs: [String]) async {
+        do {
+            let updated = try await store.reorderSourceMetadata(
+                projectDir: projectDir,
+                userID: userID,
+                sourceID: sourceID,
+                fieldIDs: fieldIDs
+            )
+            applyMetadata(updated)
+        } catch {
+            pageError = L10n.Errors.message(for: error)
+            await refreshWorkspace()
+        }
+    }
+
+    func openAddMetadata() {
+        addMetadataFieldID = ""
+        addMetadataValue = ""
+        addMetadataFieldError = nil
+        addMetadataValueError = nil
+        isAddingMetadata = true
+        Task {
+            do {
+                vocabularyFields = try await store.listMetadataFields(projectDir: projectDir)
+            } catch {
+                pageError = L10n.Errors.message(for: error)
+            }
+        }
+    }
+
+    func cancelAddMetadata() {
+        guard !isSavingMetadataAdd else { return }
+        isAddingMetadata = false
+    }
+
+    func createMetadataFromAdd() async {
+        addMetadataFieldError = nil
+        addMetadataValueError = nil
+        if addMetadataFieldID.isEmpty {
+            addMetadataFieldError = String(localized: L10n.Sources.metadataFieldRequired)
+            return
+        }
+        let value = addMetadataValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.isEmpty {
+            addMetadataValueError = String(localized: L10n.Sources.metadataValueRequired)
+            return
+        }
+        isSavingMetadataAdd = true
+        defer { isSavingMetadataAdd = false }
+        do {
+            let field = vocabularyFields.first { $0.id == addMetadataFieldID }
+            let date = field.map { dateInput(for: $0, valueText: value) } ?? nil
+            _ = try await store.setSourceMetadata(
+                projectDir: projectDir,
+                userID: userID,
+                sourceID: sourceID,
+                fieldID: addMetadataFieldID,
+                valueText: value,
+                date: date
+            )
+            isAddingMetadata = false
+            await refreshWorkspace()
+        } catch {
+            addMetadataValueError = L10n.Errors.message(for: error)
+        }
+    }
+
+    private func dateInput(for field: CatalogMetadataField, valueText: String) -> CatalogDateValueInput? {
+        guard field.dataType == "date" else { return nil }
+        let trimmed = valueText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let year = Int32(trimmed), (1000...9999).contains(year) else {
+            // Free-text dates stay on value_text only until a richer date picker lands.
+            return nil
+        }
+        return CatalogDateValueInput(
+            kind: "year",
+            qualifier: "",
+            calendar: "gregorian",
+            startYear: year,
+            startMonth: nil,
+            startDay: nil,
+            phrase: ""
+        )
+    }
+
     // MARK: Notes
 
     func addNote() async {
@@ -290,16 +479,35 @@ final class SourcePageModel {
             if let art = artifacts.first(where: { $0.id == id }) {
                 artifactLabels[id] = art.label
                 artifactDescriptions[id] = art.description
+                artifactFieldErrors[id] = nil
             }
         }
     }
 
-    func saveArtifactFields(id: String) async {
-        guard let art = artifacts.first(where: { $0.id == id }) else { return }
+    func artifactFieldsDirty(_ id: String) -> Bool {
+        guard let art = artifacts.first(where: { $0.id == id }) else { return false }
         let label = (artifactLabels[id] ?? art.label).trimmingCharacters(in: .whitespacesAndNewlines)
         let desc = (artifactDescriptions[id] ?? art.description).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !label.isEmpty else { return }
+        return label != art.label || desc != art.description
+    }
+
+    func canSaveArtifactFields(_ id: String) -> Bool {
+        artifactFieldsDirty(id) && savingArtifactID == nil
+    }
+
+    func saveArtifactFields(id: String) async {
+        guard let art = artifacts.first(where: { $0.id == id }) else { return }
+        guard savingArtifactID == nil else { return }
+        let label = (artifactLabels[id] ?? art.label).trimmingCharacters(in: .whitespacesAndNewlines)
+        let desc = (artifactDescriptions[id] ?? art.description).trimmingCharacters(in: .whitespacesAndNewlines)
+        if label.isEmpty {
+            artifactFieldErrors[id] = String(localized: L10n.Sources.artifactLabelRequired)
+            return
+        }
+        artifactFieldErrors[id] = nil
         if label == art.label, desc == art.description { return }
+        savingArtifactID = id
+        defer { savingArtifactID = nil }
         do {
             let updated = try await store.updateArtifact(
                 projectDir: projectDir,

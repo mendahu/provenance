@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		AA0000000000000000000301 /* PVThumbnail.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000300 /* PVThumbnail.swift */; };
 		AA0000000000000000000303 /* PVList.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000302 /* PVList.swift */; };
+		AA000000000000000000031F /* PVReorderableList.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000320 /* PVReorderableList.swift */; };
 		AA0000000000000000000305 /* PVDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000304 /* PVDialog.swift */; };
 		AA0000000000000000000307 /* SourcesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000306 /* SourcesModel.swift */; };
 		AA0000000000000000000309 /* SourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000308 /* SourcesView.swift */; };
@@ -133,6 +134,7 @@
 /* Begin PBXFileReference section */
 		AA0000000000000000000300 /* PVThumbnail.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVThumbnail.swift; sourceTree = "<group>"; };
 		AA0000000000000000000302 /* PVList.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVList.swift; sourceTree = "<group>"; };
+		AA0000000000000000000320 /* PVReorderableList.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVReorderableList.swift; sourceTree = "<group>"; };
 		AA0000000000000000000304 /* PVDialog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVDialog.swift; sourceTree = "<group>"; };
 		AA0000000000000000000306 /* SourcesModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcesModel.swift; sourceTree = "<group>"; };
 		AA0000000000000000000308 /* SourcesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcesView.swift; sourceTree = "<group>"; };
@@ -547,6 +549,7 @@
 			children = (
 				AA00000000000000000000C2 /* PVTable.swift */,
 				AA0000000000000000000302 /* PVList.swift */,
+				AA0000000000000000000320 /* PVReorderableList.swift */,
 			);
 			name = Data;
 			path = Data;
@@ -766,6 +769,7 @@
 				57420D5CDD1330745ACC33FD /* SourceFieldsDetailPane.swift in Sources */,
 				AA0000000000000000000301 /* PVThumbnail.swift in Sources */,
 				AA0000000000000000000303 /* PVList.swift in Sources */,
+				AA000000000000000000031F /* PVReorderableList.swift in Sources */,
 				AA0000000000000000000305 /* PVDialog.swift in Sources */,
 				AA0000000000000000000307 /* SourcesModel.swift in Sources */,
 				AA0000000000000000000309 /* SourcesView.swift in Sources */,

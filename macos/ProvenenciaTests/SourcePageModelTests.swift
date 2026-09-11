@@ -28,7 +28,9 @@ struct SourcePageModelTests {
         source: CatalogSource? = nil,
         notes: [CatalogSourceNote] = [],
         artifacts: [CatalogArtifact] = [],
-        credibility: CatalogCredibilityAssessment? = nil
+        credibility: CatalogCredibilityAssessment? = nil,
+        metadata: [CatalogMetadataEntry] = [],
+        fields: [CatalogMetadataField] = []
     ) -> FakeStore {
         let store = FakeStore()
         let src = source ?? CatalogSource(
@@ -39,6 +41,8 @@ struct SourcePageModelTests {
         store.sourceTypesByProject[projectDir] = [photoType()]
         store.notesBySource[sourceID] = notes
         store.artifactsBySource[sourceID] = artifacts
+        store.metadataBySource[sourceID] = metadata
+        store.fieldsByProject[projectDir] = fields
         store.credibilityGradesByProject[projectDir] = seededGrades()
         if let credibility {
             store.credibilityBySource[sourceID] = credibility
@@ -186,5 +190,113 @@ struct SourcePageModelTests {
             relPath: "objects/ab/cd/abcd"
         )
         #expect(url.path == "/tmp/proj.provenencia/objects/ab/cd/abcd")
+    }
+
+    private func authorField() -> CatalogMetadataField {
+        CatalogMetadataField(
+            id: "f-author", key: "author", origin: "provenencia",
+            label: "Author", dataType: "text", description: ""
+        )
+    }
+
+    private func repositoryField() -> CatalogMetadataField {
+        CatalogMetadataField(
+            id: "f-repo", key: "repository", origin: "provenencia",
+            label: "Repository", dataType: "text", description: ""
+        )
+    }
+
+    @Test func loadMetadataSuggestionsAndValues() async {
+        let author = authorField()
+        let repo = repositoryField()
+        let store = makeStore(
+            metadata: [
+                CatalogMetadataEntry(
+                    field: author, valueText: "", dateValueID: "",
+                    hasValue: false, suggested: true, sortOrder: 0
+                ),
+                CatalogMetadataEntry(
+                    field: repo, valueText: "NRO", dateValueID: "",
+                    hasValue: true, suggested: true, sortOrder: 1
+                ),
+            ],
+            fields: [author, repo]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        #expect(model.metadata.count == 2)
+        #expect(model.metadata.first?.field.key == "author")
+        #expect(model.metadata[1].hasValue)
+    }
+
+    @Test func saveMetadataValueFillsSuggestion() async {
+        let author = authorField()
+        let store = makeStore(
+            metadata: [
+                CatalogMetadataEntry(
+                    field: author, valueText: "", dateValueID: "",
+                    hasValue: false, suggested: true, sortOrder: 0
+                ),
+            ],
+            fields: [author]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        model.metadataDrafts[author.id] = "Mary Robins"
+        await model.saveMetadataValue(fieldID: author.id)
+        #expect(model.metadata.first?.hasValue == true)
+        #expect(model.metadata.first?.valueText == "Mary Robins")
+    }
+
+    @Test func dismissSuggestionRemovesEmptyRow() async {
+        let author = authorField()
+        let store = makeStore(
+            metadata: [
+                CatalogMetadataEntry(
+                    field: author, valueText: "", dateValueID: "",
+                    hasValue: false, suggested: true, sortOrder: 0
+                ),
+            ],
+            fields: [author]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        await model.dismissMetadataSuggestion(fieldID: author.id)
+        #expect(model.metadata.isEmpty)
+    }
+
+    @Test func reorderMetadataPersistsOrder() async {
+        let author = authorField()
+        let repo = repositoryField()
+        let store = makeStore(
+            metadata: [
+                CatalogMetadataEntry(
+                    field: author, valueText: "A", dateValueID: "",
+                    hasValue: true, suggested: true, sortOrder: 0
+                ),
+                CatalogMetadataEntry(
+                    field: repo, valueText: "B", dateValueID: "",
+                    hasValue: true, suggested: true, sortOrder: 1
+                ),
+            ],
+            fields: [author, repo]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        await model.moveMetadata(from: IndexSet(integer: 0), to: 2)
+        #expect(model.metadata.map(\.field.id) == [repo.id, author.id])
+    }
+
+    @Test func addMetadataFromDialog() async {
+        let author = authorField()
+        let store = makeStore(fields: [author])
+        let model = makeModel(store: store)
+        await model.load()
+        model.openAddMetadata()
+        model.addMetadataFieldID = author.id
+        model.addMetadataValue = "Eliza"
+        await model.createMetadataFromAdd()
+        #expect(model.isAddingMetadata == false)
+        #expect(model.metadata.contains { $0.field.id == author.id && $0.valueText == "Eliza" })
     }
 }

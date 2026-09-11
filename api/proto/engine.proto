@@ -46,6 +46,8 @@ enum Method {
   METHOD_UPDATE_ARTIFACT = 36;
   METHOD_LIST_SOURCE_CREDIBILITY_GRADES = 37;
   METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT = 38;
+  METHOD_DISMISS_SOURCE_METADATA_SUGGESTION = 39;
+  METHOD_REORDER_SOURCE_METADATA = 40;
 }
 
 message PingRequest {
@@ -383,6 +385,32 @@ message ClearSourceMetadataRequest {
 }
 
 message ClearSourceMetadataResponse {}
+
+// DismissSourceMetadataSuggestionRequest permanently hides an unfilled type
+// suggestion for this Source (source_metadata_layout.dismissed).
+message DismissSourceMetadataSuggestionRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  string field_id = 4;
+}
+
+message DismissSourceMetadataSuggestionResponse {
+  repeated MetadataWorkspaceEntry metadata = 1;
+}
+
+// ReorderSourceMetadataRequest sets display order for the Source's visible
+// metadata rows (valued + suggestions) via source_metadata_layout.sort_order.
+message ReorderSourceMetadataRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  repeated string field_ids = 4;
+}
+
+message ReorderSourceMetadataResponse {
+  repeated MetadataWorkspaceEntry metadata = 1;
+}
 
 message CreateArtifactRequest {
   string project_dir = 1;

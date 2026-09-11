@@ -35,6 +35,7 @@ enum PVSymbol: String {
     case plug = "powerplug.fill"
     case externalLink = "arrow.up.right.square"
     case fileUp = "doc.badge.plus"
+    case reorder = "line.3.horizontal"
 }
 
 /// Renders a design-system icon via SF Symbols.

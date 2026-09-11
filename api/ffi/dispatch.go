@@ -48,6 +48,8 @@ const (
 	MethodUpdateArtifact                      = int32(engine.Method_METHOD_UPDATE_ARTIFACT)
 	MethodListSourceCredibilityGrades         = int32(engine.Method_METHOD_LIST_SOURCE_CREDIBILITY_GRADES)
 	MethodUpsertSourceCredibilityAssessment   = int32(engine.Method_METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT)
+	MethodDismissSourceMetadataSuggestion     = int32(engine.Method_METHOD_DISMISS_SOURCE_METADATA_SUGGESTION)
+	MethodReorderSourceMetadata               = int32(engine.Method_METHOD_REORDER_SOURCE_METADATA)
 )
 
 // Call routes one coarse FFI operation to api/ffi/handlers.
@@ -129,6 +131,10 @@ func Call(method int32, in []byte) ([]byte, error) {
 		return handlers.ListSourceCredibilityGrades(in)
 	case MethodUpsertSourceCredibilityAssessment:
 		return handlers.UpsertSourceCredibilityAssessment(in)
+	case MethodDismissSourceMetadataSuggestion:
+		return handlers.DismissSourceMetadataSuggestion(in)
+	case MethodReorderSourceMetadata:
+		return handlers.ReorderSourceMetadata(in)
 	default:
 		return nil, apperr.New(apperr.CodeInternalUnknownMethod, apperr.KindInternal, strconv.Itoa(int(method)))
 	}

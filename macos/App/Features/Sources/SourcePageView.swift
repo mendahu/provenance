@@ -39,6 +39,7 @@ struct SourcePageView: View {
                 } else {
                     identitySection
                     credibilitySection
+                    metadataSection
                     artifactsSection
                     notesSection
                 }
@@ -46,7 +47,9 @@ struct SourcePageView: View {
             .padding(.horizontal, PVSpacing.gutterPage)
             .padding(.top, PVSpacing.space8)
             .padding(.bottom, PVSpacing.space10)
-            .frame(maxWidth: PVSpacing.measureForm + 160, alignment: .leading)
+            // Fill the pane so the ScrollView scrollbar sits on the trailing
+            // edge — a maxWidth on this stack alone shrinks the scroll view.
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(PVColor.surfacePage)
@@ -65,6 +68,20 @@ struct SourcePageView: View {
         ) {
             addArtifactForm
         }
+        .pvDialog(
+            isPresented: addMetadataPresented,
+            copy: PVDialogCopy(
+                title: L10n.Sources.addMetadataDialogTitle,
+                subtitle: L10n.Sources.addMetadataDialogSubtitle,
+                confirm: L10n.Sources.addMetadataConfirm,
+                cancel: L10n.Sources.cancelAction
+            ),
+            isRunning: model.isSavingMetadataAdd,
+            confirmDisabled: !model.canSubmitMetadataAdd,
+            onConfirm: { Task { await model.createMetadataFromAdd() } }
+        ) {
+            addMetadataForm
+        }
         .task { await model.load() }
         .accessibilityIdentifier("sources.page")
     }
@@ -77,6 +94,19 @@ struct SourcePageView: View {
                     model.openAddArtifact()
                 } else {
                     model.cancelAddArtifact()
+                }
+            }
+        )
+    }
+
+    private var addMetadataPresented: Binding<Bool> {
+        Binding(
+            get: { model.isAddingMetadata },
+            set: { presented in
+                if presented {
+                    model.openAddMetadata()
+                } else {
+                    model.cancelAddMetadata()
                 }
             }
         )
@@ -242,6 +272,112 @@ struct SourcePageView: View {
         }
     }
 
+    // MARK: Metadata
+
+    private var metadataSection: some View {
+        VStack(alignment: .leading, spacing: PVSpacing.space6) {
+            HStack(alignment: .center) {
+                Text(L10n.Sources.metadataHeading)
+                    .font(PVFont.display(size: PVTypeScale.h3, weight: PVFontWeight.semibold))
+                    .foregroundStyle(PVColor.textDisplay)
+                Spacer(minLength: 0)
+                PVButton(L10n.Sources.addMetadata, variant: .primary, size: .sm, icon: .plus) {
+                    model.openAddMetadata()
+                }
+                .accessibilityIdentifier("sources.page.addMetadata")
+            }
+
+            if model.metadata.isEmpty {
+                Text(L10n.Sources.metadataEmptyMessage)
+                    .font(PVFont.body(size: PVTypeScale.caption))
+                    .foregroundStyle(PVColor.textMuted)
+                    .accessibilityIdentifier("sources.page.metadata.empty")
+            } else {
+                PVReorderableList(items: model.metadata, onMove: { source, destination in
+                    Task { await model.moveMetadata(from: source, to: destination) }
+                }) { entry in
+                    metadataRow(entry)
+                }
+                .frame(height: CGFloat(model.metadata.count) * 48)
+                .scrollDisabled(true)
+                .accessibilityIdentifier("sources.page.metadata.list")
+            }
+        }
+    }
+
+    private func metadataRow(_ entry: CatalogMetadataEntry) -> some View {
+        let fieldID = entry.field.id
+        return HStack(spacing: PVSpacing.space5) {
+            PVReorderHandle()
+            Text(entry.field.label)
+                .font(PVFont.body(size: PVTypeScale.caption))
+                .foregroundStyle(PVColor.textMuted)
+                .frame(width: 170, alignment: .leading)
+            PVInput(
+                text: Binding(
+                    get: { model.metadataDrafts[fieldID] ?? entry.valueText },
+                    set: { model.metadataDrafts[fieldID] = $0 }
+                ),
+                size: .sm,
+                mono: true,
+                prompt: entry.hasValue ? nil : L10n.Sources.metadataSuggestionPlaceholder
+            )
+            .onSubmit { Task { await model.saveMetadataValue(fieldID: fieldID) } }
+            .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
+
+            if entry.field.dataType == "date" {
+                PVBadge(L10n.SourceFields.dataTypeDate, tone: .neutral)
+            }
+
+            if !entry.hasValue, entry.suggested {
+                PVIconButton(.dismiss, label: L10n.Sources.dismissMetadataSuggestion, size: .sm) {
+                    Task { await model.dismissMetadataSuggestion(fieldID: fieldID) }
+                }
+                .accessibilityIdentifier("sources.page.metadata.\(fieldID).dismiss")
+            }
+        }
+        .padding(.vertical, PVSpacing.space3)
+        .padding(.horizontal, PVSpacing.space4)
+    }
+
+    private var addMetadataForm: some View {
+        VStack(alignment: .leading, spacing: PVSpacing.space6) {
+            PVField(
+                label: L10n.Sources.metadataField,
+                hint: L10n.Sources.metadataFieldHint,
+                error: model.addMetadataFieldError,
+                required: true
+            ) {
+                PVComboBox(
+                    selection: $model.addMetadataFieldID,
+                    options: model.metadataFieldComboOptions,
+                    placeholder: L10n.Sources.metadataField,
+                    emptyLabel: L10n.Sources.typeNoMatch,
+                    isInvalid: model.addMetadataFieldError != nil,
+                    label: L10n.Sources.metadataField,
+                    accessibilityIdentifierPrefix: "sources.page.addMetadata.field"
+                )
+                .onChange(of: model.addMetadataFieldID) { _, newValue in
+                    if !newValue.isEmpty { model.addMetadataFieldError = nil }
+                }
+            }
+            PVField(
+                label: L10n.Sources.metadataValue,
+                hint: L10n.Sources.metadataValueHint,
+                error: model.addMetadataValueError,
+                required: true
+            ) {
+                PVInput(
+                    text: $model.addMetadataValue,
+                    isInvalid: model.addMetadataValueError != nil
+                )
+                .onChange(of: model.addMetadataValue) { _, _ in
+                    model.addMetadataValueError = nil
+                }
+            }
+        }
+    }
+
     // MARK: Artifacts
 
     private var artifactsSection: some View {
@@ -314,84 +450,153 @@ struct SourcePageView: View {
 
             if expanded {
                 artifactDetail(art)
-                    .padding(.horizontal, PVSpacing.space6)
-                    .padding(.bottom, PVSpacing.space6)
             }
         }
     }
 
     private func artifactDetail(_ art: CatalogArtifact) -> some View {
+        HStack(alignment: .top, spacing: PVSpacing.space8) {
+            artifactFieldsColumn(art)
+                .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
+            artifactPrimaryFileColumn(art)
+                .frame(minWidth: 300, maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.top, PVSpacing.space7)
+        .padding(.trailing, PVSpacing.space8)
+        .padding(.bottom, PVSpacing.space8)
+        .padding(.leading, 62)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(PVColor.surfaceSunken)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(PVColor.borderSubtle)
+                .frame(height: 1)
+        }
+    }
+
+    private func artifactFieldsColumn(_ art: CatalogArtifact) -> some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
             PVField(
                 label: L10n.Sources.artifactLabel,
                 hint: L10n.Sources.artifactLabelHint,
+                error: model.artifactFieldErrors[art.id],
                 required: true
             ) {
                 PVInput(
                     text: Binding(
                         get: { model.artifactLabels[art.id] ?? art.label },
-                        set: { model.artifactLabels[art.id] = $0 }
+                        set: {
+                            model.artifactLabels[art.id] = $0
+                            model.artifactFieldErrors[art.id] = nil
+                        }
                     ),
-                    size: .sm
+                    size: .sm,
+                    isInvalid: model.artifactFieldErrors[art.id] != nil
                 )
                 .onSubmit { Task { await model.saveArtifactFields(id: art.id) } }
             }
+
             PVField(
                 label: L10n.Sources.artifactDescription,
                 hint: L10n.Sources.artifactDescriptionHint
             ) {
-                PVInput(
+                TextField(
+                    "",
                     text: Binding(
                         get: { model.artifactDescriptions[art.id] ?? art.description },
                         set: { model.artifactDescriptions[art.id] = $0 }
                     ),
-                    size: .sm
+                    axis: .vertical
                 )
+                .font(PVFont.body(size: PVTypeScale.bodySmall))
+                .foregroundStyle(PVColor.textPrimary)
+                .textFieldStyle(.plain)
+                .lineLimit(3...8)
+                .padding(.horizontal, PVInputChrome.horizontalInset)
+                .padding(.vertical, PVSpacing.space4)
+                .background(
+                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                        .fill(PVColor.surfaceRaised)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                        .stroke(PVColor.borderDefault, lineWidth: 1)
+                )
+                .accessibilityIdentifier("sources.page.artifact.\(art.id).description")
                 .onSubmit { Task { await model.saveArtifactFields(id: art.id) } }
             }
 
-            if let file = art.file, !art.fileID.isEmpty {
-                HStack(spacing: PVSpacing.space6) {
-                    VStack(alignment: .leading, spacing: PVSpacing.space2) {
-                        Text(file.originalFilename)
-                            .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.medium))
-                            .foregroundStyle(PVColor.textPrimary)
-                        Text(fileMetaLine(file))
-                            .font(PVFont.mono(size: PVTypeScale.micro))
-                            .foregroundStyle(PVColor.textMuted)
-                    }
-                    Spacer(minLength: 0)
-                    PVButton(L10n.Sources.openFile, variant: .secondary, size: .sm, icon: .externalLink) {
-                        model.openArtifactFile(art)
-                    }
-                    .accessibilityIdentifier("sources.page.artifact.\(art.id).open")
+            HStack {
+                Spacer(minLength: 0)
+                PVButton(
+                    L10n.Sources.saveArtifact,
+                    variant: .primary,
+                    size: .sm,
+                    loading: model.savingArtifactID == art.id
+                ) {
+                    Task { await model.saveArtifactFields(id: art.id) }
                 }
-                .padding(PVSpacing.space6)
-                .background(PVColor.surfaceRaised)
-                .clipShape(RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .stroke(PVColor.borderSubtle, lineWidth: 1)
-                )
-
-                Text(L10n.Sources.openFileCaption)
-                    .font(PVFont.body(size: PVTypeScale.caption, italic: true))
-                    .foregroundStyle(PVColor.textMuted)
-            } else {
-                Text(L10n.Sources.filelessHint)
-                    .font(PVFont.body(size: PVTypeScale.caption))
-                    .foregroundStyle(PVColor.textMuted)
-                PVButton(L10n.Sources.addFile, variant: .primary, size: .sm, icon: .fileUp) {
-                    Task { await model.addFile(toArtifactID: art.id) }
-                }
-                .accessibilityIdentifier("sources.page.artifact.\(art.id).addFile")
+                .disabled(!model.canSaveArtifactFields(art.id) && model.savingArtifactID != art.id)
+                .accessibilityIdentifier("sources.page.artifact.\(art.id).save")
             }
 
             if let pageError = model.pageError {
                 PVCallout(tone: .danger, message: pageError)
             }
         }
-        .padding(.top, PVSpacing.space4)
+    }
+
+    private func artifactPrimaryFileColumn(_ art: CatalogArtifact) -> some View {
+        VStack(alignment: .leading, spacing: PVSpacing.space4) {
+            Text(L10n.Sources.primaryFileHeading)
+                .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
+                .tracking(PVTypeScale.micro * PVTracking.caps)
+                .textCase(.uppercase)
+                .foregroundStyle(PVColor.textFaint)
+
+            if let file = art.file, !art.fileID.isEmpty {
+                HStack(spacing: PVSpacing.space6) {
+                    PVThumbnail(.empty, size: 56)
+                    VStack(alignment: .leading, spacing: PVSpacing.space2) {
+                        Text(file.originalFilename)
+                            .font(PVFont.mono(size: PVTypeScale.caption))
+                            .foregroundStyle(PVColor.textPrimary)
+                            .lineLimit(2)
+                        Text(fileMetaLine(file))
+                            .font(PVFont.mono(size: PVTypeScale.micro))
+                            .foregroundStyle(PVColor.textMuted)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    PVButton(L10n.Sources.openFile, variant: .secondary, size: .sm, icon: .externalLink) {
+                        model.openArtifactFile(art)
+                    }
+                    .accessibilityIdentifier("sources.page.artifact.\(art.id).open")
+                }
+                .padding(PVSpacing.space6)
+                .background(PVColor.surfaceCard)
+                .clipShape(RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                        .stroke(PVColor.borderSubtle, lineWidth: 1)
+                )
+                .contentShape(Rectangle())
+                .onTapGesture { model.openArtifactFile(art) }
+
+                Text(L10n.Sources.openFileCaption)
+                    .font(PVFont.body(size: PVTypeScale.caption, italic: true))
+                    .foregroundStyle(PVColor.textMuted)
+            } else {
+                PVCallout(
+                    tone: .neutral,
+                    message: String(localized: L10n.Sources.filelessHint),
+                    compact: true
+                )
+                PVButton(L10n.Sources.addFile, variant: .primary, size: .sm, icon: .fileUp) {
+                    Task { await model.addFile(toArtifactID: art.id) }
+                }
+                .accessibilityIdentifier("sources.page.artifact.\(art.id).addFile")
+            }
+        }
     }
 
     private func fileMetaLine(_ file: CatalogFileRef) -> String {

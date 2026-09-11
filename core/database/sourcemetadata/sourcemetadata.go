@@ -1,9 +1,12 @@
-// Package sourcemetadata stores descriptive Source metadata values with audited set/clear.
+// Package sourcemetadata stores descriptive Source metadata values with audited
+// set/clear, plus the per-Source layout (dismissed suggestions and field order)
+// that the Source page metadata editor reads back through ListWorkspace.
 package sourcemetadata
 
 import (
 	"database/sql"
 	"errors"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -33,6 +36,25 @@ const (
 	sqlFieldGet     = `SELECT id, key, origin, label, data_type, COALESCE(description, '')
 		FROM source_metadata_fields WHERE id = ?`
 	sqlDateExists = `SELECT 1 FROM date_values WHERE id = ?`
+
+	// Layout rows append at the end of the Source's existing order. The next
+	// sort_order is computed inside the INSERT so two appends cannot read the
+	// same MAX and share a slot; the WHERE clause is also what lets SQLite
+	// parse INSERT…SELECT with an upsert clause.
+	sqlLayoutAppend = `INSERT INTO source_metadata_layout (source_id, field_id, sort_order, dismissed)
+		SELECT ?, ?, COALESCE(MAX(sort_order), -1) + 1, 0
+		FROM source_metadata_layout WHERE source_id = ?
+		ON CONFLICT(source_id, field_id) DO NOTHING`
+	sqlLayoutDismiss = `INSERT INTO source_metadata_layout (source_id, field_id, sort_order, dismissed)
+		SELECT ?, ?, COALESCE(MAX(sort_order), -1) + 1, 1
+		FROM source_metadata_layout WHERE source_id = ?
+		ON CONFLICT(source_id, field_id) DO UPDATE SET dismissed = 1`
+	// Reorder must not disturb dismissed, so the upsert touches sort_order only.
+	sqlLayoutOrder = `INSERT INTO source_metadata_layout (source_id, field_id, sort_order)
+		VALUES (?, ?, ?)
+		ON CONFLICT(source_id, field_id) DO UPDATE SET sort_order = excluded.sort_order`
+	sqlLayoutGet  = `SELECT sort_order, dismissed FROM source_metadata_layout WHERE source_id = ? AND field_id = ?`
+	sqlLayoutList = `SELECT field_id, sort_order, dismissed FROM source_metadata_layout WHERE source_id = ?`
 )
 
 // Row is one source_metadata value.
@@ -57,7 +79,16 @@ type WorkspaceEntry struct {
 	Field     sourcefields.Field
 	Value     *Row // nil when suggested but unset
 	Suggested bool
-	SortOrder int // suggestion order; 0 for extras
+	// SortOrder is the position ListWorkspace returned the entry in: the
+	// source_metadata_layout order once the Source has any layout row,
+	// otherwise the type's suggestion order (0 for extras).
+	SortOrder int
+}
+
+// layout is one source_metadata_layout row for a field.
+type layout struct {
+	SortOrder int
+	Dismissed bool
 }
 
 // Set upserts a metadata value for (source_id, field_id) and records update_source_metadata.
@@ -116,6 +147,11 @@ func Set(c *database.Catalog, userID []byte, in Input) (Row, error) {
 		}
 		idBytes := id[:]
 		if _, err := tx.Exec(sqlInsert, idBytes, in.SourceID, in.FieldID, nullStr(in.ValueText), nullBlob(in.DateValueID)); err != nil {
+			return Row{}, mapConstraint(err)
+		}
+		// A field the researcher just filled needs a place in the Source's
+		// order; appending keeps an existing hand-sorted layout intact.
+		if _, err := tx.Exec(sqlLayoutAppend, in.SourceID, in.FieldID, in.SourceID); err != nil {
 			return Row{}, mapConstraint(err)
 		}
 		row = Row{
@@ -235,6 +271,169 @@ func Clear(c *database.Catalog, userID, sourceID, fieldID []byte) error {
 	return tx.Commit()
 }
 
+// DismissSuggestion hides one of the type's metadata suggestions for a single
+// Source and records dismiss_source_metadata_suggestion.
+//
+// Dismissing is only meaningful while the field is an empty suggestion. A field
+// that already holds a value stays visible, so the call is a no-op rather than
+// an error — the editor's X is offered on empty suggestion rows only.
+func DismissSuggestion(c *database.Catalog, userID, sourceID, fieldID []byte) error {
+	db, err := c.DB()
+	if err != nil {
+		return err
+	}
+	if len(sourceID) != 16 || len(fieldID) != 16 {
+		return ErrInvalid
+	}
+	if err := requireUserID(userID); err != nil {
+		return err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if err := requireSource(tx, sourceID); err != nil {
+		return err
+	}
+	if _, err := getFieldTx(tx, fieldID); err != nil {
+		return err
+	}
+
+	_, err = getPairTx(tx, sourceID, fieldID)
+	switch {
+	case err == nil:
+		return tx.Commit()
+	case !errors.Is(err, sql.ErrNoRows):
+		return err
+	}
+
+	prev, err := getLayoutTx(tx, sourceID, fieldID)
+	had := true
+	if errors.Is(err, sql.ErrNoRows) {
+		had = false
+	} else if err != nil {
+		return err
+	}
+	if had && prev.Dismissed {
+		return tx.Commit()
+	}
+
+	if _, err := tx.Exec(sqlLayoutDismiss, sourceID, fieldID, sourceID); err != nil {
+		return mapConstraint(err)
+	}
+	action := audit.ActionCreate
+	var oldDismissed any
+	if had {
+		action = audit.ActionUpdate
+		oldDismissed = false
+	}
+	if _, err := audit.Record(tx, audit.Revision{
+		UserID:     userID,
+		ActionType: "dismiss_source_metadata_suggestion",
+		CreatedAt:  project.NowUTC(),
+		Changes: []audit.Change{{
+			EntityType: "source_metadata_layout",
+			EntityID:   fieldID,
+			Action:     action,
+			Fields: map[string]audit.FieldDiff{
+				"source_id": {Old: uuidString(sourceID), New: uuidString(sourceID)},
+				"field_id":  {Old: uuidString(fieldID), New: uuidString(fieldID)},
+				"dismissed": {Old: oldDismissed, New: true},
+			},
+		}},
+	}); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// Reorder rewrites the Source's field order as 0..n-1 over fieldIDs and records
+// reorder_source_metadata. Fields left out of the list keep their rows and sort
+// after the listed ones in ListWorkspace. Dismissed flags are preserved.
+func Reorder(c *database.Catalog, userID, sourceID []byte, fieldIDs [][]byte) error {
+	db, err := c.DB()
+	if err != nil {
+		return err
+	}
+	if len(sourceID) != 16 || len(fieldIDs) == 0 {
+		return ErrInvalid
+	}
+	if err := requireUserID(userID); err != nil {
+		return err
+	}
+	seen := make(map[string]struct{}, len(fieldIDs))
+	for _, fieldID := range fieldIDs {
+		if len(fieldID) != 16 {
+			return ErrInvalid
+		}
+		if _, dup := seen[string(fieldID)]; dup {
+			return ErrInvalid
+		}
+		seen[string(fieldID)] = struct{}{}
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if err := requireSource(tx, sourceID); err != nil {
+		return err
+	}
+
+	var changes []audit.Change
+	for i, fieldID := range fieldIDs {
+		if _, err := getFieldTx(tx, fieldID); err != nil {
+			return err
+		}
+		prev, err := getLayoutTx(tx, sourceID, fieldID)
+		had := true
+		if errors.Is(err, sql.ErrNoRows) {
+			had = false
+		} else if err != nil {
+			return err
+		}
+		if had && prev.SortOrder == i {
+			continue
+		}
+		if _, err := tx.Exec(sqlLayoutOrder, sourceID, fieldID, i); err != nil {
+			return mapConstraint(err)
+		}
+		action := audit.ActionCreate
+		var oldOrder any
+		if had {
+			action = audit.ActionUpdate
+			oldOrder = prev.SortOrder
+		}
+		changes = append(changes, audit.Change{
+			EntityType: "source_metadata_layout",
+			EntityID:   fieldID,
+			Action:     action,
+			Fields: map[string]audit.FieldDiff{
+				"source_id":  {Old: uuidString(sourceID), New: uuidString(sourceID)},
+				"field_id":   {Old: uuidString(fieldID), New: uuidString(fieldID)},
+				"sort_order": {Old: oldOrder, New: i},
+			},
+		})
+	}
+	if len(changes) == 0 {
+		return tx.Commit()
+	}
+	if _, err := audit.Record(tx, audit.Revision{
+		UserID:     userID,
+		ActionType: "reorder_source_metadata",
+		CreatedAt:  project.NowUTC(),
+		Changes:    changes,
+	}); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // ListBySource returns all metadata rows for a Source.
 func ListBySource(c *database.Catalog, sourceID []byte) ([]Row, error) {
 	db, err := c.DB()
@@ -260,7 +459,13 @@ func ListBySource(c *database.Catalog, sourceID []byte) ([]Row, error) {
 	return out, rows.Err()
 }
 
-// ListWorkspace returns suggested fields for the Source’s type plus any extra stored values.
+// ListWorkspace returns suggested fields for the Source’s type plus any extra
+// stored values, filtered and ordered by the Source's layout.
+//
+// Dismissed suggestions are omitted while they hold no value. Once the Source
+// has any layout row the entries come back in layout order, with fields that
+// have no row yet sorting after them in suggestion-then-extra order; a Source
+// with no layout at all keeps the original suggestion-then-extra order.
 func ListWorkspace(c *database.Catalog, sourceID []byte) ([]WorkspaceEntry, error) {
 	if len(sourceID) != 16 {
 		return nil, ErrInvalid
@@ -280,6 +485,10 @@ func ListWorkspace(c *database.Catalog, sourceID []byte) ([]WorkspaceEntry, erro
 	if err != nil {
 		return nil, err
 	}
+	layoutRows, maxOrder, err := listLayout(c, sourceID)
+	if err != nil {
+		return nil, err
+	}
 	byField := make(map[string]Row, len(values))
 	for _, v := range values {
 		byField[string(v.FieldID)] = v
@@ -294,6 +503,9 @@ func ListWorkspace(c *database.Catalog, sourceID []byte) ([]WorkspaceEntry, erro
 		if v, ok := byField[key]; ok {
 			vv := v
 			entry.Value = &vv
+		}
+		if entry.Value == nil && layoutRows[key].Dismissed {
+			continue
 		}
 		out = append(out, entry)
 	}
@@ -314,7 +526,48 @@ func ListWorkspace(c *database.Catalog, sourceID []byte) ([]WorkspaceEntry, erro
 			SortOrder: 0,
 		})
 	}
+
+	if len(layoutRows) == 0 {
+		return out, nil
+	}
+	fallback := maxOrder + 1
+	for i := range out {
+		if l, ok := layoutRows[string(out[i].Field.ID)]; ok {
+			out[i].SortOrder = l.SortOrder
+			continue
+		}
+		out[i].SortOrder = fallback + i
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].SortOrder < out[j].SortOrder })
 	return out, nil
+}
+
+// listLayout reads the Source's layout rows keyed by field id, with the highest
+// sort_order in use (-1 when the Source has no layout).
+func listLayout(c *database.Catalog, sourceID []byte) (map[string]layout, int, error) {
+	db, err := c.DB()
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := db.Query(sqlLayoutList, sourceID)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	out := map[string]layout{}
+	maxOrder := -1
+	for rows.Next() {
+		var fieldID []byte
+		var sortOrder, dismissed int
+		if err := rows.Scan(&fieldID, &sortOrder, &dismissed); err != nil {
+			return nil, 0, err
+		}
+		out[string(fieldID)] = layout{SortOrder: sortOrder, Dismissed: dismissed == 1}
+		if sortOrder > maxOrder {
+			maxOrder = sortOrder
+		}
+	}
+	return out, maxOrder, rows.Err()
 }
 
 func validateValue(dataType, valueText string, dateValueID []byte) error {
@@ -355,6 +608,16 @@ func scanRow(row rowScanner) (Row, error) {
 
 func getPairTx(tx *sql.Tx, sourceID, fieldID []byte) (Row, error) {
 	return scanRow(tx.QueryRow(sqlGetPair, sourceID, fieldID))
+}
+
+func getLayoutTx(tx *sql.Tx, sourceID, fieldID []byte) (layout, error) {
+	var l layout
+	var dismissed int
+	if err := tx.QueryRow(sqlLayoutGet, sourceID, fieldID).Scan(&l.SortOrder, &dismissed); err != nil {
+		return layout{}, err
+	}
+	l.Dismissed = dismissed == 1
+	return l, nil
 }
 
 func getFieldTx(tx *sql.Tx, fieldID []byte) (sourcefields.Field, error) {

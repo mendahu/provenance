@@ -14,6 +14,12 @@ enum L10n {
             comment: "Accessibility label for a PVToast's dismiss button"
         )
 
+        static let reorderHandle = LocalizedStringResource(
+            "designSystem.reorder.handle",
+            defaultValue: "Drag to reorder",
+            comment: "Accessibility label for a PVReorderHandle drag affordance"
+        )
+
         static let tableSortNone = LocalizedStringResource(
             "designSystem.table.sortNone",
             defaultValue: "Not sorted. Activate to sort ascending",
@@ -700,6 +706,90 @@ enum L10n {
             comment: "Helper under the credibility control"
         )
 
+        static let metadataHeading = LocalizedStringResource(
+            "sources.page.metadataHeading",
+            defaultValue: "Metadata",
+            comment: "Heading for the Metadata section on the Source page"
+        )
+
+        static let addMetadata = LocalizedStringResource(
+            "sources.page.addMetadata",
+            defaultValue: "Add",
+            comment: "Button to open Add metadata field dialog"
+        )
+
+        static let metadataEmptyMessage = LocalizedStringResource(
+            "sources.page.metadataEmptyMessage",
+            defaultValue: "No metadata yet — accept a type suggestion or add a field from the vocabulary.",
+            comment: "Empty state when a Source has no metadata rows"
+        )
+
+        static let dismissMetadataSuggestion = LocalizedStringResource(
+            "sources.page.dismissMetadataSuggestion",
+            defaultValue: "Dismiss this suggestion",
+            comment: "Accessibility label for dismissing a type metadata suggestion"
+        )
+
+        static let addMetadataDialogTitle = LocalizedStringResource(
+            "sources.page.addMetadataDialogTitle",
+            defaultValue: "Add metadata",
+            comment: "Title of the Add metadata dialog"
+        )
+
+        static let addMetadataDialogSubtitle = LocalizedStringResource(
+            "sources.page.addMetadataDialogSubtitle",
+            defaultValue: "Pick any field from this project’s vocabulary, then enter the value as written on the record.",
+            comment: "Subtitle of the Add metadata dialog"
+        )
+
+        static let addMetadataConfirm = LocalizedStringResource(
+            "sources.page.addMetadataConfirm",
+            defaultValue: "Add",
+            comment: "Confirm button on the Add metadata dialog"
+        )
+
+        static let metadataField = LocalizedStringResource(
+            "sources.page.metadataField",
+            defaultValue: "Field",
+            comment: "Label for metadata field picker"
+        )
+
+        static let metadataFieldHint = LocalizedStringResource(
+            "sources.page.metadataFieldHint",
+            defaultValue: "Search the whole source metadata vocabulary",
+            comment: "Hint under metadata field picker"
+        )
+
+        static let metadataValue = LocalizedStringResource(
+            "sources.page.metadataValue",
+            defaultValue: "Value",
+            comment: "Label for metadata value entry"
+        )
+
+        static let metadataValueHint = LocalizedStringResource(
+            "sources.page.metadataValueHint",
+            defaultValue: "Enter it as written on the record",
+            comment: "Hint under metadata value field"
+        )
+
+        static let metadataFieldRequired = LocalizedStringResource(
+            "sources.page.metadataFieldRequired",
+            defaultValue: "Choose a field.",
+            comment: "Validation when Add metadata is submitted without a field"
+        )
+
+        static let metadataValueRequired = LocalizedStringResource(
+            "sources.page.metadataValueRequired",
+            defaultValue: "Enter a value.",
+            comment: "Validation when Add metadata is submitted without a value"
+        )
+
+        static let metadataSuggestionPlaceholder = LocalizedStringResource(
+            "sources.page.metadataSuggestionPlaceholder",
+            defaultValue: "Add a value…",
+            comment: "Placeholder on an empty type-suggestion metadata row"
+        )
+
         static let artifactsHeading = LocalizedStringResource(
             "sources.page.artifactsHeading",
             defaultValue: "Artifacts",
@@ -754,10 +844,22 @@ enum L10n {
             comment: "Validation when Add Artifact is submitted without a label"
         )
 
+        static let saveArtifact = LocalizedStringResource(
+            "sources.page.saveArtifact",
+            defaultValue: "Save changes",
+            comment: "Button to save edited Artifact label and description"
+        )
+
         static let openFile = LocalizedStringResource(
             "sources.page.openFile",
             defaultValue: "Open",
             comment: "Button to open an Artifact's primary File in an external app"
+        )
+
+        static let primaryFileHeading = LocalizedStringResource(
+            "sources.page.primaryFileHeading",
+            defaultValue: "Primary file",
+            comment: "Uppercase section label above an Artifact's primary File card"
         )
 
         static let openFileCaption = LocalizedStringResource(
@@ -774,8 +876,8 @@ enum L10n {
 
         static let filelessHint = LocalizedStringResource(
             "sources.page.filelessHint",
-            defaultValue: "No file yet — physical evidence, or attach a scan when you have one.",
-            comment: "Hint when an Artifact has no primary File"
+            defaultValue: "Physical only — you have recorded the item without a scan. Attach a file when one exists; the artifact keeps its reference either way.",
+            comment: "Callout when an Artifact has no primary File"
         )
 
         static let notesHeading = LocalizedStringResource(

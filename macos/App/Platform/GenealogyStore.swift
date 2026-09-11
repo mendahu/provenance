@@ -113,7 +113,8 @@ struct CatalogMetadataField: Sendable, Equatable, Identifiable {
     var usedBy: Int = 0
 }
 
-struct CatalogMetadataEntry: Sendable, Equatable {
+struct CatalogMetadataEntry: Sendable, Equatable, Identifiable {
+    var id: String { field.id }
     var field: CatalogMetadataField
     var valueText: String
     var dateValueID: String
@@ -211,6 +212,21 @@ protocol GenealogyStore: Sendable {
         date: CatalogDateValueInput?
     ) async throws -> (valueText: String, dateValueID: String)
     func clearSourceMetadata(projectDir: String, userID: String, sourceID: String, fieldID: String) async throws
+    /// Permanently dismiss an unfilled type suggestion for this Source.
+    /// Returns the updated workspace metadata list.
+    func dismissSourceMetadataSuggestion(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        fieldID: String
+    ) async throws -> [CatalogMetadataEntry]
+    /// Persist display order for visible metadata rows (field ids in order).
+    func reorderSourceMetadata(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        fieldIDs: [String]
+    ) async throws -> [CatalogMetadataEntry]
     func createArtifact(
         projectDir: String,
         userID: String,

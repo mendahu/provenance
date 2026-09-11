@@ -310,6 +310,82 @@ func ClearSourceMetadata(in []byte) ([]byte, error) {
 	return proto.Marshal(&engine.ClearSourceMetadataResponse{})
 }
 
+func DismissSourceMetadataSuggestion(in []byte) ([]byte, error) {
+	var req engine.DismissSourceMetadataSuggestionRequest
+	if err := proto.Unmarshal(in, &req); err != nil {
+		return nil, unmarshalErr("dismiss_source_metadata_suggestion", err)
+	}
+	userID, err := parseUserID(req.GetUserId())
+	if err != nil {
+		return nil, err
+	}
+	sourceID, err := parseID(req.GetSourceId())
+	if err != nil {
+		return nil, err
+	}
+	fieldID, err := parseID(req.GetFieldId())
+	if err != nil {
+		return nil, err
+	}
+	c, err := openProjectCatalog(req.GetProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+	if err := sourcemetadata.DismissSuggestion(c, userID, sourceID, fieldID); err != nil {
+		return nil, err
+	}
+	entries, err := sourcemetadata.ListWorkspace(c, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	out := &engine.DismissSourceMetadataSuggestionResponse{}
+	for _, e := range entries {
+		out.Metadata = append(out.Metadata, metadataEntryProto(e))
+	}
+	return proto.Marshal(out)
+}
+
+func ReorderSourceMetadata(in []byte) ([]byte, error) {
+	var req engine.ReorderSourceMetadataRequest
+	if err := proto.Unmarshal(in, &req); err != nil {
+		return nil, unmarshalErr("reorder_source_metadata", err)
+	}
+	userID, err := parseUserID(req.GetUserId())
+	if err != nil {
+		return nil, err
+	}
+	sourceID, err := parseID(req.GetSourceId())
+	if err != nil {
+		return nil, err
+	}
+	fieldIDs := make([][]byte, 0, len(req.GetFieldIds()))
+	for _, id := range req.GetFieldIds() {
+		fid, err := parseID(id)
+		if err != nil {
+			return nil, err
+		}
+		fieldIDs = append(fieldIDs, fid)
+	}
+	c, err := openProjectCatalog(req.GetProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+	if err := sourcemetadata.Reorder(c, userID, sourceID, fieldIDs); err != nil {
+		return nil, err
+	}
+	entries, err := sourcemetadata.ListWorkspace(c, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	out := &engine.ReorderSourceMetadataResponse{}
+	for _, e := range entries {
+		out.Metadata = append(out.Metadata, metadataEntryProto(e))
+	}
+	return proto.Marshal(out)
+}
+
 func sourceProto(s sources.Source) *engine.Source {
 	return &engine.Source{
 		Id:           uuidString(s.ID),
