@@ -77,25 +77,11 @@ struct SourcePageIdentityHeader: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("sources.page.title")
             } editor: {
-                TextField(
-                    "",
+                PVTextArea(
                     text: $model.identity.titleDraft,
-                    prompt: Text(L10n.Sources.formTitle),
-                    axis: .vertical
-                )
-                .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
-                .foregroundStyle(PVColor.textDisplay)
-                .textFieldStyle(.plain)
-                .lineLimit(1...4)
-                .padding(.horizontal, PVSpacing.space5)
-                .padding(.vertical, PVSpacing.space4)
-                .background(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .fill(PVColor.surfaceRaised)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .stroke(PVColor.borderFocus, lineWidth: 1.5)
+                    lineLimit: 1...4,
+                    prompt: L10n.Sources.formTitle,
+                    typography: .display
                 )
                 .accessibilityIdentifier("sources.page.title")
                 .onChange(of: model.identity.titleDraft) { _, _ in model.identity.titleError = nil }

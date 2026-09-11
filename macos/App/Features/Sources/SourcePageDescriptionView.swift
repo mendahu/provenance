@@ -46,25 +46,11 @@ struct SourcePageDescriptionView: View {
                         .lineSpacing((PVLineHeight.normal - 1) * PVTypeScale.body)
                         .accessibilityIdentifier("sources.page.description")
                 } editor: {
-                    TextField(
-                        "",
+                    PVTextArea(
                         text: $model.identity.descriptionDraft,
-                        prompt: Text(L10n.Sources.descriptionPlaceholder),
-                        axis: .vertical
-                    )
-                    .font(PVFont.body(size: PVTypeScale.body, weight: PVFontWeight.regular))
-                    .foregroundStyle(PVColor.textPrimary)
-                    .textFieldStyle(.plain)
-                    .lineLimit(3...12)
-                    .padding(.horizontal, PVSpacing.space5)
-                    .padding(.vertical, PVSpacing.space4)
-                    .background(
-                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                            .fill(PVColor.surfaceCard)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                            .stroke(PVColor.borderDefault, lineWidth: 1)
+                        lineLimit: 3...12,
+                        prompt: L10n.Sources.descriptionPlaceholder,
+                        typography: .bodyLarge
                     )
                     .accessibilityIdentifier("sources.page.description")
                     .disabled(model.identity.isSaving)

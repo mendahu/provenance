@@ -130,27 +130,13 @@ struct SourcePageMetadataView: View {
                         .padding(.top, 6)
                         .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
                 } editor: {
-                    TextField(
-                        "",
+                    PVTextArea(
                         text: Binding(
                             get: { model.metadata.drafts[fieldID] ?? entry.valueText },
                             set: { model.metadata.drafts[fieldID] = $0 }
                         ),
-                        axis: .vertical
-                    )
-                    .font(PVFont.mono(size: PVTypeScale.caption))
-                    .foregroundStyle(PVColor.textPrimary)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1...6)
-                    .padding(.horizontal, PVInputChrome.horizontalInset)
-                    .padding(.vertical, PVSpacing.space3)
-                    .background(
-                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                            .fill(PVColor.surfaceRaised)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                            .stroke(PVColor.borderDefault, lineWidth: 1)
+                        lineLimit: 1...6,
+                        typography: .mono
                     )
                     .onSubmit { Task { await model.metadata.save(fieldID: fieldID) } }
                     .disabled(model.metadata.savingFieldID == fieldID)

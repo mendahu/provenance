@@ -188,27 +188,12 @@ struct SourcePageArtifactsView: View {
                 label: L10n.Sources.artifactDescription,
                 hint: L10n.Sources.artifactDescriptionHint
             ) {
-                TextField(
-                    "",
+                PVTextArea(
                     text: Binding(
                         get: { model.artifacts.descriptions[art.id] ?? art.description },
                         set: { model.artifacts.descriptions[art.id] = $0 }
                     ),
-                    axis: .vertical
-                )
-                .font(PVFont.body(size: PVTypeScale.bodySmall))
-                .foregroundStyle(PVColor.textPrimary)
-                .textFieldStyle(.plain)
-                .lineLimit(3...8)
-                .padding(.horizontal, PVInputChrome.horizontalInset)
-                .padding(.vertical, PVSpacing.space4)
-                .background(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .fill(PVColor.surfaceRaised)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .stroke(PVColor.borderDefault, lineWidth: 1)
+                    lineLimit: 3...8
                 )
                 .accessibilityIdentifier("sources.page.artifact.\(art.id).description")
                 .onSubmit { Task { await model.artifacts.saveFields(id: art.id) } }

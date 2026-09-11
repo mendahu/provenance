@@ -44,24 +44,10 @@ struct SourcePageNotesView: View {
                     .frame(width: SourcePageLayout.notesBylineWidth, alignment: .leading)
 
                 VStack(alignment: .trailing, spacing: PVSpacing.space4) {
-                    TextField(
-                        "",
+                    PVTextArea(
                         text: $model.notes.draft,
-                        prompt: Text(L10n.Sources.notePlaceholder),
-                        axis: .vertical
-                    )
-                    .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
-                    .foregroundStyle(PVColor.textPrimary)
-                    .textFieldStyle(.plain)
-                    .lineLimit(2...8)
-                    .padding(PVSpacing.space3)
-                    .background(
-                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                            .fill(PVColor.surfaceSunken)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                            .strokeBorder(PVColor.borderSubtle, lineWidth: 1)
+                        lineLimit: 2...8,
+                        prompt: L10n.Sources.notePlaceholder
                     )
                     .accessibilityIdentifier("sources.page.noteDraft")
 
@@ -130,24 +116,13 @@ private struct SourcePageNoteRow: View {
                         .accessibilityIdentifier("sources.page.note.\(note.id)")
                 },
                 editor: {
-                    TextField("", text: $bodyDraft, axis: .vertical)
-                        .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
-                        .foregroundStyle(PVColor.textPrimary)
-                        .textFieldStyle(.plain)
-                        .lineLimit(1...12)
-                        .padding(.vertical, PVSpacing.space3)
-                        .padding(.horizontal, PVSpacing.space4)
-                        .background(
-                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                                .fill(PVColor.surfaceCard)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                                .stroke(PVColor.borderDefault, lineWidth: 1)
-                        )
-                        .accessibilityIdentifier("sources.page.note.\(note.id)")
-                        .disabled(isSaving)
-                        .onChange(of: bodyDraft) { _, _ in bodyError = nil }
+                    PVTextArea(
+                        text: $bodyDraft,
+                        lineLimit: 1...12
+                    )
+                    .accessibilityIdentifier("sources.page.note.\(note.id)")
+                    .disabled(isSaving)
+                    .onChange(of: bodyDraft) { _, _ in bodyError = nil }
                 },
                 restingTrailing: {
                     PVIconButton(.trash, label: L10n.Sources.deleteNote, size: .sm, tone: .danger) {
