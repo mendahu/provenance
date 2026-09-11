@@ -4,7 +4,7 @@
 **Spike:** Provenencia Spike 2 (Source layer validation)  
 **Implements later as:** PR S2-21  
 **Depends on:** S2-01 workspace chrome (done — **Files** destination already shipped as a placeholder); S2-23 Source page (link target for “open Source”)  
-**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`S2-23-source-detail.md`](S2-23-source-detail.md)
+**Related briefs:** [`archive/S2-04-sources-list.md`](archive/S2-04-sources-list.md), [`archive/S2-23-source-detail.md`](archive/S2-23-source-detail.md)
 
 Paste this entire document into Claude Design as the requirements for one board/flow.
 
