@@ -37,17 +37,22 @@ struct DateValueEditorForm: View {
             Text(L10n.Sources.dateKindLabel)
                 .font(PVFont.body(size: PVTypeScale.caption, weight: PVFontWeight.medium))
                 .foregroundStyle(PVColor.textSecondary)
-            HStack(spacing: 0) {
-                kindChip(L10n.Sources.dateKindPoint, kind: "point")
-                kindChip(L10n.Sources.dateKindRange, kind: "range")
+            PVChipGroup(style: .segmented) {
+                PVChip(
+                    L10n.Sources.dateKindPoint,
+                    isSelected: draft.kind == "point",
+                    expands: true,
+                    selectionLift: true,
+                    action: { draft.setKind("point") }
+                )
+                PVChip(
+                    L10n.Sources.dateKindRange,
+                    isSelected: draft.kind == "range",
+                    expands: true,
+                    selectionLift: true,
+                    action: { draft.setKind("range") }
+                )
             }
-            .padding(2)
-            .background(PVColor.surfaceSunken)
-            .clipShape(RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                    .stroke(PVColor.borderSubtle, lineWidth: 1)
-            )
             if draft.isRange {
                 Text(L10n.Sources.dateKindRangeHint)
                     .font(PVFont.body(size: PVTypeScale.micro, italic: true))
@@ -56,60 +61,38 @@ struct DateValueEditorForm: View {
         }
     }
 
-    private func kindChip(_ title: LocalizedStringResource, kind: String) -> some View {
-        let on = draft.kind == kind
-        return Button {
-            draft.setKind(kind)
-        } label: {
-            Text(title)
-                .font(PVFont.body(size: PVTypeScale.caption))
-                .foregroundStyle(on ? PVColor.textPrimary : PVColor.textMuted)
-                .frame(maxWidth: .infinity)
-                .frame(height: 28)
-                .background(
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(on ? PVColor.surfaceCard : Color.clear)
-                        .pvShadow(on ? PVElevation.sm : [])
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
     private var qualifierSection: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space3) {
             Text(L10n.Sources.dateQualifierLabel)
                 .font(PVFont.body(size: PVTypeScale.caption, weight: PVFontWeight.medium))
                 .foregroundStyle(PVColor.textSecondary)
-            HStack(spacing: PVSpacing.space3) {
-                qualifierChip(L10n.Sources.dateQualifierAsStated, "")
-                qualifierChip(L10n.Sources.dateQualifierAbout, "ABT")
-                qualifierChip(L10n.Sources.dateQualifierBefore, "BEF")
-                qualifierChip(L10n.Sources.dateQualifierAfter, "AFT")
+            PVChipGroup(style: .loose) {
+                PVChip(
+                    L10n.Sources.dateQualifierAsStated,
+                    isSelected: draft.qualifier == "",
+                    tone: .accent,
+                    action: { draft.qualifier = "" }
+                )
+                PVChip(
+                    L10n.Sources.dateQualifierAbout,
+                    isSelected: draft.qualifier == "ABT",
+                    tone: .accent,
+                    action: { draft.qualifier = "ABT" }
+                )
+                PVChip(
+                    L10n.Sources.dateQualifierBefore,
+                    isSelected: draft.qualifier == "BEF",
+                    tone: .accent,
+                    action: { draft.qualifier = "BEF" }
+                )
+                PVChip(
+                    L10n.Sources.dateQualifierAfter,
+                    isSelected: draft.qualifier == "AFT",
+                    tone: .accent,
+                    action: { draft.qualifier = "AFT" }
+                )
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-    }
-
-    private func qualifierChip(_ title: LocalizedStringResource, _ value: String) -> some View {
-        let on = draft.qualifier == value
-        return Button {
-            draft.qualifier = value
-        } label: {
-            Text(title)
-                .font(PVFont.body(size: PVTypeScale.caption))
-                .foregroundStyle(on ? PVColor.accentSoftForeground : PVColor.textSecondary)
-                .padding(.horizontal, PVSpacing.space5)
-                .frame(height: 28)
-                .background(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .fill(on ? PVColor.accentSoft : PVColor.surfaceRaised)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .stroke(on ? PVColor.accentLine : PVColor.borderDefault, lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder

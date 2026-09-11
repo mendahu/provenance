@@ -20,9 +20,16 @@ struct SourcePageCredibilityView: View {
                 }
             )
 
-            HStack(spacing: PVSpacing.space4) {
+            PVChipGroup(style: .loose, spacing: PVSpacing.space4) {
                 ForEach(model.credibility.grades, id: \.id) { grade in
-                    credibilityChip(grade)
+                    PVChip(
+                        text: grade.label,
+                        isSelected: model.credibility.draftKey == grade.key,
+                        tone: tone(for: grade.key),
+                        isDashed: isDashedUnset(grade),
+                        action: { model.credibility.selectDraft(key: grade.key) }
+                    )
+                    .accessibilityIdentifier("sources.page.credibility.\(grade.key)")
                 }
             }
             .accessibilityIdentifier("sources.page.credibility.grades")
@@ -59,47 +66,19 @@ struct SourcePageCredibilityView: View {
         }
     }
 
-    private func credibilityChip(_ grade: CatalogCredibilityGrade) -> some View {
-        let selected = model.credibility.draftKey == grade.key
-        let dashedUnset = grade.key == "standard"
-            && !model.credibility.hasSavedAssessment
-            && model.credibility.draftKey == "standard"
-        let colors = credibilityColors(for: grade.key)
-        return Button {
-            model.credibility.selectDraft(key: grade.key)
-        } label: {
-            Text(grade.label)
-                .font(PVFont.body(
-                    size: PVTypeScale.caption,
-                    weight: selected ? PVFontWeight.semibold : PVFontWeight.regular
-                ))
-                .foregroundStyle(selected ? colors.fg : PVColor.textSecondary)
-                .padding(.horizontal, PVSpacing.space5)
-                .padding(.vertical, PVSpacing.space3)
-                .background(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .fill(selected ? colors.bg : Color.clear)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .strokeBorder(
-                            selected ? colors.fg : PVColor.borderDefault,
-                            style: StrokeStyle(lineWidth: 1, dash: dashedUnset ? [4, 3] : [])
-                        )
-                )
+    /// Domain mapping: catalog credibility keys → generic chip tones.
+    /// Not evidence-grade colors (proven/probable/…).
+    private func tone(for key: String) -> PVChip.Tone {
+        switch key {
+        case "low_trust": return .danger
+        case "high_trust": return .success
+        default: return .accent
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("sources.page.credibility.\(grade.key)")
     }
 
-    private func credibilityColors(for key: String) -> (bg: Color, fg: Color) {
-        switch key {
-        case "low_trust":
-            return (PVColor.dangerSoft, PVColor.danger)
-        case "high_trust":
-            return (PVColor.successSoft, PVColor.success)
-        default:
-            return (PVColor.accentSoft, PVColor.accent)
-        }
+    private func isDashedUnset(_ grade: CatalogCredibilityGrade) -> Bool {
+        grade.key == "standard"
+            && !model.credibility.hasSavedAssessment
+            && model.credibility.draftKey == "standard"
     }
 }
