@@ -18,7 +18,7 @@ Finished briefs live in [`archive/`](archive/). Sprint task list: [`../README.md
 | S2-02 | [`archive/S2-02-source-fields.md`](archive/S2-02-source-fields.md) | PR S2-15 |
 | S2-03 | [`archive/S2-03-source-types.md`](archive/S2-03-source-types.md) | PR S2-16 |
 | S2-04 | [`archive/S2-04-sources-list.md`](archive/S2-04-sources-list.md) | PR S2-17 |
-| S2-23 | [`archive/S2-23-source-detail.md`](archive/S2-23-source-detail.md) | PR S2-18 |
+| S2-23 | [`archive/S2-23-source-detail.md`](archive/S2-23-source-detail.md) | PRs S2-24 → S2-18 → S2-25 / S2-26 |
 
 ## How to use
 

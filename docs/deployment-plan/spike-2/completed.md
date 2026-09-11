@@ -103,7 +103,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Deliverables** | Done. Board for the **individual Source page** (view/edit only — no create/draft): identity + editable title/description; **Source credibility** (three-point grade + optional argument); **Notes** and **Metadata** as distinct areas; Artifacts list with **in-place accordion**; primary File opens **externally**; **Add Artifact** centered modal; **Add file…** fileless-only — **no Replace**; **breadcrumb** to Sources list. |
 | **Context** | Source doc §§4, 6–8; credibility: [`research-judgment-model.md`](../../research-judgment-model.md) §2. Feeds S2-18 schema/FFI gaps (Artifact `label`, suggestion dismiss, metadata order, credibility tables, first-attach-only ingest). |
 | **Out** | Redesigning the Sources list; delete; Replace file; Citations / Observations / Nodes; Claim confidence; in-app File preview; project Files browser (S2-20). |
-| **Feeds** | S2-18 |
+| **Feeds** | S2-24 → S2-18 (and S2-25 / S2-26) |
 
 ---
 
