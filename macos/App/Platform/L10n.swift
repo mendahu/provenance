@@ -708,9 +708,383 @@ enum L10n {
 
         static let credibilityHint = LocalizedStringResource(
             "sources.page.credibilityHint",
-            defaultValue: "Trust in this source as evidence — not claim confidence or citation certainty.",
-            comment: "Italic aside next to the Credibility section heading"
+            defaultValue: "How far you trust this source as evidence.",
+            comment: "Italic aside when a credibility assessment is saved"
         )
+
+        static let credibilityHintUnset = LocalizedStringResource(
+            "sources.page.credibilityHintUnset",
+            defaultValue: "Not assessed — treated as standard",
+            comment: "Italic aside when no credibility assessment row exists"
+        )
+
+        static let saveAssessment = LocalizedStringResource(
+            "sources.page.saveAssessment",
+            defaultValue: "Save assessment",
+            comment: "Button to save credibility grade and argument"
+        )
+
+        static let cancelEdit = LocalizedStringResource(
+            "sources.page.cancelEdit",
+            defaultValue: "Cancel",
+            comment: "Cancel an in-progress edit on the Source page"
+        )
+
+        static let saveAction = LocalizedStringResource(
+            "sources.page.saveAction",
+            defaultValue: "Save",
+            comment: "Primary save for title or type edit"
+        )
+
+        static let editTitle = LocalizedStringResource(
+            "sources.page.editTitle",
+            defaultValue: "Edit title",
+            comment: "Accessibility label for pencil to edit Source title"
+        )
+
+        static let editType = LocalizedStringResource(
+            "sources.page.editType",
+            defaultValue: "Edit type",
+            comment: "Accessibility label for pencil to edit Source type"
+        )
+
+        static let editMetadataValue = LocalizedStringResource(
+            "sources.page.editMetadataValue",
+            defaultValue: "Edit value",
+            comment: "Accessibility label for pencil to edit a saved metadata value"
+        )
+
+        static let editDescription = LocalizedStringResource(
+            "sources.page.editDescription",
+            defaultValue: "Edit",
+            comment: "Button to enter description edit mode"
+        )
+
+        static let saveDescription = LocalizedStringResource(
+            "sources.page.saveDescription",
+            defaultValue: "Save description",
+            comment: "Button to save Source description"
+        )
+
+        static let credibilitySavedStatus = LocalizedStringResource(
+            "sources.page.credibilitySavedStatus",
+            defaultValue: "Saved assessment",
+            comment: "Status when credibility draft matches saved assessment"
+        )
+
+        static let credibilityUnsavedStatus = LocalizedStringResource(
+            "sources.page.credibilityUnsavedStatus",
+            defaultValue: "No assessment saved",
+            comment: "Status when there is no credibility row and draft is clean at standard"
+        )
+
+        static let noUnsavedChanges = LocalizedStringResource(
+            "sources.page.noUnsavedChanges",
+            defaultValue: "No unsaved changes",
+            comment: "Status under artifact fields when drafts match saved values"
+        )
+
+        static let metadataStructuredLabel = LocalizedStringResource(
+            "sources.page.metadataStructuredLabel",
+            defaultValue: "structured",
+            comment: "Micro label beside structured date summary on a metadata row"
+        )
+
+        static let metadataNotStructured = LocalizedStringResource(
+            "sources.page.metadataNotStructured",
+            defaultValue: "Not structured yet",
+            comment: "Italic placeholder when a date metadata row has no DateValue"
+        )
+
+        static let structureDate = LocalizedStringResource(
+            "sources.page.structureDate",
+            defaultValue: "Structure…",
+            comment: "Button to open DateValue editor for an unstructured date field"
+        )
+
+        static let editDate = LocalizedStringResource(
+            "sources.page.editDate",
+            defaultValue: "Edit date",
+            comment: "Button to edit an existing structured DateValue"
+        )
+
+        static let addDateDialogTitle = LocalizedStringResource(
+            "sources.page.addDateDialogTitle",
+            defaultValue: "Add date",
+            comment: "Title of DateValue editor when creating structure"
+        )
+
+        static let editDateDialogTitle = LocalizedStringResource(
+            "sources.page.editDateDialogTitle",
+            defaultValue: "Edit date",
+            comment: "Title of DateValue editor when editing structure"
+        )
+
+        static let addDateConfirm = LocalizedStringResource(
+            "sources.page.addDateConfirm",
+            defaultValue: "Add date",
+            comment: "Confirm button when creating a DateValue"
+        )
+
+        static let saveDateConfirm = LocalizedStringResource(
+            "sources.page.saveDateConfirm",
+            defaultValue: "Save date",
+            comment: "Confirm button when updating a DateValue"
+        )
+
+        static let dateKindLabel = LocalizedStringResource(
+            "sources.page.dateKindLabel",
+            defaultValue: "Kind",
+            comment: "Label above DateValue kind segmented control"
+        )
+
+        static let dateKindPoint = LocalizedStringResource(
+            "sources.page.dateKindPoint",
+            defaultValue: "Single date",
+            comment: "DateValue kind: point"
+        )
+
+        static let dateKindRange = LocalizedStringResource(
+            "sources.page.dateKindRange",
+            defaultValue: "Between two bounds",
+            comment: "DateValue kind: range"
+        )
+
+        static let dateKindRangeHint = LocalizedStringResource(
+            "sources.page.dateKindRangeHint",
+            defaultValue: "A single date somewhere in this window — not how long something lasted",
+            comment: "Hint under Between kind"
+        )
+
+        static let dateQualifierLabel = LocalizedStringResource(
+            "sources.page.dateQualifierLabel",
+            defaultValue: "Qualifier",
+            comment: "Label above DateValue qualifier chips"
+        )
+
+        static let dateQualifierAsStated = LocalizedStringResource(
+            "sources.page.dateQualifierAsStated",
+            defaultValue: "As stated",
+            comment: "DateValue qualifier empty"
+        )
+
+        static let dateQualifierAbout = LocalizedStringResource(
+            "sources.page.dateQualifierAbout",
+            defaultValue: "About",
+            comment: "DateValue qualifier ABT"
+        )
+
+        static let dateQualifierBefore = LocalizedStringResource(
+            "sources.page.dateQualifierBefore",
+            defaultValue: "Before",
+            comment: "DateValue qualifier BEF"
+        )
+
+        static let dateQualifierAfter = LocalizedStringResource(
+            "sources.page.dateQualifierAfter",
+            defaultValue: "After",
+            comment: "DateValue qualifier AFT"
+        )
+
+        static let dateEarliestHeading = LocalizedStringResource(
+            "sources.page.dateEarliestHeading",
+            defaultValue: "Earliest — not before",
+            comment: "Uppercase heading for range start side"
+        )
+
+        static let dateLatestHeading = LocalizedStringResource(
+            "sources.page.dateLatestHeading",
+            defaultValue: "Latest — not after",
+            comment: "Uppercase heading for range end side"
+        )
+
+        static let datePointHeading = LocalizedStringResource(
+            "sources.page.datePointHeading",
+            defaultValue: "Date",
+            comment: "Uppercase heading for point date cascade"
+        )
+
+        static let dateLeaveEmptyHint = LocalizedStringResource(
+            "sources.page.dateLeaveEmptyHint",
+            defaultValue: "Leave a part empty when the record does not say",
+            comment: "Hint beside date cascade heading"
+        )
+
+        static let dateYear = LocalizedStringResource(
+            "sources.page.dateYear",
+            defaultValue: "Year",
+            comment: "DateValue year field label"
+        )
+
+        static let dateMonth = LocalizedStringResource(
+            "sources.page.dateMonth",
+            defaultValue: "Month",
+            comment: "DateValue month field label"
+        )
+
+        static let dateDay = LocalizedStringResource(
+            "sources.page.dateDay",
+            defaultValue: "Day",
+            comment: "DateValue day field label"
+        )
+
+        static let dateHour = LocalizedStringResource(
+            "sources.page.dateHour",
+            defaultValue: "Hour",
+            comment: "DateValue hour field label"
+        )
+
+        static let dateMinute = LocalizedStringResource(
+            "sources.page.dateMinute",
+            defaultValue: "Min",
+            comment: "DateValue minute field label"
+        )
+
+        static let dateSecond = LocalizedStringResource(
+            "sources.page.dateSecond",
+            defaultValue: "Sec",
+            comment: "DateValue second field label"
+        )
+
+        static let dateMillisecond = LocalizedStringResource(
+            "sources.page.dateMillisecond",
+            defaultValue: "Ms",
+            comment: "DateValue millisecond field label"
+        )
+
+        static let dateTimeZone = LocalizedStringResource(
+            "sources.page.dateTimeZone",
+            defaultValue: "Time zone",
+            comment: "DateValue free-text timezone label"
+        )
+
+        static let dateAddTime = LocalizedStringResource(
+            "sources.page.dateAddTime",
+            defaultValue: "Add time…",
+            comment: "Link to reveal optional time fields"
+        )
+
+        static let dateHideTime = LocalizedStringResource(
+            "sources.page.dateHideTime",
+            defaultValue: "Hide time",
+            comment: "Link to hide optional time fields"
+        )
+
+        static let dateShowAdvanced = LocalizedStringResource(
+            "sources.page.dateShowAdvanced",
+            defaultValue: "Calendar and phrase…",
+            comment: "Link to reveal calendar and phrase"
+        )
+
+        static let dateHideAdvanced = LocalizedStringResource(
+            "sources.page.dateHideAdvanced",
+            defaultValue: "Hide calendar and phrase",
+            comment: "Link to hide calendar and phrase"
+        )
+
+        static let dateCalendar = LocalizedStringResource(
+            "sources.page.dateCalendar",
+            defaultValue: "Calendar",
+            comment: "DateValue calendar picker label"
+        )
+
+        static let datePhrase = LocalizedStringResource(
+            "sources.page.datePhrase",
+            defaultValue: "Phrase",
+            comment: "DateValue phrase field label"
+        )
+
+        static let datePhraseHint = LocalizedStringResource(
+            "sources.page.datePhraseHint",
+            defaultValue: "A short gloss carried on the date itself — not the source's wording",
+            comment: "Hint under DateValue phrase"
+        )
+
+        static let dateStoredAs = LocalizedStringResource(
+            "sources.page.dateStoredAs",
+            defaultValue: "Stored as",
+            comment: "Label beside DateValue summary preview"
+        )
+
+        static let dateRangeOrderError = LocalizedStringResource(
+            "sources.page.dateRangeOrderError",
+            defaultValue: "The latest bound falls before the earliest bound. The date has to sit inside the window.",
+            comment: "Inline error when range end precedes start"
+        )
+
+        static let dateYearOutOfRange = LocalizedStringResource(
+            "sources.page.dateYearOutOfRange",
+            defaultValue: "Enter a year between 1 and 9999.",
+            comment: "Inline error when DateValue year is out of range"
+        )
+
+        static let dateMonthOutOfRange = LocalizedStringResource(
+            "sources.page.dateMonthOutOfRange",
+            defaultValue: "Month must be between 1 and 12.",
+            comment: "Inline error when DateValue month is out of range"
+        )
+
+        static let dateDayOutOfRange = LocalizedStringResource(
+            "sources.page.dateDayOutOfRange",
+            defaultValue: "Day must be between 1 and 31.",
+            comment: "Inline error when DateValue day is out of range"
+        )
+
+        static let dateHourOutOfRange = LocalizedStringResource(
+            "sources.page.dateHourOutOfRange",
+            defaultValue: "Hour must be between 0 and 23.",
+            comment: "Inline error when DateValue hour is out of range"
+        )
+
+        static let dateMinuteOutOfRange = LocalizedStringResource(
+            "sources.page.dateMinuteOutOfRange",
+            defaultValue: "Minute must be between 0 and 59.",
+            comment: "Inline error when DateValue minute is out of range"
+        )
+
+        static let dateSecondOutOfRange = LocalizedStringResource(
+            "sources.page.dateSecondOutOfRange",
+            defaultValue: "Second must be between 0 and 59.",
+            comment: "Inline error when DateValue second is out of range"
+        )
+
+        static let dateMillisecondOutOfRange = LocalizedStringResource(
+            "sources.page.dateMillisecondOutOfRange",
+            defaultValue: "Millisecond must be between 0 and 999.",
+            comment: "Inline error when DateValue millisecond is out of range"
+        )
+
+        static func metadataFieldCount(_ count: Int) -> String {
+            if count == 1 {
+                return String(localized: LocalizedStringResource(
+                    "sources.page.metadataFieldCountOne",
+                    defaultValue: "1 field",
+                    comment: "Metadata section count when exactly one saved field"
+                ))
+            }
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.metadataFieldCountMany",
+                defaultValue: "%d fields",
+                comment: "Metadata section count; argument is saved field count"
+            ))
+            return String(format: format, locale: .current, count)
+        }
+
+        static func artifactsCount(_ count: Int) -> String {
+            if count == 1 {
+                return String(localized: LocalizedStringResource(
+                    "sources.page.artifactsCountOne",
+                    defaultValue: "1 artifact",
+                    comment: "Artifacts section count when exactly one"
+                ))
+            }
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.artifactsCountMany",
+                defaultValue: "%d artifacts",
+                comment: "Artifacts section count; argument is artifact count"
+            ))
+            return String(format: format, locale: .current, count)
+        }
 
         static let metadataHeading = LocalizedStringResource(
             "sources.page.metadataHeading",
@@ -870,7 +1244,7 @@ enum L10n {
 
         static let saveArtifact = LocalizedStringResource(
             "sources.page.saveArtifact",
-            defaultValue: "Save changes",
+            defaultValue: "Save artifact",
             comment: "Button to save edited Artifact label and description"
         )
 

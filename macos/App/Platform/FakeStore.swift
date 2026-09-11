@@ -283,13 +283,28 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         sourceID: String,
         fieldID: String,
         valueText: String,
-        date _: CatalogDateValueInput?
+        date: CatalogDateValueInput?
     ) async throws -> (valueText: String, dateValueID: String) {
         var list = metadataBySource[sourceID] ?? []
+        let dateID: String
+        let summary: String
+        if let date {
+            dateID = "dv-\(fieldID.prefix(8))"
+            summary = DateValueDraft(from: date).summary
+        } else if let existing = list.first(where: { $0.field.id == fieldID }) {
+            dateID = existing.dateValueID
+            summary = existing.dateSummary
+        } else {
+            dateID = ""
+            summary = ""
+        }
         if let idx = list.firstIndex(where: { $0.field.id == fieldID }) {
             list[idx].valueText = valueText
             list[idx].hasValue = true
-            list[idx].dateValueID = ""
+            if date != nil {
+                list[idx].dateValueID = dateID
+                list[idx].dateSummary = summary
+            }
         } else {
             let field = (fieldsByProject[projectDir] ?? []).first { $0.id == fieldID }
                 ?? CatalogMetadataField(
@@ -300,7 +315,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
                 CatalogMetadataEntry(
                     field: field,
                     valueText: valueText,
-                    dateValueID: "",
+                    dateValueID: dateID,
+                    dateSummary: summary,
                     hasValue: true,
                     suggested: false,
                     sortOrder: order
@@ -308,7 +324,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
             )
         }
         metadataBySource[sourceID] = list
-        return (valueText, "")
+        return (valueText, dateID)
     }
 
     func clearSourceMetadata(projectDir _: String, userID _: String, sourceID: String, fieldID: String) async throws {

@@ -245,9 +245,22 @@ struct GoStore: GenealogyStore {
             d.qualifier = date.qualifier
             d.calendar = date.calendar
             d.phrase = date.phrase
+            d.startTz = date.startTZ
+            d.endTz = date.endTZ
             if let y = date.startYear { d.startYear = y }
             if let m = date.startMonth { d.startMonth = m }
             if let day = date.startDay { d.startDay = day }
+            if let h = date.startHour { d.startHour = h }
+            if let mi = date.startMinute { d.startMinute = mi }
+            if let s = date.startSecond { d.startSecond = s }
+            if let ms = date.startMillisecond { d.startMillisecond = ms }
+            if let y = date.endYear { d.endYear = y }
+            if let m = date.endMonth { d.endMonth = m }
+            if let day = date.endDay { d.endDay = day }
+            if let h = date.endHour { d.endHour = h }
+            if let mi = date.endMinute { d.endMinute = mi }
+            if let s = date.endSecond { d.endSecond = s }
+            if let ms = date.endMillisecond { d.endMillisecond = ms }
             req.date = d
         }
         let resp: Provenencia_Engine_V1_SetSourceMetadataResponse = try await provenenciaCall(
@@ -732,6 +745,7 @@ struct GoStore: GenealogyStore {
             field: Self.mapMetadataField(e.field),
             valueText: e.valueText,
             dateValueID: e.dateValueID,
+            dateSummary: e.dateSummary,
             hasValue: e.hasValue_p,
             suggested: e.suggested,
             sortOrder: e.sortOrder

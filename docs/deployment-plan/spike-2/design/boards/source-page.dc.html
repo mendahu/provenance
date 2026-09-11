@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/tokens/colors.css">
+<link rel="stylesheet" href="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/tokens/typography.css">
+<link rel="stylesheet" href="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/tokens/radii.css">
+<link rel="stylesheet" href="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/tokens/motion.css">
+<link rel="stylesheet" href="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/tokens/base.css">
+<link rel="stylesheet" href="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/styles.css">
+<script src="_ds/provenencia-design-system-0f6c1f29-8408-4735-b114-5ae4c4c18445/_ds_bundle.js"></script>
+<style>
+  body{margin:0;background:var(--surface-page);}
+  a{color:var(--text-link);text-decoration:none;}
+  a:hover{color:var(--text-link-hover);text-decoration:underline;}
+  textarea[data-autogrow]{overflow:hidden;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--surface-page);color:var(--text-primary);font-family:var(--font-body);font-size:var(--text-body-sm);">
+
+  <div style="display:flex;align-items:center;gap:var(--space-7);flex-wrap:wrap;padding:var(--space-4) var(--gutter-page);background:var(--surface-sunken);border-bottom:1px solid var(--border-default);">
+    <span style="font-size:var(--text-micro);letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:600;color:var(--text-faint);">S2-23 · Source page</span>
+    <span style="font-size:var(--text-caption);color:var(--text-muted);font-style:italic;">Renders inside the S2-01 content host — no second window shell drawn</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:var(--space-8);">
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Tabs" tabs="{{ scenarioTabs }}" value="{{ scenario }}" onChange="{{ onScenario }}" hint-size="320px,34px"></x-import>
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Switch" checked="{{ showPins }}" onChange="{{ onTogglePins }}" label="Annotations" hint-size="120px,22px"></x-import>
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Switch" checked="{{ failIngest }}" onChange="{{ onToggleFail }}" label="Next ingest fails" hint-size="150px,22px"></x-import>
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Switch" checked="{{ credSet }}" onChange="{{ onToggleCred }}" label="Credibility assessed" hint-size="170px,22px"></x-import>
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Switch" checked="{{ darkMode }}" onChange="{{ onToggleDark }}" label="Dark mode" hint-size="110px,22px"></x-import>
+    </div>
+  </div>
+
+  <div style="position:sticky;top:0;z-index:5;background:var(--surface-card);border-bottom:1px solid var(--border-subtle);padding:var(--space-5) var(--gutter-page) var(--space-6);">
+    <div style="display:flex;align-items:center;gap:var(--space-6);margin-bottom:var(--space-5);">
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Breadcrumbs" items="{{ crumbs }}" hint-size="auto,20px"></x-import>
+      <sc-if value="{{ showPins }}" hint-placeholder-val="{{ true }}">
+        <span style="display:inline-flex;align-items:center;gap:var(--space-3);">
+          <span style="display:grid;place-items:center;width:17px;height:17px;border-radius:var(--radius-pill);background:var(--ochre-100);border:1px solid var(--ochre-300);color:var(--ochre-900);font-family:var(--font-mono);font-size:9px;">1</span>
+          <span style="font-size:var(--text-micro);color:var(--warning);font-style:italic;">The breadcrumb is the only page-level navigation — no standalone back button</span>
+        </span>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;gap:var(--space-7);max-width:var(--width-content-max);">
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Thumbnail" icon="book-marked" size="{{ 72 }}" label="No scan yet" hint-size="72px,72px"></x-import>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:flex-start;gap:var(--space-4);">
+          <div style="flex:0 1 auto;min-width:0;">
+            <sc-if value="{{ editingTitle }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <textarea data-autogrow="true" rows="1" value="{{ titleDraft }}" onChange="{{ onTitleDraft }}" aria-label="Source title" style="{{ titleStyle }}" style-focus="background:var(--surface-card);border-color:var(--border-focus);box-shadow:var(--ring-focus);"></textarea>
+                <sc-if value="{{ titleInvalid }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:var(--space-2);font-size:var(--text-caption);color:var(--danger);">A source must keep a title — type one to save.</div>
+                </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ titleResting }}" hint-placeholder-val="{{ true }}">
+              <h1 style="margin:0;font-family:var(--font-display);font-size:var(--text-h1);font-weight:600;letter-spacing:var(--tracking-display);line-height:var(--lh-snug);color:var(--text-display);">{{ title }}</h1>
+            </sc-if>
+          </div>
+          <div style="flex:none;display:flex;align-items:center;gap:var(--space-3);min-height:28px;">
+            <sc-if value="{{ titleResting }}" hint-placeholder-val="{{ true }}">
+              <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.IconButton" icon="pencil" label="Edit title" size="sm" onClick="{{ onEditTitle }}" hint-size="28px,28px"></x-import>
+            </sc-if>
+            <sc-if value="{{ editingTitle }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-flex;gap:var(--space-3);">
+                <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" onClick="{{ onSaveTitle }}" disabled="{{ titleInvalid }}" hint-size="auto,28px">Save</x-import>
+                <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" size="sm" onClick="{{ onCancelTitle }}" hint-size="auto,28px">Cancel</x-import>
+              </span>
+            </sc-if>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-5);margin-top:var(--space-4);flex-wrap:wrap;">
+          <span style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--text-muted);">SRC-0412</span>
+          <span style="color:var(--border-default);">·</span>
+          <sc-if value="{{ editingType }}" hint-placeholder-val="{{ false }}">
+            <span style="display:inline-flex;align-items:center;gap:var(--space-3);">
+              <span style="display:inline-block;width:210px;">
+                <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Select" options="{{ typeOptions }}" value="{{ typeValue }}" onChange="{{ onType }}" size="sm" aria-label="Source type" hint-size="210px,28px"></x-import>
+              </span>
+              <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.IconButton" icon="x" label="Stop changing the type" size="sm" onClick="{{ onCloseType }}" hint-size="28px,28px"></x-import>
+            </span>
+          </sc-if>
+          <sc-if value="{{ typeResting }}" hint-placeholder-val="{{ true }}">
+            <span style="display:inline-flex;align-items:center;gap:var(--space-3);">
+              <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Tag" color="var(--rec-marriage)" hint-size="auto,22px">{{ typeLabel }}</x-import>
+              <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.IconButton" icon="pencil" label="Change source type" size="sm" onClick="{{ onEditType }}" hint-size="28px,28px"></x-import>
+            </span>
+          </sc-if>
+          <span style="color:var(--border-default);">·</span>
+          <span style="font-size:var(--text-caption);color:var(--text-muted);">Created {{ createdStamp }} · edited {{ editedStamp }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex:1;padding:var(--space-9) var(--gutter-page) var(--space-12);">
+    <div style="max-width:var(--width-content-max);">
+
+      <div style="display:flex;gap:var(--space-11);align-items:stretch;flex-wrap:wrap;">
+      <div style="flex:1 1 420px;min-width:0;display:flex;flex-direction:column;">
+      <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:baseline;gap:var(--space-5);margin:0 0 var(--space-6);padding-bottom:var(--space-4);border-bottom:1px solid var(--border-default);">
+        <h2 style="margin:0;font-family:var(--font-display);font-size:var(--text-h3);font-weight:600;color:var(--text-display);">Description</h2>
+        <sc-if value="{{ descResting }}" hint-placeholder-val="{{ true }}">
+          <span style="margin-left:auto;">
+            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" size="sm" iconLeft="pencil" onClick="{{ onEditDesc }}" hint-size="auto,28px">Edit</x-import>
+          </span>
+        </sc-if>
+      </div>
+      <sc-if value="{{ editingDesc }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <textarea data-autogrow="true" value="{{ descDraft }}" onChange="{{ onDescDraft }}" rows="3" placeholder="What this source is, and where you consulted it" aria-label="Source description" style="width:100%;box-sizing:border-box;resize:none;font-family:var(--font-body);font-size:var(--text-body);line-height:var(--lh-relaxed);color:var(--text-primary);background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:var(--space-4) var(--space-5);outline:none;" style-focus="border-color:var(--border-focus);box-shadow:var(--ring-focus);"></textarea>
+          <div style="display:flex;gap:var(--space-4);margin-top:var(--space-4);">
+            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" onClick="{{ onSaveDesc }}" hint-size="auto,28px">Save description</x-import>
+            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" size="sm" onClick="{{ onCancelDesc }}" hint-size="auto,28px">Cancel</x-import>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ descResting }}" hint-placeholder-val="{{ true }}">
+        <p style="margin:0;font-size:var(--text-body);line-height:var(--lh-relaxed);color:var(--text-secondary);text-wrap:pretty;">{{ description }}</p>
+      </sc-if>
+      </div>
+
+      <div style="margin-top:var(--space-10);">
+        <div style="display:flex;align-items:baseline;gap:var(--space-5);margin:0 0 var(--space-6);padding-bottom:var(--space-4);border-bottom:1px solid var(--border-default);">
+          <h2 style="margin:0;font-family:var(--font-display);font-size:var(--text-h3);font-weight:600;color:var(--text-display);">Credibility</h2>
+          <span style="font-size:var(--text-caption);color:var(--text-muted);font-style:italic;">{{ credHint }}</span>
+        </div>
+        <div style="display:flex;gap:var(--space-3);">
+          <sc-for list="{{ credOptions }}" as="c" hint-placeholder-count="3">
+            <button onClick="{{ c.onPick }}" aria-pressed="{{ c.selected }}" style="{{ c.style }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+        <div style="margin-top:var(--space-5);">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Input" multiline="{{ true }}" rows="{{ 2 }}" size="sm" value="{{ credArgument }}" onChange="{{ onCredArgument }}" placeholder="Why this grade — optional" aria-label="Credibility argument" hint-size="100%,56px"></x-import>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-4);margin-top:var(--space-4);">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" onClick="{{ onSaveCred }}" disabled="{{ credClean }}" hint-size="auto,28px">Save assessment</x-import>
+          <sc-if value="{{ credDirty }}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" size="sm" onClick="{{ onCancelCred }}" hint-size="auto,28px">Cancel</x-import>
+          </sc-if>
+          <sc-if value="{{ credClean }}" hint-placeholder-val="{{ true }}">
+            <span style="font-size:var(--text-caption);color:var(--text-faint);font-style:italic;">{{ credSavedLine }}</span>
+          </sc-if>
+        </div>
+        <sc-if value="{{ showPins }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:var(--space-4);align-items:flex-start;margin-top:var(--space-5);padding:var(--space-4) var(--space-5);background:var(--ochre-100);border:1px solid var(--ochre-300);border-radius:var(--radius-sm);">
+            <span style="display:grid;place-items:center;width:17px;height:17px;flex:none;border-radius:var(--radius-pill);background:var(--surface-card);border:1px solid var(--ochre-300);color:var(--ochre-900);font-family:var(--font-mono);font-size:9px;">5</span>
+            <span style="font-size:var(--text-micro);line-height:var(--lh-normal);color:var(--ochre-900);">One interpretation assessment per source (source_credibility_assessments) — trust in the source as evidence, not claim confidence or citation certainty. Not a column on the catalog row.</span>
+          </div>
+        </sc-if>
+      </div>
+      </div>
+
+      <div style="flex:1 1 520px;min-width:0;">
+      <div style="display:flex;align-items:baseline;gap:var(--space-5);margin:0 0 var(--space-6);padding-bottom:var(--space-4);border-bottom:1px solid var(--border-default);">
+        <h2 style="margin:0;font-family:var(--font-display);font-size:var(--text-h3);font-weight:600;color:var(--text-display);">Metadata</h2>
+        <span style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--text-muted);">{{ metaCount }}</span>
+        <sc-if value="{{ showPins }}" hint-placeholder-val="{{ true }}">
+          <span style="display:inline-flex;align-items:center;gap:var(--space-3);">
+            <span style="display:grid;place-items:center;width:17px;height:17px;border-radius:var(--radius-pill);background:var(--ochre-100);border:1px solid var(--ochre-300);color:var(--ochre-900);font-family:var(--font-mono);font-size:9px;">4</span>
+            <span style="font-size:var(--text-micro);color:var(--warning);font-style:italic;">Drag order and suggestion dismissals persist per source (S2-18 schema)</span>
+          </span>
+        </sc-if>
+        <div style="margin-left:auto;">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" iconLeft="plus" onClick="{{ onOpenAddField }}" hint-size="auto,28px">Add field</x-import>
+        </div>
+      </div>
+
+      <p style="margin:0 0 var(--space-7);max-width:var(--measure-prose);font-size:var(--text-caption);line-height:var(--lh-normal);color:var(--text-muted);">Metadata describes the source itself — what the record says about its own making: a registration number, a call number, the reel it sits on. Facts the record asserts about people or events are not metadata; those become citations and asserted facts, so they can move on to the entities they describe.</p>
+
+      <div>
+        <sc-for list="{{ metaRows }}" as="m" hint-placeholder-count="4">
+          <div draggable="true" onDragStart="{{ m.onDragStart }}" onDragOver="{{ m.onDragOver }}" onDrop="{{ m.onDrop }}" onDragEnd="{{ m.onDragEnd }}" style="{{ m.rowStyle }}">
+            <span style="display:grid;place-items:center;width:20px;color:var(--text-faint);cursor:grab;" style-active="cursor:grabbing;" title="Drag to reorder" aria-label="Drag to reorder">
+              <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Icon" name="grip-vertical" size="{{ 14 }}" hint-size="14px,14px"></x-import>
+            </span>
+            <span style="width:170px;flex:none;font-size:var(--text-caption);color:var(--text-muted);">{{ m.label }}</span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+              <sc-if value="{{ m.editing }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:flex-start;gap:var(--space-3);">
+                  <textarea value="{{ m.draft }}" onChange="{{ m.onChange }}" rows="{{ m.editRows }}" aria-label="{{ m.label }}" style="flex:1;min-width:0;resize:vertical;box-sizing:border-box;font-family:var(--font-mono);font-size:var(--text-caption);line-height:var(--lh-normal);color:var(--text-primary);background:var(--surface-raised);border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:var(--space-3) var(--space-4);outline:none;" style-focus="border-color:var(--border-focus);box-shadow:var(--ring-focus);"></textarea>
+                  <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" onClick="{{ m.onSave }}" disabled="{{ m.saveDisabled }}" hint-size="auto,28px">Save</x-import>
+                  <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.IconButton" icon="x" label="Cancel" size="sm" onClick="{{ m.onCancel }}" hint-size="28px,28px"></x-import>
+                </span>
+              </sc-if>
+              <sc-if value="{{ m.resting }}" hint-placeholder-val="{{ true }}">
+                <span style="display:flex;align-items:flex-start;gap:var(--space-3);">
+                  <span style="flex:1;min-width:0;padding-top:6px;font-family:var(--font-mono);font-size:var(--text-caption);line-height:var(--lh-normal);color:var(--text-primary);white-space:pre-wrap;">{{ m.value }}</span>
+                  <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.IconButton" icon="pencil" label="Edit value" size="sm" onClick="{{ m.onEdit }}" hint-size="28px,28px"></x-import>
+                </span>
+              </sc-if>
+              <sc-if value="{{ m.isDate }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;gap:var(--space-4);padding-left:var(--space-4);">
+                  <span style="font-family:var(--font-mono);font-size:var(--text-micro);color:var(--text-faint);">structured</span>
+                  <span style="{{ m.structuredStyle }}">{{ m.structured }}</span>
+                  <button onClick="{{ m.onStructure }}" style="{{ m.structureBtnStyle }}" style-hover="background:var(--surface-hover);">{{ m.structureLabel }}</button>
+                </span>
+              </sc-if>
+            </span>
+            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Badge" tone="{{ m.kindTone }}" icon="{{ m.kindIcon }}" subtle="{{ true }}" hint-size="auto,20px">{{ m.kind }}</x-import>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ hasSuggestions }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:var(--space-7);">
+            <div style="font-size:var(--text-micro);letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:600;color:var(--text-faint);margin-bottom:var(--space-4);">Suggested by this type</div>
+            <sc-for list="{{ suggestionRows }}" as="s" hint-placeholder-count="2">
+              <div style="display:flex;align-items:center;gap:var(--space-5);padding:var(--space-4) var(--space-5);border:1px dashed var(--border-default);border-radius:var(--radius-sm);margin-bottom:var(--space-4);background:var(--surface-card);">
+                <span style="width:170px;flex:none;font-size:var(--text-caption);color:var(--text-muted);margin-left:20px;">{{ s.label }}</span>
+                <input value="{{ s.draft }}" onChange="{{ s.onDraft }}" onKeyDown="{{ s.onKey }}" placeholder="{{ s.placeholder }}" aria-label="{{ s.label }}" style="flex:1;min-width:0;font-family:var(--font-mono);font-size:var(--text-caption);color:var(--text-primary);background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:var(--space-3) var(--space-4);outline:none;" style-focus="background:var(--surface-card);border-color:var(--border-focus);box-shadow:var(--ring-focus);">
+                <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" size="sm" onClick="{{ s.onSave }}" disabled="{{ s.empty }}" hint-size="auto,28px">Save</x-import>
+                <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.IconButton" icon="x" label="Dismiss this suggestion" size="sm" onClick="{{ s.onDismiss }}" hint-size="28px,28px"></x-import>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      </div>
+      </div>
+
+      <div style="display:flex;align-items:baseline;gap:var(--space-5);margin:var(--space-11) 0 var(--space-6);padding-bottom:var(--space-4);border-bottom:1px solid var(--border-default);">
+        <h2 style="margin:0;font-family:var(--font-display);font-size:var(--text-h3);font-weight:600;color:var(--text-display);">Artifacts</h2>
+        <span style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--text-muted);">{{ artifactCount }}</span>
+        <sc-if value="{{ showPins }}" hint-placeholder-val="{{ true }}">
+          <span style="display:inline-flex;align-items:center;gap:var(--space-3);">
+            <span style="display:grid;place-items:center;width:17px;height:17px;border-radius:var(--radius-pill);background:var(--ochre-100);border:1px solid var(--ochre-300);color:var(--ochre-900);font-family:var(--font-mono);font-size:9px;">2</span>
+            <span style="font-size:var(--text-micro);color:var(--warning);font-style:italic;">Rows expand in place — the Source page is the leaf destination, there is no artifact page</span>
+          </span>
+        </sc-if>
+        <div style="margin-left:auto;">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" iconLeft="plus" onClick="{{ onOpenAddArtifact }}" hint-size="auto,28px">Add artifact</x-import>
+        </div>
+      </div>
+
+      <sc-if value="{{ hasArtifacts }}" hint-placeholder-val="{{ true }}">
+        <div style="border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-card);box-shadow:var(--shadow-sm);overflow:hidden;">
+          <sc-for list="{{ artifactRows }}" as="a" hint-placeholder-count="3">
+            <div style="{{ a.wrapStyle }}">
+              <div role="button" tabindex="0" aria-expanded="{{ a.expanded }}" onClick="{{ a.onToggle }}" onKeyDown="{{ a.onKey }}" style="display:flex;align-items:center;gap:var(--space-6);padding:var(--space-5) var(--space-6);cursor:pointer;" style-hover="background:var(--surface-hover);">
+                <span style="{{ a.chevronStyle }}">
+                  <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Icon" name="chevron-right" size="{{ 15 }}" hint-size="15px,15px"></x-import>
+                </span>
+                <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Thumbnail" icon="{{ a.thumbIcon }}" size="{{ 44 }}" label="No preview yet" hint-size="44px,44px"></x-import>
+                <span style="flex:1;min-width:0;font-size:var(--text-body-sm);color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.label }}</span>
+                <span style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--text-muted);">{{ a.id }}</span>
+              </div>
+
+              <sc-if value="{{ a.expanded }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:var(--space-7) var(--space-8) var(--space-8) 62px;background:var(--surface-sunken);border-top:1px solid var(--border-subtle);">
+                  <div style="display:flex;gap:var(--space-8);flex-wrap:wrap;">
+                    <div style="flex:1;min-width:280px;">
+                      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Field" label="Label" required="{{ true }}" error="{{ a.labelError }}" hint="Name it so the row is recognisable in the list" hint-size="100%,80px">
+                        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Input" size="sm" value="{{ a.labelDraft }}" onChange="{{ a.onLabel }}" invalid="{{ a.labelInvalid }}" hint-size="100%,28px"></x-import>
+                      </x-import>
+                      <div style="margin-top:var(--space-6);">
+                        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Field" label="Description" hint="Optional — folio, entry number, condition of the scan" hint-size="100%,110px">
+                          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Input" multiline="{{ true }}" rows="{{ 3 }}" size="sm" value="{{ a.descDraft }}" onChange="{{ a.onDesc }}" hint-size="100%,72px"></x-import>
+                        </x-import>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:var(--space-4);margin-top:var(--space-6);">
+                        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" onClick="{{ a.onSave }}" disabled="{{ a.saveDisabled }}" hint-size="auto,28px">Save artifact</x-import>
+                        <sc-if value="{{ a.dirty }}" hint-placeholder-val="{{ false }}">
+                          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" size="sm" onClick="{{ a.onRevert }}" hint-size="auto,28px">Cancel</x-import>
+                        </sc-if>
+                        <sc-if value="{{ a.clean }}" hint-placeholder-val="{{ true }}">
+                          <span style="font-size:var(--text-caption);color:var(--text-faint);font-style:italic;">No unsaved changes</span>
+                        </sc-if>
+                      </div>
+                    </div>
+
+                    <div style="flex:1;min-width:300px;">
+                      <div style="font-size:var(--text-micro);letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:600;color:var(--text-faint);margin-bottom:var(--space-4);">Primary file</div>
+
+                      <sc-if value="{{ a.hasFile }}" hint-placeholder-val="{{ true }}">
+                        <div>
+                          <div role="button" tabindex="0" onClick="{{ a.onOpenFile }}" style="display:flex;gap:var(--space-6);align-items:center;padding:var(--space-6);background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);cursor:pointer;" style-hover="border-color:var(--border-strong);box-shadow:var(--shadow-md);">
+                            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Thumbnail" icon="image" size="{{ 56 }}" hint-size="56px,56px"></x-import>
+                            <div style="flex:1;min-width:0;">
+                              <div style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--text-primary);word-break:break-all;">{{ a.fileName }}</div>
+                              <div style="margin-top:var(--space-2);font-family:var(--font-mono);font-size:var(--text-micro);color:var(--text-muted);">{{ a.fileMeta }}</div>
+                            </div>
+                            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="secondary" size="sm" iconLeft="external-link" onClick="{{ a.onOpenFile }}" hint-size="auto,28px">Open</x-import>
+                          </div>
+                          <sc-if value="{{ showPins }}" hint-placeholder-val="{{ true }}">
+                            <div style="display:flex;gap:var(--space-4);align-items:flex-start;margin-top:var(--space-5);padding:var(--space-4) var(--space-5);background:var(--ochre-100);border:1px solid var(--ochre-300);border-radius:var(--radius-sm);">
+                              <span style="display:grid;place-items:center;width:17px;height:17px;flex:none;border-radius:var(--radius-pill);background:var(--surface-card);border:1px solid var(--ochre-300);color:var(--ochre-900);font-family:var(--font-mono);font-size:9px;">3</span>
+                              <span style="font-size:var(--text-micro);line-height:var(--lh-normal);color:var(--ochre-900);">No replace and no derivatives list: ingest is first-attach only, and generated files stay behind the row thumbnail.</span>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </sc-if>
+
+                      <sc-if value="{{ a.noFile }}" hint-placeholder-val="{{ false }}">
+                        <div>
+                          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Callout" tone="neutral" variant="plain" compact="{{ true }}" icon="box" hint-size="100%,72px">Physical only — you have recorded the item without a scan. Attach a file when one exists; the artifact keeps its reference either way.</x-import>
+                          <div style="margin-top:var(--space-5);">
+                            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" iconLeft="file-up" onClick="{{ a.onAddFile }}" hint-size="auto,28px">Add file…</x-import>
+                          </div>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ noArtifacts }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:var(--space-6);padding:var(--space-9) 0;border:1px dashed var(--border-default);border-radius:var(--radius-md);background:var(--surface-card);">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.EmptyState" icon="layers" title="No artifacts yet — a source can be catalogued before anything is scanned." compact="{{ true }}" hint-size="100%,120px">Add an artifact for each scan, folio or physical item held under this source.</x-import>
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" iconLeft="plus" onClick="{{ onOpenAddArtifact }}" hint-size="auto,28px">Add artifact</x-import>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;align-items:baseline;gap:var(--space-5);margin:var(--space-11) 0 var(--space-6);padding-bottom:var(--space-4);border-bottom:1px solid var(--border-default);">
+        <h2 style="margin:0;font-family:var(--font-display);font-size:var(--text-h3);font-weight:600;color:var(--text-display);">Notes</h2>
+        <span style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--text-muted);">{{ noteCount }}</span>
+      </div>
+
+      <div>
+        <sc-for list="{{ notes }}" as="n" hint-placeholder-count="3">
+          <div style="display:flex;gap:var(--space-6);padding:var(--space-6) 0;border-bottom:1px solid var(--border-subtle);">
+            <div style="width:150px;flex:none;">
+              <div style="font-size:var(--text-caption);color:var(--text-secondary);">{{ n.author }}</div>
+              <div style="font-family:var(--font-mono);font-size:var(--text-micro);color:var(--text-faint);margin-top:var(--space-1);">{{ n.stamp }}</div>
+            </div>
+            <textarea data-autogrow="true" value="{{ n.text }}" onChange="{{ n.onChange }}" rows="1" aria-label="Note" style="flex:1;min-width:0;box-sizing:border-box;resize:none;font-family:var(--font-body);font-size:var(--text-body-sm);line-height:var(--lh-normal);color:var(--text-secondary);background:transparent;border:1px solid transparent;border-radius:var(--radius-sm);padding:var(--space-3) var(--space-4);outline:none;" style-hover="background:var(--surface-hover);border-color:var(--border-subtle);" style-focus="background:var(--surface-card);border-color:var(--border-focus);box-shadow:var(--ring-focus);"></textarea>
+            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.IconButton" icon="trash-2" label="Delete note" size="sm" onClick="{{ n.onDelete }}" dc-props="{{ dangerIcon }}" hint-size="28px,28px"></x-import>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ noNotes }}" hint-placeholder-val="{{ false }}">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.EmptyState" icon="pen-line" title="No notes yet — record what the record itself cannot say." compact="{{ true }}" hint-size="100%,110px">Legibility, gaps in the film, what to order on the next visit.</x-import>
+        </sc-if>
+
+        <div style="display:flex;gap:var(--space-6);margin-top:var(--space-7);">
+          <div style="width:150px;flex:none;font-size:var(--text-caption);color:var(--text-faint);font-style:italic;">Jake Robins · now</div>
+          <div style="flex:1;min-width:0;">
+            <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Input" multiline="{{ true }}" rows="{{ 2 }}" size="sm" placeholder="Add a note about this source" value="{{ noteDraft }}" onChange="{{ onNoteDraft }}" aria-label="New note" hint-size="100%,56px"></x-import>
+            <div style="display:flex;justify-content:flex-end;margin-top:var(--space-4);">
+              <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" size="sm" iconLeft="plus" onClick="{{ onAddNote }}" disabled="{{ noteEmpty }}" hint-size="auto,28px">Add note</x-import>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid var(--border-default);background:var(--surface-sunken);padding:var(--space-8) var(--gutter-page) var(--space-10);">
+    <div style="font-size:var(--text-micro);letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:600;color:var(--text-faint);margin-bottom:var(--space-6);">Board notes</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--space-7);max-width:var(--width-content-max);">
+      <sc-for list="{{ boardNotes }}" as="b" hint-placeholder-count="5">
+        <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+          <span style="font-family:var(--font-mono);font-size:var(--text-micro);color:var(--accent);">{{ b.id }}</span>
+          <span style="font-size:var(--text-caption);line-height:var(--lh-normal);color:var(--text-secondary);">{{ b.text }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Dialog" open="{{ addArtifactOpen }}" title="Add artifact" subtitle="Under SRC-0412 · Marriages and banns, Great Yarmouth St Nicholas, 1871" width="{{ 560 }}" onClose="{{ onCloseDialog }}" onScrimClick="{{ onCloseDialog }}" hint-size="560px,420px">
+    <div>
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Field" label="Label" required="{{ true }}" error="{{ newLabelError }}" hint="How this artifact reads in the list — “Entry 14 — recto”" hint-size="100%,84px">
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Input" value="{{ newLabel }}" onChange="{{ onNewLabel }}" invalid="{{ newLabelInvalid }}" placeholder="Entry 14 — recto" hint-size="100%,34px"></x-import>
+      </x-import>
+      <div style="margin-top:var(--space-6);">
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Field" label="Description" hint="Optional" hint-size="100%,110px">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Input" multiline="{{ true }}" rows="{{ 2 }}" value="{{ newDesc }}" onChange="{{ onNewDesc }}" hint-size="100%,56px"></x-import>
+        </x-import>
+      </div>
+
+      <div style="margin-top:var(--space-7);">
+        <div style="font-size:var(--text-micro);letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:600;color:var(--text-faint);margin-bottom:var(--space-4);">File (optional)</div>
+        <div style="display:flex;align-items:center;gap:var(--space-6);padding:var(--space-6);background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="secondary" size="sm" iconLeft="folder-open" onClick="{{ onChooseFile }}" disabled="{{ busy }}" hint-size="auto,28px">Choose file…</x-import>
+          <sc-if value="{{ hasPick }}" hint-placeholder-val="{{ false }}">
+            <div style="min-width:0;flex:1;">
+              <div style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--text-primary);word-break:break-all;">{{ pickName }}</div>
+              <div style="font-family:var(--font-mono);font-size:var(--text-micro);color:var(--text-faint);word-break:break-all;">{{ pickPath }}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noPick }}" hint-placeholder-val="{{ true }}">
+            <span style="font-size:var(--text-caption);color:var(--text-muted);font-style:italic;">Skip this and the artifact stays physical-only</span>
+          </sc-if>
+        </div>
+      </div>
+
+      <sc-if value="{{ ingesting }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:var(--space-6);">
+          <div style="height:4px;background:var(--surface-inset);border-radius:var(--radius-pill);overflow:hidden;">
+            <div style="{{ progressStyle }}"></div>
+          </div>
+          <div style="margin-top:var(--space-4);font-family:var(--font-mono);font-size:var(--text-micro);color:var(--text-muted);">{{ progressLabel }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ ingestFailed }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:var(--space-6);">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Callout" tone="danger" title="The file could not be read." detail="{{ errorDetail }}" hint-size="100%,110px">Check that the volume is mounted and that Provenencia has access to the folder, then try again.</x-import>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;justify-content:flex-end;gap:var(--space-5);margin-top:var(--space-8);padding-top:var(--space-6);border-top:1px solid var(--border-subtle);">
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" onClick="{{ onCloseDialog }}" disabled="{{ busy }}" hint-size="auto,34px">Cancel</x-import>
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" iconLeft="plus" onClick="{{ onCreateArtifact }}" loading="{{ busy }}" disabled="{{ busy }}" hint-size="auto,34px">Add artifact</x-import>
+      </div>
+    </div>
+  </x-import>
+
+  <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Dialog" open="{{ fileOpen }}" title="Add file" subtitle="{{ fileDialogSubtitle }}" width="{{ 560 }}" onClose="{{ onCloseDialog }}" onScrimClick="{{ onCloseDialog }}" hint-size="560px,340px">
+    <div>
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Callout" tone="info" variant="plain" compact="{{ true }}" icon="info" hint-size="100%,64px">First attach only. Once this artifact has a file it keeps it — a better scan becomes a new artifact.</x-import>
+      <div style="display:flex;align-items:center;gap:var(--space-6);margin-top:var(--space-6);padding:var(--space-6);background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);">
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="secondary" size="sm" iconLeft="folder-open" onClick="{{ onChooseFile }}" disabled="{{ ingesting }}" hint-size="auto,28px">Choose file…</x-import>
+        <sc-if value="{{ hasPick }}" hint-placeholder-val="{{ false }}">
+          <div style="min-width:0;flex:1;">
+            <div style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--text-primary);word-break:break-all;">{{ pickName }}</div>
+            <div style="font-family:var(--font-mono);font-size:var(--text-micro);color:var(--text-faint);word-break:break-all;">{{ pickPath }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noPick }}" hint-placeholder-val="{{ true }}">
+          <span style="font-size:var(--text-caption);color:var(--text-muted);font-style:italic;">Nothing chosen yet</span>
+        </sc-if>
+      </div>
+      <div style="margin-top:var(--space-5);font-size:var(--text-caption);color:var(--text-muted);font-style:italic;">Provenencia reads the file from its location and copies the bytes into the project store</div>
+
+      <sc-if value="{{ ingesting }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:var(--space-7);">
+          <div style="height:4px;background:var(--surface-inset);border-radius:var(--radius-pill);overflow:hidden;">
+            <div style="{{ progressStyle }}"></div>
+          </div>
+          <div style="margin-top:var(--space-4);font-family:var(--font-mono);font-size:var(--text-micro);color:var(--text-muted);">{{ progressLabel }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ ingestFailed }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:var(--space-7);">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Callout" tone="danger" title="The file could not be read." detail="{{ errorDetail }}" hint-size="100%,110px">Check that the volume is mounted and that Provenencia has access to the folder, then ingest again.</x-import>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;justify-content:flex-end;gap:var(--space-5);margin-top:var(--space-8);padding-top:var(--space-6);border-top:1px solid var(--border-subtle);">
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" onClick="{{ onCloseDialog }}" disabled="{{ ingesting }}" hint-size="auto,34px">Cancel</x-import>
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" iconLeft="file-up" onClick="{{ onIngest }}" loading="{{ ingesting }}" disabled="{{ ingestDisabled }}" hint-size="auto,34px">{{ ingestLabel }}</x-import>
+      </div>
+    </div>
+  </x-import>
+
+  <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Dialog" open="{{ fieldPickerOpen }}" title="Add metadata field" subtitle="Any field in the vocabulary — not only the ones this type suggests" width="{{ 520 }}" onClose="{{ onCloseDialog }}" onScrimClick="{{ onCloseDialog }}" hint-size="520px,320px">
+    <div>
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Field" label="Field" required="{{ true }}" hint="Search the whole source metadata vocabulary" hint-size="100%,84px">
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.ComboBox" options="{{ vocabOptions }}" value="{{ pickedField }}" onChange="{{ onPickField }}" placeholder="Search fields" emptyLabel="No field matches that spelling" hint-size="100%,34px"></x-import>
+      </x-import>
+      <div style="margin-top:var(--space-6);">
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Field" label="Value" hint="Enter it as written on the record" hint-size="100%,84px">
+          <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Input" value="{{ fieldValue }}" onChange="{{ onFieldValue }}" mono="{{ true }}" hint-size="100%,34px"></x-import>
+        </x-import>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:var(--space-5);margin-top:var(--space-8);padding-top:var(--space-6);border-top:1px solid var(--border-subtle);">
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" onClick="{{ onCloseDialog }}" hint-size="auto,34px">Cancel</x-import>
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" iconLeft="plus" onClick="{{ onSaveField }}" disabled="{{ saveFieldDisabled }}" hint-size="auto,34px">Save field</x-import>
+      </div>
+    </div>
+  </x-import>
+
+  <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Dialog" open="{{ dateOpen }}" title="{{ dateTitle }}" subtitle="{{ dateSubtitle }}" width="{{ 520 }}" onClose="{{ onCloseDialog }}" onScrimClick="{{ onCloseDialog }}" hint-size="520px,440px">
+    <div style="display:flex;flex-direction:column;gap:var(--space-7);">
+      <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+        <span style="font-size:var(--text-caption);font-weight:500;color:var(--text-secondary);">Kind</span>
+        <div style="display:flex;gap:2px;background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:4px;padding:2px;">
+          <sc-for list="{{ dateKinds }}" as="k" hint-placeholder-count="2">
+            <button onClick="{{ k.onPick }}" style="{{ k.style }}">{{ k.label }}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ dateIsRange }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:var(--text-micro);font-style:italic;color:var(--text-muted);">A single date somewhere in this window — not how long something lasted</span>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ dateIsPoint }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+          <span style="font-size:var(--text-caption);font-weight:500;color:var(--text-secondary);">Qualifier</span>
+          <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;">
+            <sc-for list="{{ dateQualifiers }}" as="q" hint-placeholder-count="4">
+              <button onClick="{{ q.onPick }}" style="{{ q.style }}">{{ q.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="height:1px;background:var(--border-subtle);"></div>
+
+      <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-5);">
+          <span style="font-size:var(--text-micro);letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:600;color:var(--text-faint);">{{ dateStartHeading }}</span>
+          <span style="font-size:var(--text-micro);font-style:italic;color:var(--text-faint);">Leave a part empty when the record does not say</span>
+        </div>
+        <div style="display:flex;gap:var(--space-4);align-items:flex-end;flex-wrap:wrap;">
+          <label style="display:flex;flex-direction:column;gap:4px;width:92px;"><span style="font-size:var(--text-micro);color:var(--text-secondary);">Year</span><input value="{{ dv.s_y }}" onChange="{{ don.s_y }}" inputMode="numeric" placeholder="1871" style="height:30px;padding:0 9px;border:1px solid var(--border-default);border-radius:3px;background:var(--surface-raised);box-shadow:var(--shadow-inset);font-family:var(--font-mono);font-size:var(--text-body-sm);color:var(--text-primary);"></label>
+          <label style="display:flex;flex-direction:column;gap:4px;width:136px;"><span style="font-size:var(--text-micro);color:var(--text-secondary);">Month</span><select value="{{ dv.s_mo }}" onChange="{{ don.s_mo }}" disabled="{{ ddis.s_mo }}" style="height:30px;padding:0 7px;border:1px solid var(--border-default);border-radius:3px;background:var(--surface-raised);font-family:var(--font-body);font-size:var(--text-body-sm);color:var(--text-primary);"><option value="">—</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
+          <label style="display:flex;flex-direction:column;gap:4px;width:76px;"><span style="font-size:var(--text-micro);color:var(--text-secondary);">Day</span><input value="{{ dv.s_d }}" onChange="{{ don.s_d }}" disabled="{{ ddis.s_d }}" inputMode="numeric" placeholder="—" style="height:30px;padding:0 9px;border:1px solid var(--border-default);border-radius:3px;background:var(--surface-raised);box-shadow:var(--shadow-inset);font-family:var(--font-mono);font-size:var(--text-body-sm);color:var(--text-primary);"></label>
+        </div>
+      </div>
+
+      <sc-if value="{{ dateIsRange }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:var(--space-4);padding-top:var(--space-5);border-top:1px solid var(--border-subtle);">
+          <span style="font-size:var(--text-micro);letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:600;color:var(--text-faint);">Latest — not after</span>
+          <div style="display:flex;gap:var(--space-4);align-items:flex-end;flex-wrap:wrap;">
+            <label style="display:flex;flex-direction:column;gap:4px;width:92px;"><span style="font-size:var(--text-micro);color:var(--text-secondary);">Year</span><input value="{{ dv.e_y }}" onChange="{{ don.e_y }}" inputMode="numeric" placeholder="1872" style="height:30px;padding:0 9px;border:1px solid var(--border-default);border-radius:3px;background:var(--surface-raised);box-shadow:var(--shadow-inset);font-family:var(--font-mono);font-size:var(--text-body-sm);color:var(--text-primary);"></label>
+            <label style="display:flex;flex-direction:column;gap:4px;width:136px;"><span style="font-size:var(--text-micro);color:var(--text-secondary);">Month</span><select value="{{ dv.e_mo }}" onChange="{{ don.e_mo }}" disabled="{{ ddis.e_mo }}" style="height:30px;padding:0 7px;border:1px solid var(--border-default);border-radius:3px;background:var(--surface-raised);font-family:var(--font-body);font-size:var(--text-body-sm);color:var(--text-primary);"><option value="">—</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
+            <label style="display:flex;flex-direction:column;gap:4px;width:76px;"><span style="font-size:var(--text-micro);color:var(--text-secondary);">Day</span><input value="{{ dv.e_d }}" onChange="{{ don.e_d }}" disabled="{{ ddis.e_d }}" inputMode="numeric" placeholder="—" style="height:30px;padding:0 9px;border:1px solid var(--border-default);border-radius:3px;background:var(--surface-raised);box-shadow:var(--shadow-inset);font-family:var(--font-mono);font-size:var(--text-body-sm);color:var(--text-primary);"></label>
+          </div>
+          <sc-if value="{{ dateErrEnd }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:var(--text-micro);color:var(--danger);">{{ dateErrEnd }}</span>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;align-items:center;gap:var(--space-5);flex-wrap:wrap;padding:var(--space-4) var(--space-5);background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:4px;">
+        <span style="font-size:var(--text-micro);letter-spacing:var(--tracking-caps);text-transform:uppercase;font-weight:600;color:var(--text-faint);">Stored as</span>
+        <span style="font-family:var(--font-mono);font-size:var(--text-body-sm);color:var(--text-primary);">{{ dateSummary }}</span>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:var(--space-5);padding-top:var(--space-6);border-top:1px solid var(--border-subtle);">
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="ghost" onClick="{{ onCloseDialog }}" hint-size="auto,34px">Cancel</x-import>
+        <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Button" variant="primary" onClick="{{ onSaveDate }}" disabled="{{ dateSaveDisabled }}" hint-size="auto,34px">{{ dateSaveLabel }}</x-import>
+      </div>
+    </div>
+  </x-import>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;right:var(--space-9);bottom:var(--space-9);z-index:40;">
+      <x-import component-from-global-scope="ProvenenciaDesignSystem_0f6c1f.Toast" tone="{{ toastTone }}" title="{{ toastTitle }}" onDismiss="{{ onDismissToast }}" hint-size="340px,64px">{{ toastBody }}</x-import>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1000},&quot;scenario&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;populated&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;populated&quot;,&quot;tsType&quot;:&quot;'populated' | 'empty'&quot;,&quot;section&quot;:&quot;Board&quot;},&quot;showAnnotations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Board&quot;},&quot;failIngest&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Board&quot;},&quot;darkMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Board&quot;}}">
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const QUALS = [{ v: '', label: 'As stated' }, { v: 'ABT', label: 'About' }, { v: 'BEF', label: 'Before' }, { v: 'AFT', label: 'After' }];
+const EMPTY_DV = { kind: 'point', qualifier: '', s_y: '', s_mo: '', s_d: '', e_y: '', e_mo: '', e_d: '' };
+const digits = (s, n) => String(s || '').replace(/[^0-9]/g, '').slice(0, n);
+
+const TYPES = [
+  { value: 'parish-register', label: 'Parish register' },
+  { value: 'census', label: 'Census return' },
+  { value: 'civil-registration', label: 'Civil registration' },
+  { value: 'newspaper', label: 'Newspaper' },
+  { value: 'photograph', label: 'Photograph' }
+];
+
+const VOCAB = [
+  { value: 'repository', label: 'Repository', kind: 'text' },
+  { value: 'call-number', label: 'Call number', kind: 'text' },
+  { value: 'accessed', label: 'Date accessed', kind: 'date' },
+  { value: 'folio', label: 'Folio', kind: 'text' },
+  { value: 'parish', label: 'Parish', kind: 'text' },
+  { value: 'diocese', label: 'Diocese', kind: 'text' },
+  { value: 'film', label: 'Microfilm reel', kind: 'text' },
+  { value: 'capture', label: 'Capture method', kind: 'text' },
+  { value: 'language', label: 'Language of record', kind: 'text' },
+  { value: 'coverage', label: 'Date coverage', kind: 'date' }
+];
+
+class Component extends DCLogic {
+  state = {
+    scenario: null,
+    pins: null,
+    fail: null,
+    dark: null,
+    cred: null,
+    credArg: '',
+    credDraft: undefined,
+    credArgDraft: undefined,
+    editingTitle: false,
+    titleDraft: '',
+    editingType: false,
+    editingDesc: false,
+    descDraft: '',
+    editingMetaId: null,
+    metaDrafts: {},
+    aDrafts: {},
+    structured: { m3: { kind: 'point', qualifier: '', s_y: '2026', s_mo: '3', s_d: '4', e_y: '', e_mo: '', e_d: '' } },
+    dateRow: null,
+    dv: null,
+    title: 'Marriages and banns, Great Yarmouth St Nicholas, 1871',
+    description: 'Bound register of marriages and banns for the parish of St Nicholas, Great Yarmouth, covering Jan 1871 – Dec 1871. Consulted on microfilm at the Norfolk Record Office; the scans below were made at the film reader, not from the original book.',
+    type: 'parish-register',
+    meta: [
+      { id: 'm1', field: 'repository', value: 'Norfolk Record Office' },
+      { id: 'm2', field: 'call-number', value: 'PD 28/47' },
+      { id: 'm3', field: 'accessed', value: '04 Mar 2026' },
+      { id: 'm4', field: 'film', value: 'MF/RO 512/3' },
+      { id: 'm5', field: 'capture', value: 'Reader-station capture, NRO microfilm room, bench 3.\nTwo exposures per opening; no colour target available on the day.' }
+    ],
+    suggested: ['folio', 'parish', 'diocese'],
+    dismissed: [],
+    drafts: {},
+    dragId: null,
+    overId: null,
+    expanded: 'ART-0031',
+    artifacts: [
+      { id: 'ART-0031', label: 'Entry 14 — recto', desc: 'Marriage of Thomas Alderwick and Eliza Cusk, 3 April 1871. Left gutter is soft on the film.', file: { name: 'yarmouth-stnicholas-1871-m-014-recto.tif', type: 'image/tiff', size: '41.2 MB', at: '2026-03-04T16:48:00Z' } },
+      { id: 'ART-0032', label: 'Entry 14 — verso, witnesses', desc: '', file: { name: 'yarmouth-stnicholas-1871-m-014-verso.tif', type: 'image/tiff', size: '39.8 MB', at: '2026-03-04T16:52:00Z' } },
+      { id: 'ART-0033', label: 'Original register, pages 212–216 (uncaptured)', desc: 'Producible on request at the record office; not yet photographed.', file: null }
+    ],
+    notes: [
+      { id: 'n1', author: 'Jake Robins', at: '2026-03-04T19:22:00Z', text: 'Film reader was out of focus on the left gutter; the verso scan loses the first two characters of each surname.' },
+      { id: 'n2', author: 'Marta Lindqvist', at: '2026-03-09T13:05:00Z', text: 'Checked against the bishop\u2019s transcript — the groom\u2019s age reads "of full age" there too, so the 1871 age is not recoverable from this source.' },
+      { id: 'n3', author: 'Jake Robins', at: '2026-03-09T22:40:00Z', text: 'Original volume is producible on request — order in advance, NRO ref PD 28/47.' }
+    ],
+    noteDraft: '',
+    dialog: null,
+    newLabel: '',
+    newDesc: '',
+    newLabelTouched: false,
+    fileTarget: null,
+    pick: null,
+    ingest: 'idle',
+    ingestMode: null,
+    progress: 0,
+    creating: false,
+    pickedField: '',
+    fieldValue: '',
+    toast: null
+  };
+
+  fmtSide(v, side) {
+    const y = v[side + '_y'], mo = v[side + '_mo'], d = v[side + '_d'];
+    if (!y) return '';
+    if (!mo) return y;
+    return (d ? d + ' ' : '') + MONTHS[+mo - 1].slice(0, 3) + ' ' + y;
+  }
+
+  dateSummary(v) {
+    if (!v) return '—';
+    if (v.kind === 'range') return 'BET ' + (this.fmtSide(v, 's') || '…') + ' AND ' + (this.fmtSide(v, 'e') || '…');
+    const a = this.fmtSide(v, 's');
+    return a ? ((v.qualifier ? v.qualifier + ' ' : '') + a) : '—';
+  }
+
+  stamp(iso) {
+    const d = new Date(iso);
+    const date = d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+    const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+    return date + ' · ' + time;
+  }
+
+  applyTheme() {
+    const dark = this.state.dark ?? this.props.darkMode ?? false;
+    const el = document.documentElement;
+    if (dark) { el.setAttribute('data-theme', 'dark'); } else { el.removeAttribute('data-theme'); }
+  }
+
+  componentDidMount() {
+    this.applyTheme();
+    this.grow();
+    requestAnimationFrame(() => this.grow());
+    setTimeout(() => this.grow(), 0);
+    setTimeout(() => this.grow(), 250);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.grow());
+    this._ro = new ResizeObserver(() => this.grow());
+    this._ro.observe(document.documentElement);
+  }
+  componentDidUpdate() { this.applyTheme(); this.grow(); }
+  componentWillUnmount() { clearInterval(this._t); clearTimeout(this._toast); if (this._ro) this._ro.disconnect(); }
+
+  grow() {
+    document.querySelectorAll('textarea[data-autogrow]').forEach(el => {
+      el.style.height = 'auto';
+      el.style.height = (el.scrollHeight + 2) + 'px';
+    });
+  }
+
+  scenario() { return this.state.scenario ?? this.props.scenario ?? 'populated'; }
+  pins() { return this.state.pins ?? this.props.showAnnotations ?? true; }
+  fail() { return this.state.fail ?? this.props.failIngest ?? false; }
+  arts() { return this.scenario() === 'empty' ? [] : this.state.artifacts; }
+  fieldOf(key) { return VOCAB.find(v => v.value === key) || { label: key, kind: 'text' }; }
+
+  setDv(p) {
+    this.setState(st => {
+      const next = Object.assign({}, st.dv || EMPTY_DV, p);
+      if (!next.s_y) { next.s_mo = ''; next.s_d = ''; }
+      if (!next.s_mo) next.s_d = '';
+      if (!next.e_y) { next.e_mo = ''; next.e_d = ''; }
+      if (!next.e_mo) next.e_d = '';
+      return { dv: next };
+    });
+  }
+
+  setDraft(id, p) {
+    this.setState(st => {
+      const a = st.artifacts.find(x => x.id === id) || {};
+      const cur = st.aDrafts[id] || { label: a.label, desc: a.desc };
+      return { aDrafts: Object.assign({}, st.aDrafts, { [id]: Object.assign({}, cur, p) }) };
+    });
+  }
+
+  patch(id, p) { this.setState(s => ({ artifacts: s.artifacts.map(a => a.id === id ? Object.assign({}, a, p) : a) })); }
+
+  showToast(tone, title, body) {
+    clearTimeout(this._toast);
+    this.setState({ toast: { tone, title, body } });
+    this._toast = setTimeout(() => this.setState({ toast: null }), 4200);
+  }
+
+  nextRef() {
+    const used = this.state.artifacts.map(a => parseInt(a.id.slice(4), 10));
+    return 'ART-' + String(Math.max.apply(null, used.concat([30])) + 1).padStart(4, '0');
+  }
+
+  runIngest(mode) {
+    this.setState({ ingest: 'running', ingestMode: mode, progress: 4, creating: mode === 'create' });
+    clearInterval(this._t);
+    this._t = setInterval(() => {
+      this.setState(s => {
+        const p = s.progress + 8 + Math.random() * 9;
+        if (p >= 100) { clearInterval(this._t); setTimeout(() => this.finish(mode), 160); return { progress: 100 }; }
+        return { progress: p };
+      });
+    }, 110);
+  }
+
+  finish(mode) {
+    if (this.fail()) { this.setState({ ingest: 'error', creating: false }); return; }
+    const pick = this.state.pick;
+    const file = { name: pick.name, type: pick.type, size: pick.size, at: new Date().toISOString() };
+    if (mode === 'create') {
+      const id = this.nextRef();
+      this.setState(s => ({
+        artifacts: s.artifacts.concat([{ id, label: s.newLabel.trim(), desc: s.newDesc, file }]),
+        dialog: null, newLabel: '', newDesc: '', newLabelTouched: false, pick: null, ingest: 'idle', progress: 0, creating: false, expanded: id, scenario: 'populated'
+      }));
+      this.showToast('success', 'Artifact added', id + ' was created with ' + file.name + '.');
+    } else {
+      const target = this.state.fileTarget;
+      this.patch(target, { file });
+      this.setState({ dialog: null, pick: null, ingest: 'idle', progress: 0 });
+      this.showToast('success', 'File ingested', file.name + ' is now the primary file of ' + target + '.');
+    }
+  }
+
+  createArtifact = () => {
+    if (!this.state.newLabel.trim()) { this.setState({ newLabelTouched: true }); return; }
+    if (this.state.creating || this.state.ingest === 'running') return;
+    if (this.state.pick) { this.runIngest('create'); return; }
+    const id = this.nextRef();
+    this.setState(s => ({
+      artifacts: s.artifacts.concat([{ id, label: s.newLabel.trim(), desc: s.newDesc, file: null }]),
+      dialog: null, newLabel: '', newDesc: '', newLabelTouched: false, expanded: id, scenario: 'populated'
+    }));
+    this.showToast('success', 'Artifact added', id + ' has no file yet — physical only.');
+  };
+
+  reorder(fromId, toId) {
+    if (!fromId || !toId || fromId === toId) return;
+    this.setState(s => {
+      const rows = s.meta.slice();
+      const from = rows.findIndex(r => r.id === fromId);
+      const to = rows.findIndex(r => r.id === toId);
+      if (from < 0 || to < 0) return null;
+      rows.splice(to, 0, rows.splice(from, 1)[0]);
+      return { meta: rows };
+    });
+  }
+
+  renderVals() {
+    const pins = this.pins();
+    const arts = this.arts();
+    const ing = this.state.ingest;
+    const pick = this.state.pick;
+    const s = this.state;
+    const titleInvalid = s.editingTitle && s.titleDraft.trim().length === 0;
+    const draftGrade = s.credDraft === undefined ? s.cred : s.credDraft;
+    const draftArg = s.credArgDraft === undefined ? s.credArg : s.credArgDraft;
+    const credDirty = (draftGrade || null) !== (s.cred || null) || draftArg !== s.credArg;
+    const dv = s.dv || EMPTY_DV;
+    const dOn = {};
+    [['s_y', 4], ['e_y', 4], ['s_d', 2], ['e_d', 2]].forEach(([f, n]) => { dOn[f] = (e) => this.setDv({ [f]: digits(e.target.value, n) }); });
+    ['s_mo', 'e_mo'].forEach(f => { dOn[f] = (e) => this.setDv({ [f]: e.target.value }); });
+    const dkey = (side, hi) => {
+      const y = parseInt(dv[side + '_y'], 10);
+      if (isNaN(y)) return null;
+      const mo = parseInt(dv[side + '_mo'], 10) || (hi ? 12 : 1);
+      const d = parseInt(dv[side + '_d'], 10) || (hi ? 31 : 1);
+      return y * 10000 + mo * 100 + d;
+    };
+    const sk = dkey('s', false), ek = dkey('e', true);
+    const dateErrEnd = (dv.kind === 'range' && sk !== null && ek !== null && ek < sk)
+      ? 'The latest bound falls before the earliest bound. The date has to sit inside the window.' : '';
+
+    return {
+      scenarioTabs: [{ id: 'populated', label: 'Source with artifacts' }, { id: 'empty', label: 'Source with none' }],
+      scenario: this.scenario(),
+      onScenario: (id) => this.setState({ scenario: id }),
+      showPins: pins,
+      onTogglePins: (e) => this.setState({ pins: e.target.checked }),
+      failIngest: this.fail(),
+      onToggleFail: (e) => this.setState({ fail: e.target.checked }),
+      credSet: !!s.cred,
+      onToggleCred: (e) => this.setState(e.target.checked
+        ? { cred: 'high', credArg: 'Original register, consulted on the record office\u2019s own film; entries are contemporaneous with the event and signed by the officiant.', credDraft: undefined, credArgDraft: undefined }
+        : { cred: null, credArg: '', credDraft: undefined, credArgDraft: undefined }),
+      darkMode: s.dark ?? this.props.darkMode ?? false,
+      onToggleDark: (e) => this.setState({ dark: e.target.checked }),
+
+      crumbs: [{ label: 'Sources', href: '#sources' }, { label: 'SRC-0412' }],
+      title: s.title,
+      titleInvalid,
+      titleStyle: {
+        width: Math.max(24, (s.titleDraft || '').length + 2) + 'ch', maxWidth: '100%',
+        fontFamily: 'var(--font-display)', fontSize: 'var(--text-h1)', fontWeight: 600,
+        letterSpacing: 'var(--tracking-display)', color: 'var(--text-display)', backgroundColor: 'var(--surface-card)',
+        border: '1px solid ' + (titleInvalid ? 'var(--danger)' : 'var(--border-default)'), borderRadius: 'var(--radius-sm)',
+        padding: 'var(--space-2) var(--space-4)', outline: 'none',
+        lineHeight: 'var(--lh-snug)', resize: 'none', overflow: 'hidden', boxSizing: 'border-box', display: 'block'
+      },
+      editingTitle: s.editingTitle,
+      titleResting: !s.editingTitle,
+      titleDraft: s.titleDraft,
+      onTitleDraft: (e) => this.setState({ titleDraft: e.target.value }),
+      onEditTitle: () => this.setState({ editingTitle: true, titleDraft: s.title }),
+      onCancelTitle: () => this.setState({ editingTitle: false }),
+      onSaveTitle: () => {
+        const t = this.state.titleDraft.trim();
+        if (!t) return;
+        this.setState({ title: t, editingTitle: false });
+        this.showToast('success', 'Title saved', 'SRC-0412 is now “' + t + '”.');
+      },
+
+      description: s.description,
+      descResting: !s.editingDesc,
+      editingDesc: s.editingDesc,
+      descDraft: s.descDraft,
+      onDescDraft: (e) => this.setState({ descDraft: e.target.value }),
+      onEditDesc: () => this.setState({ editingDesc: true, descDraft: s.description }),
+      onCancelDesc: () => this.setState({ editingDesc: false }),
+      onSaveDesc: () => {
+        this.setState(st => ({ description: st.descDraft, editingDesc: false }));
+        this.showToast('success', 'Description saved', 'The catalogue text for SRC-0412 was updated.');
+      },
+
+      editingType: s.editingType,
+      typeResting: !s.editingType,
+      onEditType: () => this.setState({ editingType: true }),
+      onCloseType: () => this.setState({ editingType: false }),
+      typeOptions: TYPES,
+      typeValue: s.type,
+      onType: (v) => {
+        const label = (TYPES.find(t => t.value === v) || {}).label || v;
+        this.setState({ type: v, editingType: false });
+        this.showToast('success', 'Source type changed', 'SRC-0412 is now catalogued as a ' + label.toLowerCase() + '.');
+      },
+      credHint: s.cred ? 'How far you trust this source as evidence' : 'Not assessed — treated as standard',
+      credGradeSaved: s.cred,
+      credOptions: [
+        { key: 'low', label: 'Low trust', tint: 'var(--danger)', soft: 'var(--danger-soft)' },
+        { key: 'standard', label: 'Standard', tint: 'var(--accent)', soft: 'var(--accent-soft)' },
+        { key: 'high', label: 'High trust', tint: 'var(--success)', soft: 'var(--success-soft)' }
+      ].map(o => {
+        const active = (draftGrade || 'standard') === o.key;
+        const unset = !draftGrade && o.key === 'standard';
+        return {
+          key: o.key, label: o.label, selected: active,
+          style: {
+            fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption)', lineHeight: 1,
+            padding: '8px var(--space-6)', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+            backgroundColor: active ? o.soft : 'transparent',
+            border: '1px solid ' + (active ? o.tint : 'var(--border-default)'),
+            borderStyle: unset ? 'dashed' : 'solid',
+            color: active ? o.tint : 'var(--text-secondary)',
+            fontWeight: active ? 600 : 400,
+            transition: 'background-color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard)'
+          },
+          onPick: () => this.setState({ credDraft: o.key })
+        };
+      }),
+      credArgument: draftArg,
+      onCredArgument: (e) => this.setState({ credArgDraft: e.target.value }),
+      credDirty,
+      credClean: !credDirty,
+      credSavedLine: s.cred ? 'Saved assessment' : 'No assessment saved',
+      onCancelCred: () => this.setState({ credDraft: undefined, credArgDraft: undefined }),
+      onSaveCred: () => {
+        const g = draftGrade || 'standard';
+        this.setState({ cred: g, credArg: draftArg, credDraft: undefined, credArgDraft: undefined });
+        this.showToast('success', 'Credibility saved', 'SRC-0412 is assessed as ' + (g === 'high' ? 'high trust' : g === 'low' ? 'low trust' : 'standard') + '.');
+      },
+      typeLabel: (TYPES.find(t => t.value === s.type) || {}).label || s.type,
+      createdStamp: this.stamp('2026-03-04T14:12:00Z'),
+      editedStamp: this.stamp(this._opened || (this._opened = new Date().toISOString())),
+      dangerIcon: { style: { color: 'var(--danger)' } },
+
+      metaCount: s.meta.length + (s.meta.length === 1 ? ' field' : ' fields'),
+      metaRows: s.meta.map(m => {
+        const f = this.fieldOf(m.field);
+        const dragging = s.dragId === m.id;
+        const over = s.overId === m.id && s.dragId !== m.id;
+        const editing = s.editingMetaId === m.id;
+        const draft = editing ? (s.metaDrafts[m.id] != null ? s.metaDrafts[m.id] : m.value) : m.value;
+        const save = () => {
+          const v = String(this.state.metaDrafts[m.id] != null ? this.state.metaDrafts[m.id] : m.value).trim();
+          if (!v) return;
+          this.setState(st => ({
+            meta: st.meta.map(x => x.id === m.id ? Object.assign({}, x, { value: v }) : x),
+            editingMetaId: null,
+            metaDrafts: Object.assign({}, st.metaDrafts, { [m.id]: undefined })
+          }));
+          this.showToast('success', 'Metadata saved', f.label + ' updated on SRC-0412.');
+        };
+        return {
+          id: m.id, label: f.label, kind: f.kind, value: m.value, draft,
+          editing, resting: !editing,
+          saveDisabled: !String(draft || '').trim(),
+          editRows: Math.min(6, Math.max(1, String(draft || '').split('\n').length)),
+          kindTone: f.kind === 'date' ? 'info' : 'neutral',
+          kindIcon: f.kind === 'date' ? 'calendar' : 'type',
+          isDate: f.kind === 'date',
+          structured: s.structured[m.id] ? this.dateSummary(s.structured[m.id]) : 'Not structured yet',
+          structuredStyle: s.structured[m.id]
+            ? { display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 8px', borderRadius: 3, background: 'var(--accent-soft)', color: 'var(--accent-soft-fg)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-micro)' }
+            : { fontSize: 'var(--text-micro)', fontStyle: 'italic', color: 'var(--text-muted)' },
+          structureLabel: s.structured[m.id] ? 'Edit date' : 'Structure…',
+          structureBtnStyle: {
+            height: 24, padding: '0 10px', borderRadius: 3, cursor: 'pointer',
+            border: '1px ' + (s.structured[m.id] ? 'solid' : 'dashed') + ' var(--border-default)',
+            background: 'transparent',
+            color: s.structured[m.id] ? 'var(--text-primary)' : 'var(--text-link)',
+            fontFamily: 'var(--font-body)', fontSize: 'var(--text-micro)'
+          },
+          onStructure: () => this.setState({ dialog: 'date', dateRow: m.id, dv: Object.assign({}, EMPTY_DV, s.structured[m.id] || {}) }),
+          rowStyle: {
+            display: 'flex', alignItems: 'flex-start', gap: 'var(--space-5)',
+            padding: 'var(--space-3) var(--space-4)', marginBottom: 'var(--space-2)',
+            borderRadius: 'var(--radius-sm)', background: dragging ? 'var(--surface-active)' : 'transparent',
+            borderTop: over ? '2px solid var(--accent-line)' : '2px solid transparent',
+            opacity: dragging ? 0.6 : 1
+          },
+          onEdit: () => this.setState(st => ({
+            editingMetaId: m.id,
+            metaDrafts: Object.assign({}, st.metaDrafts, { [m.id]: m.value })
+          })),
+          onChange: (e) => {
+            const v = e.target.value;
+            this.setState(st => ({ metaDrafts: Object.assign({}, st.metaDrafts, { [m.id]: v }) }));
+          },
+          onSave: save,
+          onCancel: () => this.setState(st => ({
+            editingMetaId: null,
+            metaDrafts: Object.assign({}, st.metaDrafts, { [m.id]: undefined })
+          })),
+          onDragStart: (e) => { e.dataTransfer.effectAllowed = 'move'; this.setState({ dragId: m.id }); },
+          onDragOver: (e) => { e.preventDefault(); if (s.overId !== m.id) this.setState({ overId: m.id }); },
+          onDrop: (e) => { e.preventDefault(); this.reorder(s.dragId, m.id); this.setState({ dragId: null, overId: null }); },
+          onDragEnd: () => this.setState({ dragId: null, overId: null })
+        };
+      }),
+
+      hasSuggestions: s.suggested.filter(k => s.dismissed.indexOf(k) < 0 && !s.meta.some(m => m.field === k)).length > 0,
+      suggestionRows: s.suggested.filter(k => s.dismissed.indexOf(k) < 0 && !s.meta.some(m => m.field === k)).map(k => {
+        const f = this.fieldOf(k);
+        const draft = s.drafts[k] || '';
+        const save = () => {
+          const v = (this.state.drafts[k] || '').trim();
+          if (!v) return;
+          this.setState(st => ({
+            meta: st.meta.concat([{ id: 'm' + Date.now(), field: k, value: v }]),
+            drafts: Object.assign({}, st.drafts, { [k]: '' })
+          }));
+          this.showToast('success', 'Metadata saved', f.label + ' added to SRC-0412.');
+        };
+        return {
+          key: k, label: f.label, draft, empty: draft.trim().length === 0,
+          placeholder: k === 'folio' ? 'f. 214v' : 'Enter a value',
+          onDraft: (e) => { const v = e.target.value; this.setState(st => ({ drafts: Object.assign({}, st.drafts, { [k]: v }) })); },
+          onKey: (e) => { if (e.key === 'Enter') save(); },
+          onSave: save,
+          onDismiss: () => { this.setState(st => ({ dismissed: st.dismissed.concat([k]) })); this.showToast('info', 'Suggestion dismissed', f.label + ' will not be suggested for this source again.'); }
+        };
+      }),
+
+      artifactCount: arts.length + (arts.length === 1 ? ' artifact' : ' artifacts'),
+      hasArtifacts: arts.length > 0,
+      noArtifacts: arts.length === 0,
+      artifactRows: arts.map((a, i) => {
+        const open = s.expanded === a.id;
+        const toggle = () => this.setState({ expanded: open ? null : a.id });
+        const draft = s.aDrafts[a.id] || { label: a.label, desc: a.desc };
+        const aDirty = draft.label !== a.label || draft.desc !== a.desc;
+        return {
+          id: a.id, label: a.label, desc: a.desc, expanded: open,
+          wrapStyle: { borderTop: i === 0 ? 'none' : '1px solid var(--border-subtle)' },
+          chevronStyle: { display: 'grid', placeItems: 'center', width: 18, color: 'var(--text-muted)', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 130ms var(--ease-standard)' },
+          thumbIcon: a.file ? 'image' : undefined,
+          qualifier: a.file ? '' : 'physical only',
+          onToggle: toggle,
+          onKey: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } },
+          labelDraft: draft.label,
+          descDraft: draft.desc,
+          labelInvalid: draft.label.trim().length === 0,
+          labelError: draft.label.trim().length === 0 ? 'An artifact needs a label' : undefined,
+          dirty: aDirty,
+          clean: !aDirty,
+          saveDisabled: !aDirty || draft.label.trim().length === 0,
+          onLabel: (e) => this.setDraft(a.id, { label: e.target.value }),
+          onDesc: (e) => this.setDraft(a.id, { desc: e.target.value }),
+          onRevert: () => this.setState(st => { const d = Object.assign({}, st.aDrafts); delete d[a.id]; return { aDrafts: d }; }),
+          onSave: () => {
+            this.patch(a.id, { label: draft.label.trim(), desc: draft.desc });
+            this.setState(st => { const d = Object.assign({}, st.aDrafts); delete d[a.id]; return { aDrafts: d }; });
+            this.showToast('success', 'Artifact saved', a.id + ' was updated.');
+          },
+          hasFile: !!a.file,
+          noFile: !a.file,
+          fileName: a.file ? a.file.name : '',
+          fileMeta: a.file ? a.file.type + ' · ' + a.file.size + ' · ingested ' + this.stamp(a.file.at) : '',
+          onOpenFile: () => this.showToast('info', 'Opened outside Provenencia', (a.file ? a.file.name : '') + ' was handed to the system default app.'),
+          onAddFile: () => this.setState({ dialog: 'file', fileTarget: a.id, pick: null, ingest: 'idle', progress: 0 })
+        };
+      }),
+      onOpenAddArtifact: () => this.setState({ dialog: 'artifact', newLabel: '', newDesc: '', newLabelTouched: false, pick: null, ingest: 'idle', progress: 0 }),
+
+      noteCount: s.notes.length + (s.notes.length === 1 ? ' note' : ' notes'),
+      noNotes: s.notes.length === 0,
+      notes: s.notes.map(n => ({
+        id: n.id, author: n.author, stamp: this.stamp(n.at), text: n.text,
+        onChange: (e) => this.setState(st => ({ notes: st.notes.map(x => x.id === n.id ? Object.assign({}, x, { text: e.target.value }) : x) })),
+        onDelete: () => this.setState(st => ({ notes: st.notes.filter(x => x.id !== n.id) }))
+      })),
+      noteDraft: s.noteDraft,
+      noteEmpty: s.noteDraft.trim().length === 0,
+      onNoteDraft: (e) => this.setState({ noteDraft: e.target.value }),
+      onAddNote: () => {
+        const t = s.noteDraft.trim();
+        if (!t) return;
+        this.setState(st => ({ notes: st.notes.concat([{ id: 'n' + Date.now(), author: 'Jake Robins', at: new Date().toISOString(), text: t }]), noteDraft: '' }));
+      },
+
+      boardNotes: [
+        { id: 'D-1 / D-2', text: 'A separate destination reached from the Sources list, and the breadcrumb is the only way back — no standalone back button anywhere on the page.' },
+        { id: 'D-9', text: 'Artifact detail is an in-place accordion on the row. The Source page is the leaf of this flow; nothing pushes further, so the researcher never loses the source context.' },
+        { id: 'D-11 / D-14', text: 'The primary file is identity plus Open — the system default app handles it. No in-app viewer, no replace, no derivatives list; a better scan is a new artifact so citations keep their locator.' },
+        { id: 'D-5a–d', text: 'Metadata sits high in the main pane: filled rows drag to order, type suggestions are quick-add rows with a permanent dismiss, and Add field opens the whole vocabulary. Once saved, a value is just metadata — no “suggested” label follows it.' },
+        { id: 'D-16 / D-17', text: 'Add artifact is the same centered modal as Add Source — required label, optional description, optional file in one pass. Add file… appears only on a fileless artifact.' }
+      ],
+
+      addArtifactOpen: s.dialog === 'artifact',
+      newLabel: s.newLabel,
+      newLabelInvalid: s.newLabelTouched && s.newLabel.trim().length === 0,
+      newLabelError: s.newLabelTouched && s.newLabel.trim().length === 0 ? 'Give the artifact a label' : undefined,
+      onNewLabel: (e) => this.setState({ newLabel: e.target.value }),
+      newDesc: s.newDesc,
+      onNewDesc: (e) => this.setState({ newDesc: e.target.value }),
+      busy: s.creating || ing === 'running',
+      onCreateArtifact: this.createArtifact,
+      onCloseDialog: () => { if (ing === 'running') return; clearInterval(this._t); this.setState({ dialog: null, ingest: 'idle', progress: 0, pick: null, pickedField: '', fieldValue: '' }); },
+
+      fileOpen: s.dialog === 'file',
+      fileDialogSubtitle: (s.fileTarget || '') + ' · first attach',
+      onChooseFile: () => this.setState({
+        ingest: 'idle',
+        pick: { name: 'yarmouth-stnicholas-1871-m-016-recto.tif', path: '/Volumes/Scans/NRO/2026-09-10/yarmouth-stnicholas-1871-m-016-recto.tif', type: 'image/tiff', size: '44.6 MB' }
+      }),
+      hasPick: !!pick,
+      noPick: !pick,
+      pickName: pick ? pick.name : '',
+      pickPath: pick ? pick.path : '',
+      ingesting: ing === 'running',
+      ingestFailed: ing === 'error',
+      ingestDisabled: !pick || ing === 'running',
+      ingestLabel: ing === 'error' ? 'Ingest again' : 'Ingest file',
+      onIngest: () => { if (!this.state.pick || this.state.ingest === 'running') return; this.runIngest('attach'); },
+      progressStyle: { width: Math.min(100, s.progress) + '%', height: '100%', background: 'var(--accent)', transition: 'width 120ms var(--ease-standard)' },
+      progressLabel: pick ? 'Ingesting ' + pick.size + ' — ' + Math.round(Math.min(100, s.progress)) + '%' : '',
+      errorDetail: pick ? pick.path + ' — Operation not permitted (EPERM)' : '',
+
+      fieldPickerOpen: s.dialog === 'metafield',
+      onOpenAddField: () => this.setState({ dialog: 'metafield', pickedField: '', fieldValue: '' }),
+      vocabOptions: VOCAB.filter(v => !s.meta.some(m => m.field === v.value)).map(v => ({ value: v.value, label: v.label, subtext: v.kind })),
+      pickedField: s.pickedField,
+      onPickField: (v) => this.setState({ pickedField: v }),
+      fieldValue: s.fieldValue,
+      onFieldValue: (e) => this.setState({ fieldValue: e.target.value }),
+      saveFieldDisabled: !s.pickedField || s.fieldValue.trim().length === 0,
+      onSaveField: () => {
+        if (!s.pickedField || !s.fieldValue.trim()) return;
+        const f = this.fieldOf(s.pickedField);
+        this.setState(st => ({
+          meta: st.meta.concat([{ id: 'm' + Date.now(), field: st.pickedField, value: st.fieldValue.trim() }]),
+          dialog: null, pickedField: '', fieldValue: ''
+        }));
+        this.showToast('success', 'Metadata saved', f.label + ' added to SRC-0412.');
+      },
+
+      dateOpen: s.dialog === 'date',
+      dateTitle: s.dateRow && s.structured[s.dateRow] ? 'Edit date' : 'Add date',
+      dateSubtitle: 'SRC-0412 · Metadata · ' + (s.dateRow ? this.fieldOf((s.meta.find(m => m.id === s.dateRow) || {}).field).label : ''),
+      dv: dv,
+      don: dOn,
+      ddis: { s_mo: !dv.s_y, s_d: !dv.s_mo, e_mo: !dv.e_y, e_d: !dv.e_mo },
+      dateIsPoint: dv.kind !== 'range',
+      dateIsRange: dv.kind === 'range',
+      dateStartHeading: dv.kind === 'range' ? 'Earliest — not before' : 'Date',
+      dateKinds: [['point', 'Single date'], ['range', 'Between two bounds']].map(([k, label]) => ({
+        label,
+        style: {
+          flex: 1, height: 28, border: 0, borderRadius: 3, cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-sm)',
+          backgroundColor: dv.kind === k ? 'var(--surface-card)' : 'transparent',
+          color: dv.kind === k ? 'var(--text-primary)' : 'var(--text-muted)',
+          boxShadow: dv.kind === k ? 'var(--shadow-sm)' : 'none'
+        },
+        onPick: () => this.setDv(k === 'point'
+          ? { kind: k, e_y: '', e_mo: '', e_d: '' }
+          : { kind: k, qualifier: '' })
+      })),
+      dateQualifiers: QUALS.map(q => ({
+        label: q.label,
+        style: {
+          height: 28, padding: '0 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-sm)',
+          border: '1px solid ' + (dv.qualifier === q.v ? 'var(--accent-line)' : 'var(--border-default)'),
+          backgroundColor: dv.qualifier === q.v ? 'var(--accent-soft)' : 'var(--surface-raised)',
+          color: dv.qualifier === q.v ? 'var(--accent-soft-fg)' : 'var(--text-secondary)'
+        },
+        onPick: () => this.setDv({ qualifier: q.v })
+      })),
+      dateErrEnd: dateErrEnd,
+      dateSummary: this.dateSummary(dv),
+      dateSaveLabel: s.dateRow && s.structured[s.dateRow] ? 'Save date' : 'Add date',
+      dateSaveDisabled: dv.kind === 'range' ? (!dv.s_y || !dv.e_y || !!dateErrEnd) : !dv.s_y,
+      onSaveDate: () => {
+        const row = s.dateRow;
+        this.setState(st => ({ structured: Object.assign({}, st.structured, { [row]: dv }), dialog: null, dateRow: null, dv: null }));
+        this.showToast('success', 'Date structured', this.dateSummary(dv) + ' stored beside the transcribed wording.');
+      },
+
+      toastOpen: !!s.toast,
+      toastTone: s.toast ? s.toast.tone : 'info',
+      toastTitle: s.toast ? s.toast.title : '',
+      toastBody: s.toast ? s.toast.body : '',
+      onDismissToast: () => this.setState({ toast: null })
+    };
+  }
+}
+</script>
+</body>
+</html>

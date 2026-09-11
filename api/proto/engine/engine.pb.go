@@ -2227,13 +2227,15 @@ func (x *MetadataField) GetUsedBy() int32 {
 }
 
 type MetadataWorkspaceEntry struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Field         *MetadataField         `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
-	ValueText     string                 `protobuf:"bytes,2,opt,name=value_text,json=valueText,proto3" json:"value_text,omitempty"`
-	DateValueId   string                 `protobuf:"bytes,3,opt,name=date_value_id,json=dateValueId,proto3" json:"date_value_id,omitempty"`
-	HasValue      bool                   `protobuf:"varint,4,opt,name=has_value,json=hasValue,proto3" json:"has_value,omitempty"`
-	Suggested     bool                   `protobuf:"varint,5,opt,name=suggested,proto3" json:"suggested,omitempty"`
-	SortOrder     int32                  `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Field       *MetadataField         `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	ValueText   string                 `protobuf:"bytes,2,opt,name=value_text,json=valueText,proto3" json:"value_text,omitempty"`
+	DateValueId string                 `protobuf:"bytes,3,opt,name=date_value_id,json=dateValueId,proto3" json:"date_value_id,omitempty"`
+	HasValue    bool                   `protobuf:"varint,4,opt,name=has_value,json=hasValue,proto3" json:"has_value,omitempty"`
+	Suggested   bool                   `protobuf:"varint,5,opt,name=suggested,proto3" json:"suggested,omitempty"`
+	SortOrder   int32                  `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	// Compact GEDCOM-style summary when date_value_id is set (empty otherwise).
+	DateSummary   string `protobuf:"bytes,7,opt,name=date_summary,json=dateSummary,proto3" json:"date_summary,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2308,6 +2310,13 @@ func (x *MetadataWorkspaceEntry) GetSortOrder() int32 {
 		return x.SortOrder
 	}
 	return 0
+}
+
+func (x *MetadataWorkspaceEntry) GetDateSummary() string {
+	if x != nil {
+		return x.DateSummary
+	}
+	return ""
 }
 
 // DateValueInput maps to datevalues.Insert (kind point|range; see docs/structured-date-model.md).
@@ -6134,7 +6143,7 @@ const file_engine_proto_rawDesc = "" +
 	"\x05label\x18\x04 \x01(\tR\x05label\x12\x1b\n" +
 	"\tdata_type\x18\x05 \x01(\tR\bdataType\x12 \n" +
 	"\vdescription\x18\x06 \x01(\tR\vdescription\x12\x17\n" +
-	"\aused_by\x18\a \x01(\x05R\x06usedBy\"\xf1\x01\n" +
+	"\aused_by\x18\a \x01(\x05R\x06usedBy\"\x94\x02\n" +
 	"\x16MetadataWorkspaceEntry\x12:\n" +
 	"\x05field\x18\x01 \x01(\v2$.provenencia.engine.v1.MetadataFieldR\x05field\x12\x1d\n" +
 	"\n" +
@@ -6143,7 +6152,8 @@ const file_engine_proto_rawDesc = "" +
 	"\thas_value\x18\x04 \x01(\bR\bhasValue\x12\x1c\n" +
 	"\tsuggested\x18\x05 \x01(\bR\tsuggested\x12\x1d\n" +
 	"\n" +
-	"sort_order\x18\x06 \x01(\x05R\tsortOrder\"\x8a\a\n" +
+	"sort_order\x18\x06 \x01(\x05R\tsortOrder\x12!\n" +
+	"\fdate_summary\x18\a \x01(\tR\vdateSummary\"\x8a\a\n" +
 	"\x0eDateValueInput\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x1c\n" +
 	"\tqualifier\x18\x02 \x01(\tR\tqualifier\x12\x1a\n" +

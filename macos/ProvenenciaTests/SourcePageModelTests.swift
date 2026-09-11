@@ -70,42 +70,74 @@ struct SourcePageModelTests {
         #expect(model.grades.count == 3)
     }
 
-    @Test func saveIdentityUpdatesTitleAndType() async {
+    @Test func saveTitleUpdatesCommittedTitle() async {
         let store = makeStore()
         let model = makeModel(store: store)
         await model.load()
-        model.title = "Revised title"
-        model.description = "New desc"
-        await model.saveIdentity()
+        model.beginEditTitle()
+        model.titleDraft = "Revised title"
+        await model.saveTitle()
+        #expect(model.editingTitle == false)
+        #expect(model.title == "Revised title")
         #expect(model.workspace?.source.title == "Revised title")
         #expect(store.sourcesByProject[projectDir]?.first?.title == "Revised title")
     }
 
-    @Test func emptyTitleSetsValidationError() async {
+    @Test func emptyTitleDraftSetsValidationError() async {
         let model = makeModel(store: makeStore())
         await model.load()
-        model.title = "   "
-        await model.saveIdentity()
+        model.beginEditTitle()
+        model.titleDraft = "   "
+        await model.saveTitle()
         #expect(model.titleError != nil)
+        #expect(model.editingTitle == true)
         #expect(model.workspace?.source.title == "Family album")
     }
 
-    @Test func selectingHighTrustPersistsAssessment() async {
+    @Test func selectCredibilityDraftDoesNotPersistUntilSave() async {
         let store = makeStore()
         let model = makeModel(store: store)
         await model.load()
-        await model.selectCredibility(key: "high_trust")
+        model.selectCredibilityDraft(key: "high_trust")
+        #expect(model.credibilityDirty)
+        #expect(model.workspace?.credibility == nil)
+        #expect(store.credibilityBySource[sourceID] == nil)
+        await model.saveCredibility()
         #expect(model.workspace?.credibility?.gradeKey == "high_trust")
         #expect(store.credibilityBySource[sourceID]?.gradeKey == "high_trust")
+        #expect(!model.credibilityDirty)
     }
 
     @Test func standardWithEmptyArgumentDoesNotWriteRow() async {
         let store = makeStore()
         let model = makeModel(store: store)
         await model.load()
-        await model.selectCredibility(key: "standard")
+        model.selectCredibilityDraft(key: "standard")
+        await model.saveCredibility()
         #expect(model.workspace?.credibility == nil)
         #expect(store.credibilityBySource[sourceID] == nil)
+        #expect(!model.hasSavedCredibilityAssessment)
+    }
+
+    @Test func cancelCredibilityRestoresDraftFromSaved() async {
+        let store = makeStore(credibility: CatalogCredibilityAssessment(
+            id: "cred-1",
+            sourceID: sourceID,
+            gradeID: "g-high",
+            gradeKey: "high_trust",
+            gradeLabel: "High trust",
+            argument: "Film"
+        ))
+        let model = makeModel(store: store)
+        await model.load()
+        #expect(model.hasSavedCredibilityAssessment)
+        model.selectCredibilityDraft(key: "low_trust")
+        model.credibilityArgumentDraft = "changed"
+        #expect(model.credibilityDirty)
+        model.cancelCredibility()
+        #expect(model.credibilityDraftKey == "high_trust")
+        #expect(model.credibilityArgumentDraft == "Film")
+        #expect(!model.credibilityDirty)
     }
 
     @Test func notesCRUD() async throws {
@@ -282,6 +314,47 @@ struct SourcePageModelTests {
         #expect(model.suggestedMetadata.isEmpty)
     }
 
+    @Test func beginEditMetadataThenCancelRestoresDraft() async {
+        let repo = repositoryField()
+        let store = makeStore(
+            metadata: [
+                CatalogMetadataEntry(
+                    field: repo, valueText: "NRO", dateValueID: "",
+                    hasValue: true, suggested: false, sortOrder: 0
+                ),
+            ],
+            fields: [repo]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        model.beginEditMetadata(fieldID: repo.id)
+        #expect(model.editingMetadataFieldID == repo.id)
+        model.metadataDrafts[repo.id] = "Changed"
+        model.cancelEditMetadata()
+        #expect(model.editingMetadataFieldID == nil)
+        #expect(model.metadataDrafts[repo.id] == "NRO")
+    }
+
+    @Test func saveMetadataValueExitsEditMode() async {
+        let repo = repositoryField()
+        let store = makeStore(
+            metadata: [
+                CatalogMetadataEntry(
+                    field: repo, valueText: "NRO", dateValueID: "",
+                    hasValue: true, suggested: false, sortOrder: 0
+                ),
+            ],
+            fields: [repo]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        model.beginEditMetadata(fieldID: repo.id)
+        model.metadataDrafts[repo.id] = "Norfolk Record Office"
+        await model.saveMetadataValue(fieldID: repo.id)
+        #expect(model.editingMetadataFieldID == nil)
+        #expect(model.savedMetadata.map(\.valueText) == ["Norfolk Record Office"])
+    }
+
     @Test func dismissSuggestionRemovesEmptyRow() async {
         let author = authorField()
         let store = makeStore(
@@ -343,5 +416,77 @@ struct SourcePageModelTests {
         await model.createMetadataFromAdd()
         #expect(model.isAddingMetadata == false)
         #expect(model.metadata.contains { $0.field.id == author.id && $0.valueText == "Eliza" })
+    }
+
+    @Test func cancelArtifactFieldsRestoresDrafts() async throws {
+        let store = makeStore(
+            artifacts: [
+                CatalogArtifact(
+                    id: "a1", ref: "ART-AAAAA", sourceID: sourceID, fileID: "",
+                    label: "Front", description: "Original", file: nil
+                ),
+            ]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        let artID = try #require(model.artifacts.first?.id)
+        model.artifactLabels[artID] = "Changed"
+        model.artifactDescriptions[artID] = "Changed desc"
+        #expect(model.artifactFieldsDirty(artID))
+        model.cancelArtifactFields(id: artID)
+        #expect(!model.artifactFieldsDirty(artID))
+        #expect(model.artifactLabels[artID] == "Front")
+        #expect(model.artifactDescriptions[artID] == "Original")
+    }
+
+    @Test func saveDateEditorStructuresMetadata() async {
+        let dateField = CatalogMetadataField(
+            id: "f-date", key: "date_of_record", origin: "provenencia",
+            label: "Date of record", dataType: "date", description: ""
+        )
+        let store = makeStore(
+            metadata: [
+                CatalogMetadataEntry(
+                    field: dateField, valueText: "about the year 1890", dateValueID: "",
+                    hasValue: true, suggested: false, sortOrder: 0
+                ),
+            ],
+            fields: [dateField]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        model.metadataDrafts[dateField.id] = "about the year 1890"
+        model.openStructureDate(fieldID: dateField.id)
+        model.dateEditorDraft.qualifier = "ABT"
+        model.dateEditorDraft.startYear = 1890
+        await model.saveDateEditor()
+        #expect(model.isEditingDate == false)
+        let entry = model.metadata.first { $0.field.id == dateField.id }
+        #expect(entry?.dateValueID.isEmpty == false)
+        #expect(entry?.dateSummary == "ABT 1890")
+        #expect(model.dateDraftsByFieldID[dateField.id] != nil)
+    }
+
+    @Test func expandingArtifactCollapsesOther() async {
+        let store = makeStore(
+            artifacts: [
+                CatalogArtifact(
+                    id: "a1", ref: "ART-AAAAA", sourceID: sourceID, fileID: "",
+                    label: "Front", description: "", file: nil
+                ),
+                CatalogArtifact(
+                    id: "a2", ref: "ART-BBBBB", sourceID: sourceID, fileID: "",
+                    label: "Back", description: "", file: nil
+                ),
+            ]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        model.toggleArtifactExpanded("a1")
+        #expect(model.expandedArtifactIDs == ["a1"])
+        model.toggleArtifactExpanded("a2")
+        #expect(model.expandedArtifactIDs == ["a2"])
+        model.toggleArtifactExpanded("a2")
+        #expect(model.expandedArtifactIDs.isEmpty)
     }
 }

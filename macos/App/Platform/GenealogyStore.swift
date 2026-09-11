@@ -126,6 +126,8 @@ struct CatalogMetadataEntry: Sendable, Equatable, Identifiable {
     var field: CatalogMetadataField
     var valueText: String
     var dateValueID: String
+    /// Compact GEDCOM-style summary when `dateValueID` is set.
+    var dateSummary: String = ""
     var hasValue: Bool
     var suggested: Bool
     var sortOrder: Int32
@@ -142,12 +144,25 @@ struct CatalogSourceWorkspace: Sendable, Equatable {
 
 struct CatalogDateValueInput: Sendable, Equatable {
     var kind: String
-    var qualifier: String
-    var calendar: String
+    var qualifier: String = ""
+    var calendar: String = "gregorian"
     var startYear: Int32?
     var startMonth: Int32?
     var startDay: Int32?
-    var phrase: String
+    var startHour: Int32?
+    var startMinute: Int32?
+    var startSecond: Int32?
+    var startMillisecond: Int32?
+    var startTZ: String = ""
+    var endYear: Int32?
+    var endMonth: Int32?
+    var endDay: Int32?
+    var endHour: Int32?
+    var endMinute: Int32?
+    var endSecond: Int32?
+    var endMillisecond: Int32?
+    var endTZ: String = ""
+    var phrase: String = ""
 }
 
 /// Origin split returned by `GetWorkspaceNavCounts` for vocabulary

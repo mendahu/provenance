@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"bytes"
+
 	"github.com/mendahu/provenencia/api/proto/engine"
+	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/datevalues"
 	"github.com/mendahu/provenencia/core/database/files"
 	"github.com/mendahu/provenencia/core/database/sourcemetadata"
@@ -77,7 +80,7 @@ func GetSourceWorkspace(in []byte) ([]byte, error) {
 		out.Notes = append(out.Notes, noteProto(n))
 	}
 	for _, e := range meta {
-		out.Metadata = append(out.Metadata, metadataEntryProto(e))
+		out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
 	}
 	out.Artifacts = arts
 	out.Credibility = cred
@@ -263,6 +266,18 @@ func SetSourceMetadata(in []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		// Text-only updates keep any existing structured DateValue.
+		existing, listErr := sourcemetadata.ListBySource(c, sourceID)
+		if listErr != nil {
+			return nil, listErr
+		}
+		for _, row := range existing {
+			if bytes.Equal(row.FieldID, fieldID) {
+				dateID = row.DateValueID
+				break
+			}
+		}
 	}
 	row, err := sourcemetadata.Set(c, userID, sourcemetadata.Input{
 		SourceID:    sourceID,
@@ -338,7 +353,7 @@ func DismissSourceMetadataSuggestion(in []byte) ([]byte, error) {
 	}
 	out := &engine.DismissSourceMetadataSuggestionResponse{}
 	for _, e := range entries {
-		out.Metadata = append(out.Metadata, metadataEntryProto(e))
+		out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
 	}
 	return proto.Marshal(out)
 }
@@ -378,7 +393,7 @@ func ReorderSourceMetadata(in []byte) ([]byte, error) {
 	}
 	out := &engine.ReorderSourceMetadataResponse{}
 	for _, e := range entries {
-		out.Metadata = append(out.Metadata, metadataEntryProto(e))
+		out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
 	}
 	return proto.Marshal(out)
 }
@@ -403,7 +418,7 @@ func noteProto(n sources.Note) *engine.SourceNote {
 	}
 }
 
-func metadataEntryProto(e sourcemetadata.WorkspaceEntry) *engine.MetadataWorkspaceEntry {
+func metadataEntryProto(c *database.Catalog, e sourcemetadata.WorkspaceEntry) *engine.MetadataWorkspaceEntry {
 	out := &engine.MetadataWorkspaceEntry{
 		Field: &engine.MetadataField{
 			Id:          uuidString(e.Field.ID),
@@ -420,6 +435,11 @@ func metadataEntryProto(e sourcemetadata.WorkspaceEntry) *engine.MetadataWorkspa
 		out.HasValue = true
 		out.ValueText = e.Value.ValueText
 		out.DateValueId = uuidString(e.Value.DateValueID)
+		if len(e.Value.DateValueID) == 16 {
+			if dv, err := datevalues.Lookup(c, e.Value.DateValueID); err == nil {
+				out.DateSummary = datevalues.FormatSummary(dv)
+			}
+		}
 	}
 	return out
 }

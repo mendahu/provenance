@@ -19,15 +19,35 @@ final class SourcePageModel {
     private(set) var isLoading = false
     var loadError: Error?
 
+    /// Saved identity (synced from workspace after load/save).
     var title = ""
     var description = ""
     var sourceTypeID = ""
     var titleError: String?
     private(set) var isSavingIdentity = false
 
-    /// Displayed grade key; defaults to `standard` when no assessment row.
+    // MARK: Title edit
+
+    var editingTitle = false
+    var titleDraft = ""
+
+    // MARK: Type edit
+
+    var editingType = false
+    var typeDraftID = ""
+
+    // MARK: Description edit
+
+    var editingDescription = false
+    var descriptionDraft = ""
+
+    // MARK: Credibility (saved vs draft)
+
+    /// Saved grade key; defaults to `standard` when no assessment row.
     var credibilityKey = "standard"
     var credibilityArgument = ""
+    var credibilityDraftKey = "standard"
+    var credibilityArgumentDraft = ""
     private(set) var isSavingCredibility = false
 
     var noteDraft = ""
@@ -51,6 +71,8 @@ final class SourcePageModel {
     var metadata: [CatalogMetadataEntry] = []
     /// Edit buffers keyed by field id.
     var metadataDrafts: [String: String] = [:]
+    /// Saved metadata row currently in explicit edit mode (one at a time).
+    var editingMetadataFieldID: String?
     private(set) var savingMetadataFieldID: String?
     var isAddingMetadata = false
     var addMetadataFieldID = ""
@@ -59,6 +81,15 @@ final class SourcePageModel {
     var addMetadataValueError: String?
     private(set) var isSavingMetadataAdd = false
     private(set) var vocabularyFields: [CatalogMetadataField] = []
+
+    // MARK: Date editor
+
+    var isEditingDate = false
+    var dateEditorFieldID: String?
+    var dateEditorDraft = DateValueDraft.empty()
+    /// Last successfully saved draft per metadata field — used to reopen Edit.
+    var dateDraftsByFieldID: [String: DateValueDraft] = [:]
+    private(set) var isSavingDateEditor = false
 
     var toast: VocabularyToast?
     var pageError: String?
@@ -100,15 +131,26 @@ final class SourcePageModel {
         types.map { PVComboBoxOption(value: $0.id, label: $0.label, subtext: $0.key) }
     }
 
+    /// Resting type label from committed `sourceTypeID`.
     var typeLabel: String {
         types.first { $0.id == sourceTypeID }?.label ?? ""
     }
 
-    /// Grade shown in the chips (assessment or Standard display default).
+    /// Grade shown in the chips (draft selection, falling back to Standard).
     var displayedCredibilityGrade: CatalogCredibilityGrade? {
-        grades.first { $0.key == credibilityKey }
+        grades.first { $0.key == credibilityDraftKey }
             ?? grades.first { $0.key == "standard" }
             ?? grades.first
+    }
+
+    var credibilityDirty: Bool {
+        credibilityDraftKey != credibilityKey
+            || credibilityArgumentDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+            != credibilityArgument.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var hasSavedCredibilityAssessment: Bool {
+        workspace?.credibility != nil
     }
 
     var canSubmitArtifact: Bool {
@@ -166,6 +208,15 @@ final class SourcePageModel {
         title = workspace.source.title
         description = workspace.source.description
         sourceTypeID = workspace.source.sourceTypeID
+
+        editingTitle = false
+        titleDraft = ""
+        editingType = false
+        typeDraftID = workspace.source.sourceTypeID
+        editingDescription = false
+        descriptionDraft = ""
+
+        editingMetadataFieldID = nil
         applyMetadata(workspace.metadata)
         if let cred = workspace.credibility {
             credibilityKey = cred.gradeKey
@@ -174,6 +225,9 @@ final class SourcePageModel {
             credibilityKey = "standard"
             credibilityArgument = ""
         }
+        credibilityDraftKey = credibilityKey
+        credibilityArgumentDraft = credibilityArgument
+
         for art in workspace.artifacts {
             if artifactLabels[art.id] == nil {
                 artifactLabels[art.id] = art.label
@@ -193,6 +247,7 @@ final class SourcePageModel {
         }
         let ids = Set(entries.map(\.field.id))
         metadataDrafts = metadataDrafts.filter { ids.contains($0.key) }
+        dateDraftsByFieldID = dateDraftsByFieldID.filter { ids.contains($0.key) }
         if var ws = workspace {
             ws.metadata = entries
             workspace = ws
@@ -209,20 +264,106 @@ final class SourcePageModel {
         }
     }
 
-    // MARK: Identity
+    // MARK: Identity — title
 
-    func saveIdentity() async {
+    func beginEditTitle() {
+        titleDraft = title
+        titleError = nil
+        editingTitle = true
+    }
+
+    func cancelEditTitle() {
         guard !isSavingIdentity else { return }
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        editingTitle = false
+        titleDraft = ""
+        titleError = nil
+    }
+
+    func saveTitle() async {
+        let trimmed = titleDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
             titleError = String(localized: L10n.Sources.pageTitleRequired)
             return
         }
+        await saveIdentity(
+            title: trimmed,
+            description: description.trimmingCharacters(in: .whitespacesAndNewlines),
+            sourceTypeID: sourceTypeID
+        )
+        if titleError == nil {
+            editingTitle = false
+            titleDraft = ""
+        }
+    }
+
+    // MARK: Identity — type
+
+    func beginEditType() {
+        // Blank the picker so the researcher can type immediately; Cancel
+        // restores `sourceTypeID`.
+        typeDraftID = ""
+        editingType = true
+    }
+
+    func cancelEditType() {
+        guard !isSavingIdentity else { return }
+        typeDraftID = sourceTypeID
+        editingType = false
+    }
+
+    func saveType() async {
+        let typeID = typeDraftID.isEmpty ? sourceTypeID : typeDraftID
+        await saveIdentity(
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            description: description.trimmingCharacters(in: .whitespacesAndNewlines),
+            sourceTypeID: typeID
+        )
+        if titleError == nil {
+            editingType = false
+        }
+    }
+
+    // MARK: Identity — description
+
+    func beginEditDescription() {
+        descriptionDraft = description
+        editingDescription = true
+    }
+
+    func cancelEditDescription() {
+        guard !isSavingIdentity else { return }
+        editingDescription = false
+        descriptionDraft = ""
+    }
+
+    func saveDescription() async {
+        await saveIdentity(
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            description: descriptionDraft.trimmingCharacters(in: .whitespacesAndNewlines),
+            sourceTypeID: sourceTypeID
+        )
+        if titleError == nil {
+            editingDescription = false
+            descriptionDraft = ""
+        }
+    }
+
+    /// Shared `updateSource` write used by title / type / description saves.
+    private func saveIdentity(title: String, description: String, sourceTypeID: String) async {
+        guard !isSavingIdentity else { return }
+        if title.isEmpty {
+            titleError = String(localized: L10n.Sources.pageTitleRequired)
+            return
+        }
         guard let current = workspace?.source else { return }
-        if trimmed == current.title,
-           description.trimmingCharacters(in: .whitespacesAndNewlines) == current.description,
+        if title == current.title,
+           description == current.description,
            sourceTypeID == current.sourceTypeID
         {
+            self.title = title
+            self.description = description
+            self.sourceTypeID = sourceTypeID
+            titleError = nil
             return
         }
         isSavingIdentity = true
@@ -233,10 +374,14 @@ final class SourcePageModel {
                 userID: userID,
                 sourceID: sourceID,
                 sourceTypeID: sourceTypeID,
-                title: trimmed,
-                description: description.trimmingCharacters(in: .whitespacesAndNewlines)
+                title: title,
+                description: description
             )
             titleError = nil
+            self.title = updated.title
+            self.description = updated.description
+            self.sourceTypeID = updated.sourceTypeID
+            typeDraftID = updated.sourceTypeID
             if var ws = workspace {
                 ws.source = updated
                 workspace = ws
@@ -249,25 +394,34 @@ final class SourcePageModel {
 
     // MARK: Credibility
 
-    func selectCredibility(key: String) async {
-        credibilityKey = key
-        await commitCredibility()
+    func selectCredibilityDraft(key: String) {
+        credibilityDraftKey = key
     }
 
-    func saveCredibilityArgument() async {
-        await commitCredibility()
-    }
-
-    private func commitCredibility() async {
+    func cancelCredibility() {
         guard !isSavingCredibility else { return }
-        guard let grade = displayedCredibilityGrade ?? grades.first(where: { $0.key == credibilityKey }) else {
+        credibilityDraftKey = credibilityKey
+        credibilityArgumentDraft = credibilityArgument
+    }
+
+    func saveCredibility() async {
+        guard !isSavingCredibility else { return }
+        guard let grade = grades.first(where: { $0.key == credibilityDraftKey })
+            ?? displayedCredibilityGrade
+            ?? grades.first
+        else {
             return
         }
+        let argument = credibilityArgumentDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         // Missing row + Standard + empty argument: keep display-only (no write).
         if workspace?.credibility == nil,
            grade.key == "standard",
-           credibilityArgument.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+           argument.isEmpty
         {
+            credibilityKey = "standard"
+            credibilityArgument = ""
+            credibilityDraftKey = credibilityKey
+            credibilityArgumentDraft = credibilityArgument
             return
         }
         isSavingCredibility = true
@@ -278,7 +432,7 @@ final class SourcePageModel {
                 userID: userID,
                 sourceID: sourceID,
                 gradeID: grade.id,
-                argument: credibilityArgument.trimmingCharacters(in: .whitespacesAndNewlines)
+                argument: argument
             )
             if var ws = workspace {
                 ws.credibility = assessment
@@ -286,6 +440,8 @@ final class SourcePageModel {
             }
             credibilityKey = assessment.gradeKey
             credibilityArgument = assessment.argument
+            credibilityDraftKey = credibilityKey
+            credibilityArgumentDraft = credibilityArgument
         } catch {
             pageError = L10n.Errors.message(for: error)
         }
@@ -293,23 +449,45 @@ final class SourcePageModel {
 
     // MARK: Metadata
 
+    func beginEditMetadata(fieldID: String) {
+        guard let entry = metadata.first(where: { $0.field.id == fieldID }), entry.hasValue else { return }
+        if let current = editingMetadataFieldID, current != fieldID {
+            cancelEditMetadata()
+        }
+        metadataDrafts[fieldID] = entry.valueText
+        editingMetadataFieldID = fieldID
+    }
+
+    func cancelEditMetadata() {
+        guard let fieldID = editingMetadataFieldID else { return }
+        guard savingMetadataFieldID == nil else { return }
+        if let entry = metadata.first(where: { $0.field.id == fieldID }) {
+            metadataDrafts[fieldID] = entry.valueText
+        }
+        editingMetadataFieldID = nil
+    }
+
     func saveMetadataValue(fieldID: String) async {
         guard let entry = metadata.first(where: { $0.field.id == fieldID }) else { return }
         guard savingMetadataFieldID == nil else { return }
         let value = (metadataDrafts[fieldID] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return }
-        if entry.hasValue, value == entry.valueText { return }
+        if entry.hasValue, value == entry.valueText {
+            if editingMetadataFieldID == fieldID {
+                editingMetadataFieldID = nil
+            }
+            return
+        }
         savingMetadataFieldID = fieldID
         defer { savingMetadataFieldID = nil }
         do {
-            let date = dateInput(for: entry.field, valueText: value)
             let result = try await store.setSourceMetadata(
                 projectDir: projectDir,
                 userID: userID,
                 sourceID: sourceID,
                 fieldID: fieldID,
                 valueText: value,
-                date: date
+                date: nil
             )
             if let idx = metadata.firstIndex(where: { $0.field.id == fieldID }) {
                 metadata[idx].valueText = result.valueText
@@ -320,6 +498,9 @@ final class SourcePageModel {
                     ws.metadata = metadata
                     workspace = ws
                 }
+            }
+            if editingMetadataFieldID == fieldID {
+                editingMetadataFieldID = nil
             }
         } catch {
             pageError = L10n.Errors.message(for: error)
@@ -399,15 +580,13 @@ final class SourcePageModel {
         isSavingMetadataAdd = true
         defer { isSavingMetadataAdd = false }
         do {
-            let field = vocabularyFields.first { $0.id == addMetadataFieldID }
-            let date = field.map { dateInput(for: $0, valueText: value) } ?? nil
             _ = try await store.setSourceMetadata(
                 projectDir: projectDir,
                 userID: userID,
                 sourceID: sourceID,
                 fieldID: addMetadataFieldID,
                 valueText: value,
-                date: date
+                date: nil
             )
             isAddingMetadata = false
             await refreshWorkspace()
@@ -416,22 +595,70 @@ final class SourcePageModel {
         }
     }
 
-    private func dateInput(for field: CatalogMetadataField, valueText: String) -> CatalogDateValueInput? {
-        guard field.dataType == "date" else { return nil }
-        let trimmed = valueText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let year = Int32(trimmed), (1000...9999).contains(year) else {
-            // Free-text dates stay on value_text only until a richer date picker lands.
-            return nil
+    // MARK: Date editor
+
+    func openStructureDate(fieldID: String) {
+        dateEditorFieldID = fieldID
+        dateEditorDraft = DateValueDraft.empty()
+        isEditingDate = true
+    }
+
+    func openEditDate(fieldID: String) {
+        dateEditorFieldID = fieldID
+        if let cached = dateDraftsByFieldID[fieldID] {
+            dateEditorDraft = cached
+        } else {
+            dateEditorDraft = DateValueDraft.empty()
         }
-        return CatalogDateValueInput(
-            kind: "point",
-            qualifier: "",
-            calendar: "gregorian",
-            startYear: year,
-            startMonth: nil,
-            startDay: nil,
-            phrase: ""
-        )
+        isEditingDate = true
+    }
+
+    func cancelDateEditor() {
+        guard !isSavingDateEditor else { return }
+        isEditingDate = false
+        dateEditorFieldID = nil
+        dateEditorDraft = DateValueDraft.empty()
+    }
+
+    func saveDateEditor() async {
+        guard let fieldID = dateEditorFieldID else { return }
+        guard !isSavingDateEditor else { return }
+        guard dateEditorDraft.isValid else { return }
+        let value = (metadataDrafts[fieldID] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else {
+            pageError = String(localized: L10n.Sources.metadataValueRequired)
+            return
+        }
+        isSavingDateEditor = true
+        defer { isSavingDateEditor = false }
+        do {
+            let draft = dateEditorDraft
+            let result = try await store.setSourceMetadata(
+                projectDir: projectDir,
+                userID: userID,
+                sourceID: sourceID,
+                fieldID: fieldID,
+                valueText: value,
+                date: draft.toInput()
+            )
+            if let idx = metadata.firstIndex(where: { $0.field.id == fieldID }) {
+                metadata[idx].valueText = result.valueText
+                metadata[idx].dateValueID = result.dateValueID
+                metadata[idx].dateSummary = draft.summary
+                metadata[idx].hasValue = true
+                metadataDrafts[fieldID] = result.valueText
+                if var ws = workspace {
+                    ws.metadata = metadata
+                    workspace = ws
+                }
+            }
+            dateDraftsByFieldID[fieldID] = draft
+            isEditingDate = false
+            dateEditorFieldID = nil
+            dateEditorDraft = DateValueDraft.empty()
+        } catch {
+            pageError = L10n.Errors.message(for: error)
+        }
     }
 
     // MARK: Notes
@@ -493,9 +720,10 @@ final class SourcePageModel {
 
     func toggleArtifactExpanded(_ id: String) {
         if expandedArtifactIDs.contains(id) {
-            expandedArtifactIDs.remove(id)
+            expandedArtifactIDs.removeAll()
         } else {
-            expandedArtifactIDs.insert(id)
+            // Accordion: only one Artifact expanded at a time.
+            expandedArtifactIDs = [id]
             if let art = artifacts.first(where: { $0.id == id }) {
                 artifactLabels[id] = art.label
                 artifactDescriptions[id] = art.description
@@ -513,6 +741,14 @@ final class SourcePageModel {
 
     func canSaveArtifactFields(_ id: String) -> Bool {
         artifactFieldsDirty(id) && savingArtifactID == nil
+    }
+
+    func cancelArtifactFields(id: String) {
+        guard savingArtifactID != id else { return }
+        guard let art = artifacts.first(where: { $0.id == id }) else { return }
+        artifactLabels[id] = art.label
+        artifactDescriptions[id] = art.description
+        artifactFieldErrors[id] = nil
     }
 
     func saveArtifactFields(id: String) async {

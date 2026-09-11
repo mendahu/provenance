@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Individual Source page (S2-18 / S2-25): breadcrumb, identity, Description +
+/// Individual Source page (S2-18 / S2-25): sticky identity header, Description +
 /// Credibility beside Metadata, Artifacts accordion, Notes.
 struct SourcePageView: View {
     @State private var model: SourcePageModel
@@ -29,28 +29,30 @@ struct SourcePageView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: PVSpacing.space9) {
-                breadcrumbs
-                if model.isLoading && model.workspace == nil {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, PVSpacing.space9)
-                } else if let loadError = model.loadError, model.workspace == nil {
-                    PVCallout(tone: .danger, message: L10n.Errors.message(for: loadError))
-                } else {
-                    identitySection
-                    overviewColumns
-                    artifactsSection
-                    notesSection
-                }
+        VStack(spacing: 0) {
+            if model.workspace != nil || model.isLoading || model.loadError != nil {
+                identityHeader
             }
-            .padding(.horizontal, PVSpacing.gutterPage)
-            .padding(.top, PVSpacing.space8)
-            .padding(.bottom, PVSpacing.space10)
-            // Fill the pane so the ScrollView scrollbar sits on the trailing
-            // edge — a maxWidth on this stack alone shrinks the scroll view.
-            .frame(maxWidth: .infinity, alignment: .leading)
+            ScrollView {
+                VStack(alignment: .leading, spacing: PVSpacing.space9) {
+                    if model.isLoading && model.workspace == nil {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, PVSpacing.space9)
+                    } else if let loadError = model.loadError, model.workspace == nil {
+                        PVCallout(tone: .danger, message: L10n.Errors.message(for: loadError))
+                    } else {
+                        overviewColumns
+                        artifactsSection
+                        notesSection
+                    }
+                }
+                .frame(maxWidth: PVSpacing.widthContentMax, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, PVSpacing.gutterPage)
+                .padding(.top, PVSpacing.space8)
+                .padding(.bottom, PVSpacing.space10)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(PVColor.surfacePage)
@@ -83,6 +85,24 @@ struct SourcePageView: View {
         ) {
             addMetadataForm
         }
+        .pvDialog(
+            isPresented: dateEditorPresented,
+            copy: PVDialogCopy(
+                title: isDateEditMode
+                    ? L10n.Sources.editDateDialogTitle
+                    : L10n.Sources.addDateDialogTitle,
+                subtitle: dateEditorSubtitle,
+                confirm: isDateEditMode
+                    ? L10n.Sources.saveDateConfirm
+                    : L10n.Sources.addDateConfirm,
+                cancel: L10n.Sources.cancelAction
+            ),
+            isRunning: model.isSavingDateEditor,
+            confirmDisabled: !canSaveDateEditor,
+            onConfirm: { Task { await model.saveDateEditor() } }
+        ) {
+            DateValueEditorForm(draft: $model.dateEditorDraft)
+        }
         .task { await model.load() }
         .accessibilityIdentifier("sources.page")
     }
@@ -113,6 +133,66 @@ struct SourcePageView: View {
         )
     }
 
+    private var dateEditorPresented: Binding<Bool> {
+        Binding(
+            get: { model.isEditingDate },
+            set: { presented in
+                if !presented {
+                    model.cancelDateEditor()
+                }
+            }
+        )
+    }
+
+    /// True when reopening an existing structured DateValue (Edit date).
+    private var isDateEditMode: Bool {
+        guard let fieldID = model.dateEditorFieldID else { return false }
+        if model.dateDraftsByFieldID[fieldID] != nil { return true }
+        guard let entry = model.metadata.first(where: { $0.field.id == fieldID }) else {
+            return false
+        }
+        return !entry.dateValueID.isEmpty || !entry.dateSummary.isEmpty
+    }
+
+    private var canSaveDateEditor: Bool {
+        model.dateEditorDraft.isValid && !model.isSavingDateEditor
+    }
+
+    private var dateEditorSubtitle: LocalizedStringResource? {
+        guard let fieldID = model.dateEditorFieldID,
+              let entry = model.metadata.first(where: { $0.field.id == fieldID })
+        else { return nil }
+        let ref = model.source?.ref ?? "…"
+        let text = "\(ref) · Metadata · \(entry.field.label)"
+        return LocalizedStringResource(String.LocalizationValue(text))
+    }
+
+    // MARK: Sticky identity header
+
+    private var identityHeader: some View {
+        VStack(alignment: .leading, spacing: PVSpacing.space5) {
+            breadcrumbs
+            if model.workspace != nil {
+                HStack(alignment: .top, spacing: PVSpacing.space7) {
+                    PVThumbnail(sourceThumbnail, size: 72)
+                    titleCluster
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: PVSpacing.widthContentMax, alignment: .leading)
+            }
+        }
+        .padding(.top, PVSpacing.space5)
+        .padding(.horizontal, PVSpacing.gutterPage)
+        .padding(.bottom, PVSpacing.space6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(PVColor.surfaceCard)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(PVColor.borderSubtle)
+                .frame(height: 1)
+        }
+    }
+
     private var breadcrumbs: some View {
         PVBreadcrumbs(items: [
             PVBreadcrumbItem(
@@ -129,62 +209,151 @@ struct SourcePageView: View {
         .accessibilityIdentifier("sources.page.breadcrumbs")
     }
 
-    // MARK: Identity
-
-    private var identitySection: some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space5) {
-            TextField(
-                "",
-                text: $model.title,
-                prompt: Text(L10n.Sources.formTitle),
-                axis: .vertical
-            )
-            .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
-            .foregroundStyle(PVColor.textDisplay)
-            .textFieldStyle(.plain)
-            .lineLimit(1...4)
-            .accessibilityIdentifier("sources.page.title")
-            .onChange(of: model.title) { _, _ in model.titleError = nil }
-            .onSubmit { Task { await model.saveIdentity() } }
-
-            if let titleError = model.titleError {
-                Text(titleError)
-                    .font(PVFont.body(size: PVTypeScale.caption))
-                    .foregroundStyle(PVColor.danger)
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: PVSpacing.space5) {
-                PVComboBox(
-                    selection: $model.sourceTypeID,
-                    options: model.typeComboOptions,
-                    placeholder: L10n.Sources.typePlaceholder,
-                    emptyLabel: L10n.Sources.typeNoMatch,
-                    label: L10n.Sources.pageFormType,
-                    accessibilityIdentifierPrefix: "sources.page.type"
-                )
-                .frame(maxWidth: 280)
-                .onChange(of: model.sourceTypeID) { _, _ in
-                    Task { await model.saveIdentity() }
-                }
-
-                if let ref = model.source?.ref {
-                    Text(ref)
-                        .font(PVFont.mono(size: PVTypeScale.caption))
-                        .foregroundStyle(PVColor.textMuted)
-                        .accessibilityIdentifier("sources.page.ref")
-                }
-            }
+    private var sourceThumbnail: PVThumbnail.Content {
+        if let image = ProjectFiles.thumbnailImage(
+            projectDir: model.pageProjectDir,
+            relPath: model.source?.thumbnailRelPath ?? ""
+        ) {
+            return PVThumbnail.Content(image: image)
         }
-        .onChange(of: model.title) { _, _ in
-            Task {
-                try? await Task.sleep(for: .milliseconds(800))
-                await model.saveIdentity()
+        return .empty
+    }
+
+    private var titleCluster: some View {
+        VStack(alignment: .leading, spacing: PVSpacing.space4) {
+            HStack(alignment: .firstTextBaseline, spacing: PVSpacing.space4) {
+                if model.editingTitle {
+                    VStack(alignment: .leading, spacing: PVSpacing.space2) {
+                        TextField(
+                            "",
+                            text: $model.titleDraft,
+                            prompt: Text(L10n.Sources.formTitle),
+                            axis: .vertical
+                        )
+                        .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
+                        .foregroundStyle(PVColor.textDisplay)
+                        .textFieldStyle(.plain)
+                        .lineLimit(1...4)
+                        .padding(.horizontal, PVSpacing.space5)
+                        .padding(.vertical, PVSpacing.space4)
+                        .background(
+                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                                .fill(PVColor.surfaceRaised)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                                .stroke(PVColor.borderFocus, lineWidth: 1.5)
+                        )
+                        .accessibilityIdentifier("sources.page.title")
+                        .onChange(of: model.titleDraft) { _, _ in model.titleError = nil }
+                        .onSubmit { Task { await model.saveTitle() } }
+                        .disabled(model.isSavingIdentity)
+
+                        if let titleError = model.titleError {
+                            Text(titleError)
+                                .font(PVFont.body(size: PVTypeScale.caption))
+                                .foregroundStyle(PVColor.danger)
+                        }
+                    }
+                    .frame(maxWidth: 720, alignment: .leading)
+
+                    HStack(spacing: PVSpacing.space3) {
+                        PVButton(
+                            L10n.Sources.saveAction,
+                            variant: .primary,
+                            size: .sm,
+                            loading: model.isSavingIdentity
+                        ) {
+                            Task { await model.saveTitle() }
+                        }
+                        .accessibilityIdentifier("sources.page.title.save")
+                        PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
+                            model.cancelEditTitle()
+                        }
+                        .disabled(model.isSavingIdentity)
+                        .accessibilityIdentifier("sources.page.title.cancel")
+                    }
+                } else {
+                    Text(model.title)
+                        .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
+                        .foregroundStyle(PVColor.textDisplay)
+                        .lineLimit(4)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("sources.page.title")
+
+                    PVIconButton(.penLine, label: L10n.Sources.editTitle, size: .sm) {
+                        model.beginEditTitle()
+                    }
+                    .accessibilityIdentifier("sources.page.title.edit")
+                }
+            }
+
+            metaRow
+        }
+    }
+
+    private var metaRow: some View {
+        HStack(alignment: .center, spacing: PVSpacing.space5) {
+            if let ref = model.source?.ref {
+                Text(ref)
+                    .font(PVFont.mono(size: PVTypeScale.caption))
+                    .foregroundStyle(PVColor.textMuted)
+                    .accessibilityIdentifier("sources.page.ref")
+            }
+
+            Text("·")
+                .foregroundStyle(PVColor.borderDefault)
+
+            if model.editingType {
+                HStack(spacing: PVSpacing.space3) {
+                    PVComboBox(
+                        selection: $model.typeDraftID,
+                        options: model.typeComboOptions,
+                        placeholder: L10n.Sources.typePlaceholder,
+                        emptyLabel: L10n.Sources.typeNoMatch,
+                        label: L10n.Sources.pageFormType,
+                        accessibilityIdentifierPrefix: "sources.page.type",
+                        activateOnAppear: true
+                    )
+                    .frame(width: 210)
+                    .disabled(model.isSavingIdentity)
+                    .onChange(of: model.typeDraftID) { _, newValue in
+                        guard !newValue.isEmpty, newValue != model.sourceTypeID else { return }
+                        Task { await model.saveType() }
+                    }
+
+                    PVIconButton(.dismiss, label: L10n.Sources.cancelEdit, size: .sm) {
+                        model.cancelEditType()
+                    }
+                    .disabled(model.isSavingIdentity)
+                    .accessibilityIdentifier("sources.page.type.cancel")
+                }
+            } else {
+                HStack(spacing: PVSpacing.space3) {
+                    Text(model.typeLabel)
+                        .font(PVFont.body(size: PVTypeScale.caption, weight: PVFontWeight.medium))
+                        .foregroundStyle(PVColor.recordMarriage)
+                        .padding(.horizontal, PVSpacing.space4)
+                        .padding(.vertical, PVSpacing.space2)
+                        .background(
+                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                                .fill(Color.pvDynamic(
+                                    light: PVPalette.plum100,
+                                    dark: PVPalette.hex("#3A2434")
+                                ))
+                        )
+                        .accessibilityIdentifier("sources.page.type")
+
+                    PVIconButton(.penLine, label: L10n.Sources.editType, size: .sm) {
+                        model.beginEditType()
+                    }
+                    .accessibilityIdentifier("sources.page.type.edit")
+                }
             }
         }
     }
 
     /// Board: Description + Credibility | Metadata.
-    /// LazyVGrid wraps below ~900pt (sidebar + gutters leave ~1060 at a 1366 window).
     private var overviewColumns: some View {
         LazyVGrid(
             columns: [
@@ -206,26 +375,75 @@ struct SourcePageView: View {
         }
     }
 
+    // MARK: Description
+
     private var descriptionSection: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
-            sectionHeader(title: L10n.Sources.descriptionHeading)
-            TextField(
-                "",
-                text: $model.description,
-                prompt: Text(L10n.Sources.descriptionPlaceholder),
-                axis: .vertical
-            )
-            .font(PVFont.body(size: PVTypeScale.body))
-            .foregroundStyle(PVColor.textSecondary)
-            .textFieldStyle(.plain)
-            .lineLimit(2...8)
-            .accessibilityIdentifier("sources.page.description")
-            .onSubmit { Task { await model.saveIdentity() } }
-            .onChange(of: model.description) { _, _ in
-                Task {
-                    try? await Task.sleep(for: .milliseconds(800))
-                    await model.saveIdentity()
+            sectionHeader(
+                title: L10n.Sources.descriptionHeading,
+                actions: {
+                    if !model.editingDescription {
+                        PVButton(
+                            L10n.Sources.editDescription,
+                            variant: .ghost,
+                            size: .sm,
+                            icon: .penLine
+                        ) {
+                            model.beginEditDescription()
+                        }
+                        .accessibilityIdentifier("sources.page.description.edit")
+                    }
                 }
+            )
+
+            if model.editingDescription {
+                VStack(alignment: .leading, spacing: PVSpacing.space4) {
+                    TextField(
+                        "",
+                        text: $model.descriptionDraft,
+                        prompt: Text(L10n.Sources.descriptionPlaceholder),
+                        axis: .vertical
+                    )
+                    .font(PVFont.body(size: PVTypeScale.body, weight: PVFontWeight.regular))
+                    .foregroundStyle(PVColor.textPrimary)
+                    .textFieldStyle(.plain)
+                    .lineLimit(3...12)
+                    .padding(.horizontal, PVSpacing.space5)
+                    .padding(.vertical, PVSpacing.space4)
+                    .background(
+                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                            .fill(PVColor.surfaceCard)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                            .stroke(PVColor.borderDefault, lineWidth: 1)
+                    )
+                    .accessibilityIdentifier("sources.page.description")
+                    .disabled(model.isSavingIdentity)
+
+                    HStack(spacing: PVSpacing.space4) {
+                        PVButton(
+                            L10n.Sources.saveDescription,
+                            variant: .primary,
+                            size: .sm,
+                            loading: model.isSavingIdentity
+                        ) {
+                            Task { await model.saveDescription() }
+                        }
+                        .accessibilityIdentifier("sources.page.description.save")
+                        PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
+                            model.cancelEditDescription()
+                        }
+                        .disabled(model.isSavingIdentity)
+                        .accessibilityIdentifier("sources.page.description.cancel")
+                    }
+                }
+            } else if !model.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(model.description)
+                    .font(PVFont.body(size: PVTypeScale.body, weight: PVFontWeight.regular))
+                    .foregroundStyle(PVColor.textSecondary)
+                    .lineSpacing((PVLineHeight.normal - 1) * PVTypeScale.body)
+                    .accessibilityIdentifier("sources.page.description")
             }
         }
     }
@@ -237,10 +455,14 @@ struct SourcePageView: View {
             sectionHeader(
                 title: L10n.Sources.credibilityHeading,
                 aside: {
-                    Text(L10n.Sources.credibilityHint)
-                        .font(PVFont.body(size: PVTypeScale.caption, italic: true))
-                        .foregroundStyle(PVColor.textMuted)
-                        .lineLimit(2)
+                    Text(
+                        model.hasSavedCredibilityAssessment
+                            ? L10n.Sources.credibilityHint
+                            : L10n.Sources.credibilityHintUnset
+                    )
+                    .font(PVFont.body(size: PVTypeScale.caption, italic: true))
+                    .foregroundStyle(PVColor.textMuted)
+                    .lineLimit(2)
                 }
             )
 
@@ -252,39 +474,70 @@ struct SourcePageView: View {
             .accessibilityIdentifier("sources.page.credibility.grades")
 
             PVInput(
-                text: $model.credibilityArgument,
+                text: $model.credibilityArgumentDraft,
                 size: .sm,
                 prompt: L10n.Sources.credibilityArgumentPlaceholder
             )
             .accessibilityIdentifier("sources.page.credibility.argument")
-            .onSubmit { Task { await model.saveCredibilityArgument() } }
-            .onChange(of: model.credibilityArgument) { _, _ in
-                Task {
-                    try? await Task.sleep(for: .milliseconds(800))
-                    await model.saveCredibilityArgument()
+
+            HStack(spacing: PVSpacing.space4) {
+                PVButton(
+                    L10n.Sources.saveAssessment,
+                    variant: .primary,
+                    size: .sm,
+                    loading: model.isSavingCredibility
+                ) {
+                    Task { await model.saveCredibility() }
+                }
+                .disabled(!model.credibilityDirty && !model.isSavingCredibility)
+                .accessibilityIdentifier("sources.page.credibility.save")
+
+                if model.credibilityDirty {
+                    PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
+                        model.cancelCredibility()
+                    }
+                    .disabled(model.isSavingCredibility)
+                    .accessibilityIdentifier("sources.page.credibility.cancel")
+                } else {
+                    Text(
+                        model.hasSavedCredibilityAssessment
+                            ? L10n.Sources.credibilitySavedStatus
+                            : L10n.Sources.credibilityUnsavedStatus
+                    )
+                    .font(PVFont.body(size: PVTypeScale.caption, italic: true))
+                    .foregroundStyle(PVColor.textFaint)
                 }
             }
         }
     }
 
     private func credibilityChip(_ grade: CatalogCredibilityGrade) -> some View {
-        let selected = model.credibilityKey == grade.key
+        let selected = model.credibilityDraftKey == grade.key
+        let dashedUnset = grade.key == "standard"
+            && !model.hasSavedCredibilityAssessment
+            && model.credibilityDraftKey == "standard"
         let colors = credibilityColors(for: grade.key)
         return Button {
-            Task { await model.selectCredibility(key: grade.key) }
+            model.selectCredibilityDraft(key: grade.key)
         } label: {
             Text(grade.label)
-                .font(PVFont.body(size: PVTypeScale.caption, weight: PVFontWeight.medium))
+                .font(PVFont.body(
+                    size: PVTypeScale.caption,
+                    weight: selected ? PVFontWeight.semibold : PVFontWeight.regular
+                ))
                 .foregroundStyle(selected ? colors.fg : PVColor.textSecondary)
                 .padding(.horizontal, PVSpacing.space5)
                 .padding(.vertical, PVSpacing.space3)
                 .background(
                     RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .fill(selected ? colors.bg : PVColor.surfaceRaised)
+                        .fill(selected ? colors.bg : Color.clear)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .stroke(selected ? colors.fg.opacity(0.35) : PVColor.borderSubtle, lineWidth: 1)
+                        .strokeBorder(
+                            selected ? colors.fg : PVColor.borderDefault,
+                            style: StrokeStyle(lineWidth: 1, dash: dashedUnset ? [4, 3] : [])
+                        )
                 )
         }
         .buttonStyle(.plain)
@@ -310,7 +563,7 @@ struct SourcePageView: View {
                 title: L10n.Sources.metadataHeading,
                 meta: model.savedMetadata.isEmpty
                     ? nil
-                    : "\(model.savedMetadata.count)",
+                    : L10n.Sources.metadataFieldCount(model.savedMetadata.count),
                 actions: {
                     PVButton(L10n.Sources.addMetadata, variant: .primary, size: .sm, icon: .plus) {
                         model.openAddMetadata()
@@ -336,8 +589,6 @@ struct SourcePageView: View {
                     }) { entry in
                         savedMetadataRow(entry)
                     }
-                    .frame(height: CGFloat(model.savedMetadata.count) * 44)
-                    .scrollDisabled(true)
                     .accessibilityIdentifier("sources.page.metadata.list")
                 }
 
@@ -362,27 +613,156 @@ struct SourcePageView: View {
 
     private func savedMetadataRow(_ entry: CatalogMetadataEntry) -> some View {
         let fieldID = entry.field.id
-        return HStack(spacing: PVSpacing.space5) {
-            PVReorderHandle()
-            Text(entry.field.label)
-                .font(PVFont.body(size: PVTypeScale.caption))
-                .foregroundStyle(PVColor.textMuted)
-                .frame(width: 170, alignment: .leading)
-            PVInput(
-                text: Binding(
-                    get: { model.metadataDrafts[fieldID] ?? entry.valueText },
-                    set: { model.metadataDrafts[fieldID] = $0 }
-                ),
-                size: .sm,
-                mono: true
-            )
-            .onSubmit { Task { await model.saveMetadataValue(fieldID: fieldID) } }
-            .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
+        let isDate = entry.field.dataType == "date"
+        let structured = isDateStructured(entry)
+        let editing = model.editingMetadataFieldID == fieldID
+        return VStack(alignment: .leading, spacing: PVSpacing.space2) {
+            HStack(alignment: .top, spacing: PVSpacing.space5) {
+                PVReorderHandle()
+                    .padding(.top, 6)
+                Text(entry.field.label)
+                    .font(PVFont.body(size: PVTypeScale.caption))
+                    .foregroundStyle(PVColor.textMuted)
+                    .frame(width: 170, alignment: .leading)
+                    .padding(.top, 6)
 
-            metadataTypeBadge(entry.field.dataType)
+                if editing {
+                    HStack(alignment: .top, spacing: PVSpacing.space3) {
+                        TextField(
+                            "",
+                            text: Binding(
+                                get: { model.metadataDrafts[fieldID] ?? entry.valueText },
+                                set: { model.metadataDrafts[fieldID] = $0 }
+                            ),
+                            axis: .vertical
+                        )
+                        .font(PVFont.mono(size: PVTypeScale.caption))
+                        .foregroundStyle(PVColor.textPrimary)
+                        .textFieldStyle(.plain)
+                        .lineLimit(1...6)
+                        .padding(.horizontal, PVInputChrome.horizontalInset)
+                        .padding(.vertical, PVSpacing.space3)
+                        .background(
+                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                                .fill(PVColor.surfaceRaised)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                                .stroke(PVColor.borderDefault, lineWidth: 1)
+                        )
+                        .onSubmit { Task { await model.saveMetadataValue(fieldID: fieldID) } }
+                        .disabled(model.savingMetadataFieldID == fieldID)
+                        .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
+
+                        PVButton(
+                            L10n.Sources.saveAction,
+                            variant: .primary,
+                            size: .sm,
+                            loading: model.savingMetadataFieldID == fieldID
+                        ) {
+                            Task { await model.saveMetadataValue(fieldID: fieldID) }
+                        }
+                        .disabled(
+                            (model.metadataDrafts[fieldID] ?? "")
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                                .isEmpty
+                        )
+                        .accessibilityIdentifier("sources.page.metadata.\(fieldID).save")
+
+                        PVIconButton(.dismiss, label: L10n.Sources.cancelEdit, size: .sm) {
+                            model.cancelEditMetadata()
+                        }
+                        .disabled(model.savingMetadataFieldID == fieldID)
+                        .accessibilityIdentifier("sources.page.metadata.\(fieldID).cancel")
+                    }
+                } else {
+                    HStack(alignment: .top, spacing: PVSpacing.space3) {
+                        Text(entry.valueText)
+                            .font(PVFont.mono(size: PVTypeScale.caption))
+                            .foregroundStyle(PVColor.textPrimary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 6)
+                            .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
+
+                        PVIconButton(.penLine, label: L10n.Sources.editMetadataValue, size: .sm) {
+                            model.beginEditMetadata(fieldID: fieldID)
+                        }
+                        .padding(.top, 2)
+                        .accessibilityIdentifier("sources.page.metadata.\(fieldID).edit")
+                    }
+                }
+
+                metadataTypeBadge(entry.field.dataType)
+                    .padding(.top, 4)
+            }
+
+            if isDate {
+                HStack(spacing: PVSpacing.space4) {
+                    Text(L10n.Sources.metadataStructuredLabel)
+                        .font(PVFont.mono(size: PVTypeScale.micro))
+                        .foregroundStyle(PVColor.textFaint)
+
+                    if structured {
+                        Text(entry.dateSummary.isEmpty
+                            ? (model.dateDraftsByFieldID[fieldID]?.summary ?? "")
+                            : entry.dateSummary
+                        )
+                        .font(PVFont.mono(size: PVTypeScale.micro))
+                        .foregroundStyle(PVColor.accentSoftForeground)
+                        .padding(.horizontal, PVSpacing.space3)
+                        .frame(height: 20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(PVColor.accentSoft)
+                        )
+                    } else {
+                        Text(L10n.Sources.metadataNotStructured)
+                            .font(PVFont.body(size: PVTypeScale.micro, italic: true))
+                            .foregroundStyle(PVColor.textMuted)
+                    }
+
+                    Button {
+                        if structured {
+                            model.openEditDate(fieldID: fieldID)
+                        } else {
+                            model.openStructureDate(fieldID: fieldID)
+                        }
+                    } label: {
+                        Text(structured ? L10n.Sources.editDate : L10n.Sources.structureDate)
+                            .font(PVFont.body(size: PVTypeScale.micro))
+                            .foregroundStyle(structured ? PVColor.textPrimary : PVColor.textLink)
+                            .padding(.horizontal, 10)
+                            .frame(height: 24)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                    .strokeBorder(
+                                        PVColor.borderDefault,
+                                        style: StrokeStyle(
+                                            lineWidth: 1,
+                                            dash: structured ? [] : [4, 3]
+                                        )
+                                    )
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier(
+                        structured
+                            ? "sources.page.metadata.\(fieldID).editDate"
+                            : "sources.page.metadata.\(fieldID).structureDate"
+                    )
+                }
+                .padding(.leading, 20 + PVSpacing.space5 + 170 + PVSpacing.space5)
+            }
         }
         .padding(.vertical, PVSpacing.space3)
         .padding(.horizontal, PVSpacing.space4)
+    }
+
+    private func isDateStructured(_ entry: CatalogMetadataEntry) -> Bool {
+        !entry.dateValueID.isEmpty
+            || !entry.dateSummary.isEmpty
+            || model.dateDraftsByFieldID[entry.field.id] != nil
     }
 
     private func suggestionMetadataRow(_ entry: CatalogMetadataEntry) -> some View {
@@ -518,7 +898,9 @@ struct SourcePageView: View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
             sectionHeader(
                 title: L10n.Sources.artifactsHeading,
-                meta: model.artifacts.isEmpty ? nil : "\(model.artifacts.count)",
+                meta: model.artifacts.isEmpty
+                    ? nil
+                    : L10n.Sources.artifactsCount(model.artifacts.count),
                 actions: {
                     PVButton(L10n.Sources.addArtifact, variant: .primary, size: .sm, icon: .plus) {
                         model.openAddArtifact()
@@ -528,11 +910,26 @@ struct SourcePageView: View {
             )
 
             if model.artifacts.isEmpty {
-                PVEmptyState(
-                    icon: .photo,
-                    title: L10n.Sources.artifactsEmptyTitle,
-                    message: String(localized: L10n.Sources.artifactsEmptyMessage),
-                    compact: true
+                VStack(spacing: PVSpacing.space6) {
+                    PVEmptyState(
+                        icon: .photo,
+                        title: L10n.Sources.artifactsEmptyTitle,
+                        message: String(localized: L10n.Sources.artifactsEmptyMessage),
+                        compact: true
+                    )
+                    PVButton(L10n.Sources.addArtifact, variant: .primary, size: .sm, icon: .plus) {
+                        model.openAddArtifact()
+                    }
+                    .accessibilityIdentifier("sources.page.artifacts.empty.add")
+                }
+                .padding(.vertical, PVSpacing.space9)
+                .frame(maxWidth: .infinity)
+                .background(PVColor.surfaceCard)
+                .clipShape(RoundedRectangle(cornerRadius: PVRadius.md, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: PVRadius.md, style: .continuous)
+                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                        .foregroundStyle(PVColor.borderDefault)
                 )
                 .accessibilityIdentifier("sources.page.artifacts.empty")
             } else {
@@ -550,6 +947,7 @@ struct SourcePageView: View {
                     RoundedRectangle(cornerRadius: PVRadius.md, style: .continuous)
                         .stroke(PVColor.borderSubtle, lineWidth: 1)
                 )
+                .pvShadow(PVElevation.sm)
                 .accessibilityIdentifier("sources.page.artifacts.list")
             }
         }
@@ -563,6 +961,10 @@ struct SourcePageView: View {
                 model.toggleArtifactExpanded(art.id)
             } label: {
                 HStack(spacing: PVSpacing.space6) {
+                    PVIcon(.chevronForward, size: 15)
+                        .foregroundStyle(PVColor.textMuted)
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                        .frame(width: 18)
                     PVThumbnail(artifactThumbnail(art), size: 44)
                     Text(art.label.isEmpty ? art.ref : art.label)
                         .font(PVFont.body(size: PVTypeScale.bodySmall))
@@ -572,9 +974,6 @@ struct SourcePageView: View {
                     Text(art.ref)
                         .font(PVFont.mono(size: PVTypeScale.micro))
                         .foregroundStyle(PVColor.textMuted)
-                    PVIcon(.chevronDown, size: 11)
-                        .foregroundStyle(PVColor.textFaint)
-                        .rotationEffect(.degrees(expanded ? 0 : -90))
                 }
                 .padding(.horizontal, PVSpacing.space6)
                 .padding(.vertical, PVSpacing.space5)
@@ -610,7 +1009,8 @@ struct SourcePageView: View {
     }
 
     private func artifactFieldsColumn(_ art: CatalogArtifact) -> some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space6) {
+        let dirty = model.artifactFieldsDirty(art.id)
+        return VStack(alignment: .leading, spacing: PVSpacing.space6) {
             PVField(
                 label: L10n.Sources.artifactLabel,
                 hint: L10n.Sources.artifactLabelHint,
@@ -661,8 +1061,7 @@ struct SourcePageView: View {
                 .onSubmit { Task { await model.saveArtifactFields(id: art.id) } }
             }
 
-            HStack {
-                Spacer(minLength: 0)
+            HStack(spacing: PVSpacing.space4) {
                 PVButton(
                     L10n.Sources.saveArtifact,
                     variant: .primary,
@@ -673,6 +1072,20 @@ struct SourcePageView: View {
                 }
                 .disabled(!model.canSaveArtifactFields(art.id) && model.savingArtifactID != art.id)
                 .accessibilityIdentifier("sources.page.artifact.\(art.id).save")
+
+                if dirty {
+                    PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
+                        model.cancelArtifactFields(id: art.id)
+                    }
+                    .disabled(model.savingArtifactID == art.id)
+                    .accessibilityIdentifier("sources.page.artifact.\(art.id).cancel")
+                } else {
+                    Text(L10n.Sources.noUnsavedChanges)
+                        .font(PVFont.body(size: PVTypeScale.caption, italic: true))
+                        .foregroundStyle(PVColor.textFaint)
+                }
+
+                Spacer(minLength: 0)
             }
 
             if let pageError = model.pageError {
@@ -716,10 +1129,6 @@ struct SourcePageView: View {
                 )
                 .contentShape(Rectangle())
                 .onTapGesture { model.openArtifactFile(art) }
-
-                Text(L10n.Sources.openFileCaption)
-                    .font(PVFont.body(size: PVTypeScale.caption, italic: true))
-                    .foregroundStyle(PVColor.textMuted)
             } else {
                 PVCallout(
                     tone: .neutral,
@@ -793,7 +1202,7 @@ struct SourcePageView: View {
                         prompt: Text(L10n.Sources.notePlaceholder),
                         axis: .vertical
                     )
-                    .font(PVFont.body(size: PVTypeScale.bodySmall))
+                    .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
                     .foregroundStyle(PVColor.textPrimary)
                     .textFieldStyle(.plain)
                     .lineLimit(2...8)
@@ -810,7 +1219,7 @@ struct SourcePageView: View {
 
                     PVButton(
                         L10n.Sources.addNote,
-                        variant: .secondary,
+                        variant: .primary,
                         size: .sm,
                         icon: .plus,
                         loading: model.isSavingNote
@@ -893,7 +1302,7 @@ private struct SourcePageNoteRow: View {
             .frame(width: 150, alignment: .leading)
 
             TextField("", text: $bodyText, axis: .vertical)
-                .font(PVFont.body(size: PVTypeScale.bodySmall))
+                .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
                 .foregroundStyle(PVColor.textSecondary)
                 .textFieldStyle(.plain)
                 .lineLimit(1...12)
