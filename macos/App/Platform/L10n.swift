@@ -1318,6 +1318,24 @@ enum L10n {
             comment: "Button to save a new Source note"
         )
 
+        static let editNote = LocalizedStringResource(
+            "sources.page.editNote",
+            defaultValue: "Edit note",
+            comment: "Accessibility label for pencil to edit a Source note"
+        )
+
+        static let saveNote = LocalizedStringResource(
+            "sources.page.saveNote",
+            defaultValue: "Save note",
+            comment: "Button to commit an edited Source note"
+        )
+
+        static let noteBodyRequired = LocalizedStringResource(
+            "sources.page.noteBodyRequired",
+            defaultValue: "A note needs some text.",
+            comment: "Validation when saving an empty Source note body"
+        )
+
         static let deleteNote = LocalizedStringResource(
             "sources.page.deleteNote",
             defaultValue: "Delete note",

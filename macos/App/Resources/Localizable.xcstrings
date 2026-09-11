@@ -3007,6 +3007,42 @@
         }
       }
     },
+    "sources.page.editNote": {
+      "comment": "Accessibility label for pencil to edit a Source note",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit note"
+          }
+        }
+      }
+    },
+    "sources.page.noteBodyRequired": {
+      "comment": "Validation when saving an empty Source note body",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A note needs some text."
+          }
+        }
+      }
+    },
+    "sources.page.saveNote": {
+      "comment": "Button to commit an edited Source note",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save note"
+          }
+        }
+      }
+    },
     "sources.page.descriptionHeading": {
       "comment": "Section heading above Source description",
       "extractionState": "manual",

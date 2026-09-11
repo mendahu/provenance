@@ -65,11 +65,6 @@ struct OnboardingProjectMetaLines: View {
     }
 
     private static func formatDate(_ rfc3339: String) -> String {
-        let parser = ISO8601DateFormatter()
-        parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = parser.date(from: rfc3339) ?? ISO8601DateFormatter().date(from: rfc3339) {
-            return date.formatted(date: .abbreviated, time: .shortened)
-        }
-        return rfc3339
+        TimestampFormat.abbreviatedDateTime(rfc3339)
     }
 }

@@ -152,12 +152,49 @@ struct SourcePageModelTests {
         let noteID = try #require(model.notes.items.first?.id)
         #expect(model.notes.items.first?.authorDisplayName == "Jake Robins")
         #expect(!(model.notes.items.first?.createdAt.isEmpty ?? true))
-        await model.notes.update(id: noteID, body: "Updated look")
+
+        model.notes.beginEdit(id: noteID)
+        #expect(model.notes.editingNoteID == noteID)
+        #expect(model.notes.bodyDraft == "First look")
+        model.notes.bodyDraft = "Updated look"
+        await model.notes.saveEdit()
+        #expect(model.notes.editingNoteID == nil)
         #expect(model.notes.items.first?.body == "Updated look")
         #expect(model.notes.items.first?.authorDisplayName == "Jake Robins")
 
         await model.notes.delete(id: noteID)
         #expect(model.notes.items.isEmpty)
+    }
+
+    @Test func cancelNoteEditRestoresCommittedBody() async throws {
+        let store = makeStore()
+        let model = makeModel(store: store)
+        await model.load()
+        model.notes.draft = "Original"
+        await model.notes.add()
+        let noteID = try #require(model.notes.items.first?.id)
+
+        model.notes.beginEdit(id: noteID)
+        model.notes.bodyDraft = "Changed"
+        model.notes.cancelEdit()
+        #expect(model.notes.editingNoteID == nil)
+        #expect(model.notes.items.first?.body == "Original")
+    }
+
+    @Test func emptyNoteBodyDraftSetsValidationError() async throws {
+        let store = makeStore()
+        let model = makeModel(store: store)
+        await model.load()
+        model.notes.draft = "Keep me"
+        await model.notes.add()
+        let noteID = try #require(model.notes.items.first?.id)
+
+        model.notes.beginEdit(id: noteID)
+        model.notes.bodyDraft = "   "
+        await model.notes.saveEdit()
+        #expect(model.notes.bodyError != nil)
+        #expect(model.notes.editingNoteID == noteID)
+        #expect(model.notes.items.first?.body == "Keep me")
     }
 
     @Test func createFilelessArtifact() async {

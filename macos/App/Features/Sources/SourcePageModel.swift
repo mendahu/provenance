@@ -88,6 +88,7 @@ final class SourcePageModel {
         identity.reset()
         credibility.resetDrafts()
         metadata.resetDrafts()
+        notes.reset()
         artifacts.seedDrafts()
     }
 }

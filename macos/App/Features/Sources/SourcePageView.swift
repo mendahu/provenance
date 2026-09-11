@@ -1165,9 +1165,13 @@ struct SourcePageView: View {
                 ForEach(model.notes.items, id: \.id) { note in
                     SourcePageNoteRow(
                         note: note,
-                        onCommit: { body in
-                            Task { await model.notes.update(id: note.id, body: body) }
-                        },
+                        isEditing: model.notes.editingNoteID == note.id,
+                        bodyDraft: $model.notes.bodyDraft,
+                        bodyError: $model.notes.bodyError,
+                        isSaving: model.notes.isSaving && model.notes.editingNoteID == note.id,
+                        onBeginEdit: { model.notes.beginEdit(id: note.id) },
+                        onSave: { Task { await model.notes.saveEdit() } },
+                        onCancel: { model.notes.cancelEdit() },
                         onDelete: {
                             Task { await model.notes.delete(id: note.id) }
                         }
@@ -1269,9 +1273,14 @@ struct SourcePageView: View {
 
 private struct SourcePageNoteRow: View {
     let note: CatalogSourceNote
-    let onCommit: (String) -> Void
+    let isEditing: Bool
+    @Binding var bodyDraft: String
+    @Binding var bodyError: String?
+    let isSaving: Bool
+    let onBeginEdit: () -> Void
+    let onSave: () -> Void
+    let onCancel: () -> Void
     let onDelete: () -> Void
-    @State private var bodyText: String = ""
 
     var body: some View {
         HStack(alignment: .top, spacing: PVSpacing.space6) {
@@ -1280,40 +1289,86 @@ private struct SourcePageNoteRow: View {
                     .font(PVFont.body(size: PVTypeScale.caption))
                     .foregroundStyle(PVColor.textSecondary)
                 if !note.createdAt.isEmpty {
-                    Text(Self.formatStamp(note.createdAt))
+                    Text(TimestampFormat.boardStamp(note.createdAt))
                         .font(PVFont.mono(size: PVTypeScale.micro))
                         .foregroundStyle(PVColor.textFaint)
                 }
             }
             .frame(width: 150, alignment: .leading)
 
-            TextField("", text: $bodyText, axis: .vertical)
-                .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
-                .foregroundStyle(PVColor.textSecondary)
-                .textFieldStyle(.plain)
-                .lineLimit(1...12)
-                .padding(.vertical, PVSpacing.space3)
-                .padding(.horizontal, PVSpacing.space4)
-                .accessibilityIdentifier("sources.page.note.\(note.id)")
-                .onAppear { bodyText = note.body }
-                .onChange(of: note.body) { _, newValue in
-                    if bodyText != newValue { bodyText = newValue }
-                }
-                .onSubmit { onCommit(bodyText) }
-                .onChange(of: bodyText) { _, newValue in
-                    guard newValue != note.body else { return }
-                    Task {
-                        try? await Task.sleep(for: .milliseconds(800))
-                        if bodyText == newValue {
-                            onCommit(newValue)
+            if isEditing {
+                VStack(alignment: .leading, spacing: PVSpacing.space4) {
+                    TextField("", text: $bodyDraft, axis: .vertical)
+                        .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
+                        .foregroundStyle(PVColor.textPrimary)
+                        .textFieldStyle(.plain)
+                        .lineLimit(1...12)
+                        .padding(.vertical, PVSpacing.space3)
+                        .padding(.horizontal, PVSpacing.space4)
+                        .background(
+                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                                .fill(PVColor.surfaceCard)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                                .stroke(PVColor.borderDefault, lineWidth: 1)
+                        )
+                        .accessibilityIdentifier("sources.page.note.\(note.id)")
+                        .disabled(isSaving)
+                        .onChange(of: bodyDraft) { _, _ in bodyError = nil }
+
+                    if let bodyError {
+                        Text(bodyError)
+                            .font(PVFont.body(size: PVTypeScale.caption))
+                            .foregroundStyle(PVColor.danger)
+                    }
+
+                    HStack(spacing: PVSpacing.space4) {
+                        PVButton(
+                            L10n.Sources.saveNote,
+                            variant: .primary,
+                            size: .sm,
+                            loading: isSaving
+                        ) {
+                            onSave()
                         }
+                        .accessibilityIdentifier("sources.page.note.\(note.id).save")
+                        PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
+                            onCancel()
+                        }
+                        .disabled(isSaving)
+                        .accessibilityIdentifier("sources.page.note.\(note.id).cancel")
+
+                        Spacer(minLength: 0)
+
+                        PVIconButton(.trash, label: L10n.Sources.deleteNote, size: .sm, tone: .danger) {
+                            onDelete()
+                        }
+                        .disabled(isSaving)
+                        .accessibilityIdentifier("sources.page.note.\(note.id).delete")
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text(note.body)
+                    .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
+                    .foregroundStyle(PVColor.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, PVSpacing.space3)
+                    .accessibilityIdentifier("sources.page.note.\(note.id)")
 
-            PVIconButton(.trash, label: L10n.Sources.deleteNote, size: .sm, tone: .danger) {
-                onDelete()
+                HStack(spacing: PVSpacing.space2) {
+                    PVIconButton(.penLine, label: L10n.Sources.editNote, size: .sm) {
+                        onBeginEdit()
+                    }
+                    .accessibilityIdentifier("sources.page.note.\(note.id).edit")
+
+                    PVIconButton(.trash, label: L10n.Sources.deleteNote, size: .sm, tone: .danger) {
+                        onDelete()
+                    }
+                    .accessibilityIdentifier("sources.page.note.\(note.id).delete")
+                }
             }
-            .accessibilityIdentifier("sources.page.note.\(note.id).delete")
         }
         .padding(.vertical, PVSpacing.space6)
         .overlay(alignment: .bottom) {
@@ -1321,19 +1376,5 @@ private struct SourcePageNoteRow: View {
                 .fill(PVColor.borderSubtle)
                 .frame(height: 1)
         }
-    }
-
-    /// Board stamp: `04 Mar 2026 · 7:22 PM MST`.
-    private static func formatStamp(_ rfc3339: String) -> String {
-        let withFraction = ISO8601DateFormatter()
-        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let plain = ISO8601DateFormatter()
-        plain.formatOptions = [.withInternetDateTime]
-        guard let date = withFraction.date(from: rfc3339) ?? plain.date(from: rfc3339) else {
-            return rfc3339
-        }
-        let datePart = date.formatted(.dateTime.day(.twoDigits).month(.abbreviated).year())
-        let timePart = date.formatted(.dateTime.hour().minute().timeZone(.specificName(.short)))
-        return "\(datePart) · \(timePart)"
     }
 }

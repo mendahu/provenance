@@ -25,6 +25,7 @@
 		AA0000000000000000000331 /* DateValueDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000330 /* DateValueDraft.swift */; };
 		AA0000000000000000000335 /* DateValueEditorForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000336 /* DateValueEditorForm.swift */; };
 		AA000000000000000000031B /* ProjectFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000031C /* ProjectFiles.swift */; };
+		AA0000000000000000000351 /* TimestampFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000350 /* TimestampFormat.swift */; };
 		AA000000000000000000031D /* SourcePageModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000031E /* SourcePageModelTests.swift */; };
 		AA0000000000000000000333 /* DateValueDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000332 /* DateValueDraftTests.swift */; };
 		AA0000000000000000000313 /* SourcesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000312 /* SourcesModelTests.swift */; };
@@ -86,6 +87,7 @@
 		AA000000000000000000000D /* InstallPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001D /* InstallPaths.swift */; };
 		AA00000000000000000000B3 /* OnboardingModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000B0 /* OnboardingModelTests.swift */; };
 		AA00000000000000000000B4 /* InstallPathsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000B1 /* InstallPathsTests.swift */; };
+		AA0000000000000000000353 /* TimestampFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000352 /* TimestampFormatTests.swift */; };
 		AA00000000000000000000D4 /* OnboardingChooseFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000D0 /* OnboardingChooseFileView.swift */; };
 		AA00000000000000000000D5 /* OnboardingIdentifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000D1 /* OnboardingIdentifyView.swift */; };
 		AA00000000000000000000D7 /* OnboardingFileChoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000D3 /* OnboardingFileChoice.swift */; };
@@ -159,6 +161,7 @@
 		AA0000000000000000000330 /* DateValueDraft.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueDraft.swift; sourceTree = "<group>"; };
 		AA0000000000000000000336 /* DateValueEditorForm.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueEditorForm.swift; sourceTree = "<group>"; };
 		AA000000000000000000031C /* ProjectFiles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectFiles.swift; sourceTree = "<group>"; };
+		AA0000000000000000000350 /* TimestampFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimestampFormat.swift; sourceTree = "<group>"; };
 		AA000000000000000000031E /* SourcePageModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageModelTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000332 /* DateValueDraftTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueDraftTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000312 /* SourcesModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcesModelTests.swift; sourceTree = "<group>"; };
@@ -222,6 +225,7 @@
 		AA0000000000000000000020 /* Provenencia.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Provenencia.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000B0 /* OnboardingModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModelTests.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B1 /* InstallPathsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallPathsTests.swift; sourceTree = "<group>"; };
+		AA0000000000000000000352 /* TimestampFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimestampFormatTests.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B2 /* ProvenenciaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProvenenciaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000D0 /* OnboardingChooseFileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingChooseFileView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000D1 /* OnboardingIdentifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIdentifyView.swift; sourceTree = "<group>"; };
@@ -489,6 +493,7 @@
 				AA0000000000000000000016 /* GoStore.swift */,
 				AA0000000000000000000017 /* CoreInvoke.swift */,
 				AA000000000000000000031C /* ProjectFiles.swift */,
+				AA0000000000000000000350 /* TimestampFormat.swift */,
 				AA000000000000000000001D /* InstallPaths.swift */,
 				AA00000000000000000000F0 /* ProjectSlug.swift */,
 				AA00000000000000000000E2 /* L10n.swift */,
@@ -562,6 +567,7 @@
 			children = (
 				AA00000000000000000000B0 /* OnboardingModelTests.swift */,
 				AA00000000000000000000B1 /* InstallPathsTests.swift */,
+				AA0000000000000000000352 /* TimestampFormatTests.swift */,
 				AA00000000000000000000F2 /* ProjectSlugTests.swift */,
 				164584B2DB70D89A55C4178F /* WorkspaceModelTests.swift */,
 				AA0000000000000000000270 /* CatalogCountsTests.swift */,
@@ -820,6 +826,7 @@
 				AA0000000000000000000331 /* DateValueDraft.swift in Sources */,
 				AA0000000000000000000335 /* DateValueEditorForm.swift in Sources */,
 				AA000000000000000000031B /* ProjectFiles.swift in Sources */,
+				AA0000000000000000000351 /* TimestampFormat.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -829,6 +836,7 @@
 			files = (
 				AA00000000000000000000B3 /* OnboardingModelTests.swift in Sources */,
 				AA00000000000000000000B4 /* InstallPathsTests.swift in Sources */,
+				AA0000000000000000000353 /* TimestampFormatTests.swift in Sources */,
 				AA00000000000000000000F3 /* ProjectSlugTests.swift in Sources */,
 				826574F8CA8D24BE551A88BF /* WorkspaceModelTests.swift in Sources */,
 				AA0000000000000000000271 /* CatalogCountsTests.swift in Sources */,
