@@ -464,7 +464,47 @@ struct SourcePageModelTests {
         let entry = model.metadata.first { $0.field.id == dateField.id }
         #expect(entry?.dateValueID.isEmpty == false)
         #expect(entry?.dateSummary == "ABT 1890")
-        #expect(model.dateDraftsByFieldID[dateField.id] != nil)
+        #expect(entry?.date?.qualifier == "ABT")
+        #expect(entry?.date?.startYear == 1890)
+    }
+
+    @Test func reopenDateEditorRebuildsDraftFromCatalog() async {
+        let dateField = CatalogMetadataField(
+            id: "f-date", key: "date_of_record", origin: "provenencia",
+            label: "Date of record", dataType: "date", description: ""
+        )
+        let store = makeStore(
+            metadata: [
+                CatalogMetadataEntry(
+                    field: dateField, valueText: "spring 1890", dateValueID: "",
+                    hasValue: true, suggested: false, sortOrder: 0
+                ),
+            ],
+            fields: [dateField]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        model.metadataDrafts[dateField.id] = "spring 1890"
+        model.openStructureDate(fieldID: dateField.id)
+        model.dateEditorDraft.setKind("range")
+        model.dateEditorDraft.startYear = 1890
+        model.dateEditorDraft.startMonth = 3
+        model.dateEditorDraft.endYear = 1890
+        model.dateEditorDraft.endMonth = 6
+        await model.saveDateEditor()
+        #expect(model.isEditingDate == false)
+
+        // A fresh model on the same store (new session — no in-memory cache)
+        // must rebuild the saved draft from the workspace entry.
+        let reopened = makeModel(store: store)
+        await reopened.load()
+        reopened.openEditDate(fieldID: dateField.id)
+        #expect(reopened.dateEditorDraft.kind == "range")
+        #expect(reopened.dateEditorDraft.startYear == 1890)
+        #expect(reopened.dateEditorDraft.startMonth == 3)
+        #expect(reopened.dateEditorDraft.endYear == 1890)
+        #expect(reopened.dateEditorDraft.endMonth == 6)
+        #expect(reopened.dateEditorDraft.summary == "BET Mar 1890 AND Jun 1890")
     }
 
     @Test func expandingArtifactCollapsesOther() async {

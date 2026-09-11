@@ -232,7 +232,7 @@ struct GoStore: GenealogyStore {
         fieldID: String,
         valueText: String,
         date: CatalogDateValueInput?
-    ) async throws -> (valueText: String, dateValueID: String) {
+    ) async throws -> CatalogMetadataEntry {
         var req = Provenencia_Engine_V1_SetSourceMetadataRequest()
         req.projectDir = projectDir
         req.userID = userID
@@ -267,7 +267,7 @@ struct GoStore: GenealogyStore {
             method: CoreMethod.setSourceMetadata,
             request: req
         )
-        return (resp.valueText, resp.dateValueID)
+        return Self.mapMetadataEntry(resp.entry)
     }
 
     func clearSourceMetadata(projectDir: String, userID: String, sourceID: String, fieldID: String) async throws {
@@ -746,9 +746,35 @@ struct GoStore: GenealogyStore {
             valueText: e.valueText,
             dateValueID: e.dateValueID,
             dateSummary: e.dateSummary,
+            date: e.hasDate ? Self.mapDateValue(e.date) : nil,
             hasValue: e.hasValue_p,
             suggested: e.suggested,
             sortOrder: e.sortOrder
+        )
+    }
+
+    private static func mapDateValue(_ d: Provenencia_Engine_V1_DateValueInput) -> CatalogDateValueInput {
+        CatalogDateValueInput(
+            kind: d.kind,
+            qualifier: d.qualifier,
+            calendar: d.calendar,
+            startYear: d.hasStartYear ? d.startYear : nil,
+            startMonth: d.hasStartMonth ? d.startMonth : nil,
+            startDay: d.hasStartDay ? d.startDay : nil,
+            startHour: d.hasStartHour ? d.startHour : nil,
+            startMinute: d.hasStartMinute ? d.startMinute : nil,
+            startSecond: d.hasStartSecond ? d.startSecond : nil,
+            startMillisecond: d.hasStartMillisecond ? d.startMillisecond : nil,
+            startTZ: d.startTz,
+            endYear: d.hasEndYear ? d.endYear : nil,
+            endMonth: d.hasEndMonth ? d.endMonth : nil,
+            endDay: d.hasEndDay ? d.endDay : nil,
+            endHour: d.hasEndHour ? d.endHour : nil,
+            endMinute: d.hasEndMinute ? d.endMinute : nil,
+            endSecond: d.hasEndSecond ? d.endSecond : nil,
+            endMillisecond: d.hasEndMillisecond ? d.endMillisecond : nil,
+            endTZ: d.endTz,
+            phrase: d.phrase
         )
     }
 }

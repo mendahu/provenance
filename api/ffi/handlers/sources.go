@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	"github.com/mendahu/provenencia/api/proto/engine"
+	"github.com/mendahu/provenencia/core/apperr"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/datevalues"
 	"github.com/mendahu/provenencia/core/database/files"
@@ -279,19 +280,27 @@ func SetSourceMetadata(in []byte) ([]byte, error) {
 			}
 		}
 	}
-	row, err := sourcemetadata.Set(c, userID, sourcemetadata.Input{
+	if _, err := sourcemetadata.Set(c, userID, sourcemetadata.Input{
 		SourceID:    sourceID,
 		FieldID:     fieldID,
 		ValueText:   req.GetValueText(),
 		DateValueID: dateID,
-	})
+	}); err != nil {
+		return nil, err
+	}
+	entries, err := sourcemetadata.ListWorkspace(c, sourceID)
 	if err != nil {
 		return nil, err
 	}
-	return proto.Marshal(&engine.SetSourceMetadataResponse{
-		ValueText:   row.ValueText,
-		DateValueId: uuidString(row.DateValueID),
-	})
+	for _, e := range entries {
+		if bytes.Equal(e.Field.ID, fieldID) {
+			return proto.Marshal(&engine.SetSourceMetadataResponse{
+				Entry: metadataEntryProto(c, e),
+			})
+		}
+	}
+	// Set succeeded, so the row is always in the workspace list.
+	return nil, apperr.New(apperr.CodeInternalUnknown, apperr.KindInternal)
 }
 
 func ClearSourceMetadata(in []byte) ([]byte, error) {
@@ -438,6 +447,7 @@ func metadataEntryProto(c *database.Catalog, e sourcemetadata.WorkspaceEntry) *e
 		if len(e.Value.DateValueID) == 16 {
 			if dv, err := datevalues.Lookup(c, e.Value.DateValueID); err == nil {
 				out.DateSummary = datevalues.FormatSummary(dv)
+				out.Date = dateValueProto(dv)
 			}
 		}
 	}
@@ -452,6 +462,41 @@ func fileRefProto(f files.File, relPath string) *engine.SourceFileRef {
 		MediaType:        f.MediaType,
 		ByteSize:         f.ByteSize,
 	}
+}
+
+// dateValueProto is the inverse of dateValueFromProto: it carries a stored
+// DateValue's components back to the client (MetadataWorkspaceEntry.date).
+func dateValueProto(v datevalues.Value) *engine.DateValueInput {
+	d := &engine.DateValueInput{
+		Kind:      v.Kind,
+		Qualifier: v.Qualifier,
+		Calendar:  v.Calendar,
+		StartTz:   v.StartTZ,
+		EndTz:     v.EndTZ,
+		Phrase:    v.Phrase,
+	}
+	toInt32 := func(p *int) *int32 {
+		if p == nil {
+			return nil
+		}
+		n := int32(*p)
+		return &n
+	}
+	d.StartYear = toInt32(v.StartYear)
+	d.StartMonth = toInt32(v.StartMonth)
+	d.StartDay = toInt32(v.StartDay)
+	d.StartHour = toInt32(v.StartHour)
+	d.StartMinute = toInt32(v.StartMinute)
+	d.StartSecond = toInt32(v.StartSecond)
+	d.StartMillisecond = toInt32(v.StartMillisecond)
+	d.EndYear = toInt32(v.EndYear)
+	d.EndMonth = toInt32(v.EndMonth)
+	d.EndDay = toInt32(v.EndDay)
+	d.EndHour = toInt32(v.EndHour)
+	d.EndMinute = toInt32(v.EndMinute)
+	d.EndSecond = toInt32(v.EndSecond)
+	d.EndMillisecond = toInt32(v.EndMillisecond)
+	return d
 }
 
 func dateValueFromProto(d *engine.DateValueInput) datevalues.Value {

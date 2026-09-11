@@ -87,8 +87,6 @@ final class SourcePageModel {
     var isEditingDate = false
     var dateEditorFieldID: String?
     var dateEditorDraft = DateValueDraft.empty()
-    /// Last successfully saved draft per metadata field — used to reopen Edit.
-    var dateDraftsByFieldID: [String: DateValueDraft] = [:]
     private(set) var isSavingDateEditor = false
 
     var toast: VocabularyToast?
@@ -247,7 +245,6 @@ final class SourcePageModel {
         }
         let ids = Set(entries.map(\.field.id))
         metadataDrafts = metadataDrafts.filter { ids.contains($0.key) }
-        dateDraftsByFieldID = dateDraftsByFieldID.filter { ids.contains($0.key) }
         if var ws = workspace {
             ws.metadata = entries
             workspace = ws
@@ -481,7 +478,7 @@ final class SourcePageModel {
         savingMetadataFieldID = fieldID
         defer { savingMetadataFieldID = nil }
         do {
-            let result = try await store.setSourceMetadata(
+            let entry = try await store.setSourceMetadata(
                 projectDir: projectDir,
                 userID: userID,
                 sourceID: sourceID,
@@ -489,16 +486,7 @@ final class SourcePageModel {
                 valueText: value,
                 date: nil
             )
-            if let idx = metadata.firstIndex(where: { $0.field.id == fieldID }) {
-                metadata[idx].valueText = result.valueText
-                metadata[idx].dateValueID = result.dateValueID
-                metadata[idx].hasValue = true
-                metadataDrafts[fieldID] = result.valueText
-                if var ws = workspace {
-                    ws.metadata = metadata
-                    workspace = ws
-                }
-            }
+            replaceMetadataEntry(entry)
             if editingMetadataFieldID == fieldID {
                 editingMetadataFieldID = nil
             }
@@ -605,8 +593,8 @@ final class SourcePageModel {
 
     func openEditDate(fieldID: String) {
         dateEditorFieldID = fieldID
-        if let cached = dateDraftsByFieldID[fieldID] {
-            dateEditorDraft = cached
+        if let date = metadata.first(where: { $0.field.id == fieldID })?.date {
+            dateEditorDraft = DateValueDraft(from: date)
         } else {
             dateEditorDraft = DateValueDraft.empty()
         }
@@ -632,32 +620,35 @@ final class SourcePageModel {
         isSavingDateEditor = true
         defer { isSavingDateEditor = false }
         do {
-            let draft = dateEditorDraft
-            let result = try await store.setSourceMetadata(
+            let entry = try await store.setSourceMetadata(
                 projectDir: projectDir,
                 userID: userID,
                 sourceID: sourceID,
                 fieldID: fieldID,
                 valueText: value,
-                date: draft.toInput()
+                date: dateEditorDraft.toInput()
             )
-            if let idx = metadata.firstIndex(where: { $0.field.id == fieldID }) {
-                metadata[idx].valueText = result.valueText
-                metadata[idx].dateValueID = result.dateValueID
-                metadata[idx].dateSummary = draft.summary
-                metadata[idx].hasValue = true
-                metadataDrafts[fieldID] = result.valueText
-                if var ws = workspace {
-                    ws.metadata = metadata
-                    workspace = ws
-                }
-            }
-            dateDraftsByFieldID[fieldID] = draft
+            replaceMetadataEntry(entry)
             isEditingDate = false
             dateEditorFieldID = nil
             dateEditorDraft = DateValueDraft.empty()
         } catch {
             pageError = L10n.Errors.message(for: error)
+        }
+    }
+
+    /// Patches one workspace row from a `setSourceMetadata` response (the
+    /// server returns the refreshed entry, including structured date state).
+    private func replaceMetadataEntry(_ entry: CatalogMetadataEntry) {
+        if let idx = metadata.firstIndex(where: { $0.field.id == entry.field.id }) {
+            metadata[idx] = entry
+        } else {
+            metadata.append(entry)
+        }
+        metadataDrafts[entry.field.id] = entry.valueText
+        if var ws = workspace {
+            ws.metadata = metadata
+            workspace = ws
         }
     }
 

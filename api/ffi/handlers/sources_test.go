@@ -127,45 +127,122 @@ func TestSourceNotes(t *testing.T) {
 	})
 }
 
+// metadataSetFixture creates a source and returns a request skeleton targeting
+// the first seeded field of the wanted data type ("text" | "date").
+func metadataSetFixture(t *testing.T, dataType string) *engine.SetSourceMetadataRequest {
+	t.Helper()
+	dir, userID, typeID := sourceFixture(t)
+	cout, err := CreateSource(marshalProto(t, &engine.CreateSourceRequest{
+		ProjectDir: dir, UserId: userID, SourceTypeId: typeID, Title: "Book",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var created engine.CreateSourceResponse
+	if err := proto.Unmarshal(cout, &created); err != nil {
+		t.Fatal(err)
+	}
+	fout, err := ListMetadataFields(marshalProto(t, &engine.ListMetadataFieldsRequest{ProjectDir: dir}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fields engine.ListMetadataFieldsResponse
+	if err := proto.Unmarshal(fout, &fields); err != nil {
+		t.Fatal(err)
+	}
+	var fieldID string
+	for _, f := range fields.Fields {
+		if f.DataType == dataType {
+			fieldID = f.Id
+			break
+		}
+	}
+	if fieldID == "" {
+		t.Fatalf("no seeded %s field", dataType)
+	}
+	return &engine.SetSourceMetadataRequest{
+		ProjectDir: dir, UserId: userID, SourceId: created.Source.Id, FieldId: fieldID,
+	}
+}
+
+func unmarshalSetMetadataEntry(t *testing.T, raw []byte) *engine.MetadataWorkspaceEntry {
+	t.Helper()
+	var resp engine.SetSourceMetadataResponse
+	if err := proto.Unmarshal(raw, &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Entry == nil {
+		t.Fatal("missing entry")
+	}
+	return resp.Entry
+}
+
 func TestSetSourceMetadata(t *testing.T) {
 	runRPC(t, SetSourceMetadata, []rpcTest{
 		{
-			name: "set text metadata",
+			name: "set text metadata returns entry",
 			reqFn: func(t *testing.T) proto.Message {
-				dir, userID, typeID := sourceFixture(t)
-				cout, err := CreateSource(marshalProto(t, &engine.CreateSourceRequest{
-					ProjectDir: dir, UserId: userID, SourceTypeId: typeID, Title: "Book",
+				req := metadataSetFixture(t, "text")
+				req.ValueText = "Ada"
+				return req
+			},
+			after: func(t *testing.T, raw []byte, req proto.Message) {
+				sr := req.(*engine.SetSourceMetadataRequest)
+				entry := unmarshalSetMetadataEntry(t, raw)
+				if entry.GetValueText() != "Ada" || !entry.GetHasValue() {
+					t.Fatalf("entry %+v", entry)
+				}
+				if entry.GetField().GetId() != sr.FieldId {
+					t.Fatalf("field %s want %s", entry.GetField().GetId(), sr.FieldId)
+				}
+				if entry.GetDateValueId() != "" || entry.GetDateSummary() != "" || entry.GetDate() != nil {
+					t.Fatalf("unexpected date on text entry: %+v", entry)
+				}
+			},
+		},
+		{
+			name: "set date metadata returns structured entry and keeps date on text-only update",
+			reqFn: func(t *testing.T) proto.Message {
+				req := metadataSetFixture(t, "date")
+				req.ValueText = "about the year 1890"
+				year := int32(1890)
+				req.Date = &engine.DateValueInput{Kind: "point", Qualifier: "ABT", StartYear: &year}
+				return req
+			},
+			after: func(t *testing.T, raw []byte, req proto.Message) {
+				sr := req.(*engine.SetSourceMetadataRequest)
+				entry := unmarshalSetMetadataEntry(t, raw)
+				if entry.GetDateValueId() == "" {
+					t.Fatal("missing date_value_id")
+				}
+				if entry.GetDateSummary() != "ABT 1890" {
+					t.Fatalf("summary %q", entry.GetDateSummary())
+				}
+				d := entry.GetDate()
+				if d.GetKind() != "point" || d.GetQualifier() != "ABT" || d.GetStartYear() != 1890 {
+					t.Fatalf("date %+v", d)
+				}
+
+				// A text-only update must keep the structured DateValue and
+				// still return it on the refreshed entry.
+				tout, err := SetSourceMetadata(marshalProto(t, &engine.SetSourceMetadataRequest{
+					ProjectDir: sr.ProjectDir, UserId: sr.UserId, SourceId: sr.SourceId,
+					FieldId: sr.FieldId, ValueText: "circa 1890",
 				}))
 				if err != nil {
 					t.Fatal(err)
 				}
-				var created engine.CreateSourceResponse
-				if err := proto.Unmarshal(cout, &created); err != nil {
-					t.Fatal(err)
+				textEntry := unmarshalSetMetadataEntry(t, tout)
+				if textEntry.GetValueText() != "circa 1890" {
+					t.Fatalf("value %q", textEntry.GetValueText())
 				}
-				fout, err := ListMetadataFields(marshalProto(t, &engine.ListMetadataFieldsRequest{ProjectDir: dir}))
-				if err != nil {
-					t.Fatal(err)
+				if textEntry.GetDateValueId() != entry.GetDateValueId() {
+					t.Fatalf("date_value_id changed: %q -> %q", entry.GetDateValueId(), textEntry.GetDateValueId())
 				}
-				var fields engine.ListMetadataFieldsResponse
-				if err := proto.Unmarshal(fout, &fields); err != nil {
-					t.Fatal(err)
-				}
-				var fieldID string
-				for _, f := range fields.Fields {
-					if f.DataType == "text" {
-						fieldID = f.Id
-						break
-					}
-				}
-				if fieldID == "" {
-					t.Fatal("no text field")
-				}
-				return &engine.SetSourceMetadataRequest{
-					ProjectDir: dir, UserId: userID, SourceId: created.Source.Id, FieldId: fieldID, ValueText: "Ada",
+				if textEntry.GetDate().GetStartYear() != 1890 {
+					t.Fatalf("date lost on text-only update: %+v", textEntry.GetDate())
 				}
 			},
-			want: &engine.SetSourceMetadataResponse{ValueText: "Ada"},
 		},
 	})
 }

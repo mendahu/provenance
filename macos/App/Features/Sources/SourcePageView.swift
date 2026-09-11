@@ -146,11 +146,9 @@ struct SourcePageView: View {
 
     /// True when reopening an existing structured DateValue (Edit date).
     private var isDateEditMode: Bool {
-        guard let fieldID = model.dateEditorFieldID else { return false }
-        if model.dateDraftsByFieldID[fieldID] != nil { return true }
-        guard let entry = model.metadata.first(where: { $0.field.id == fieldID }) else {
-            return false
-        }
+        guard let fieldID = model.dateEditorFieldID,
+              let entry = model.metadata.first(where: { $0.field.id == fieldID })
+        else { return false }
         return !entry.dateValueID.isEmpty || !entry.dateSummary.isEmpty
     }
 
@@ -704,10 +702,7 @@ struct SourcePageView: View {
                         .foregroundStyle(PVColor.textFaint)
 
                     if structured {
-                        Text(entry.dateSummary.isEmpty
-                            ? (model.dateDraftsByFieldID[fieldID]?.summary ?? "")
-                            : entry.dateSummary
-                        )
+                        Text(entry.dateSummary)
                         .font(PVFont.mono(size: PVTypeScale.micro))
                         .foregroundStyle(PVColor.accentSoftForeground)
                         .padding(.horizontal, PVSpacing.space3)
@@ -760,9 +755,7 @@ struct SourcePageView: View {
     }
 
     private func isDateStructured(_ entry: CatalogMetadataEntry) -> Bool {
-        !entry.dateValueID.isEmpty
-            || !entry.dateSummary.isEmpty
-            || model.dateDraftsByFieldID[entry.field.id] != nil
+        !entry.dateValueID.isEmpty || !entry.dateSummary.isEmpty
     }
 
     private func suggestionMetadataRow(_ entry: CatalogMetadataEntry) -> some View {
