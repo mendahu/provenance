@@ -196,7 +196,7 @@ struct SourcesModelTests {
         #expect(model.loadError != nil)
     }
 
-    @Test func openAndCloseSourceStub() async {
+    @Test func openAndCloseSourcePage() async {
         let model = makeModel(
             sources: [source(id: "s1", title: "Album", typeID: "t1")],
             types: [photoType()]

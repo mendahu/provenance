@@ -365,13 +365,13 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func upsertSourceCredibilityAssessment(
-        projectDir _: String,
+        projectDir: String,
         userID _: String,
         sourceID: String,
         gradeID: String,
         argument: String
     ) async throws -> CatalogCredibilityAssessment {
-        let grades = try await listSourceCredibilityGrades(projectDir: "")
+        let grades = try await listSourceCredibilityGrades(projectDir: projectDir)
         let grade = grades.first { $0.id == gradeID } ?? grades[1]
         let assessment = CatalogCredibilityAssessment(
             id: credibilityBySource[sourceID]?.id ?? UUID().uuidString.lowercased(),

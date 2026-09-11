@@ -437,9 +437,8 @@ enum L10n {
         }
     }
 
-    /// The **Sources** workspace destination (S2-17): browse Sources as an
-    /// evidence list, create via a thin dialog, open a separate Source page
-    /// (stub until S2-18).
+    /// The **Sources** workspace destination (S2-17–18): browse Sources as an
+    /// evidence list, create via a thin dialog, open a separate Source page.
     enum Sources {
         static let description = LocalizedStringResource(
             "sources.list.description",
@@ -663,17 +662,241 @@ enum L10n {
             return String(format: format, locale: .current, title)
         }
 
-        static let stubBack = LocalizedStringResource(
-            "sources.stub.back",
-            defaultValue: "Back to Sources",
-            comment: "Button on the Source page stub returning to the Sources list"
+        // MARK: Source page (S2-18)
+
+        static let breadcrumbSources = LocalizedStringResource(
+            "sources.page.breadcrumbSources",
+            defaultValue: "Sources",
+            comment: "Breadcrumb link back to the Sources list"
         )
 
-        static let stubNote = LocalizedStringResource(
-            "sources.stub.note",
-            defaultValue: "The full Source page — notes, metadata, artifacts and file ingest — arrives in a later update.",
-            comment: "Placeholder body on the S2-17 Source page stub"
+        static let pageTitleRequired = LocalizedStringResource(
+            "sources.page.titleRequired",
+            defaultValue: "A source needs a title.",
+            comment: "Inline validation when Source page title is cleared"
         )
+
+        static let descriptionPlaceholder = LocalizedStringResource(
+            "sources.page.descriptionPlaceholder",
+            defaultValue: "What this source is, and where you consulted it",
+            comment: "Placeholder for the Source description field"
+        )
+
+        static let credibilityHeading = LocalizedStringResource(
+            "sources.page.credibilityHeading",
+            defaultValue: "Credibility",
+            comment: "Heading for the Source credibility control"
+        )
+
+        static let credibilityArgumentPlaceholder = LocalizedStringResource(
+            "sources.page.credibilityArgumentPlaceholder",
+            defaultValue: "Why this grade — optional",
+            comment: "Placeholder for optional credibility argument"
+        )
+
+        static let credibilityHint = LocalizedStringResource(
+            "sources.page.credibilityHint",
+            defaultValue: "Trust in this source as evidence — not claim confidence or citation certainty.",
+            comment: "Helper under the credibility control"
+        )
+
+        static let artifactsHeading = LocalizedStringResource(
+            "sources.page.artifactsHeading",
+            defaultValue: "Artifacts",
+            comment: "Heading for the Artifacts section on the Source page"
+        )
+
+        static let addArtifact = LocalizedStringResource(
+            "sources.page.addArtifact",
+            defaultValue: "Add artifact",
+            comment: "Button to open the Add Artifact dialog"
+        )
+
+        static let artifactsEmptyTitle = LocalizedStringResource(
+            "sources.page.artifactsEmptyTitle",
+            defaultValue: "No artifacts yet",
+            comment: "Empty state title when a Source has no Artifacts"
+        )
+
+        static let artifactsEmptyMessage = LocalizedStringResource(
+            "sources.page.artifactsEmptyMessage",
+            defaultValue: "Add a scan, photo, or a fileless stand-in for something you only saw in person.",
+            comment: "Empty state message for Artifacts"
+        )
+
+        static let artifactLabel = LocalizedStringResource(
+            "sources.page.artifactLabel",
+            defaultValue: "Label",
+            comment: "Field label for an Artifact's required list headline"
+        )
+
+        static let artifactLabelHint = LocalizedStringResource(
+            "sources.page.artifactLabelHint",
+            defaultValue: "Name it so the row is recognisable in the list",
+            comment: "Hint under Artifact label field"
+        )
+
+        static let artifactDescription = LocalizedStringResource(
+            "sources.page.artifactDescription",
+            defaultValue: "Description",
+            comment: "Field label for optional Artifact description"
+        )
+
+        static let artifactDescriptionHint = LocalizedStringResource(
+            "sources.page.artifactDescriptionHint",
+            defaultValue: "Optional — folio, entry number, condition of the scan",
+            comment: "Hint under Artifact description on the page"
+        )
+
+        static let artifactLabelRequired = LocalizedStringResource(
+            "sources.page.artifactLabelRequired",
+            defaultValue: "Give the artifact a label.",
+            comment: "Validation when Add Artifact is submitted without a label"
+        )
+
+        static let openFile = LocalizedStringResource(
+            "sources.page.openFile",
+            defaultValue: "Open",
+            comment: "Button to open an Artifact's primary File in an external app"
+        )
+
+        static let openFileCaption = LocalizedStringResource(
+            "sources.page.openFileCaption",
+            defaultValue: "Opens in the system's default app · the file is immutable once ingested",
+            comment: "Caption under the Open file control"
+        )
+
+        static let addFile = LocalizedStringResource(
+            "sources.page.addFile",
+            defaultValue: "Add file…",
+            comment: "Button to attach a first file to a fileless Artifact"
+        )
+
+        static let filelessHint = LocalizedStringResource(
+            "sources.page.filelessHint",
+            defaultValue: "No file yet — physical evidence, or attach a scan when you have one.",
+            comment: "Hint when an Artifact has no primary File"
+        )
+
+        static let notesHeading = LocalizedStringResource(
+            "sources.page.notesHeading",
+            defaultValue: "Notes",
+            comment: "Heading for the Notes stream on the Source page"
+        )
+
+        static let notePlaceholder = LocalizedStringResource(
+            "sources.page.notePlaceholder",
+            defaultValue: "Add a note about this source",
+            comment: "Placeholder for the new-note composer"
+        )
+
+        static let addNote = LocalizedStringResource(
+            "sources.page.addNote",
+            defaultValue: "Add note",
+            comment: "Button to save a new Source note"
+        )
+
+        static let deleteNote = LocalizedStringResource(
+            "sources.page.deleteNote",
+            defaultValue: "Delete note",
+            comment: "Accessibility label for deleting a Source note"
+        )
+
+        static let addArtifactDialogTitle = LocalizedStringResource(
+            "sources.page.addArtifactDialogTitle",
+            defaultValue: "Add artifact",
+            comment: "Title of the Add Artifact dialog"
+        )
+
+        static let addArtifactDialogSubtitle = LocalizedStringResource(
+            "sources.page.addArtifactDialogSubtitle",
+            defaultValue: "A concrete representation of this source — scan, photo, or physical-only stand-in.",
+            comment: "Subtitle of the Add Artifact dialog"
+        )
+
+        static let addArtifactConfirm = LocalizedStringResource(
+            "sources.page.addArtifactConfirm",
+            defaultValue: "Add artifact",
+            comment: "Confirm button on the Add Artifact dialog"
+        )
+
+        static let optionalFile = LocalizedStringResource(
+            "sources.page.optionalFile",
+            defaultValue: "File",
+            comment: "Label for optional file pick on Add Artifact"
+        )
+
+        static let chooseFile = LocalizedStringResource(
+            "sources.page.chooseFile",
+            defaultValue: "Choose file…",
+            comment: "Button to pick a file in Add Artifact"
+        )
+
+        static let clearFile = LocalizedStringResource(
+            "sources.page.clearFile",
+            defaultValue: "Clear",
+            comment: "Clear a chosen file before creating an Artifact"
+        )
+
+        static let filePickPrompt = LocalizedStringResource(
+            "sources.page.filePickPrompt",
+            defaultValue: "Choose",
+            comment: "NSOpenPanel confirm button for Artifact file pick"
+        )
+
+        static let filePickMessage = LocalizedStringResource(
+            "sources.page.filePickMessage",
+            defaultValue: "Choose a file to attach to this artifact. Provenencia copies it into the project.",
+            comment: "NSOpenPanel message for Artifact file pick"
+        )
+
+        static let fileOpenMissing = LocalizedStringResource(
+            "sources.page.fileOpenMissing",
+            defaultValue: "That file is missing from the project folder.",
+            comment: "Error when Open cannot find the object on disk"
+        )
+
+        static let pageFormType = LocalizedStringResource(
+            "sources.page.formType",
+            defaultValue: "Type",
+            comment: "Source type field on the Source page"
+        )
+
+        static func toastArtifactCreatedTitle(ref: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.toastArtifactCreatedTitle",
+                defaultValue: "%@",
+                comment: "Toast title after creating an Artifact; argument is ART- ref"
+            ))
+            return String(format: format, locale: .current, ref)
+        }
+
+        static let toastArtifactCreatedFileless = String(localized: LocalizedStringResource(
+            "sources.page.toastArtifactCreatedFileless",
+            defaultValue: "Created with no file yet — physical only.",
+            comment: "Toast body after creating a fileless Artifact"
+        ))
+
+        static let toastArtifactCreatedWithFile = String(localized: LocalizedStringResource(
+            "sources.page.toastArtifactCreatedWithFile",
+            defaultValue: "Created and the file was ingested.",
+            comment: "Toast body after creating an Artifact with a file"
+        ))
+
+        static let toastFileAttachedTitle = String(localized: LocalizedStringResource(
+            "sources.page.toastFileAttachedTitle",
+            defaultValue: "File attached",
+            comment: "Toast title after first-attach ingest"
+        ))
+
+        static func toastFileAttachedBody(name: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.toastFileAttachedBody",
+                defaultValue: "%@ was ingested into the project.",
+                comment: "Toast body after ingest; argument is original filename"
+            ))
+            return String(format: format, locale: .current, name)
+        }
     }
 
     enum SourceFields {

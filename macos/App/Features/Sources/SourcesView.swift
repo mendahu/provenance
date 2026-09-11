@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// The **Sources** workspace destination (S2-04 board / S2-17 PR): evidence
-/// list (not `PVTable`), Add Source dialog, and navigation to a Source page
-/// stub. Mounts inside the S2-01 workspace content host.
+/// The **Sources** workspace destination (S2-04 board / S2-17–18): evidence
+/// list (not `PVTable`), Add Source dialog, and navigation to the Source page.
+/// Mounts inside the S2-01 workspace content host.
 struct SourcesView: View {
     @State private var model: SourcesModel
 
@@ -25,10 +25,13 @@ struct SourcesView: View {
     var body: some View {
         Group {
             if let opened = model.openedSourceID {
-                SourcePageStubView(
-                    source: model.openedSource,
-                    typeLabel: model.openedSource.map(model.typeLabel(for:)) ?? "",
-                    onBack: { model.closeSource() }
+                SourcePageView(
+                    sourceID: opened,
+                    projectDir: model.pageProjectDir,
+                    userID: model.pageUserID,
+                    store: model.pageStore,
+                    onBackToList: { model.closeSource() },
+                    onSourceUpdated: { model.applyUpdatedSource($0) }
                 )
                 .id(opened)
             } else {
