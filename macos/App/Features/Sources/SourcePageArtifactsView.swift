@@ -6,7 +6,7 @@ struct SourcePageArtifactsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
-            SourcePageSectionHeader(
+            PVSectionHeader(
                 title: L10n.Sources.artifactsHeading,
                 meta: model.artifacts.items.isEmpty
                     ? nil

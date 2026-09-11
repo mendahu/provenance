@@ -6,7 +6,7 @@ struct SourcePageCredibilityView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space5) {
-            SourcePageSectionHeader(
+            PVSectionHeader(
                 title: L10n.Sources.credibilityHeading,
                 aside: {
                     Text(

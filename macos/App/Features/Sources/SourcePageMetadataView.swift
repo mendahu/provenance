@@ -6,7 +6,7 @@ struct SourcePageMetadataView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
-            SourcePageSectionHeader(
+            PVSectionHeader(
                 title: L10n.Sources.metadataHeading,
                 meta: model.metadata.saved.isEmpty
                     ? nil

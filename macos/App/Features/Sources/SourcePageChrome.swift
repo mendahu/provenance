@@ -29,49 +29,6 @@ enum SourcePageLayout {
     }
 }
 
-/// Title + optional meta + aside + actions + bottom rule. Hoisted from the
-/// page monolith so every section file can share it (DS promotion is fix 11).
-struct SourcePageSectionHeader<Aside: View, Actions: View>: View {
-    let title: LocalizedStringResource
-    var meta: String? = nil
-    @ViewBuilder var aside: () -> Aside
-    @ViewBuilder var actions: () -> Actions
-
-    init(
-        title: LocalizedStringResource,
-        meta: String? = nil,
-        @ViewBuilder aside: @escaping () -> Aside = { EmptyView() },
-        @ViewBuilder actions: @escaping () -> Actions = { EmptyView() }
-    ) {
-        self.title = title
-        self.meta = meta
-        self.aside = aside
-        self.actions = actions
-    }
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: PVSpacing.space5) {
-            Text(title)
-                .font(PVFont.display(size: PVTypeScale.h3, weight: PVFontWeight.semibold))
-                .foregroundStyle(PVColor.textDisplay)
-            if let meta {
-                Text(meta)
-                    .font(PVFont.mono(size: PVTypeScale.caption))
-                    .foregroundStyle(PVColor.textMuted)
-            }
-            aside()
-            Spacer(minLength: 0)
-            actions()
-        }
-        .padding(.bottom, PVSpacing.space4)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(PVColor.borderDefault)
-                .frame(height: 1)
-        }
-    }
-}
-
 /// Label column used by metadata saved / suggestion rows.
 struct SourcePageMetadataLabel: View {
     let text: String
