@@ -17,10 +17,6 @@ final class SourcePageModel {
     private(set) var isLoading = false
     var loadError: Error?
 
-    /// Saved identity (synced from workspace after load/save).
-    var title = ""
-    var description = ""
-    var sourceTypeID = ""
     var titleError: String?
     private(set) var isSavingIdentity = false
 
@@ -39,11 +35,8 @@ final class SourcePageModel {
     var editingDescription = false
     var descriptionDraft = ""
 
-    // MARK: Credibility (saved vs draft)
+    // MARK: Credibility drafts (saved values are derived from `workspace`)
 
-    /// Saved grade key; defaults to `standard` when no assessment row.
-    var credibilityKey = "standard"
-    var credibilityArgument = ""
     var credibilityDraftKey = "standard"
     var credibilityArgumentDraft = ""
     private(set) var isSavingCredibility = false
@@ -65,8 +58,6 @@ final class SourcePageModel {
     /// Per-artifact validation for expanded edit fields.
     var artifactFieldErrors: [String: String] = [:]
 
-    /// Working copy of workspace metadata (reorderable).
-    var metadata: [CatalogMetadataEntry] = []
     /// Edit buffers keyed by field id.
     var metadataDrafts: [String: String] = [:]
     /// Saved metadata row currently in explicit edit mode (one at a time).
@@ -114,6 +105,24 @@ final class SourcePageModel {
     }
 
     var source: CatalogSource? { workspace?.source }
+
+    /// Saved identity, derived from the workspace (single source of truth).
+    var title: String { workspace?.source.title ?? "" }
+
+    var description: String { workspace?.source.description ?? "" }
+
+    var sourceTypeID: String { workspace?.source.sourceTypeID ?? "" }
+
+    /// Saved grade key; defaults to `standard` when no assessment row.
+    var credibilityKey: String { workspace?.credibility?.gradeKey ?? "standard" }
+
+    var credibilityArgument: String { workspace?.credibility?.argument ?? "" }
+
+    /// Workspace metadata rows; writes go straight to the workspace.
+    var metadata: [CatalogMetadataEntry] {
+        get { workspace?.metadata ?? [] }
+        set { workspace?.metadata = newValue }
+    }
 
     var artifacts: [CatalogArtifact] { workspace?.artifacts ?? [] }
 
@@ -204,9 +213,6 @@ final class SourcePageModel {
 
     private func applyWorkspace(_ workspace: CatalogSourceWorkspace) {
         self.workspace = workspace
-        title = workspace.source.title
-        description = workspace.source.description
-        sourceTypeID = workspace.source.sourceTypeID
 
         editingTitle = false
         titleDraft = ""
@@ -216,14 +222,7 @@ final class SourcePageModel {
         descriptionDraft = ""
 
         editingMetadataFieldID = nil
-        applyMetadata(workspace.metadata)
-        if let cred = workspace.credibility {
-            credibilityKey = cred.gradeKey
-            credibilityArgument = cred.argument
-        } else {
-            credibilityKey = "standard"
-            credibilityArgument = ""
-        }
+        syncMetadataDrafts()
         credibilityDraftKey = credibilityKey
         credibilityArgumentDraft = credibilityArgument
 
@@ -239,17 +238,17 @@ final class SourcePageModel {
 
     private func applyMetadata(_ entries: [CatalogMetadataEntry]) {
         metadata = entries
-        for e in entries {
-            if metadataDrafts[e.field.id] == nil || e.hasValue {
-                metadataDrafts[e.field.id] = e.valueText
-            }
+        syncMetadataDrafts()
+    }
+
+    /// Seeds edit buffers for saved values and drops buffers for rows that
+    /// no longer exist (dismissed suggestions).
+    private func syncMetadataDrafts() {
+        for e in metadata where metadataDrafts[e.field.id] == nil || e.hasValue {
+            metadataDrafts[e.field.id] = e.valueText
         }
-        let ids = Set(entries.map(\.field.id))
+        let ids = Set(metadata.map(\.field.id))
         metadataDrafts = metadataDrafts.filter { ids.contains($0.key) }
-        if var ws = workspace {
-            ws.metadata = entries
-            workspace = ws
-        }
     }
 
     private func refreshWorkspace() async {
@@ -358,9 +357,6 @@ final class SourcePageModel {
            description == current.description,
            sourceTypeID == current.sourceTypeID
         {
-            self.title = title
-            self.description = description
-            self.sourceTypeID = sourceTypeID
             titleError = nil
             return
         }
@@ -376,14 +372,8 @@ final class SourcePageModel {
                 description: description
             )
             titleError = nil
-            self.title = updated.title
-            self.description = updated.description
-            self.sourceTypeID = updated.sourceTypeID
+            workspace?.source = updated
             typeDraftID = updated.sourceTypeID
-            if var ws = workspace {
-                ws.source = updated
-                workspace = ws
-            }
             onSourceUpdated?(updated)
         } catch {
             titleError = L10n.Errors.message(for: error)
@@ -416,10 +406,8 @@ final class SourcePageModel {
            grade.key == "standard",
            argument.isEmpty
         {
-            credibilityKey = "standard"
-            credibilityArgument = ""
-            credibilityDraftKey = credibilityKey
-            credibilityArgumentDraft = credibilityArgument
+            credibilityDraftKey = "standard"
+            credibilityArgumentDraft = ""
             return
         }
         isSavingCredibility = true
@@ -432,12 +420,7 @@ final class SourcePageModel {
                 gradeID: grade.id,
                 argument: argument
             )
-            if var ws = workspace {
-                ws.credibility = assessment
-                workspace = ws
-            }
-            credibilityKey = assessment.gradeKey
-            credibilityArgument = assessment.argument
+            workspace?.credibility = assessment
             credibilityDraftKey = credibilityKey
             credibilityArgumentDraft = credibilityArgument
         } catch {
@@ -640,10 +623,6 @@ final class SourcePageModel {
             metadata.append(entry)
         }
         metadataDrafts[entry.field.id] = entry.valueText
-        if var ws = workspace {
-            ws.metadata = metadata
-            workspace = ws
-        }
     }
 
     // MARK: Notes
@@ -661,10 +640,7 @@ final class SourcePageModel {
                 body: body
             )
             noteDraft = ""
-            if var ws = workspace {
-                ws.notes.append(note)
-                workspace = ws
-            }
+            workspace?.notes.append(note)
         } catch {
             pageError = L10n.Errors.message(for: error)
         }
@@ -680,9 +656,8 @@ final class SourcePageModel {
                 noteID: id,
                 body: trimmed
             )
-            if var ws = workspace, let idx = ws.notes.firstIndex(where: { $0.id == id }) {
-                ws.notes[idx] = note
-                workspace = ws
+            if let idx = workspace?.notes.firstIndex(where: { $0.id == id }) {
+                workspace?.notes[idx] = note
             }
         } catch {
             pageError = L10n.Errors.message(for: error)
@@ -692,10 +667,7 @@ final class SourcePageModel {
     func deleteNote(id: String) async {
         do {
             try await store.deleteSourceNote(projectDir: projectDir, userID: userID, noteID: id)
-            if var ws = workspace {
-                ws.notes.removeAll { $0.id == id }
-                workspace = ws
-            }
+            workspace?.notes.removeAll { $0.id == id }
         } catch {
             pageError = L10n.Errors.message(for: error)
         }
@@ -817,10 +789,7 @@ final class SourcePageModel {
                 )
                 art = ingested.artifact
             }
-            if var ws = workspace {
-                ws.artifacts.append(art)
-                workspace = ws
-            }
+            workspace?.artifacts.append(art)
             artifactLabels[art.id] = art.label
             artifactDescriptions[art.id] = art.description
             isAddingArtifact = false
@@ -870,9 +839,8 @@ final class SourcePageModel {
     }
 
     private func replaceArtifact(_ updated: CatalogArtifact) {
-        if var ws = workspace, let idx = ws.artifacts.firstIndex(where: { $0.id == updated.id }) {
-            ws.artifacts[idx] = updated
-            workspace = ws
+        if let idx = workspace?.artifacts.firstIndex(where: { $0.id == updated.id }) {
+            workspace?.artifacts[idx] = updated
         }
         artifactLabels[updated.id] = updated.label
         artifactDescriptions[updated.id] = updated.description
