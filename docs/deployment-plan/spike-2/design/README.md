@@ -8,8 +8,6 @@ Finished briefs live in [`archive/`](archive/). Sprint task list: [`../README.md
 
 | Step | Brief | Feeds implementation |
 | --- | --- | --- |
-| S2-04 | [`S2-04-sources-list.md`](S2-04-sources-list.md) | PR S2-17 |
-| S2-23 | [`S2-23-source-detail.md`](S2-23-source-detail.md) | PR S2-18 |
 | S2-20 | [`S2-20-files-list.md`](S2-20-files-list.md) | PR S2-21 |
 
 ## Completed
@@ -19,6 +17,8 @@ Finished briefs live in [`archive/`](archive/). Sprint task list: [`../README.md
 | S2-01 | [`archive/S2-01-workspace-chrome.md`](archive/S2-01-workspace-chrome.md) | PR S2-14 |
 | S2-02 | [`archive/S2-02-source-fields.md`](archive/S2-02-source-fields.md) | PR S2-15 |
 | S2-03 | [`archive/S2-03-source-types.md`](archive/S2-03-source-types.md) | PR S2-16 |
+| S2-04 | [`archive/S2-04-sources-list.md`](archive/S2-04-sources-list.md) | PR S2-17 |
+| S2-23 | [`archive/S2-23-source-detail.md`](archive/S2-23-source-detail.md) | PR S2-18 |
 
 ## How to use
 
@@ -32,7 +32,7 @@ Finished briefs live in [`archive/`](archive/). Sprint task list: [`../README.md
 
 - Offline-first macOS genealogy app; no cloud account for this spike.
 - After first-run onboarding, the user is “signed in” to a local `*.provenencia` project folder.
-- Evidence lives in the **Source** layer; people/events/conclusions are later layers — do not design Interpretation chrome as active product UI in Spike 2.
+- Evidence lives in the **Source** layer; people/events/conclusions are later layers — do not design Interpretation chrome as active product UI in Spike 2 (Source credibility on the Source page is the intentional exception).
 - Short human ids (`SRC-…`, `ART-…`, `USR-…`) are shown in mono; UUIDs are not primary UI.
 - Vocabulary rows use `origin` (`provenencia` / `user` / `plugin:…`) — surface origin in admin UIs; do not invent a separate “builtin” flag.
 - An Artifact has **zero or one** primary File; multiple scans are multiple Artifacts. Derivatives belong to Files.

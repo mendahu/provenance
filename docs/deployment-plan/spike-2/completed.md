@@ -11,6 +11,8 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | [S2-01](#s2-01--design-app-workspace-chrome-sidebar--content) | Design | App workspace chrome (sidebar + content host) |
 | [S2-02](#s2-02--design-source-fields-metadata-field-vocabulary) | Design | Source fields vocabulary |
 | [S2-03](#s2-03--design-source-types-types--suggested-field-associations) | Design | Source types + suggested fields |
+| [S2-04](#s2-04--design-sources-list) | Design | Sources list + Add Source dialog |
+| [S2-23](#s2-23--design-source-page-artifacts--files) | Design | Source page (Artifacts + Files) |
 | [S2-05](#s2-05--pr-audit-tables-and-atomic-write-helper) | PR | Audit tables + write helper |
 | [S2-06](#s2-06--pr-date_values-schema-and-minimal-helpers) | PR | `date_values` schema + helpers |
 | [S2-07](#s2-07--pr-source-vocabulary-tables--small-seed) | PR | Source vocabulary tables + small seed |
@@ -24,6 +26,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | [S2-15](#s2-15--pr-swift-source-fields-list--createedit) | PR | Swift Source fields |
 | [S2-22](#s2-22--pr-pvtable--custom-chrome-table-with-keyboarda11y) | PR | `PVTable` (custom-chrome table + keyboard/a11y) |
 | [S2-16](#s2-16--pr-swift-source-types-list--associations) | PR | Swift Source types |
+| [S2-17](#s2-17--pr-swift-sources-list) | PR | Swift Sources list |
 
 ---
 
@@ -71,6 +74,36 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Context** | Source doc §§3, 5.2; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1.1. One complexity step above S2-02 because suggestions join fields. Prefer `provenencia` type rows view-only for label/description; association edit on seeded types OK for dogfood. |
 | **Out** | Force-deleting a Source type sources still use; field vocabulary CRUD (S2-02); Source instance UI; Artifacts. |
 | **Feeds** | S2-16 |
+
+---
+
+### S2-04 — Design: Sources list
+
+**Claude Design brief:** [`design/archive/S2-04-sources-list.md`](design/archive/S2-04-sources-list.md)
+
+| | |
+| --- | --- |
+| **Kind** | Design (Claude Design) |
+| **Depends on** | S2-01 (done); S2-02 / S2-03 (types vocabulary for Add Source / row type name) |
+| **Deliverables** | Done. Board for the **Sources** list only: **list-style** rows (thumbnail + title + type/`SRC-…`) via a **new list component** — **not** `PVTable`; search; empty + **Add Source** as a **centered dimming dialog** (same family as confirm dialogs; type + **title** required; description optional) that on Create navigates to the **separate Source page**; row select also opens that page. Not master–detail like S2-02/S2-03. Do not design Artifacts or File ingest here. |
+| **Context** | Source doc §4 (list-facing). Navigation locked: **separate page**. Create locked: **confirm-style dialog on the list**, then land on S2-23 (view/edit). Presentation locked: **evidence list**, not vocabulary table — `PVTable` remains fields/types only. |
+| **Out** | Source page body, Artifacts, ingest (S2-23 / S2-18); delete; vocabulary admin. |
+| **Feeds** | S2-17 |
+
+---
+
+### S2-23 — Design: Source page (Artifacts + Files)
+
+**Claude Design brief:** [`design/archive/S2-23-source-detail.md`](design/archive/S2-23-source-detail.md)
+
+| | |
+| --- | --- |
+| **Kind** | Design (Claude Design) |
+| **Depends on** | S2-01 (done); S2-04 (done); S2-02 / S2-03 (notes/metadata + type display) |
+| **Deliverables** | Done. Board for the **individual Source page** (view/edit only — no create/draft): identity + editable title/description; **Source credibility** (three-point grade + optional argument); **Notes** and **Metadata** as distinct areas; Artifacts list with **in-place accordion**; primary File opens **externally**; **Add Artifact** centered modal; **Add file…** fileless-only — **no Replace**; **breadcrumb** to Sources list. |
+| **Context** | Source doc §§4, 6–8; credibility: [`research-judgment-model.md`](../../research-judgment-model.md) §2. Feeds S2-18 schema/FFI gaps (Artifact `label`, suggestion dismiss, metadata order, credibility tables, first-attach-only ingest). |
+| **Out** | Redesigning the Sources list; delete; Replace file; Citations / Observations / Nodes; Claim confidence; in-app File preview; project Files browser (S2-20). |
+| **Feeds** | S2-18 |
 
 ---
 
@@ -227,6 +260,19 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Deliverables** | Done. **Source types** destination: master–detail split (S2-03 T-13) mounted in the S2-14 pane — list (label + origin pill, key, suggested-field count) via **`PVTable`**, detail with description + suggested fields, assign/remove `source_type_metadata_fields` associations from the Source fields pool, add/create type, and delete gated on `usedBy == 0` and non-plugin origin (S2-03 T-12, added when the brief was refined). Origin markers hoisted out of Source fields into shared `OriginBadge` / `OriginPill` (plus the new plugin in-list pill). The assign control is a new design-system **`PVComboBox`** (searchable on field label *or* key, rich rows with the data-type badge, macOS key handling) with the assign action as an icon button beside it — the board switched from a plain `Select` after the first pass; single-select subset only, documented in `DesignSystem/README.md`. FFI added: `UpdateSourceType`, `ListTypeSuggestions`, `AssignTypeField`, `RemoveTypeField`; `CreateSourceType` now mints its key from the label like `CreateMetadataField`, and `SourceType` carries `used_by` + `suggested_field_count`. Unit tests with `FakeStore`; Go tests for `sourcetypes.Create`/`Update`/`UsedBy` and `sourcevocab.AppendSuggestion`. |
 | **Context** | Mount under S2-14 **Source types** pane. Removing a suggestion must not delete field vocabulary or Source metadata values. Reuse `PVTable` from S2-22 — do not reintroduce a hand-rolled column list. |
 | **Out** | Source catalog UI; field definition CRUD (S2-15); reordering suggestions; force-deleting a type sources still use. |
+
+---
+
+### S2-17 — PR: Swift Sources list
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-04 (done), S2-16 (types available to pick), S2-13, S2-14 |
+| **Deliverables** | Done. **Sources** list destination: homogeneous **list** rows (thumbnail + title + type/`SRC-…`) via design-system **`PVList`** (not `PVTable`); **`PVDialog`** **Add Source** (type + **required** title + optional description) that on Create navigates to a **separate Source page** (stub until S2-18); row select opens that page. Search/filter/sort chrome; empty states; unit tests with `FakeStore`; L10n via skill. |
+| **Context** | Mount under S2-14 **Sources** pane. Match S2-04: **not** master–detail; create is confirm-style dialog → Source page; presentation is list-not-table. Thumbnail placeholders OK until S2-18 owns real thumbs. |
+| **Out** | Source page body, Artifact detail, ingest, derivative/thumbnail ensure (S2-18). |
+| **Feeds** | S2-18; S2-21 (prefer reusing `PVList`) |
 
 ---
 

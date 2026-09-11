@@ -4,8 +4,8 @@
 **Spike:** Provenencia Spike 2 (Source layer validation)  
 **Implements later as:** PR S2-18  
 **Depends on:** S2-01 workspace chrome (done); S2-04 Sources list (how researchers arrive here); S2-02 / S2-03 vocabulary (metadata editor + type display)  
-**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`archive/S2-02-source-fields.md`](archive/S2-02-source-fields.md), [`archive/S2-03-source-types.md`](archive/S2-03-source-types.md), [`S2-20-files-list.md`](S2-20-files-list.md)  
-**Judgment model:** [`research-judgment-model.md`](../../../research-judgment-model.md) §2 (Source credibility assessments)
+**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`S2-02-source-fields.md`](S2-02-source-fields.md), [`S2-03-source-types.md`](S2-03-source-types.md), [`../S2-20-files-list.md`](../S2-20-files-list.md)  
+**Judgment model:** [`research-judgment-model.md`](../../../../research-judgment-model.md) §2 (Source credibility assessments)
 
 Paste this entire document into Claude Design as the requirements for one board/flow.
 
@@ -35,7 +35,7 @@ Include **add flows** on this page: **Add Artifact** (same centered dimming moda
 
 ## 2. Domain model (UI must reflect)
 
-Authoritative: [`source-layer-data-model.md`](../../../source-layer-data-model.md) §§4, 6–8; stack rules for ingest (bytes never in protobuf). Source **credibility** is Interpretation judgment ([`research-judgment-model.md`](../../../research-judgment-model.md) §2) — **not** a column on `sources` — but the **Source page is the right UI** to set it during intake.
+Authoritative: [`source-layer-data-model.md`](../../../../source-layer-data-model.md) §§4, 6–8; stack rules for ingest (bytes never in protobuf). Source **credibility** is Interpretation judgment ([`research-judgment-model.md`](../../../../research-judgment-model.md) §2) — **not** a column on `sources` — but the **Source page is the right UI** to set it during intake.
 
 ### 2.1 Source
 
@@ -246,11 +246,11 @@ Design these as reusable, not Source-page-only sketches:
 | Gap | Status |
 | --- | --- |
 | Artifact ↔ File association | **Exists:** `CreateArtifact`, `IngestArtifactFile`. |
-| No primary-File replace | **Product rule change.** Today ingest can pointer-swap `file_id`. **S2-18 must:** reject `IngestArtifactFile` when Artifact already has a File; update [`source-layer-data-model.md`](../../../source-layer-data-model.md) (and related notes) so better scans = **new Artifact**, not replace; keep first-attach (NULL → File) only. |
+| No primary-File replace | **Product rule change.** Today ingest can pointer-swap `file_id`. **S2-18 must:** reject `IngestArtifactFile` when Artifact already has a File; update [`source-layer-data-model.md`](../../../../source-layer-data-model.md) (and related notes) so better scans = **new Artifact**, not replace; keep first-attach (NULL → File) only. |
 | Artifact `label` column | **Schema gap today** (`artifacts` has only `description`). **S2-18 must add** `label` (migration + query/FFI/proto) **before** shipping the Source page UI that depends on it. |
 | Per-Source suggestion dismiss | **Schema gap:** type suggestions live on `source_type_metadata_fields` only — no per-Source dismiss store. **S2-18 must add** persistent dismiss (e.g. `source_metadata_suggestion_dismissals` or equivalent) + FFI. |
 | Metadata display order | **Schema gap:** `source_metadata` has no `sort_order` (type-join order is not per-Source). **S2-18 must add** `sort_order` (or equivalent) on Source metadata + reorder FFI. |
 | List / workspace thumbnail refs | Likely **FFI gap:** ensure/list derivative paths for list cells — fold into S2-18 (or a thin precede PR). |
 | Open primary File | **MVP:** Swift opens the `objects/…` URL with **`NSWorkspace`** (default app). No in-app preview in S2-18. |
-| Source credibility assessments | **Schema/FFI gap.** Tables not migrated yet. **S2-18 must add:** `source_credibility_grades` + `source_credibility_assessments` (per [`research-judgment-model.md`](../../../research-judgment-model.md) §2); seed `provenencia` grades (`low_trust` / `standard` / `high_trust`); audited upsert/get for the single assessment per Source; list/get grades; wire into `GetSourceWorkspace` (or equivalent) + Swift. Do **not** add a credibility column on `sources`. |
+| Source credibility assessments | **Schema/FFI gap.** Tables not migrated yet. **S2-18 must add:** `source_credibility_grades` + `source_credibility_assessments` (per [`research-judgment-model.md`](../../../../research-judgment-model.md) §2); seed `provenencia` grades (`low_trust` / `standard` / `high_trust`); audited upsert/get for the single assessment per Source; list/get grades; wire into `GetSourceWorkspace` (or equivalent) + Swift. Do **not** add a credibility column on `sources`. |
 | Sources list | Shipped earlier as S2-17 from S2-04; this board feeds S2-18 only. |
