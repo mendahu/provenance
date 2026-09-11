@@ -138,7 +138,10 @@ struct GoStore: GenealogyStore {
             notes: resp.notes.map(Self.mapNote),
             metadata: resp.metadata.map(Self.mapMetadataEntry),
             artifacts: resp.artifacts.map(Self.mapArtifact),
-            credibility: resp.hasCredibility ? Self.mapCredibility(resp.credibility) : nil
+            credibility: resp.hasCredibility ? Self.mapCredibility(resp.credibility) : nil,
+            types: resp.types.map(Self.mapSourceType),
+            grades: resp.grades.map(Self.mapCredibilityGrade),
+            fields: resp.fields.map(Self.mapMetadataField)
         )
     }
 

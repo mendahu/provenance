@@ -14,8 +14,6 @@ final class SourcePageModel {
     }
 
     private(set) var workspace: CatalogSourceWorkspace?
-    private(set) var grades: [CatalogCredibilityGrade] = []
-    private(set) var types: [CatalogSourceType] = []
     private(set) var isLoading = false
     var loadError: Error?
 
@@ -80,7 +78,6 @@ final class SourcePageModel {
     var addMetadataFieldError: String?
     var addMetadataValueError: String?
     private(set) var isSavingMetadataAdd = false
-    private(set) var vocabularyFields: [CatalogMetadataField] = []
 
     // MARK: Date editor
 
@@ -121,6 +118,13 @@ final class SourcePageModel {
     var artifacts: [CatalogArtifact] { workspace?.artifacts ?? [] }
 
     var notes: [CatalogSourceNote] { workspace?.notes ?? [] }
+
+    /// Page vocabulary rides on the workspace payload (one catalog open).
+    var grades: [CatalogCredibilityGrade] { workspace?.grades ?? [] }
+
+    var types: [CatalogSourceType] { workspace?.types ?? [] }
+
+    private var vocabularyFields: [CatalogMetadataField] { workspace?.fields ?? [] }
 
     /// Project folder for resolving `objects/…` thumbnail paths.
     var pageProjectDir: String { projectDir }
@@ -186,15 +190,12 @@ final class SourcePageModel {
         loadError = nil
         defer { isLoading = false }
         do {
-            // Catalog RPCs take an exclusive open; do not fan out concurrently
-            // (catalog.already_open). See docs/ideas/catalog-access-serialization.md.
+            // One exclusive catalog open: the workspace payload carries the
+            // page vocabulary (types, grades, fields) alongside the source.
             let workspace = try await store.getSourceWorkspace(
                 projectDir: projectDir,
                 sourceID: sourceID
             )
-            grades = try await store.listSourceCredibilityGrades(projectDir: projectDir)
-            types = try await store.listSourceTypes(projectDir: projectDir)
-            vocabularyFields = try await store.listMetadataFields(projectDir: projectDir)
             applyWorkspace(workspace)
         } catch {
             loadError = error
@@ -539,13 +540,6 @@ final class SourcePageModel {
         addMetadataFieldError = nil
         addMetadataValueError = nil
         isAddingMetadata = true
-        Task {
-            do {
-                vocabularyFields = try await store.listMetadataFields(projectDir: projectDir)
-            } catch {
-                pageError = L10n.Errors.message(for: error)
-            }
-        }
     }
 
     func cancelAddMetadata() {
@@ -568,7 +562,7 @@ final class SourcePageModel {
         isSavingMetadataAdd = true
         defer { isSavingMetadataAdd = false }
         do {
-            _ = try await store.setSourceMetadata(
+            let entry = try await store.setSourceMetadata(
                 projectDir: projectDir,
                 userID: userID,
                 sourceID: sourceID,
@@ -576,8 +570,8 @@ final class SourcePageModel {
                 valueText: value,
                 date: nil
             )
+            replaceMetadataEntry(entry)
             isAddingMetadata = false
-            await refreshWorkspace()
         } catch {
             addMetadataValueError = L10n.Errors.message(for: error)
         }

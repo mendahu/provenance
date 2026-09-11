@@ -177,6 +177,46 @@ func unmarshalSetMetadataEntry(t *testing.T, raw []byte) *engine.MetadataWorkspa
 	return resp.Entry
 }
 
+func TestGetSourceWorkspace(t *testing.T) {
+	runRPC(t, GetSourceWorkspace, []rpcTest{
+		{
+			name: "workspace folds in types, grades, and fields",
+			reqFn: func(t *testing.T) proto.Message {
+				dir, userID, typeID := sourceFixture(t)
+				cout, err := CreateSource(marshalProto(t, &engine.CreateSourceRequest{
+					ProjectDir: dir, UserId: userID, SourceTypeId: typeID, Title: "Book",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var created engine.CreateSourceResponse
+				if err := proto.Unmarshal(cout, &created); err != nil {
+					t.Fatal(err)
+				}
+				return &engine.GetSourceWorkspaceRequest{ProjectDir: dir, SourceId: created.Source.Id}
+			},
+			after: func(t *testing.T, raw []byte, _ proto.Message) {
+				var resp engine.GetSourceWorkspaceResponse
+				if err := proto.Unmarshal(raw, &resp); err != nil {
+					t.Fatal(err)
+				}
+				if resp.Source.GetTitle() != "Book" {
+					t.Fatalf("source %+v", resp.Source)
+				}
+				if len(resp.Types) == 0 {
+					t.Fatal("expected seeded source types on workspace")
+				}
+				if len(resp.Grades) == 0 {
+					t.Fatal("expected seeded credibility grades on workspace")
+				}
+				if len(resp.Fields) == 0 {
+					t.Fatal("expected seeded metadata fields on workspace")
+				}
+			},
+		},
+	})
+}
+
 func TestSetSourceMetadata(t *testing.T) {
 	runRPC(t, SetSourceMetadata, []rpcTest{
 		{
