@@ -32,6 +32,7 @@
 		AA0000000000000000000371 /* PVInlineEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000370 /* PVInlineEdit.swift */; };
 		AA0000000000000000000373 /* PVTextArea.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000372 /* PVTextArea.swift */; };
 		AA0000000000000000000375 /* PVChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000374 /* PVChip.swift */; };
+		AA0000000000000000000377 /* PVCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000376 /* PVCard.swift */; };
 		AA0000000000000000000331 /* DateValueDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000330 /* DateValueDraft.swift */; };
 		AA0000000000000000000335 /* DateValueEditorForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000336 /* DateValueEditorForm.swift */; };
 		AA000000000000000000031B /* ProjectFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000031C /* ProjectFiles.swift */; };
@@ -178,6 +179,7 @@
 		AA0000000000000000000370 /* PVInlineEdit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVInlineEdit.swift; sourceTree = "<group>"; };
 		AA0000000000000000000372 /* PVTextArea.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVTextArea.swift; sourceTree = "<group>"; };
 		AA0000000000000000000374 /* PVChip.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVChip.swift; sourceTree = "<group>"; };
+		AA0000000000000000000376 /* PVCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVCard.swift; sourceTree = "<group>"; };
 		AA0000000000000000000330 /* DateValueDraft.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueDraft.swift; sourceTree = "<group>"; };
 		AA0000000000000000000336 /* DateValueEditorForm.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueEditorForm.swift; sourceTree = "<group>"; };
 		AA000000000000000000031C /* ProjectFiles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectFiles.swift; sourceTree = "<group>"; };
@@ -455,6 +457,7 @@
 				F3E732F3D44BB89512758F85 /* PVBadge.swift */,
 				B2C3D4E5F60718293A4B5E01 /* PVDivider.swift */,
 				AA0000000000000000000300 /* PVThumbnail.swift */,
+				AA0000000000000000000376 /* PVCard.swift */,
 			);
 			name = Core;
 			path = Core;
@@ -803,6 +806,7 @@
 				AA0000000000000000000371 /* PVInlineEdit.swift in Sources */,
 				AA0000000000000000000373 /* PVTextArea.swift in Sources */,
 				AA0000000000000000000375 /* PVChip.swift in Sources */,
+				AA0000000000000000000377 /* PVCard.swift in Sources */,
 				504C4A2D17A9AC30A47D4E37 /* PVSelect.swift in Sources */,
 				854A784AE802C0EF7A484971 /* PVToast.swift in Sources */,
 				07D60E0FE9704E4723AE18DD /* PVLogoMark.swift in Sources */,

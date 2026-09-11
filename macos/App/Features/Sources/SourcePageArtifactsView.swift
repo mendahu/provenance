@@ -20,44 +20,29 @@ struct SourcePageArtifactsView: View {
             )
 
             if model.artifacts.items.isEmpty {
-                VStack(spacing: PVSpacing.space6) {
-                    PVEmptyState(
-                        icon: .photo,
-                        title: L10n.Sources.artifactsEmptyTitle,
-                        message: String(localized: L10n.Sources.artifactsEmptyMessage),
-                        compact: true
-                    )
+                PVEmptyState(
+                    icon: .photo,
+                    title: L10n.Sources.artifactsEmptyTitle,
+                    message: String(localized: L10n.Sources.artifactsEmptyMessage),
+                    compact: true
+                ) {
                     PVButton(L10n.Sources.addArtifact, variant: .primary, size: .sm, icon: .plus) {
                         model.artifacts.openAdd()
                     }
                     .accessibilityIdentifier("sources.page.artifacts.empty.add")
                 }
-                .padding(.vertical, PVSpacing.space9)
-                .frame(maxWidth: .infinity)
-                .background(PVColor.surfaceCard)
-                .clipShape(RoundedRectangle(cornerRadius: PVRadius.md, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: PVRadius.md, style: .continuous)
-                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
-                        .foregroundStyle(PVColor.borderDefault)
-                )
                 .accessibilityIdentifier("sources.page.artifacts.empty")
             } else {
-                VStack(spacing: 0) {
-                    ForEach(model.artifacts.items, id: \.id) { art in
-                        artifactRow(art)
-                        if art.id != model.artifacts.items.last?.id {
-                            PVDivider()
+                PVCard(elevated: true) {
+                    VStack(spacing: 0) {
+                        ForEach(model.artifacts.items, id: \.id) { art in
+                            artifactRow(art)
+                            if art.id != model.artifacts.items.last?.id {
+                                PVDivider()
+                            }
                         }
                     }
                 }
-                .background(PVColor.surfaceCard)
-                .clipShape(RoundedRectangle(cornerRadius: PVRadius.md, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: PVRadius.md, style: .continuous)
-                        .stroke(PVColor.borderSubtle, lineWidth: 1)
-                )
-                .pvShadow(PVElevation.sm)
                 .accessibilityIdentifier("sources.page.artifacts.list")
             }
         }
@@ -235,30 +220,25 @@ struct SourcePageArtifactsView: View {
                 .foregroundStyle(PVColor.textFaint)
 
             if let file = art.file, !art.fileID.isEmpty {
-                HStack(spacing: PVSpacing.space6) {
-                    PVThumbnail(artifactThumbnail(art), size: 56)
-                    VStack(alignment: .leading, spacing: PVSpacing.space2) {
-                        Text(file.originalFilename)
-                            .font(PVFont.mono(size: PVTypeScale.caption))
-                            .foregroundStyle(PVColor.textPrimary)
-                            .lineLimit(2)
-                        Text(fileMetaLine(file))
-                            .font(PVFont.mono(size: PVTypeScale.micro))
-                            .foregroundStyle(PVColor.textMuted)
+                PVCard(cornerRadius: PVRadius.sm, padding: PVSpacing.space6) {
+                    HStack(spacing: PVSpacing.space6) {
+                        PVThumbnail(artifactThumbnail(art), size: 56)
+                        VStack(alignment: .leading, spacing: PVSpacing.space2) {
+                            Text(file.originalFilename)
+                                .font(PVFont.mono(size: PVTypeScale.caption))
+                                .foregroundStyle(PVColor.textPrimary)
+                                .lineLimit(2)
+                            Text(fileMetaLine(file))
+                                .font(PVFont.mono(size: PVTypeScale.micro))
+                                .foregroundStyle(PVColor.textMuted)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        PVButton(L10n.Sources.openFile, variant: .secondary, size: .sm, icon: .externalLink) {
+                            model.artifacts.open(art)
+                        }
+                        .accessibilityIdentifier("sources.page.artifact.\(art.id).open")
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    PVButton(L10n.Sources.openFile, variant: .secondary, size: .sm, icon: .externalLink) {
-                        model.artifacts.open(art)
-                    }
-                    .accessibilityIdentifier("sources.page.artifact.\(art.id).open")
                 }
-                .padding(PVSpacing.space6)
-                .background(PVColor.surfaceCard)
-                .clipShape(RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .stroke(PVColor.borderSubtle, lineWidth: 1)
-                )
                 .contentShape(Rectangle())
                 .onTapGesture { model.artifacts.open(art) }
             } else {

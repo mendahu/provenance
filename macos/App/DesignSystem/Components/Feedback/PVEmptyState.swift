@@ -1,29 +1,29 @@
 import SwiftUI
 
 /// A "nothing here yet" placeholder — mirrors `components/feedback/EmptyState.jsx`
-/// (dashed border, faint icon, display-font title, muted prose body).
-/// `message` is a plain `String` (like `PVToast`'s) since callers often
-/// interpolate dynamic content (e.g. a search query) into it; pass
-/// `String(localized: …)` for fixed copy. The web spec's `action` slot
-/// isn't ported — no call site needs it yet (the primary CTA already lives
-/// in the surrounding toolbar); add it here, following `PVButton`'s
-/// pattern, if a future screen needs an empty state with its own button.
-struct PVEmptyState: View {
+/// (dashed border, faint icon, display-font title, muted prose body, optional
+/// `action` slot). `message` is a plain `String` (like `PVToast`'s) since
+/// callers often interpolate dynamic content (e.g. a search query) into it;
+/// pass `String(localized: …)` for fixed copy.
+struct PVEmptyState<Action: View>: View {
     private let icon: PVSymbol
     private let title: LocalizedStringResource?
     private let message: String?
     private let compact: Bool
+    private let action: Action
 
     init(
         icon: PVSymbol,
         title: LocalizedStringResource? = nil,
         message: String? = nil,
-        compact: Bool = false
+        compact: Bool = false,
+        @ViewBuilder action: () -> Action
     ) {
         self.icon = icon
         self.title = title
         self.message = message
         self.compact = compact
+        self.action = action()
     }
 
     var body: some View {
@@ -42,6 +42,7 @@ struct PVEmptyState: View {
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: PVSpacing.measureNarrow)
             }
+            action
         }
         .padding(.vertical, compact ? PVSpacing.space9 : PVSpacing.space12)
         .padding(.horizontal, compact ? PVSpacing.space8 : PVSpacing.space9)
@@ -58,6 +59,19 @@ struct PVEmptyState: View {
     }
 }
 
+extension PVEmptyState where Action == EmptyView {
+    init(
+        icon: PVSymbol,
+        title: LocalizedStringResource? = nil,
+        message: String? = nil,
+        compact: Bool = false
+    ) {
+        self.init(icon: icon, title: title, message: message, compact: compact) {
+            EmptyView()
+        }
+    }
+}
+
 #Preview {
     VStack(spacing: PVSpacing.space9) {
         PVEmptyState(
@@ -65,6 +79,14 @@ struct PVEmptyState: View {
             title: "No source fields yet",
             message: "This project has no metadata vocabulary. Add the fields your records actually carry."
         )
+        PVEmptyState(
+            icon: .photo,
+            title: "No artifacts yet",
+            message: "Attach a scan, photo, or transcript of this source.",
+            compact: true
+        ) {
+            PVButton("Add artifact", variant: .primary, size: .sm, icon: .plus) {}
+        }
         PVEmptyState(icon: .searchEmpty, title: "No field selected", compact: true)
     }
     .padding(PVSpacing.space9)

@@ -208,49 +208,44 @@ struct SourcePageMetadataView: View {
 
     private func suggestionRow(_ entry: CatalogMetadataEntry) -> some View {
         let fieldID = entry.field.id
-        return HStack(spacing: SourcePageLayout.metadataColumnSpacing) {
-            SourcePageMetadataLabel(text: entry.field.label, alignWithReorderHandle: true)
-            PVInput(
-                text: Binding(
-                    get: { model.metadata.drafts[fieldID] ?? "" },
-                    set: { model.metadata.drafts[fieldID] = $0 }
-                ),
-                size: .sm,
-                mono: true,
-                prompt: L10n.Sources.metadataSuggestionPlaceholder
-            )
-            .onSubmit { Task { await model.metadata.save(fieldID: fieldID) } }
-            .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
+        return PVCard(border: .dashed, cornerRadius: PVRadius.sm) {
+            HStack(spacing: SourcePageLayout.metadataColumnSpacing) {
+                SourcePageMetadataLabel(text: entry.field.label, alignWithReorderHandle: true)
+                PVInput(
+                    text: Binding(
+                        get: { model.metadata.drafts[fieldID] ?? "" },
+                        set: { model.metadata.drafts[fieldID] = $0 }
+                    ),
+                    size: .sm,
+                    mono: true,
+                    prompt: L10n.Sources.metadataSuggestionPlaceholder
+                )
+                .onSubmit { Task { await model.metadata.save(fieldID: fieldID) } }
+                .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
 
-            PVButton(
-                L10n.Sources.saveMetadataSuggestion,
-                variant: .ghost,
-                size: .sm,
-                loading: model.metadata.savingFieldID == fieldID
-            ) {
-                Task { await model.metadata.save(fieldID: fieldID) }
-            }
-            .disabled(
-                (model.metadata.drafts[fieldID] ?? "")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .isEmpty
-            )
-            .accessibilityIdentifier("sources.page.metadata.\(fieldID).save")
+                PVButton(
+                    L10n.Sources.saveMetadataSuggestion,
+                    variant: .ghost,
+                    size: .sm,
+                    loading: model.metadata.savingFieldID == fieldID
+                ) {
+                    Task { await model.metadata.save(fieldID: fieldID) }
+                }
+                .disabled(
+                    (model.metadata.drafts[fieldID] ?? "")
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .isEmpty
+                )
+                .accessibilityIdentifier("sources.page.metadata.\(fieldID).save")
 
-            PVIconButton(.dismiss, label: L10n.Sources.dismissMetadataSuggestion, size: .sm) {
-                Task { await model.metadata.dismissSuggestion(fieldID: fieldID) }
+                PVIconButton(.dismiss, label: L10n.Sources.dismissMetadataSuggestion, size: .sm) {
+                    Task { await model.metadata.dismissSuggestion(fieldID: fieldID) }
+                }
+                .accessibilityIdentifier("sources.page.metadata.\(fieldID).dismiss")
             }
-            .accessibilityIdentifier("sources.page.metadata.\(fieldID).dismiss")
+            .padding(.vertical, PVSpacing.space4)
+            .padding(.horizontal, PVSpacing.space5)
         }
-        .padding(.vertical, PVSpacing.space4)
-        .padding(.horizontal, PVSpacing.space5)
-        .background(PVColor.surfaceCard)
-        .clipShape(RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                .foregroundStyle(PVColor.borderDefault)
-        )
     }
 
     @ViewBuilder
