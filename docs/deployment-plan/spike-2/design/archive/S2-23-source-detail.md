@@ -2,7 +2,7 @@
 
 **Kind:** Claude Design board  
 **Spike:** Provenencia Spike 2 (Source layer validation)  
-**Implements later as:** PR S2-18  
+**Implements later as:** PRs **S2-24** (schema precede) → **S2-18** (page + Artifacts) → **S2-25** (Metadata) / **S2-26** (thumbnails)
 **Depends on:** S2-01 workspace chrome (done); S2-04 Sources list (how researchers arrive here); S2-02 / S2-03 vocabulary (metadata editor + type display)  
 **Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`S2-02-source-fields.md`](S2-02-source-fields.md), [`S2-03-source-types.md`](S2-03-source-types.md), [`../S2-20-files-list.md`](../S2-20-files-list.md)  
 **Judgment model:** [`research-judgment-model.md`](../../../../research-judgment-model.md) §2 (Source credibility assessments)
@@ -46,15 +46,15 @@ Authoritative: [`source-layer-data-model.md`](../../../../source-layer-data-mode
 | Type (`source_types.label`) | Show type **name**; changing type after create is **allowed**. |
 | `description` | Catalog text about the Source — editable on this page (same as title: always editable). |
 | Notes | Distinct area on the Source page: a **stream** of researcher commentary — multi-entry add/edit/delete over time, not a single text field. Keep secondary to the evidence tree if the board gets crowded, but do not omit. |
-| Metadata | Distinct area on the Source page (separate from Notes): a **collection of properties**. Show all `source_metadata` values for this Source. **Type suggestions** (not yet filled) are quick-add rows — type a value and save; each is **permanently dismissible** (e.g. X) with dismiss **persisted** per Source. Separately, an **Add** control opens a field picker over the full vocabulary, then value entry + save (not the same as accepting a suggestion). Rows are **user-orderable** (drag). Design assumes schema support for dismiss + order — S2-18 adds it. |
-| Credibility | Distinct control on this page (near identity — not buried in Notes/Metadata): the researcher’s reusable **three-point trust** of this Source as evidence (`low_trust` / `standard` / `high_trust`). Backed by `source_credibility_assessments` (at most one row per Source) + `source_credibility_grades` vocabulary — **not** a `sources` column. Optional free-text **argument**. Missing assessment may **display** as Standard without inserting a row. Do **not** conflate with Claim confidence or Citation transcription certainty. |
+| Metadata | Distinct area on the Source page (separate from Notes): a **collection of properties**. Show all `source_metadata` values for this Source. **Type suggestions** (not yet filled) are quick-add rows — type a value and save; each is **permanently dismissible** (e.g. X) with dismiss **persisted** per Source. Separately, an **Add** control opens a field picker over the full vocabulary, then value entry + save (not the same as accepting a suggestion). Rows are **user-orderable** (drag). Design assumes schema support for dismiss + order — **S2-25** adds it. |
+| Credibility | Distinct control on this page (near identity — not buried in Notes/Metadata): the researcher’s reusable **three-point trust** of this Source as evidence (`low_trust` / `standard` / `high_trust`). Backed by `source_credibility_assessments` (at most one row per Source) + `source_credibility_grades` vocabulary — **not** a `sources` column. Optional free-text **argument**. Missing assessment may **display** as Standard without inserting a row. Do **not** conflate with Claim confidence or Citation transcription certainty. (**S2-24** schema; **S2-18** UI.) |
 
 ### 2.2 Artifact
 
 | Field / concept | UI implication |
 | --- | --- |
 | `ref` (`ART-…`) | Always visible; mono; not editable. |
-| `label` | **Required** (non-empty) human name for the Artifact. Primary list-row headline so rows are easily identifiable. Editable when expanded (same always-editable pattern as Source title). Design assumes this column exists — S2-18 adds it to the schema before shipping the page. |
+| `label` | **Required** (non-empty) human name for the Artifact. Primary list-row headline so rows are easily identifiable. Editable when expanded (same always-editable pattern as Source title). Design assumes this column exists — **S2-24** adds it before **S2-18** ships the page. |
 | List thumbnail | Each Artifact **list row** includes a **thumbnail** of the associated primary File (from a File derivative under the hood). Fileless Artifacts (or missing derivative) use a calm **placeholder** — not an error. Same slot size whether present or not. Do **not** expose derivatives as a separate UI list. |
 | `description` | Longer optional text; shown when the Artifact row is expanded — not the list headline. |
 | `file_id` | **Zero or one** primary File. Fileless Artifacts are valid (physical-only). Once set, the primary File is **not** replaced on this Artifact. |
@@ -75,7 +75,7 @@ Authoritative: [`source-layer-data-model.md`](../../../../source-layer-data-mode
 - `CreateArtifact` — create fileless or with an existing `file_id`
 - `IngestArtifactFile` — ingest from an absolute path and set the Artifact’s primary `file_id`
 
-**Product rule:** ingest may run only when the Artifact is still **fileless**. S2-18 should **reject** ingest when `file_id` is already set (align engine + docs with this board). Design “Add file” only for the fileless empty state. Implementation may still need **thumbnail listing / ensure** for list cells (see §8 gaps).
+**Product rule:** ingest may run only when the Artifact is still **fileless**. **S2-24** should **reject** ingest when `file_id` is already set (align engine + docs with this board). Design “Add file” only for the fileless empty state. Thumbnail listing / ensure for list cells is **S2-26** (see §8).
 
 ### 2.5 Design system — new vs reuse
 
@@ -118,7 +118,7 @@ Design these as reusable, not Source-page-only sketches:
 
 **Metadata:** hoist **primitives** (dismissible suggestion row, reorderable property row, field picker via `PVComboBox` + `PVDialog`). Do **not** invent a monolithic `PVSourceMetadataEditor` — the Source-specific mix of filled values + type suggestions + Add is feature composition.
 
-**S2-18 priority (engineering):** (1) breadcrumbs, (2) file pick control, (3) disclosure list, (4) reorderable rows — Metadata order depends on (4).
+**Engineering priority by PR:** **S2-18** — (1) breadcrumbs, (2) file pick control, (3) disclosure list. **S2-25** — (4) reorderable rows (Metadata order). **S2-26** — list thumbnails.
 
 #### Leave out of the design system for now (feature-owned)
 
@@ -243,14 +243,16 @@ Design these as reusable, not Source-page-only sketches:
 
 ## 8. Implementation notes (for PRs — not Design homework)
 
-| Gap | Status |
+S2-23 feeds **several** PRs (do not recombine into one mega-PR):
+
+| Gap | Owner |
 | --- | --- |
 | Artifact ↔ File association | **Exists:** `CreateArtifact`, `IngestArtifactFile`. |
-| No primary-File replace | **Product rule change.** Today ingest can pointer-swap `file_id`. **S2-18 must:** reject `IngestArtifactFile` when Artifact already has a File; update [`source-layer-data-model.md`](../../../../source-layer-data-model.md) (and related notes) so better scans = **new Artifact**, not replace; keep first-attach (NULL → File) only. |
-| Artifact `label` column | **Schema gap today** (`artifacts` has only `description`). **S2-18 must add** `label` (migration + query/FFI/proto) **before** shipping the Source page UI that depends on it. |
-| Per-Source suggestion dismiss | **Schema gap:** type suggestions live on `source_type_metadata_fields` only — no per-Source dismiss store. **S2-18 must add** persistent dismiss (e.g. `source_metadata_suggestion_dismissals` or equivalent) + FFI. |
-| Metadata display order | **Schema gap:** `source_metadata` has no `sort_order` (type-join order is not per-Source). **S2-18 must add** `sort_order` (or equivalent) on Source metadata + reorder FFI. |
-| List / workspace thumbnail refs | Likely **FFI gap:** ensure/list derivative paths for list cells — fold into S2-18 (or a thin precede PR). |
-| Open primary File | **MVP:** Swift opens the `objects/…` URL with **`NSWorkspace`** (default app). No in-app preview in S2-18. |
-| Source credibility assessments | **Schema/FFI gap.** Tables not migrated yet. **S2-18 must add:** `source_credibility_grades` + `source_credibility_assessments` (per [`research-judgment-model.md`](../../../../research-judgment-model.md) §2); seed `provenencia` grades (`low_trust` / `standard` / `high_trust`); audited upsert/get for the single assessment per Source; list/get grades; wire into `GetSourceWorkspace` (or equivalent) + Swift. Do **not** add a credibility column on `sources`. |
-| Sources list | Shipped earlier as S2-17 from S2-04; this board feeds S2-18 only. |
+| No primary-File replace | **S2-24:** reject `IngestArtifactFile` when Artifact already has a File; update [`source-layer-data-model.md`](../../../../source-layer-data-model.md). |
+| Artifact `label` column | **S2-24:** migration + query/FFI/proto. |
+| Source credibility assessments | **S2-24** schema/FFI/seed; **S2-18** Source page UI. See [`research-judgment-model.md`](../../../../research-judgment-model.md) §2. Do **not** add a credibility column on `sources`. |
+| Source page shell + Artifacts + ingest + external open | **S2-18** (thumbnail placeholders OK). |
+| Per-Source suggestion dismiss + metadata `sort_order` + Metadata UI | **S2-25**. |
+| List / workspace thumbnail refs | **S2-26** (Sources + Artifact rows); S2-21 reuses. |
+| Open primary File | **S2-18 MVP:** `NSWorkspace` on `objects/…`. No in-app preview in Spike 2 Source page. |
+| Sources list | Shipped as S2-17 from S2-04. |
