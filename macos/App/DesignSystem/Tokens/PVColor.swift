@@ -104,6 +104,8 @@ enum PVColor {
     // MARK: Record types (categorical, deliberately non-sequential)
     static let recordBirth = Color.pvDynamic(light: PVPalette.verdigris500, dark: PVPalette.hex("#6FB394"))
     static let recordMarriage = Color.pvDynamic(light: PVPalette.plum500, dark: PVPalette.hex("#C08FB2"))
+    /// Soft fill behind source-type pills (pairs with `recordMarriage`).
+    static let recordMarriageSoft = Color.pvDynamic(light: PVPalette.plum100, dark: PVPalette.hex("#3A2434"))
     static let recordDeath = Color.pvDynamic(light: PVPalette.iron900, dark: PVPalette.iron300)
     static let recordCensus = Color.pvDynamic(light: PVPalette.lapis500, dark: PVPalette.hex("#8E9DDA"))
     static let recordMigration = Color.pvDynamic(light: PVPalette.copper500, dark: PVPalette.hex("#DB9764"))

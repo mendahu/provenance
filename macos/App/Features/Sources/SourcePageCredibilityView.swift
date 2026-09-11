@@ -25,8 +25,12 @@ struct SourcePageCredibilityView: View {
                     PVChip(
                         text: grade.label,
                         isSelected: model.credibility.draftKey == grade.key,
-                        tone: tone(for: grade.key),
-                        isDashed: isDashedUnset(grade),
+                        tone: CatalogCredibility.chipTone(for: grade.key),
+                        isDashed: CatalogCredibility.isDashedUnset(
+                            key: grade.key,
+                            hasSavedAssessment: model.credibility.hasSavedAssessment,
+                            draftKey: model.credibility.draftKey
+                        ),
                         action: { model.credibility.selectDraft(key: grade.key) }
                     )
                     .accessibilityIdentifier("sources.page.credibility.\(grade.key)")
@@ -64,21 +68,5 @@ struct SourcePageCredibilityView: View {
                 }
             }
         }
-    }
-
-    /// Domain mapping: catalog credibility keys → generic chip tones.
-    /// Not evidence-grade colors (proven/probable/…).
-    private func tone(for key: String) -> PVChip.Tone {
-        switch key {
-        case "low_trust": return .danger
-        case "high_trust": return .success
-        default: return .accent
-        }
-    }
-
-    private func isDashedUnset(_ grade: CatalogCredibilityGrade) -> Bool {
-        grade.key == "standard"
-            && !model.credibility.hasSavedAssessment
-            && model.credibility.draftKey == "standard"
     }
 }

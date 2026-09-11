@@ -97,7 +97,7 @@ struct SourceFieldsDetailPane: View {
             VStack(alignment: .leading, spacing: PVSpacing.space7) {
                 PVCallout(tone: .neutral, icon: .lock, message: lockedNote(for: field), compact: true)
                 VocabularyLabeledSection(label: L10n.SourceFields.dataTypeSectionLabel) {
-                    Text(SourceFieldDataType.label(for: field.dataType))
+                    Text(CatalogFieldDataType.label(for: field.dataType))
                         .font(PVFont.body(size: PVTypeScale.bodySmall))
                         .foregroundStyle(PVColor.textPrimary)
                 }
@@ -122,8 +122,8 @@ struct SourceFieldsDetailPane: View {
 
     private var dataTypeOptions: [PVSelectOption] {
         [
-            PVSelectOption(value: SourceFieldDataType.text, label: String(localized: L10n.SourceFields.dataTypeText)),
-            PVSelectOption(value: SourceFieldDataType.date, label: String(localized: L10n.SourceFields.dataTypeDate)),
+            PVSelectOption(value: CatalogFieldDataType.text, label: String(localized: L10n.SourceFields.dataTypeText)),
+            PVSelectOption(value: CatalogFieldDataType.date, label: String(localized: L10n.SourceFields.dataTypeDate)),
         ]
     }
 
@@ -145,7 +145,7 @@ struct SourceFieldsDetailPane: View {
                     if model.isAdding {
                         PVSelect(selection: draft.dataType, options: dataTypeOptions)
                     } else {
-                        Text(SourceFieldDataType.label(for: draft.wrappedValue.dataType))
+                        Text(CatalogFieldDataType.label(for: draft.wrappedValue.dataType))
                             .font(PVFont.body(size: PVTypeScale.body))
                             .foregroundStyle(PVColor.textPrimary)
                             .accessibilityIdentifier("sourceFields.form.dataType.readonly")

@@ -280,7 +280,7 @@ struct SourceTypesDetailPane: View {
                             .truncationMode(.middle)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    SourceFieldDataTypeBadge(dataType: suggestion.field.dataType)
+                    CatalogFieldDataTypeBadge(dataType: suggestion.field.dataType)
                     if !isLocked {
                         PVIconButton(
                             .dismiss,
@@ -372,7 +372,7 @@ struct SourceTypesDetailPane: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if let dataType = dataTypes[option.value] {
-                SourceFieldDataTypeBadge(dataType: dataType)
+                CatalogFieldDataTypeBadge(dataType: dataType)
             }
         }
     }

@@ -47,6 +47,8 @@
 		AA0000000000000000000240 /* PVComboBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000230 /* PVComboBox.swift */; };
 		AA0000000000000000000242 /* PVComboBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000232 /* PVComboBoxTests.swift */; };
 		AA0000000000000000000211 /* MetadataFieldBadges.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000201 /* MetadataFieldBadges.swift */; };
+		AA0000000000000000000381 /* CredibilityMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000380 /* CredibilityMarkers.swift */; };
+		AA0000000000000000000383 /* SourceTypeMarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000382 /* SourceTypeMarkers.swift */; };
 		AA0000000000000000000260 /* VocabularyPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000250 /* VocabularyPane.swift */; };
 		AA0000000000000000000261 /* VocabularyListPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000251 /* VocabularyListPane.swift */; };
 		AA0000000000000000000262 /* VocabularyChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000252 /* VocabularyChrome.swift */; };
@@ -204,6 +206,8 @@
 		AA0000000000000000000230 /* PVComboBox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVComboBox.swift; sourceTree = "<group>"; };
 		AA0000000000000000000232 /* PVComboBoxTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVComboBoxTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000201 /* MetadataFieldBadges.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MetadataFieldBadges.swift; sourceTree = "<group>"; };
+		AA0000000000000000000380 /* CredibilityMarkers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CredibilityMarkers.swift; sourceTree = "<group>"; };
+		AA0000000000000000000382 /* SourceTypeMarkers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceTypeMarkers.swift; sourceTree = "<group>"; };
 		AA0000000000000000000250 /* VocabularyPane.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VocabularyPane.swift; sourceTree = "<group>"; };
 		AA0000000000000000000251 /* VocabularyListPane.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VocabularyListPane.swift; sourceTree = "<group>"; };
 		AA0000000000000000000252 /* VocabularyChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VocabularyChrome.swift; sourceTree = "<group>"; };
@@ -306,6 +310,8 @@
 			children = (
 				AA0000000000000000000200 /* OriginMarkers.swift */,
 				AA0000000000000000000201 /* MetadataFieldBadges.swift */,
+				AA0000000000000000000380 /* CredibilityMarkers.swift */,
+				AA0000000000000000000382 /* SourceTypeMarkers.swift */,
 				AA0000000000000000000253 /* CatalogCounts.swift */,
 			);
 			name = Catalog;
@@ -838,6 +844,8 @@
 				AA0000000000000000000210 /* OriginMarkers.swift in Sources */,
 				AA0000000000000000000240 /* PVComboBox.swift in Sources */,
 				AA0000000000000000000211 /* MetadataFieldBadges.swift in Sources */,
+				AA0000000000000000000381 /* CredibilityMarkers.swift in Sources */,
+				AA0000000000000000000383 /* SourceTypeMarkers.swift in Sources */,
 				AA0000000000000000000260 /* VocabularyPane.swift in Sources */,
 				AA0000000000000000000261 /* VocabularyListPane.swift in Sources */,
 				AA0000000000000000000262 /* VocabularyChrome.swift in Sources */,

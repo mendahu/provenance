@@ -99,7 +99,7 @@ struct SourcePageMetadataView: View {
 
     private func savedRow(_ entry: CatalogMetadataEntry) -> some View {
         let fieldID = entry.field.id
-        let isDate = entry.field.dataType == "date"
+        let isDate = entry.field.dataType == CatalogFieldDataType.date
         let structured = model.metadata.isStructured(entry)
         let editing = model.metadata.editingFieldID == fieldID
         return VStack(alignment: .leading, spacing: PVSpacing.space2) {
@@ -143,7 +143,7 @@ struct SourcePageMetadataView: View {
                     .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
                 }
 
-                metadataTypeBadge(entry.field.dataType)
+                CatalogFieldDataTypeBadge(dataType: entry.field.dataType)
                     .padding(.top, 4)
             }
 
@@ -245,15 +245,6 @@ struct SourcePageMetadataView: View {
             }
             .padding(.vertical, PVSpacing.space4)
             .padding(.horizontal, PVSpacing.space5)
-        }
-    }
-
-    @ViewBuilder
-    private func metadataTypeBadge(_ dataType: String) -> some View {
-        if dataType == "date" {
-            PVBadge(L10n.SourceFields.dataTypeDate, tone: .info, icon: .calendar, subtle: true)
-        } else {
-            PVBadge(L10n.SourceFields.dataTypeText, tone: .neutral, icon: .textType, subtle: true)
         }
     }
 }

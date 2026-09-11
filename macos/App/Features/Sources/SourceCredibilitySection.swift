@@ -7,7 +7,7 @@ import Observation
 @MainActor
 @Observable
 final class SourceCredibilitySection {
-    var draftKey = "standard"
+    var draftKey = CatalogCredibility.standard
     var argumentDraft = ""
     private(set) var isSaving = false
 
@@ -19,8 +19,10 @@ final class SourceCredibilitySection {
 
     var grades: [CatalogCredibilityGrade] { context.workspace?.grades ?? [] }
 
-    /// Saved grade key; defaults to `standard` when no assessment row.
-    var savedKey: String { context.workspace?.credibility?.gradeKey ?? "standard" }
+    /// Saved grade key; defaults to Standard when no assessment row.
+    var savedKey: String {
+        context.workspace?.credibility?.gradeKey ?? CatalogCredibility.standard
+    }
 
     var savedArgument: String { context.workspace?.credibility?.argument ?? "" }
 
@@ -29,7 +31,7 @@ final class SourceCredibilitySection {
     /// Grade shown in the chips (draft selection, falling back to Standard).
     var displayedGrade: CatalogCredibilityGrade? {
         grades.first { $0.key == draftKey }
-            ?? grades.first { $0.key == "standard" }
+            ?? grades.first { $0.key == CatalogCredibility.standard }
             ?? grades.first
     }
 
@@ -63,8 +65,8 @@ final class SourceCredibilitySection {
         }
         let argument = argumentDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         // Missing row + Standard + empty argument: keep display-only (no write).
-        if !hasSavedAssessment, grade.key == "standard", argument.isEmpty {
-            draftKey = "standard"
+        if !hasSavedAssessment, grade.key == CatalogCredibility.standard, argument.isEmpty {
+            draftKey = CatalogCredibility.standard
             argumentDraft = ""
             return
         }

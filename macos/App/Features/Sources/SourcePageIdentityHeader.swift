@@ -140,18 +140,7 @@ struct SourcePageIdentityHeader: View {
                 }
             } else {
                 HStack(spacing: PVSpacing.space3) {
-                    Text(model.identity.typeLabel)
-                        .font(PVFont.body(size: PVTypeScale.caption, weight: PVFontWeight.medium))
-                        .foregroundStyle(PVColor.recordMarriage)
-                        .padding(.horizontal, PVSpacing.space4)
-                        .padding(.vertical, PVSpacing.space2)
-                        .background(
-                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                                .fill(Color.pvDynamic(
-                                    light: PVPalette.plum100,
-                                    dark: PVPalette.hex("#3A2434")
-                                ))
-                        )
+                    CatalogSourceTypePill(label: model.identity.typeLabel)
                         .accessibilityIdentifier("sources.page.type")
 
                     PVIconButton(.penLine, label: L10n.Sources.editType, size: .sm) {
