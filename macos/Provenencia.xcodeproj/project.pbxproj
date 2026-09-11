@@ -16,6 +16,12 @@
 		AA0000000000000000000311 /* SourcePageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000310 /* SourcePageView.swift */; };
 		AA0000000000000000000317 /* PVBreadcrumbs.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000318 /* PVBreadcrumbs.swift */; };
 		AA0000000000000000000319 /* SourcePageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000031A /* SourcePageModel.swift */; };
+		AA0000000000000000000341 /* SourcePageContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000340 /* SourcePageContext.swift */; };
+		AA0000000000000000000343 /* SourceIdentitySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000342 /* SourceIdentitySection.swift */; };
+		AA0000000000000000000345 /* SourceCredibilitySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000344 /* SourceCredibilitySection.swift */; };
+		AA0000000000000000000347 /* SourceMetadataSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000346 /* SourceMetadataSection.swift */; };
+		AA0000000000000000000349 /* SourceNotesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000348 /* SourceNotesSection.swift */; };
+		AA000000000000000000034B /* SourceArtifactsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000034A /* SourceArtifactsSection.swift */; };
 		AA0000000000000000000331 /* DateValueDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000330 /* DateValueDraft.swift */; };
 		AA0000000000000000000335 /* DateValueEditorForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000336 /* DateValueEditorForm.swift */; };
 		AA000000000000000000031B /* ProjectFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000031C /* ProjectFiles.swift */; };
@@ -144,6 +150,12 @@
 		AA0000000000000000000310 /* SourcePageView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000318 /* PVBreadcrumbs.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PVBreadcrumbs.swift; sourceTree = "<group>"; };
 		AA000000000000000000031A /* SourcePageModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageModel.swift; sourceTree = "<group>"; };
+		AA0000000000000000000340 /* SourcePageContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageContext.swift; sourceTree = "<group>"; };
+		AA0000000000000000000342 /* SourceIdentitySection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceIdentitySection.swift; sourceTree = "<group>"; };
+		AA0000000000000000000344 /* SourceCredibilitySection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceCredibilitySection.swift; sourceTree = "<group>"; };
+		AA0000000000000000000346 /* SourceMetadataSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceMetadataSection.swift; sourceTree = "<group>"; };
+		AA0000000000000000000348 /* SourceNotesSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceNotesSection.swift; sourceTree = "<group>"; };
+		AA000000000000000000034A /* SourceArtifactsSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceArtifactsSection.swift; sourceTree = "<group>"; };
 		AA0000000000000000000330 /* DateValueDraft.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueDraft.swift; sourceTree = "<group>"; };
 		AA0000000000000000000336 /* DateValueEditorForm.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueEditorForm.swift; sourceTree = "<group>"; };
 		AA000000000000000000031C /* ProjectFiles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectFiles.swift; sourceTree = "<group>"; };
@@ -289,6 +301,12 @@
 				AA0000000000000000000306 /* SourcesModel.swift */,
 				AA0000000000000000000308 /* SourcesView.swift */,
 				AA000000000000000000031A /* SourcePageModel.swift */,
+				AA0000000000000000000340 /* SourcePageContext.swift */,
+				AA0000000000000000000342 /* SourceIdentitySection.swift */,
+				AA0000000000000000000344 /* SourceCredibilitySection.swift */,
+				AA0000000000000000000346 /* SourceMetadataSection.swift */,
+				AA0000000000000000000348 /* SourceNotesSection.swift */,
+				AA000000000000000000034A /* SourceArtifactsSection.swift */,
 				AA0000000000000000000310 /* SourcePageView.swift */,
 			);
 			name = Sources;
@@ -793,6 +811,12 @@
 				AA0000000000000000000311 /* SourcePageView.swift in Sources */,
 				AA0000000000000000000317 /* PVBreadcrumbs.swift in Sources */,
 				AA0000000000000000000319 /* SourcePageModel.swift in Sources */,
+				AA0000000000000000000341 /* SourcePageContext.swift in Sources */,
+				AA0000000000000000000343 /* SourceIdentitySection.swift in Sources */,
+				AA0000000000000000000345 /* SourceCredibilitySection.swift in Sources */,
+				AA0000000000000000000347 /* SourceMetadataSection.swift in Sources */,
+				AA0000000000000000000349 /* SourceNotesSection.swift in Sources */,
+				AA000000000000000000034B /* SourceArtifactsSection.swift in Sources */,
 				AA0000000000000000000331 /* DateValueDraft.swift in Sources */,
 				AA0000000000000000000335 /* DateValueEditorForm.swift in Sources */,
 				AA000000000000000000031B /* ProjectFiles.swift in Sources */,

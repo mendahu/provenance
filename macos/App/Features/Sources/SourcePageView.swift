@@ -65,9 +65,9 @@ struct SourcePageView: View {
                 confirm: L10n.Sources.addArtifactConfirm,
                 cancel: L10n.Sources.cancelAction
             ),
-            isRunning: model.isSavingArtifact,
-            confirmDisabled: !model.canSubmitArtifact,
-            onConfirm: { Task { await model.createArtifact() } }
+            isRunning: model.artifacts.isSavingDraft,
+            confirmDisabled: !model.artifacts.canSubmitDraft,
+            onConfirm: { Task { await model.artifacts.create() } }
         ) {
             addArtifactForm
         }
@@ -79,29 +79,29 @@ struct SourcePageView: View {
                 confirm: L10n.Sources.addMetadataConfirm,
                 cancel: L10n.Sources.cancelAction
             ),
-            isRunning: model.isSavingMetadataAdd,
-            confirmDisabled: !model.canSubmitMetadataAdd,
-            onConfirm: { Task { await model.createMetadataFromAdd() } }
+            isRunning: model.metadata.isSavingAdd,
+            confirmDisabled: !model.metadata.canSubmitAdd,
+            onConfirm: { Task { await model.metadata.createFromAdd() } }
         ) {
             addMetadataForm
         }
         .pvDialog(
             isPresented: dateEditorPresented,
             copy: PVDialogCopy(
-                title: isDateEditMode
+                title: model.metadata.isDateEditMode
                     ? L10n.Sources.editDateDialogTitle
                     : L10n.Sources.addDateDialogTitle,
-                subtitle: dateEditorSubtitle,
-                confirm: isDateEditMode
+                subtitle: model.metadata.dateEditorSubtitle,
+                confirm: model.metadata.isDateEditMode
                     ? L10n.Sources.saveDateConfirm
                     : L10n.Sources.addDateConfirm,
                 cancel: L10n.Sources.cancelAction
             ),
-            isRunning: model.isSavingDateEditor,
+            isRunning: model.metadata.isSavingDate,
             confirmDisabled: !canSaveDateEditor,
-            onConfirm: { Task { await model.saveDateEditor() } }
+            onConfirm: { Task { await model.metadata.saveDateEditor() } }
         ) {
-            DateValueEditorForm(draft: $model.dateEditorDraft)
+            DateValueEditorForm(draft: $model.metadata.dateEditorDraft)
         }
         .task { await model.load() }
         .accessibilityIdentifier("sources.page")
@@ -109,12 +109,12 @@ struct SourcePageView: View {
 
     private var addArtifactPresented: Binding<Bool> {
         Binding(
-            get: { model.isAddingArtifact },
+            get: { model.artifacts.isAdding },
             set: { presented in
                 if presented {
-                    model.openAddArtifact()
+                    model.artifacts.openAdd()
                 } else {
-                    model.cancelAddArtifact()
+                    model.artifacts.cancelAdd()
                 }
             }
         )
@@ -122,12 +122,12 @@ struct SourcePageView: View {
 
     private var addMetadataPresented: Binding<Bool> {
         Binding(
-            get: { model.isAddingMetadata },
+            get: { model.metadata.isAdding },
             set: { presented in
                 if presented {
-                    model.openAddMetadata()
+                    model.metadata.openAdd()
                 } else {
-                    model.cancelAddMetadata()
+                    model.metadata.cancelAdd()
                 }
             }
         )
@@ -135,34 +135,17 @@ struct SourcePageView: View {
 
     private var dateEditorPresented: Binding<Bool> {
         Binding(
-            get: { model.isEditingDate },
+            get: { model.metadata.isEditingDate },
             set: { presented in
                 if !presented {
-                    model.cancelDateEditor()
+                    model.metadata.cancelDateEditor()
                 }
             }
         )
     }
 
-    /// True when reopening an existing structured DateValue (Edit date).
-    private var isDateEditMode: Bool {
-        guard let fieldID = model.dateEditorFieldID,
-              let entry = model.metadata.first(where: { $0.field.id == fieldID })
-        else { return false }
-        return !entry.dateValueID.isEmpty || !entry.dateSummary.isEmpty
-    }
-
     private var canSaveDateEditor: Bool {
-        model.dateEditorDraft.isValid && !model.isSavingDateEditor
-    }
-
-    private var dateEditorSubtitle: LocalizedStringResource? {
-        guard let fieldID = model.dateEditorFieldID,
-              let entry = model.metadata.first(where: { $0.field.id == fieldID })
-        else { return nil }
-        let ref = model.source?.ref ?? "…"
-        let text = "\(ref) · Metadata · \(entry.field.label)"
-        return LocalizedStringResource(String.LocalizationValue(text))
+        model.metadata.dateEditorDraft.isValid && !model.metadata.isSavingDate
     }
 
     // MARK: Sticky identity header
@@ -220,11 +203,11 @@ struct SourcePageView: View {
     private var titleCluster: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space4) {
             HStack(alignment: .firstTextBaseline, spacing: PVSpacing.space4) {
-                if model.editingTitle {
+                if model.identity.editingTitle {
                     VStack(alignment: .leading, spacing: PVSpacing.space2) {
                         TextField(
                             "",
-                            text: $model.titleDraft,
+                            text: $model.identity.titleDraft,
                             prompt: Text(L10n.Sources.formTitle),
                             axis: .vertical
                         )
@@ -243,11 +226,11 @@ struct SourcePageView: View {
                                 .stroke(PVColor.borderFocus, lineWidth: 1.5)
                         )
                         .accessibilityIdentifier("sources.page.title")
-                        .onChange(of: model.titleDraft) { _, _ in model.titleError = nil }
-                        .onSubmit { Task { await model.saveTitle() } }
-                        .disabled(model.isSavingIdentity)
+                        .onChange(of: model.identity.titleDraft) { _, _ in model.identity.titleError = nil }
+                        .onSubmit { Task { await model.identity.saveTitle() } }
+                        .disabled(model.identity.isSaving)
 
-                        if let titleError = model.titleError {
+                        if let titleError = model.identity.titleError {
                             Text(titleError)
                                 .font(PVFont.body(size: PVTypeScale.caption))
                                 .foregroundStyle(PVColor.danger)
@@ -260,19 +243,19 @@ struct SourcePageView: View {
                             L10n.Sources.saveAction,
                             variant: .primary,
                             size: .sm,
-                            loading: model.isSavingIdentity
+                            loading: model.identity.isSaving
                         ) {
-                            Task { await model.saveTitle() }
+                            Task { await model.identity.saveTitle() }
                         }
                         .accessibilityIdentifier("sources.page.title.save")
                         PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
-                            model.cancelEditTitle()
+                            model.identity.cancelEditTitle()
                         }
-                        .disabled(model.isSavingIdentity)
+                        .disabled(model.identity.isSaving)
                         .accessibilityIdentifier("sources.page.title.cancel")
                     }
                 } else {
-                    Text(model.title)
+                    Text(model.identity.title)
                         .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
                         .foregroundStyle(PVColor.textDisplay)
                         .lineLimit(4)
@@ -280,7 +263,7 @@ struct SourcePageView: View {
                         .accessibilityIdentifier("sources.page.title")
 
                     PVIconButton(.penLine, label: L10n.Sources.editTitle, size: .sm) {
-                        model.beginEditTitle()
+                        model.identity.beginEditTitle()
                     }
                     .accessibilityIdentifier("sources.page.title.edit")
                 }
@@ -302,33 +285,41 @@ struct SourcePageView: View {
             Text("·")
                 .foregroundStyle(PVColor.borderDefault)
 
-            if model.editingType {
-                HStack(spacing: PVSpacing.space3) {
-                    PVComboBox(
-                        selection: $model.typeDraftID,
-                        options: model.typeComboOptions,
-                        placeholder: L10n.Sources.typePlaceholder,
-                        emptyLabel: L10n.Sources.typeNoMatch,
-                        label: L10n.Sources.pageFormType,
-                        accessibilityIdentifierPrefix: "sources.page.type",
-                        activateOnAppear: true
-                    )
-                    .frame(width: 210)
-                    .disabled(model.isSavingIdentity)
-                    .onChange(of: model.typeDraftID) { _, newValue in
-                        guard !newValue.isEmpty, newValue != model.sourceTypeID else { return }
-                        Task { await model.saveType() }
+            if model.identity.editingType {
+                VStack(alignment: .leading, spacing: PVSpacing.space2) {
+                    HStack(spacing: PVSpacing.space3) {
+                        PVComboBox(
+                            selection: $model.identity.typeDraftID,
+                            options: model.identity.typeComboOptions,
+                            placeholder: L10n.Sources.typePlaceholder,
+                            emptyLabel: L10n.Sources.typeNoMatch,
+                            label: L10n.Sources.pageFormType,
+                            accessibilityIdentifierPrefix: "sources.page.type",
+                            activateOnAppear: true
+                        )
+                        .frame(width: 210)
+                        .disabled(model.identity.isSaving)
+                        .onChange(of: model.identity.typeDraftID) { _, newValue in
+                            guard !newValue.isEmpty, newValue != model.identity.sourceTypeID else { return }
+                            Task { await model.identity.saveType() }
+                        }
+
+                        PVIconButton(.dismiss, label: L10n.Sources.cancelEdit, size: .sm) {
+                            model.identity.cancelEditType()
+                        }
+                        .disabled(model.identity.isSaving)
+                        .accessibilityIdentifier("sources.page.type.cancel")
                     }
 
-                    PVIconButton(.dismiss, label: L10n.Sources.cancelEdit, size: .sm) {
-                        model.cancelEditType()
+                    if let typeError = model.identity.typeError {
+                        Text(typeError)
+                            .font(PVFont.body(size: PVTypeScale.caption))
+                            .foregroundStyle(PVColor.danger)
                     }
-                    .disabled(model.isSavingIdentity)
-                    .accessibilityIdentifier("sources.page.type.cancel")
                 }
             } else {
                 HStack(spacing: PVSpacing.space3) {
-                    Text(model.typeLabel)
+                    Text(model.identity.typeLabel)
                         .font(PVFont.body(size: PVTypeScale.caption, weight: PVFontWeight.medium))
                         .foregroundStyle(PVColor.recordMarriage)
                         .padding(.horizontal, PVSpacing.space4)
@@ -343,7 +334,7 @@ struct SourcePageView: View {
                         .accessibilityIdentifier("sources.page.type")
 
                     PVIconButton(.penLine, label: L10n.Sources.editType, size: .sm) {
-                        model.beginEditType()
+                        model.identity.beginEditType()
                     }
                     .accessibilityIdentifier("sources.page.type.edit")
                 }
@@ -380,25 +371,25 @@ struct SourcePageView: View {
             sectionHeader(
                 title: L10n.Sources.descriptionHeading,
                 actions: {
-                    if !model.editingDescription {
+                    if !model.identity.editingDescription {
                         PVButton(
                             L10n.Sources.editDescription,
                             variant: .ghost,
                             size: .sm,
                             icon: .penLine
                         ) {
-                            model.beginEditDescription()
+                            model.identity.beginEditDescription()
                         }
                         .accessibilityIdentifier("sources.page.description.edit")
                     }
                 }
             )
 
-            if model.editingDescription {
+            if model.identity.editingDescription {
                 VStack(alignment: .leading, spacing: PVSpacing.space4) {
                     TextField(
                         "",
-                        text: $model.descriptionDraft,
+                        text: $model.identity.descriptionDraft,
                         prompt: Text(L10n.Sources.descriptionPlaceholder),
                         axis: .vertical
                     )
@@ -417,27 +408,33 @@ struct SourcePageView: View {
                             .stroke(PVColor.borderDefault, lineWidth: 1)
                     )
                     .accessibilityIdentifier("sources.page.description")
-                    .disabled(model.isSavingIdentity)
+                    .disabled(model.identity.isSaving)
+
+                    if let descriptionError = model.identity.descriptionError {
+                        Text(descriptionError)
+                            .font(PVFont.body(size: PVTypeScale.caption))
+                            .foregroundStyle(PVColor.danger)
+                    }
 
                     HStack(spacing: PVSpacing.space4) {
                         PVButton(
                             L10n.Sources.saveDescription,
                             variant: .primary,
                             size: .sm,
-                            loading: model.isSavingIdentity
+                            loading: model.identity.isSaving
                         ) {
-                            Task { await model.saveDescription() }
+                            Task { await model.identity.saveDescription() }
                         }
                         .accessibilityIdentifier("sources.page.description.save")
                         PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
-                            model.cancelEditDescription()
+                            model.identity.cancelEditDescription()
                         }
-                        .disabled(model.isSavingIdentity)
+                        .disabled(model.identity.isSaving)
                         .accessibilityIdentifier("sources.page.description.cancel")
                     }
                 }
-            } else if !model.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text(model.description)
+            } else if !model.identity.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(model.identity.description)
                     .font(PVFont.body(size: PVTypeScale.body, weight: PVFontWeight.regular))
                     .foregroundStyle(PVColor.textSecondary)
                     .lineSpacing((PVLineHeight.normal - 1) * PVTypeScale.body)
@@ -454,7 +451,7 @@ struct SourcePageView: View {
                 title: L10n.Sources.credibilityHeading,
                 aside: {
                     Text(
-                        model.hasSavedCredibilityAssessment
+                        model.credibility.hasSavedAssessment
                             ? L10n.Sources.credibilityHint
                             : L10n.Sources.credibilityHintUnset
                     )
@@ -465,14 +462,14 @@ struct SourcePageView: View {
             )
 
             HStack(spacing: PVSpacing.space4) {
-                ForEach(model.grades, id: \.id) { grade in
+                ForEach(model.credibility.grades, id: \.id) { grade in
                     credibilityChip(grade)
                 }
             }
             .accessibilityIdentifier("sources.page.credibility.grades")
 
             PVInput(
-                text: $model.credibilityArgumentDraft,
+                text: $model.credibility.argumentDraft,
                 size: .sm,
                 prompt: L10n.Sources.credibilityArgumentPlaceholder
             )
@@ -483,22 +480,22 @@ struct SourcePageView: View {
                     L10n.Sources.saveAssessment,
                     variant: .primary,
                     size: .sm,
-                    loading: model.isSavingCredibility
+                    loading: model.credibility.isSaving
                 ) {
-                    Task { await model.saveCredibility() }
+                    Task { await model.credibility.save() }
                 }
-                .disabled(!model.credibilityDirty && !model.isSavingCredibility)
+                .disabled(!model.credibility.isDirty && !model.credibility.isSaving)
                 .accessibilityIdentifier("sources.page.credibility.save")
 
-                if model.credibilityDirty {
+                if model.credibility.isDirty {
                     PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
-                        model.cancelCredibility()
+                        model.credibility.cancel()
                     }
-                    .disabled(model.isSavingCredibility)
+                    .disabled(model.credibility.isSaving)
                     .accessibilityIdentifier("sources.page.credibility.cancel")
                 } else {
                     Text(
-                        model.hasSavedCredibilityAssessment
+                        model.credibility.hasSavedAssessment
                             ? L10n.Sources.credibilitySavedStatus
                             : L10n.Sources.credibilityUnsavedStatus
                     )
@@ -510,13 +507,13 @@ struct SourcePageView: View {
     }
 
     private func credibilityChip(_ grade: CatalogCredibilityGrade) -> some View {
-        let selected = model.credibilityDraftKey == grade.key
+        let selected = model.credibility.draftKey == grade.key
         let dashedUnset = grade.key == "standard"
-            && !model.hasSavedCredibilityAssessment
-            && model.credibilityDraftKey == "standard"
+            && !model.credibility.hasSavedAssessment
+            && model.credibility.draftKey == "standard"
         let colors = credibilityColors(for: grade.key)
         return Button {
-            model.selectCredibilityDraft(key: grade.key)
+            model.credibility.selectDraft(key: grade.key)
         } label: {
             Text(grade.label)
                 .font(PVFont.body(
@@ -559,12 +556,12 @@ struct SourcePageView: View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
             sectionHeader(
                 title: L10n.Sources.metadataHeading,
-                meta: model.savedMetadata.isEmpty
+                meta: model.metadata.saved.isEmpty
                     ? nil
-                    : L10n.Sources.metadataFieldCount(model.savedMetadata.count),
+                    : L10n.Sources.metadataFieldCount(model.metadata.saved.count),
                 actions: {
                     PVButton(L10n.Sources.addMetadata, variant: .primary, size: .sm, icon: .plus) {
-                        model.openAddMetadata()
+                        model.metadata.openAdd()
                     }
                     .accessibilityIdentifier("sources.page.addMetadata")
                 }
@@ -575,31 +572,31 @@ struct SourcePageView: View {
                 .foregroundStyle(PVColor.textMuted)
                 .frame(maxWidth: PVSpacing.measureProse, alignment: .leading)
 
-            if model.savedMetadata.isEmpty, model.suggestedMetadata.isEmpty {
+            if model.metadata.saved.isEmpty, model.metadata.suggested.isEmpty {
                 Text(L10n.Sources.metadataEmptyMessage)
                     .font(PVFont.body(size: PVTypeScale.caption))
                     .foregroundStyle(PVColor.textMuted)
                     .accessibilityIdentifier("sources.page.metadata.empty")
             } else {
-                if !model.savedMetadata.isEmpty {
-                    PVReorderableList(items: model.savedMetadata, onMove: { source, destination in
-                        Task { await model.moveSavedMetadata(from: source, to: destination) }
+                if !model.metadata.saved.isEmpty {
+                    PVReorderableList(items: model.metadata.saved, onMove: { source, destination in
+                        Task { await model.metadata.moveSaved(from: source, to: destination) }
                     }) { entry in
                         savedMetadataRow(entry)
                     }
                     .accessibilityIdentifier("sources.page.metadata.list")
                 }
 
-                if !model.suggestedMetadata.isEmpty {
+                if !model.metadata.suggested.isEmpty {
                     VStack(alignment: .leading, spacing: PVSpacing.space4) {
                         Text(L10n.Sources.metadataSuggestionsHeading)
                             .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
                             .tracking(PVTypeScale.micro * PVTracking.caps)
                             .textCase(.uppercase)
                             .foregroundStyle(PVColor.textFaint)
-                            .padding(.top, model.savedMetadata.isEmpty ? 0 : PVSpacing.space7)
+                            .padding(.top, model.metadata.saved.isEmpty ? 0 : PVSpacing.space7)
 
-                        ForEach(model.suggestedMetadata) { entry in
+                        ForEach(model.metadata.suggested) { entry in
                             suggestionMetadataRow(entry)
                         }
                     }
@@ -612,8 +609,8 @@ struct SourcePageView: View {
     private func savedMetadataRow(_ entry: CatalogMetadataEntry) -> some View {
         let fieldID = entry.field.id
         let isDate = entry.field.dataType == "date"
-        let structured = isDateStructured(entry)
-        let editing = model.editingMetadataFieldID == fieldID
+        let structured = model.metadata.isStructured(entry)
+        let editing = model.metadata.editingFieldID == fieldID
         return VStack(alignment: .leading, spacing: PVSpacing.space2) {
             HStack(alignment: .top, spacing: PVSpacing.space5) {
                 PVReorderHandle()
@@ -629,8 +626,8 @@ struct SourcePageView: View {
                         TextField(
                             "",
                             text: Binding(
-                                get: { model.metadataDrafts[fieldID] ?? entry.valueText },
-                                set: { model.metadataDrafts[fieldID] = $0 }
+                                get: { model.metadata.drafts[fieldID] ?? entry.valueText },
+                                set: { model.metadata.drafts[fieldID] = $0 }
                             ),
                             axis: .vertical
                         )
@@ -648,29 +645,29 @@ struct SourcePageView: View {
                             RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
                                 .stroke(PVColor.borderDefault, lineWidth: 1)
                         )
-                        .onSubmit { Task { await model.saveMetadataValue(fieldID: fieldID) } }
-                        .disabled(model.savingMetadataFieldID == fieldID)
+                        .onSubmit { Task { await model.metadata.save(fieldID: fieldID) } }
+                        .disabled(model.metadata.savingFieldID == fieldID)
                         .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
 
                         PVButton(
                             L10n.Sources.saveAction,
                             variant: .primary,
                             size: .sm,
-                            loading: model.savingMetadataFieldID == fieldID
+                            loading: model.metadata.savingFieldID == fieldID
                         ) {
-                            Task { await model.saveMetadataValue(fieldID: fieldID) }
+                            Task { await model.metadata.save(fieldID: fieldID) }
                         }
                         .disabled(
-                            (model.metadataDrafts[fieldID] ?? "")
+                            (model.metadata.drafts[fieldID] ?? "")
                                 .trimmingCharacters(in: .whitespacesAndNewlines)
                                 .isEmpty
                         )
                         .accessibilityIdentifier("sources.page.metadata.\(fieldID).save")
 
                         PVIconButton(.dismiss, label: L10n.Sources.cancelEdit, size: .sm) {
-                            model.cancelEditMetadata()
+                            model.metadata.cancelEdit()
                         }
-                        .disabled(model.savingMetadataFieldID == fieldID)
+                        .disabled(model.metadata.savingFieldID == fieldID)
                         .accessibilityIdentifier("sources.page.metadata.\(fieldID).cancel")
                     }
                 } else {
@@ -684,7 +681,7 @@ struct SourcePageView: View {
                             .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
 
                         PVIconButton(.penLine, label: L10n.Sources.editMetadataValue, size: .sm) {
-                            model.beginEditMetadata(fieldID: fieldID)
+                            model.metadata.beginEdit(fieldID: fieldID)
                         }
                         .padding(.top, 2)
                         .accessibilityIdentifier("sources.page.metadata.\(fieldID).edit")
@@ -719,9 +716,9 @@ struct SourcePageView: View {
 
                     Button {
                         if structured {
-                            model.openEditDate(fieldID: fieldID)
+                            model.metadata.openEditDate(fieldID: fieldID)
                         } else {
-                            model.openStructureDate(fieldID: fieldID)
+                            model.metadata.openStructureDate(fieldID: fieldID)
                         }
                     } label: {
                         Text(structured ? L10n.Sources.editDate : L10n.Sources.structureDate)
@@ -754,10 +751,6 @@ struct SourcePageView: View {
         .padding(.horizontal, PVSpacing.space4)
     }
 
-    private func isDateStructured(_ entry: CatalogMetadataEntry) -> Bool {
-        !entry.dateValueID.isEmpty || !entry.dateSummary.isEmpty
-    }
-
     private func suggestionMetadataRow(_ entry: CatalogMetadataEntry) -> some View {
         let fieldID = entry.field.id
         return HStack(spacing: PVSpacing.space5) {
@@ -768,33 +761,33 @@ struct SourcePageView: View {
                 .padding(.leading, 20)
             PVInput(
                 text: Binding(
-                    get: { model.metadataDrafts[fieldID] ?? "" },
-                    set: { model.metadataDrafts[fieldID] = $0 }
+                    get: { model.metadata.drafts[fieldID] ?? "" },
+                    set: { model.metadata.drafts[fieldID] = $0 }
                 ),
                 size: .sm,
                 mono: true,
                 prompt: L10n.Sources.metadataSuggestionPlaceholder
             )
-            .onSubmit { Task { await model.saveMetadataValue(fieldID: fieldID) } }
+            .onSubmit { Task { await model.metadata.save(fieldID: fieldID) } }
             .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
 
             PVButton(
                 L10n.Sources.saveMetadataSuggestion,
                 variant: .ghost,
                 size: .sm,
-                loading: model.savingMetadataFieldID == fieldID
+                loading: model.metadata.savingFieldID == fieldID
             ) {
-                Task { await model.saveMetadataValue(fieldID: fieldID) }
+                Task { await model.metadata.save(fieldID: fieldID) }
             }
             .disabled(
-                (model.metadataDrafts[fieldID] ?? "")
+                (model.metadata.drafts[fieldID] ?? "")
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                     .isEmpty
             )
             .accessibilityIdentifier("sources.page.metadata.\(fieldID).save")
 
             PVIconButton(.dismiss, label: L10n.Sources.dismissMetadataSuggestion, size: .sm) {
-                Task { await model.dismissMetadataSuggestion(fieldID: fieldID) }
+                Task { await model.metadata.dismissSuggestion(fieldID: fieldID) }
             }
             .accessibilityIdentifier("sources.page.metadata.\(fieldID).dismiss")
         }
@@ -823,34 +816,34 @@ struct SourcePageView: View {
             PVField(
                 label: L10n.Sources.metadataField,
                 hint: L10n.Sources.metadataFieldHint,
-                error: model.addMetadataFieldError,
+                error: model.metadata.addFieldError,
                 required: true
             ) {
                 PVComboBox(
-                    selection: $model.addMetadataFieldID,
-                    options: model.metadataFieldComboOptions,
+                    selection: $model.metadata.addFieldID,
+                    options: model.metadata.fieldComboOptions,
                     placeholder: L10n.Sources.metadataField,
                     emptyLabel: L10n.Sources.typeNoMatch,
-                    isInvalid: model.addMetadataFieldError != nil,
+                    isInvalid: model.metadata.addFieldError != nil,
                     label: L10n.Sources.metadataField,
                     accessibilityIdentifierPrefix: "sources.page.addMetadata.field"
                 )
-                .onChange(of: model.addMetadataFieldID) { _, newValue in
-                    if !newValue.isEmpty { model.addMetadataFieldError = nil }
+                .onChange(of: model.metadata.addFieldID) { _, newValue in
+                    if !newValue.isEmpty { model.metadata.addFieldError = nil }
                 }
             }
             PVField(
                 label: L10n.Sources.metadataValue,
                 hint: L10n.Sources.metadataValueHint,
-                error: model.addMetadataValueError,
+                error: model.metadata.addValueError,
                 required: true
             ) {
                 PVInput(
-                    text: $model.addMetadataValue,
-                    isInvalid: model.addMetadataValueError != nil
+                    text: $model.metadata.addValue,
+                    isInvalid: model.metadata.addValueError != nil
                 )
-                .onChange(of: model.addMetadataValue) { _, _ in
-                    model.addMetadataValueError = nil
+                .onChange(of: model.metadata.addValue) { _, _ in
+                    model.metadata.addValueError = nil
                 }
             }
         }
@@ -891,18 +884,18 @@ struct SourcePageView: View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
             sectionHeader(
                 title: L10n.Sources.artifactsHeading,
-                meta: model.artifacts.isEmpty
+                meta: model.artifacts.items.isEmpty
                     ? nil
-                    : L10n.Sources.artifactsCount(model.artifacts.count),
+                    : L10n.Sources.artifactsCount(model.artifacts.items.count),
                 actions: {
                     PVButton(L10n.Sources.addArtifact, variant: .primary, size: .sm, icon: .plus) {
-                        model.openAddArtifact()
+                        model.artifacts.openAdd()
                     }
                     .accessibilityIdentifier("sources.page.addArtifact")
                 }
             )
 
-            if model.artifacts.isEmpty {
+            if model.artifacts.items.isEmpty {
                 VStack(spacing: PVSpacing.space6) {
                     PVEmptyState(
                         icon: .photo,
@@ -911,7 +904,7 @@ struct SourcePageView: View {
                         compact: true
                     )
                     PVButton(L10n.Sources.addArtifact, variant: .primary, size: .sm, icon: .plus) {
-                        model.openAddArtifact()
+                        model.artifacts.openAdd()
                     }
                     .accessibilityIdentifier("sources.page.artifacts.empty.add")
                 }
@@ -927,9 +920,9 @@ struct SourcePageView: View {
                 .accessibilityIdentifier("sources.page.artifacts.empty")
             } else {
                 VStack(spacing: 0) {
-                    ForEach(model.artifacts, id: \.id) { art in
+                    ForEach(model.artifacts.items, id: \.id) { art in
                         artifactRow(art)
-                        if art.id != model.artifacts.last?.id {
+                        if art.id != model.artifacts.items.last?.id {
                             PVDivider()
                         }
                     }
@@ -948,10 +941,10 @@ struct SourcePageView: View {
     }
 
     private func artifactRow(_ art: CatalogArtifact) -> some View {
-        let expanded = model.expandedArtifactIDs.contains(art.id)
+        let expanded = model.artifacts.expandedIDs.contains(art.id)
         return VStack(alignment: .leading, spacing: 0) {
             Button {
-                model.toggleArtifactExpanded(art.id)
+                model.artifacts.toggleExpanded(art.id)
             } label: {
                 HStack(spacing: PVSpacing.space6) {
                     PVIcon(.chevronForward, size: 15)
@@ -1002,26 +995,26 @@ struct SourcePageView: View {
     }
 
     private func artifactFieldsColumn(_ art: CatalogArtifact) -> some View {
-        let dirty = model.artifactFieldsDirty(art.id)
+        let dirty = model.artifacts.fieldsDirty(art.id)
         return VStack(alignment: .leading, spacing: PVSpacing.space6) {
             PVField(
                 label: L10n.Sources.artifactLabel,
                 hint: L10n.Sources.artifactLabelHint,
-                error: model.artifactFieldErrors[art.id],
+                error: model.artifacts.fieldErrors[art.id],
                 required: true
             ) {
                 PVInput(
                     text: Binding(
-                        get: { model.artifactLabels[art.id] ?? art.label },
+                        get: { model.artifacts.labels[art.id] ?? art.label },
                         set: {
-                            model.artifactLabels[art.id] = $0
-                            model.artifactFieldErrors[art.id] = nil
+                            model.artifacts.labels[art.id] = $0
+                            model.artifacts.fieldErrors[art.id] = nil
                         }
                     ),
                     size: .sm,
-                    isInvalid: model.artifactFieldErrors[art.id] != nil
+                    isInvalid: model.artifacts.fieldErrors[art.id] != nil
                 )
-                .onSubmit { Task { await model.saveArtifactFields(id: art.id) } }
+                .onSubmit { Task { await model.artifacts.saveFields(id: art.id) } }
             }
 
             PVField(
@@ -1031,8 +1024,8 @@ struct SourcePageView: View {
                 TextField(
                     "",
                     text: Binding(
-                        get: { model.artifactDescriptions[art.id] ?? art.description },
-                        set: { model.artifactDescriptions[art.id] = $0 }
+                        get: { model.artifacts.descriptions[art.id] ?? art.description },
+                        set: { model.artifacts.descriptions[art.id] = $0 }
                     ),
                     axis: .vertical
                 )
@@ -1051,7 +1044,7 @@ struct SourcePageView: View {
                         .stroke(PVColor.borderDefault, lineWidth: 1)
                 )
                 .accessibilityIdentifier("sources.page.artifact.\(art.id).description")
-                .onSubmit { Task { await model.saveArtifactFields(id: art.id) } }
+                .onSubmit { Task { await model.artifacts.saveFields(id: art.id) } }
             }
 
             HStack(spacing: PVSpacing.space4) {
@@ -1059,18 +1052,18 @@ struct SourcePageView: View {
                     L10n.Sources.saveArtifact,
                     variant: .primary,
                     size: .sm,
-                    loading: model.savingArtifactID == art.id
+                    loading: model.artifacts.savingID == art.id
                 ) {
-                    Task { await model.saveArtifactFields(id: art.id) }
+                    Task { await model.artifacts.saveFields(id: art.id) }
                 }
-                .disabled(!model.canSaveArtifactFields(art.id) && model.savingArtifactID != art.id)
+                .disabled(!model.artifacts.canSaveFields(art.id) && model.artifacts.savingID != art.id)
                 .accessibilityIdentifier("sources.page.artifact.\(art.id).save")
 
                 if dirty {
                     PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
-                        model.cancelArtifactFields(id: art.id)
+                        model.artifacts.cancelFields(id: art.id)
                     }
-                    .disabled(model.savingArtifactID == art.id)
+                    .disabled(model.artifacts.savingID == art.id)
                     .accessibilityIdentifier("sources.page.artifact.\(art.id).cancel")
                 } else {
                     Text(L10n.Sources.noUnsavedChanges)
@@ -1109,7 +1102,7 @@ struct SourcePageView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     PVButton(L10n.Sources.openFile, variant: .secondary, size: .sm, icon: .externalLink) {
-                        model.openArtifactFile(art)
+                        model.artifacts.open(art)
                     }
                     .accessibilityIdentifier("sources.page.artifact.\(art.id).open")
                 }
@@ -1121,7 +1114,7 @@ struct SourcePageView: View {
                         .stroke(PVColor.borderSubtle, lineWidth: 1)
                 )
                 .contentShape(Rectangle())
-                .onTapGesture { model.openArtifactFile(art) }
+                .onTapGesture { model.artifacts.open(art) }
             } else {
                 PVCallout(
                     tone: .neutral,
@@ -1129,7 +1122,7 @@ struct SourcePageView: View {
                     compact: true
                 )
                 PVButton(L10n.Sources.addFile, variant: .primary, size: .sm, icon: .fileUp) {
-                    Task { await model.addFile(toArtifactID: art.id) }
+                    Task { await model.artifacts.addFile(to: art.id) }
                 }
                 .accessibilityIdentifier("sources.page.artifact.\(art.id).addFile")
             }
@@ -1157,10 +1150,10 @@ struct SourcePageView: View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
             sectionHeader(
                 title: L10n.Sources.notesHeading,
-                meta: model.notes.isEmpty ? nil : "\(model.notes.count)"
+                meta: model.notes.items.isEmpty ? nil : "\(model.notes.items.count)"
             )
 
-            if model.notes.isEmpty {
+            if model.notes.items.isEmpty {
                 PVEmptyState(
                     icon: .penLine,
                     title: L10n.Sources.notesEmptyTitle,
@@ -1169,14 +1162,14 @@ struct SourcePageView: View {
                 )
                 .accessibilityIdentifier("sources.page.notes.empty")
             } else {
-                ForEach(model.notes, id: \.id) { note in
+                ForEach(model.notes.items, id: \.id) { note in
                     SourcePageNoteRow(
                         note: note,
                         onCommit: { body in
-                            Task { await model.updateNote(id: note.id, body: body) }
+                            Task { await model.notes.update(id: note.id, body: body) }
                         },
                         onDelete: {
-                            Task { await model.deleteNote(id: note.id) }
+                            Task { await model.notes.delete(id: note.id) }
                         }
                     )
                 }
@@ -1191,7 +1184,7 @@ struct SourcePageView: View {
                 VStack(alignment: .trailing, spacing: PVSpacing.space4) {
                     TextField(
                         "",
-                        text: $model.noteDraft,
+                        text: $model.notes.draft,
                         prompt: Text(L10n.Sources.notePlaceholder),
                         axis: .vertical
                     )
@@ -1215,16 +1208,16 @@ struct SourcePageView: View {
                         variant: .primary,
                         size: .sm,
                         icon: .plus,
-                        loading: model.isSavingNote
+                        loading: model.notes.isSaving
                     ) {
-                        Task { await model.addNote() }
+                        Task { await model.notes.add() }
                     }
-                    .disabled(model.noteDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(model.notes.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("sources.page.addNote")
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .padding(.top, model.notes.isEmpty ? PVSpacing.space7 : 0)
+            .padding(.top, model.notes.items.isEmpty ? PVSpacing.space7 : 0)
         }
         .padding(.top, PVSpacing.space11 - PVSpacing.space9)
     }
@@ -1236,12 +1229,12 @@ struct SourcePageView: View {
             PVField(
                 label: L10n.Sources.artifactLabel,
                 hint: L10n.Sources.artifactLabelHint,
-                error: model.artifactLabelError,
+                error: model.artifacts.draftLabelError,
                 required: true
             ) {
                 PVInput(
-                    text: $model.artifactDraft.label,
-                    isInvalid: model.artifactLabelError != nil
+                    text: $model.artifacts.draft.label,
+                    isInvalid: model.artifacts.draftLabelError != nil
                 )
                 .accessibilityIdentifier("sources.page.addArtifact.label")
             }
@@ -1249,22 +1242,22 @@ struct SourcePageView: View {
                 label: L10n.Sources.artifactDescription,
                 hint: L10n.Sources.formDescriptionHint
             ) {
-                PVInput(text: $model.artifactDraft.description)
+                PVInput(text: $model.artifacts.draft.description)
                     .accessibilityIdentifier("sources.page.addArtifact.description")
             }
             PVField(label: L10n.Sources.optionalFile) {
                 HStack(spacing: PVSpacing.space4) {
-                    if let name = model.artifactDraft.fileName {
+                    if let name = model.artifacts.draft.fileName {
                         Text(name)
                             .font(PVFont.mono(size: PVTypeScale.caption))
                             .foregroundStyle(PVColor.textPrimary)
                             .lineLimit(1)
                         PVButton(L10n.Sources.clearFile, variant: .ghost, size: .sm) {
-                            model.clearArtifactFile()
+                            model.artifacts.clearFile()
                         }
                     } else {
                         PVButton(L10n.Sources.chooseFile, variant: .secondary, size: .sm, icon: .fileUp) {
-                            model.pickArtifactFile()
+                            model.artifacts.pickFile()
                         }
                         .accessibilityIdentifier("sources.page.addArtifact.chooseFile")
                     }

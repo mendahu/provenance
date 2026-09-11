@@ -64,21 +64,21 @@ struct SourcePageModelTests {
         let model = makeModel(store: makeStore())
         await model.load()
         #expect(model.workspace?.source.ref == "SRC-AAAAA")
-        #expect(model.title == "Family album")
-        #expect(model.credibilityKey == "standard")
+        #expect(model.identity.title == "Family album")
+        #expect(model.credibility.savedKey == "standard")
         #expect(model.workspace?.credibility == nil)
-        #expect(model.grades.count == 3)
+        #expect(model.credibility.grades.count == 3)
     }
 
     @Test func saveTitleUpdatesCommittedTitle() async {
         let store = makeStore()
         let model = makeModel(store: store)
         await model.load()
-        model.beginEditTitle()
-        model.titleDraft = "Revised title"
-        await model.saveTitle()
-        #expect(model.editingTitle == false)
-        #expect(model.title == "Revised title")
+        model.identity.beginEditTitle()
+        model.identity.titleDraft = "Revised title"
+        await model.identity.saveTitle()
+        #expect(model.identity.editingTitle == false)
+        #expect(model.identity.title == "Revised title")
         #expect(model.workspace?.source.title == "Revised title")
         #expect(store.sourcesByProject[projectDir]?.first?.title == "Revised title")
     }
@@ -86,11 +86,11 @@ struct SourcePageModelTests {
     @Test func emptyTitleDraftSetsValidationError() async {
         let model = makeModel(store: makeStore())
         await model.load()
-        model.beginEditTitle()
-        model.titleDraft = "   "
-        await model.saveTitle()
-        #expect(model.titleError != nil)
-        #expect(model.editingTitle == true)
+        model.identity.beginEditTitle()
+        model.identity.titleDraft = "   "
+        await model.identity.saveTitle()
+        #expect(model.identity.titleError != nil)
+        #expect(model.identity.editingTitle == true)
         #expect(model.workspace?.source.title == "Family album")
     }
 
@@ -98,25 +98,25 @@ struct SourcePageModelTests {
         let store = makeStore()
         let model = makeModel(store: store)
         await model.load()
-        model.selectCredibilityDraft(key: "high_trust")
-        #expect(model.credibilityDirty)
+        model.credibility.selectDraft(key: "high_trust")
+        #expect(model.credibility.isDirty)
         #expect(model.workspace?.credibility == nil)
         #expect(store.credibilityBySource[sourceID] == nil)
-        await model.saveCredibility()
+        await model.credibility.save()
         #expect(model.workspace?.credibility?.gradeKey == "high_trust")
         #expect(store.credibilityBySource[sourceID]?.gradeKey == "high_trust")
-        #expect(!model.credibilityDirty)
+        #expect(!model.credibility.isDirty)
     }
 
     @Test func standardWithEmptyArgumentDoesNotWriteRow() async {
         let store = makeStore()
         let model = makeModel(store: store)
         await model.load()
-        model.selectCredibilityDraft(key: "standard")
-        await model.saveCredibility()
+        model.credibility.selectDraft(key: "standard")
+        await model.credibility.save()
         #expect(model.workspace?.credibility == nil)
         #expect(store.credibilityBySource[sourceID] == nil)
-        #expect(!model.hasSavedCredibilityAssessment)
+        #expect(!model.credibility.hasSavedAssessment)
     }
 
     @Test func cancelCredibilityRestoresDraftFromSaved() async {
@@ -130,68 +130,68 @@ struct SourcePageModelTests {
         ))
         let model = makeModel(store: store)
         await model.load()
-        #expect(model.hasSavedCredibilityAssessment)
-        model.selectCredibilityDraft(key: "low_trust")
-        model.credibilityArgumentDraft = "changed"
-        #expect(model.credibilityDirty)
-        model.cancelCredibility()
-        #expect(model.credibilityDraftKey == "high_trust")
-        #expect(model.credibilityArgumentDraft == "Film")
-        #expect(!model.credibilityDirty)
+        #expect(model.credibility.hasSavedAssessment)
+        model.credibility.selectDraft(key: "low_trust")
+        model.credibility.argumentDraft = "changed"
+        #expect(model.credibility.isDirty)
+        model.credibility.cancel()
+        #expect(model.credibility.draftKey == "high_trust")
+        #expect(model.credibility.argumentDraft == "Film")
+        #expect(!model.credibility.isDirty)
     }
 
     @Test func notesCRUD() async throws {
         let store = makeStore()
         let model = makeModel(store: store)
         await model.load()
-        model.noteDraft = "First look"
-        await model.addNote()
-        #expect(model.notes.count == 1)
-        #expect(model.noteDraft.isEmpty)
+        model.notes.draft = "First look"
+        await model.notes.add()
+        #expect(model.notes.items.count == 1)
+        #expect(model.notes.draft.isEmpty)
 
-        let noteID = try #require(model.notes.first?.id)
-        #expect(model.notes.first?.authorDisplayName == "Jake Robins")
-        #expect(!(model.notes.first?.createdAt.isEmpty ?? true))
-        await model.updateNote(id: noteID, body: "Updated look")
-        #expect(model.notes.first?.body == "Updated look")
-        #expect(model.notes.first?.authorDisplayName == "Jake Robins")
+        let noteID = try #require(model.notes.items.first?.id)
+        #expect(model.notes.items.first?.authorDisplayName == "Jake Robins")
+        #expect(!(model.notes.items.first?.createdAt.isEmpty ?? true))
+        await model.notes.update(id: noteID, body: "Updated look")
+        #expect(model.notes.items.first?.body == "Updated look")
+        #expect(model.notes.items.first?.authorDisplayName == "Jake Robins")
 
-        await model.deleteNote(id: noteID)
-        #expect(model.notes.isEmpty)
+        await model.notes.delete(id: noteID)
+        #expect(model.notes.items.isEmpty)
     }
 
     @Test func createFilelessArtifact() async {
         let store = makeStore()
         let model = makeModel(store: store)
         await model.load()
-        model.openAddArtifact()
-        model.artifactDraft.label = "Physical copy"
-        model.artifactDraft.description = "At the archive"
-        await model.createArtifact()
-        #expect(model.artifacts.count == 1)
-        #expect(model.artifacts.first?.label == "Physical copy")
-        #expect(model.artifacts.first?.fileID.isEmpty == true)
-        #expect(model.isAddingArtifact == false)
+        model.artifacts.openAdd()
+        model.artifacts.draft.label = "Physical copy"
+        model.artifacts.draft.description = "At the archive"
+        await model.artifacts.create()
+        #expect(model.artifacts.items.count == 1)
+        #expect(model.artifacts.items.first?.label == "Physical copy")
+        #expect(model.artifacts.items.first?.fileID.isEmpty == true)
+        #expect(model.artifacts.isAdding == false)
     }
 
     @Test func createArtifactRequiresLabel() async {
         let model = makeModel(store: makeStore())
         await model.load()
-        model.openAddArtifact()
-        model.artifactDraft.label = "  "
-        await model.createArtifact()
-        #expect(model.artifactLabelError != nil)
-        #expect(model.artifacts.isEmpty)
+        model.artifacts.openAdd()
+        model.artifacts.draft.label = "  "
+        await model.artifacts.create()
+        #expect(model.artifacts.draftLabelError != nil)
+        #expect(model.artifacts.items.isEmpty)
     }
 
     @Test func ingestThenRejectSecondAttach() async throws {
         let store = makeStore()
         let model = makeModel(store: store)
         await model.load()
-        model.openAddArtifact()
-        model.artifactDraft.label = "Scan"
-        await model.createArtifact()
-        let artID = try #require(model.artifacts.first?.id)
+        model.artifacts.openAdd()
+        model.artifacts.draft.label = "Scan"
+        await model.artifacts.create()
+        let artID = try #require(model.artifacts.items.first?.id)
 
         let path = FileManager.default.temporaryDirectory
             .appendingPathComponent("scan-\(UUID().uuidString).bin").path
@@ -204,7 +204,7 @@ struct SourcePageModelTests {
 
         // Refresh model artifact state from store.
         await model.load()
-        #expect(model.artifacts.first?.fileID.isEmpty == false)
+        #expect(model.artifacts.items.first?.fileID.isEmpty == false)
 
         do {
             _ = try await store.ingestArtifactFile(
@@ -254,7 +254,7 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        #expect(model.artifacts.first?.thumbnailRelPath == "objects/aa/bb/thumb")
+        #expect(model.artifacts.items.first?.thumbnailRelPath == "objects/aa/bb/thumb")
     }
 
     private func authorField() -> CatalogMetadataField {
@@ -289,9 +289,9 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        #expect(model.metadata.count == 2)
-        #expect(model.savedMetadata.map(\.field.key) == ["repository"])
-        #expect(model.suggestedMetadata.map(\.field.key) == ["author"])
+        #expect(model.metadata.entries.count == 2)
+        #expect(model.metadata.saved.map(\.field.key) == ["repository"])
+        #expect(model.metadata.suggested.map(\.field.key) == ["author"])
     }
 
     @Test func saveMetadataValueFillsSuggestion() async {
@@ -307,11 +307,11 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        #expect(model.suggestedMetadata.count == 1)
-        model.metadataDrafts[author.id] = "Mary Robins"
-        await model.saveMetadataValue(fieldID: author.id)
-        #expect(model.savedMetadata.map(\.valueText) == ["Mary Robins"])
-        #expect(model.suggestedMetadata.isEmpty)
+        #expect(model.metadata.suggested.count == 1)
+        model.metadata.drafts[author.id] = "Mary Robins"
+        await model.metadata.save(fieldID: author.id)
+        #expect(model.metadata.saved.map(\.valueText) == ["Mary Robins"])
+        #expect(model.metadata.suggested.isEmpty)
     }
 
     @Test func beginEditMetadataThenCancelRestoresDraft() async {
@@ -327,12 +327,12 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        model.beginEditMetadata(fieldID: repo.id)
-        #expect(model.editingMetadataFieldID == repo.id)
-        model.metadataDrafts[repo.id] = "Changed"
-        model.cancelEditMetadata()
-        #expect(model.editingMetadataFieldID == nil)
-        #expect(model.metadataDrafts[repo.id] == "NRO")
+        model.metadata.beginEdit(fieldID: repo.id)
+        #expect(model.metadata.editingFieldID == repo.id)
+        model.metadata.drafts[repo.id] = "Changed"
+        model.metadata.cancelEdit()
+        #expect(model.metadata.editingFieldID == nil)
+        #expect(model.metadata.drafts[repo.id] == "NRO")
     }
 
     @Test func saveMetadataValueExitsEditMode() async {
@@ -348,11 +348,11 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        model.beginEditMetadata(fieldID: repo.id)
-        model.metadataDrafts[repo.id] = "Norfolk Record Office"
-        await model.saveMetadataValue(fieldID: repo.id)
-        #expect(model.editingMetadataFieldID == nil)
-        #expect(model.savedMetadata.map(\.valueText) == ["Norfolk Record Office"])
+        model.metadata.beginEdit(fieldID: repo.id)
+        model.metadata.drafts[repo.id] = "Norfolk Record Office"
+        await model.metadata.save(fieldID: repo.id)
+        #expect(model.metadata.editingFieldID == nil)
+        #expect(model.metadata.saved.map(\.valueText) == ["Norfolk Record Office"])
     }
 
     @Test func dismissSuggestionRemovesEmptyRow() async {
@@ -368,9 +368,9 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        await model.dismissMetadataSuggestion(fieldID: author.id)
-        #expect(model.metadata.isEmpty)
-        #expect(model.suggestedMetadata.isEmpty)
+        await model.metadata.dismissSuggestion(fieldID: author.id)
+        #expect(model.metadata.entries.isEmpty)
+        #expect(model.metadata.suggested.isEmpty)
     }
 
     @Test func reorderSavedMetadataLeavesSuggestions() async {
@@ -399,10 +399,10 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        await model.moveSavedMetadata(from: IndexSet(integer: 0), to: 2)
-        #expect(model.savedMetadata.map(\.field.id) == [repo.id, author.id])
-        #expect(model.suggestedMetadata.map(\.field.id) == [issue.id])
-        #expect(model.metadata.map(\.field.id) == [repo.id, author.id, issue.id])
+        await model.metadata.moveSaved(from: IndexSet(integer: 0), to: 2)
+        #expect(model.metadata.saved.map(\.field.id) == [repo.id, author.id])
+        #expect(model.metadata.suggested.map(\.field.id) == [issue.id])
+        #expect(model.metadata.entries.map(\.field.id) == [repo.id, author.id, issue.id])
     }
 
     @Test func addMetadataFromDialog() async {
@@ -410,12 +410,12 @@ struct SourcePageModelTests {
         let store = makeStore(fields: [author])
         let model = makeModel(store: store)
         await model.load()
-        model.openAddMetadata()
-        model.addMetadataFieldID = author.id
-        model.addMetadataValue = "Eliza"
-        await model.createMetadataFromAdd()
-        #expect(model.isAddingMetadata == false)
-        #expect(model.metadata.contains { $0.field.id == author.id && $0.valueText == "Eliza" })
+        model.metadata.openAdd()
+        model.metadata.addFieldID = author.id
+        model.metadata.addValue = "Eliza"
+        await model.metadata.createFromAdd()
+        #expect(model.metadata.isAdding == false)
+        #expect(model.metadata.entries.contains { $0.field.id == author.id && $0.valueText == "Eliza" })
     }
 
     @Test func cancelArtifactFieldsRestoresDrafts() async throws {
@@ -429,14 +429,14 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        let artID = try #require(model.artifacts.first?.id)
-        model.artifactLabels[artID] = "Changed"
-        model.artifactDescriptions[artID] = "Changed desc"
-        #expect(model.artifactFieldsDirty(artID))
-        model.cancelArtifactFields(id: artID)
-        #expect(!model.artifactFieldsDirty(artID))
-        #expect(model.artifactLabels[artID] == "Front")
-        #expect(model.artifactDescriptions[artID] == "Original")
+        let artID = try #require(model.artifacts.items.first?.id)
+        model.artifacts.labels[artID] = "Changed"
+        model.artifacts.descriptions[artID] = "Changed desc"
+        #expect(model.artifacts.fieldsDirty(artID))
+        model.artifacts.cancelFields(id: artID)
+        #expect(!model.artifacts.fieldsDirty(artID))
+        #expect(model.artifacts.labels[artID] == "Front")
+        #expect(model.artifacts.descriptions[artID] == "Original")
     }
 
     @Test func saveDateEditorStructuresMetadata() async {
@@ -455,13 +455,13 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        model.metadataDrafts[dateField.id] = "about the year 1890"
-        model.openStructureDate(fieldID: dateField.id)
-        model.dateEditorDraft.qualifier = "ABT"
-        model.dateEditorDraft.startYear = 1890
-        await model.saveDateEditor()
-        #expect(model.isEditingDate == false)
-        let entry = model.metadata.first { $0.field.id == dateField.id }
+        model.metadata.drafts[dateField.id] = "about the year 1890"
+        model.metadata.openStructureDate(fieldID: dateField.id)
+        model.metadata.dateEditorDraft.qualifier = "ABT"
+        model.metadata.dateEditorDraft.startYear = 1890
+        await model.metadata.saveDateEditor()
+        #expect(model.metadata.isEditingDate == false)
+        let entry = model.metadata.entries.first { $0.field.id == dateField.id }
         #expect(entry?.dateValueID.isEmpty == false)
         #expect(entry?.dateSummary == "ABT 1890")
         #expect(entry?.date?.qualifier == "ABT")
@@ -484,27 +484,27 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        model.metadataDrafts[dateField.id] = "spring 1890"
-        model.openStructureDate(fieldID: dateField.id)
-        model.dateEditorDraft.setKind("range")
-        model.dateEditorDraft.startYear = 1890
-        model.dateEditorDraft.startMonth = 3
-        model.dateEditorDraft.endYear = 1890
-        model.dateEditorDraft.endMonth = 6
-        await model.saveDateEditor()
-        #expect(model.isEditingDate == false)
+        model.metadata.drafts[dateField.id] = "spring 1890"
+        model.metadata.openStructureDate(fieldID: dateField.id)
+        model.metadata.dateEditorDraft.setKind("range")
+        model.metadata.dateEditorDraft.startYear = 1890
+        model.metadata.dateEditorDraft.startMonth = 3
+        model.metadata.dateEditorDraft.endYear = 1890
+        model.metadata.dateEditorDraft.endMonth = 6
+        await model.metadata.saveDateEditor()
+        #expect(model.metadata.isEditingDate == false)
 
         // A fresh model on the same store (new session — no in-memory cache)
         // must rebuild the saved draft from the workspace entry.
         let reopened = makeModel(store: store)
         await reopened.load()
-        reopened.openEditDate(fieldID: dateField.id)
-        #expect(reopened.dateEditorDraft.kind == "range")
-        #expect(reopened.dateEditorDraft.startYear == 1890)
-        #expect(reopened.dateEditorDraft.startMonth == 3)
-        #expect(reopened.dateEditorDraft.endYear == 1890)
-        #expect(reopened.dateEditorDraft.endMonth == 6)
-        #expect(reopened.dateEditorDraft.summary == "BET Mar 1890 AND Jun 1890")
+        reopened.metadata.openEditDate(fieldID: dateField.id)
+        #expect(reopened.metadata.dateEditorDraft.kind == "range")
+        #expect(reopened.metadata.dateEditorDraft.startYear == 1890)
+        #expect(reopened.metadata.dateEditorDraft.startMonth == 3)
+        #expect(reopened.metadata.dateEditorDraft.endYear == 1890)
+        #expect(reopened.metadata.dateEditorDraft.endMonth == 6)
+        #expect(reopened.metadata.dateEditorDraft.summary == "BET Mar 1890 AND Jun 1890")
     }
 
     @Test func expandingArtifactCollapsesOther() async {
@@ -522,11 +522,11 @@ struct SourcePageModelTests {
         )
         let model = makeModel(store: store)
         await model.load()
-        model.toggleArtifactExpanded("a1")
-        #expect(model.expandedArtifactIDs == ["a1"])
-        model.toggleArtifactExpanded("a2")
-        #expect(model.expandedArtifactIDs == ["a2"])
-        model.toggleArtifactExpanded("a2")
-        #expect(model.expandedArtifactIDs.isEmpty)
+        model.artifacts.toggleExpanded("a1")
+        #expect(model.artifacts.expandedIDs == ["a1"])
+        model.artifacts.toggleExpanded("a2")
+        #expect(model.artifacts.expandedIDs == ["a2"])
+        model.artifacts.toggleExpanded("a2")
+        #expect(model.artifacts.expandedIDs.isEmpty)
     }
 }
