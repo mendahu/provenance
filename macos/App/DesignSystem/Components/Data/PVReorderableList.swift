@@ -41,7 +41,8 @@ struct PVReorderHandle: View {
 }
 
 private struct PVReorderRowHeightsKey: PreferenceKey {
-    static let defaultValue: [AnyHashable: CGFloat] = [:]
+    // Dictionary isn't Sendable; PreferenceKey storage is main-actor UI only.
+    nonisolated(unsafe) static let defaultValue: [AnyHashable: CGFloat] = [:]
 
     static func reduce(
         value: inout [AnyHashable: CGFloat],

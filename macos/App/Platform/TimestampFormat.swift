@@ -2,16 +2,17 @@ import Foundation
 
 /// Shared RFC 3339 → display formatting for catalog timestamps.
 ///
-/// Formatters are cached and guarded: `ISO8601DateFormatter` is not safe for
-/// concurrent use on the same instance.
+/// Formatters are cached and lock-guarded: `ISO8601DateFormatter` is not
+/// `Sendable`, so the static caches are `nonisolated(unsafe)` and all access
+/// goes through `lock`.
 enum TimestampFormat {
     private static let lock = NSLock()
-    private static let withFraction: ISO8601DateFormatter = {
+    nonisolated(unsafe) private static let withFraction: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter
     }()
-    private static let plain: ISO8601DateFormatter = {
+    nonisolated(unsafe) private static let plain: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
         return formatter
