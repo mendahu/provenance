@@ -22,6 +22,13 @@
 		AA0000000000000000000347 /* SourceMetadataSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000346 /* SourceMetadataSection.swift */; };
 		AA0000000000000000000349 /* SourceNotesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000348 /* SourceNotesSection.swift */; };
 		AA000000000000000000034B /* SourceArtifactsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000034A /* SourceArtifactsSection.swift */; };
+		AA0000000000000000000361 /* SourcePageChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000360 /* SourcePageChrome.swift */; };
+		AA0000000000000000000363 /* SourcePageIdentityHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000362 /* SourcePageIdentityHeader.swift */; };
+		AA0000000000000000000365 /* SourcePageDescriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000364 /* SourcePageDescriptionView.swift */; };
+		AA0000000000000000000367 /* SourcePageCredibilityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000366 /* SourcePageCredibilityView.swift */; };
+		AA0000000000000000000369 /* SourcePageMetadataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000368 /* SourcePageMetadataView.swift */; };
+		AA000000000000000000036B /* SourcePageArtifactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000036A /* SourcePageArtifactsView.swift */; };
+		AA000000000000000000036D /* SourcePageNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000036C /* SourcePageNotesView.swift */; };
 		AA0000000000000000000331 /* DateValueDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000330 /* DateValueDraft.swift */; };
 		AA0000000000000000000335 /* DateValueEditorForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000336 /* DateValueEditorForm.swift */; };
 		AA000000000000000000031B /* ProjectFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000031C /* ProjectFiles.swift */; };
@@ -158,6 +165,13 @@
 		AA0000000000000000000346 /* SourceMetadataSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceMetadataSection.swift; sourceTree = "<group>"; };
 		AA0000000000000000000348 /* SourceNotesSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceNotesSection.swift; sourceTree = "<group>"; };
 		AA000000000000000000034A /* SourceArtifactsSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourceArtifactsSection.swift; sourceTree = "<group>"; };
+		AA0000000000000000000360 /* SourcePageChrome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageChrome.swift; sourceTree = "<group>"; };
+		AA0000000000000000000362 /* SourcePageIdentityHeader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageIdentityHeader.swift; sourceTree = "<group>"; };
+		AA0000000000000000000364 /* SourcePageDescriptionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageDescriptionView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000366 /* SourcePageCredibilityView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageCredibilityView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000368 /* SourcePageMetadataView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageMetadataView.swift; sourceTree = "<group>"; };
+		AA000000000000000000036A /* SourcePageArtifactsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageArtifactsView.swift; sourceTree = "<group>"; };
+		AA000000000000000000036C /* SourcePageNotesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageNotesView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000330 /* DateValueDraft.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueDraft.swift; sourceTree = "<group>"; };
 		AA0000000000000000000336 /* DateValueEditorForm.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueEditorForm.swift; sourceTree = "<group>"; };
 		AA000000000000000000031C /* ProjectFiles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectFiles.swift; sourceTree = "<group>"; };
@@ -311,6 +325,13 @@
 				AA0000000000000000000346 /* SourceMetadataSection.swift */,
 				AA0000000000000000000348 /* SourceNotesSection.swift */,
 				AA000000000000000000034A /* SourceArtifactsSection.swift */,
+				AA0000000000000000000360 /* SourcePageChrome.swift */,
+				AA0000000000000000000362 /* SourcePageIdentityHeader.swift */,
+				AA0000000000000000000364 /* SourcePageDescriptionView.swift */,
+				AA0000000000000000000366 /* SourcePageCredibilityView.swift */,
+				AA0000000000000000000368 /* SourcePageMetadataView.swift */,
+				AA000000000000000000036A /* SourcePageArtifactsView.swift */,
+				AA000000000000000000036C /* SourcePageNotesView.swift */,
 				AA0000000000000000000310 /* SourcePageView.swift */,
 			);
 			name = Sources;
@@ -823,6 +844,13 @@
 				AA0000000000000000000347 /* SourceMetadataSection.swift in Sources */,
 				AA0000000000000000000349 /* SourceNotesSection.swift in Sources */,
 				AA000000000000000000034B /* SourceArtifactsSection.swift in Sources */,
+				AA0000000000000000000361 /* SourcePageChrome.swift in Sources */,
+				AA0000000000000000000363 /* SourcePageIdentityHeader.swift in Sources */,
+				AA0000000000000000000365 /* SourcePageDescriptionView.swift in Sources */,
+				AA0000000000000000000367 /* SourcePageCredibilityView.swift in Sources */,
+				AA0000000000000000000369 /* SourcePageMetadataView.swift in Sources */,
+				AA000000000000000000036B /* SourcePageArtifactsView.swift in Sources */,
+				AA000000000000000000036D /* SourcePageNotesView.swift in Sources */,
 				AA0000000000000000000331 /* DateValueDraft.swift in Sources */,
 				AA0000000000000000000335 /* DateValueEditorForm.swift in Sources */,
 				AA000000000000000000031B /* ProjectFiles.swift in Sources */,
