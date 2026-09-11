@@ -61,6 +61,10 @@ func GetSourceWorkspace(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	cred, err := credibilityForSource(c, sourceID)
+	if err != nil {
+		return nil, err
+	}
 
 	out := &engine.GetSourceWorkspaceResponse{Source: sourceProto(s)}
 	for _, n := range notes {
@@ -70,6 +74,7 @@ func GetSourceWorkspace(in []byte) ([]byte, error) {
 		out.Metadata = append(out.Metadata, metadataEntryProto(e))
 	}
 	out.Artifacts = arts
+	out.Credibility = cred
 	return proto.Marshal(out)
 }
 

@@ -110,7 +110,8 @@ func TestArtifacts(t *testing.T) {
 				src := mustSource(t, c)
 				a, err := Create(c, userID, CreateInput{
 					SourceID:    src.ID,
-					Description: "physical copy held by Mary",
+					Label:       "Physical copy",
+					Description: "held by Mary",
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -121,6 +122,9 @@ func TestArtifacts(t *testing.T) {
 				if a.FileID != nil {
 					t.Fatalf("expected nil file_id %+v", a)
 				}
+				if a.Label != "Physical copy" {
+					t.Fatalf("label %q", a.Label)
+				}
 				if latestAction(t, c) != "create_artifact" {
 					t.Fatalf("action %q", latestAction(t, c))
 				}
@@ -128,7 +132,7 @@ func TestArtifacts(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if got.Description != "physical copy held by Mary" || got.FileID != nil {
+				if got.Label != "Physical copy" || got.Description != "held by Mary" || got.FileID != nil {
 					t.Fatalf("got %+v", got)
 				}
 				byRef, err := GetByRef(c, a.Ref)
@@ -143,7 +147,7 @@ func TestArtifacts(t *testing.T) {
 				mustUser(t, c)
 				src := mustSource(t, c)
 				f := mustFile(t, c, "scan.jpg", []byte("jpeg-bytes"))
-				a, err := Create(c, userID, CreateInput{SourceID: src.ID, FileID: f.ID})
+				a, err := Create(c, userID, CreateInput{SourceID: src.ID, FileID: f.ID, Label: "Scan"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -157,11 +161,29 @@ func TestArtifacts(t *testing.T) {
 			},
 		},
 		{
-			name: "attach then replace file_id retains old file",
+			name: "reject empty label",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
 				src := mustSource(t, c)
-				a, err := Create(c, userID, CreateInput{SourceID: src.ID, Description: "photo"})
+				if _, err := Create(c, userID, CreateInput{SourceID: src.ID, Label: "  "}); !errors.Is(err, ErrInvalid) {
+					t.Fatalf("got %v", err)
+				}
+				a, err := Create(c, userID, CreateInput{SourceID: src.ID, Label: "Keep"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				a.Label = ""
+				if err := Update(c, userID, a); !errors.Is(err, ErrInvalid) {
+					t.Fatalf("update empty label %v", err)
+				}
+			},
+		},
+		{
+			name: "attach first file then reject replace",
+			run: func(t *testing.T, c *database.Catalog) {
+				mustUser(t, c)
+				src := mustSource(t, c)
+				a, err := Create(c, userID, CreateInput{SourceID: src.ID, Label: "Photo", Description: "photo"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -186,11 +208,11 @@ func TestArtifacts(t *testing.T) {
 
 				f2 := mustFile(t, c, "b.bin", []byte("file-two"))
 				a.FileID = f2.ID
-				if err := Update(c, userID, a); err != nil {
-					t.Fatal(err)
+				if err := Update(c, userID, a); !errors.Is(err, ErrFileAlreadyAttached) {
+					t.Fatalf("got %v", err)
 				}
 				got, err := Get(c, a.ID)
-				if err != nil || string(got.FileID) != string(f2.ID) {
+				if err != nil || string(got.FileID) != string(f1.ID) {
 					t.Fatalf("%v %+v", err, got)
 				}
 				if _, err := files.Lookup(c, f1.ID); err != nil {
@@ -207,7 +229,7 @@ func TestArtifacts(t *testing.T) {
 				mustUser(t, c)
 				src := mustSource(t, c)
 				f := mustFile(t, c, "x.bin", []byte("x"))
-				a, err := Create(c, userID, CreateInput{SourceID: src.ID, FileID: f.ID})
+				a, err := Create(c, userID, CreateInput{SourceID: src.ID, FileID: f.ID, Label: "X"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -224,16 +246,16 @@ func TestArtifacts(t *testing.T) {
 				src := mustSource(t, c)
 				missing := make([]byte, 16)
 				missing[15] = 9
-				if _, err := Create(c, userID, CreateInput{SourceID: missing}); !errors.Is(err, ErrInvalid) {
+				if _, err := Create(c, userID, CreateInput{SourceID: missing, Label: "X"}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("bad source %v", err)
 				}
-				if _, err := Create(c, userID, CreateInput{SourceID: src.ID, FileID: missing}); !errors.Is(err, ErrInvalid) {
+				if _, err := Create(c, userID, CreateInput{SourceID: src.ID, FileID: missing, Label: "X"}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("bad file %v", err)
 				}
-				if _, err := Create(c, nil, CreateInput{SourceID: src.ID}); !errors.Is(err, ErrInvalid) {
+				if _, err := Create(c, nil, CreateInput{SourceID: src.ID, Label: "X"}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("nil user %v", err)
 				}
-				if _, err := Create(c, []byte{1}, CreateInput{SourceID: src.ID}); !errors.Is(err, ErrInvalid) {
+				if _, err := Create(c, []byte{1}, CreateInput{SourceID: src.ID, Label: "X"}); !errors.Is(err, ErrInvalid) {
 					t.Fatalf("short user %v", err)
 				}
 			},
@@ -256,13 +278,13 @@ func TestArtifacts(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if _, err := Create(c, userID, CreateInput{SourceID: s1.ID, Description: "a"}); err != nil {
+				if _, err := Create(c, userID, CreateInput{SourceID: s1.ID, Label: "a", Description: "a"}); err != nil {
 					t.Fatal(err)
 				}
-				if _, err := Create(c, userID, CreateInput{SourceID: s1.ID, Description: "b"}); err != nil {
+				if _, err := Create(c, userID, CreateInput{SourceID: s1.ID, Label: "b", Description: "b"}); err != nil {
 					t.Fatal(err)
 				}
-				if _, err := Create(c, userID, CreateInput{SourceID: s2.ID, Description: "c"}); err != nil {
+				if _, err := Create(c, userID, CreateInput{SourceID: s2.ID, Label: "c", Description: "c"}); err != nil {
 					t.Fatal(err)
 				}
 				list, err := ListBySource(c, s1.ID)
@@ -282,7 +304,7 @@ func TestArtifacts(t *testing.T) {
 				mustUser(t, c)
 				src := mustSource(t, c)
 				f := mustFile(t, c, "keep.bin", []byte("keep"))
-				if _, err := Create(c, userID, CreateInput{SourceID: src.ID, FileID: f.ID}); err != nil {
+				if _, err := Create(c, userID, CreateInput{SourceID: src.ID, FileID: f.ID, Label: "Keep"}); err != nil {
 					t.Fatal(err)
 				}
 				if artifactCount(t, c) != 1 {
@@ -304,20 +326,21 @@ func TestArtifacts(t *testing.T) {
 			},
 		},
 		{
-			name: "update description only",
+			name: "update label and description",
 			run: func(t *testing.T, c *database.Catalog) {
 				mustUser(t, c)
 				src := mustSource(t, c)
-				a, err := Create(c, userID, CreateInput{SourceID: src.ID, Description: "old"})
+				a, err := Create(c, userID, CreateInput{SourceID: src.ID, Label: "Old label", Description: "old"})
 				if err != nil {
 					t.Fatal(err)
 				}
+				a.Label = "New label"
 				a.Description = "new"
 				if err := Update(c, userID, a); err != nil {
 					t.Fatal(err)
 				}
 				got, err := Get(c, a.ID)
-				if err != nil || got.Description != "new" {
+				if err != nil || got.Label != "New label" || got.Description != "new" {
 					t.Fatalf("%v %+v", err, got)
 				}
 			},

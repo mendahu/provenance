@@ -16,16 +16,20 @@ import (
 
 var ErrInvalid = apperr.New(apperr.CodeArtifactsInvalid, apperr.KindUser)
 
+// ErrFileAlreadyAttached is returned when attaching a File to an Artifact that
+// already has a primary File (first-attach only; better scan = new Artifact).
+var ErrFileAlreadyAttached = apperr.New(apperr.CodeArtifactsFileAlreadyAttached, apperr.KindConflict)
+
 const (
-	sqlInsert = `INSERT INTO artifacts (id, ref, source_id, file_id, description)
-		VALUES (?, ?, ?, ?, ?)`
-	sqlUpdate = `UPDATE artifacts SET file_id = ?, description = ?
+	sqlInsert = `INSERT INTO artifacts (id, ref, source_id, file_id, label, description)
+		VALUES (?, ?, ?, ?, ?, ?)`
+	sqlUpdate = `UPDATE artifacts SET file_id = ?, label = ?, description = ?
 		WHERE id = ?`
-	sqlGet = `SELECT id, ref, source_id, file_id, COALESCE(description, '')
+	sqlGet = `SELECT id, ref, source_id, file_id, label, COALESCE(description, '')
 		FROM artifacts WHERE id = ?`
-	sqlGetByRef = `SELECT id, ref, source_id, file_id, COALESCE(description, '')
+	sqlGetByRef = `SELECT id, ref, source_id, file_id, label, COALESCE(description, '')
 		FROM artifacts WHERE ref = ?`
-	sqlListBySource = `SELECT id, ref, source_id, file_id, COALESCE(description, '')
+	sqlListBySource = `SELECT id, ref, source_id, file_id, label, COALESCE(description, '')
 		FROM artifacts WHERE source_id = ?
 		ORDER BY ref COLLATE NOCASE`
 	sqlSourceExists = `SELECT 1 FROM sources WHERE id = ?`
@@ -39,6 +43,7 @@ type Artifact struct {
 	Ref         string
 	SourceID    []byte
 	FileID      []byte
+	Label       string
 	Description string
 }
 
@@ -46,6 +51,7 @@ type Artifact struct {
 type CreateInput struct {
 	SourceID    []byte
 	FileID      []byte // nil/empty = fileless
+	Label       string
 	Description string
 }
 
@@ -55,8 +61,9 @@ func Create(c *database.Catalog, userID []byte, in CreateInput) (Artifact, error
 	if err != nil {
 		return Artifact{}, err
 	}
+	in.Label = strings.TrimSpace(in.Label)
 	in.Description = strings.TrimSpace(in.Description)
-	if len(in.SourceID) != 16 {
+	if len(in.SourceID) != 16 || in.Label == "" {
 		return Artifact{}, ErrInvalid
 	}
 	if len(in.FileID) != 0 && len(in.FileID) != 16 {
@@ -93,7 +100,7 @@ func Create(c *database.Catalog, userID []byte, in CreateInput) (Artifact, error
 		if err != nil {
 			return Artifact{}, err
 		}
-		_, err = tx.Exec(sqlInsert, idBytes, artRef, in.SourceID, nullBlob(in.FileID), nullStr(in.Description))
+		_, err = tx.Exec(sqlInsert, idBytes, artRef, in.SourceID, nullBlob(in.FileID), in.Label, nullStr(in.Description))
 		if err == nil {
 			break
 		}
@@ -109,6 +116,7 @@ func Create(c *database.Catalog, userID []byte, in CreateInput) (Artifact, error
 		"id":        {Old: nil, New: id.String()},
 		"ref":       {Old: nil, New: artRef},
 		"source_id": {Old: nil, New: uuidString(in.SourceID)},
+		"label":     {Old: nil, New: in.Label},
 	}
 	if len(in.FileID) == 16 {
 		fields["file_id"] = audit.FieldDiff{Old: nil, New: uuidString(in.FileID)}
@@ -137,19 +145,23 @@ func Create(c *database.Catalog, userID []byte, in CreateInput) (Artifact, error
 		Ref:         artRef,
 		SourceID:    append([]byte(nil), in.SourceID...),
 		FileID:      copyBlob(in.FileID),
+		Label:       in.Label,
 		Description: in.Description,
 	}, nil
 }
 
-// Update patches description and/or file_id; records update_artifact for changed fields.
-// Clearing a set file_id back to null is rejected (primary detach unsupported).
+// Update patches label, description, and/or first-attach file_id; records
+// update_artifact for changed fields. Clearing a set file_id back to null is
+// rejected. Replacing a set file_id with a different File is rejected
+// (first-attach only).
 func Update(c *database.Catalog, userID []byte, a Artifact) error {
 	db, err := c.DB()
 	if err != nil {
 		return err
 	}
+	a.Label = strings.TrimSpace(a.Label)
 	a.Description = strings.TrimSpace(a.Description)
-	if len(a.ID) != 16 {
+	if len(a.ID) != 16 || a.Label == "" {
 		return ErrInvalid
 	}
 	if len(a.FileID) != 0 && len(a.FileID) != 16 {
@@ -175,6 +187,9 @@ func Update(c *database.Catalog, userID []byte, a Artifact) error {
 	if len(prev.FileID) == 16 && len(a.FileID) == 0 {
 		return ErrInvalid
 	}
+	if len(prev.FileID) == 16 && len(a.FileID) == 16 && !bytesEqual(prev.FileID, a.FileID) {
+		return ErrFileAlreadyAttached
+	}
 	if len(a.FileID) == 16 {
 		if err := requireFile(tx, a.FileID); err != nil {
 			return err
@@ -188,6 +203,9 @@ func Update(c *database.Catalog, userID []byte, a Artifact) error {
 			New: uuidJSON(a.FileID),
 		}
 	}
+	if prev.Label != a.Label {
+		fields["label"] = audit.FieldDiff{Old: prev.Label, New: a.Label}
+	}
 	if prev.Description != a.Description {
 		fields["description"] = audit.FieldDiff{Old: nullJSON(prev.Description), New: nullJSON(a.Description)}
 	}
@@ -195,7 +213,7 @@ func Update(c *database.Catalog, userID []byte, a Artifact) error {
 		return tx.Commit()
 	}
 
-	if _, err := tx.Exec(sqlUpdate, nullBlob(a.FileID), nullStr(a.Description), a.ID); err != nil {
+	if _, err := tx.Exec(sqlUpdate, nullBlob(a.FileID), a.Label, nullStr(a.Description), a.ID); err != nil {
 		return mapConstraint(err)
 	}
 	if _, err := audit.Record(tx, audit.Revision{
@@ -271,7 +289,7 @@ type rowScanner interface {
 func scanArtifact(row rowScanner) (Artifact, error) {
 	var a Artifact
 	var fileID []byte
-	if err := row.Scan(&a.ID, &a.Ref, &a.SourceID, &fileID, &a.Description); err != nil {
+	if err := row.Scan(&a.ID, &a.Ref, &a.SourceID, &fileID, &a.Label, &a.Description); err != nil {
 		return Artifact{}, err
 	}
 	a.FileID = fileID

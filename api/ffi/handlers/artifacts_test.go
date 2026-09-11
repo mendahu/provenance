@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/mendahu/provenencia/api/proto/engine"
+	"github.com/mendahu/provenencia/core/database/artifacts"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -27,7 +29,8 @@ func TestCreateArtifactAndIngest(t *testing.T) {
 					t.Fatal(err)
 				}
 				return &engine.CreateArtifactRequest{
-					ProjectDir: dir, UserId: userID, SourceId: created.Source.Id, Description: "front",
+					ProjectDir: dir, UserId: userID, SourceId: created.Source.Id,
+					Label: "Front", Description: "front",
 				}
 			},
 			want: nil,
@@ -36,7 +39,7 @@ func TestCreateArtifactAndIngest(t *testing.T) {
 				if err := proto.Unmarshal(out, &art); err != nil {
 					t.Fatal(err)
 				}
-				if art.Artifact.GetDescription() != "front" {
+				if art.Artifact.GetLabel() != "Front" || art.Artifact.GetDescription() != "front" {
 					t.Fatalf("%+v", art.Artifact)
 				}
 				cr := req.(*engine.CreateArtifactRequest)
@@ -59,6 +62,32 @@ func TestCreateArtifactAndIngest(t *testing.T) {
 				}
 				if ingested.Artifact.GetFileId() == "" {
 					t.Fatal("expected file_id")
+				}
+
+				path2 := filepath.Join(t.TempDir(), "scan2.jpg")
+				if err := os.WriteFile(path2, []byte("jpeg-two"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				_, err = IngestArtifactFile(marshalProto(t, &engine.IngestArtifactFileRequest{
+					ProjectDir: cr.ProjectDir, UserId: cr.UserId, ArtifactId: art.Artifact.Id, Path: path2,
+				}))
+				if !errors.Is(err, artifacts.ErrFileAlreadyAttached) {
+					t.Fatalf("second ingest: %v", err)
+				}
+
+				uout, err := UpdateArtifact(marshalProto(t, &engine.UpdateArtifactRequest{
+					ProjectDir: cr.ProjectDir, UserId: cr.UserId, ArtifactId: art.Artifact.Id,
+					Label: "Front scan", Description: "updated",
+				}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var updated engine.UpdateArtifactResponse
+				if err := proto.Unmarshal(uout, &updated); err != nil {
+					t.Fatal(err)
+				}
+				if updated.Artifact.GetLabel() != "Front scan" || updated.Artifact.GetDescription() != "updated" {
+					t.Fatalf("%+v", updated.Artifact)
 				}
 			},
 		},

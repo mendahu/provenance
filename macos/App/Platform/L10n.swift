@@ -1679,6 +1679,16 @@ enum L10n {
             defaultValue: "Invalid artifact.",
             comment: "FFI error artifacts.invalid"
         )
+        static let artifactsFileAlreadyAttached = LocalizedStringResource(
+            "error.artifacts.file_already_attached",
+            defaultValue: "This artifact already has a file. Add a new artifact for a better scan.",
+            comment: "FFI error artifacts.file_already_attached"
+        )
+        static let sourceCredibilityInvalid = LocalizedStringResource(
+            "error.sourcecredibility.invalid",
+            defaultValue: "Invalid source credibility assessment.",
+            comment: "FFI error sourcecredibility.invalid"
+        )
         static let sourceMetadataInvalid = LocalizedStringResource(
             "error.sourcemetadata.invalid",
             defaultValue: "Invalid source metadata.",
@@ -1813,6 +1823,10 @@ enum L10n {
                 return String(localized: sourcesInvalid)
             case "artifacts.invalid":
                 return String(localized: artifactsInvalid)
+            case "artifacts.file_already_attached":
+                return String(localized: artifactsFileAlreadyAttached)
+            case "sourcecredibility.invalid":
+                return String(localized: sourceCredibilityInvalid)
             case "sourcemetadata.invalid":
                 return String(localized: sourceMetadataInvalid)
             case "files.invalid":

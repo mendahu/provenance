@@ -51,8 +51,26 @@ struct CatalogArtifact: Sendable, Equatable {
     var ref: String
     var sourceID: String
     var fileID: String
+    var label: String
     var description: String
     var file: CatalogFileRef?
+}
+
+struct CatalogCredibilityGrade: Sendable, Equatable, Identifiable {
+    var id: String
+    var key: String
+    var origin: String
+    var label: String
+    var sortOrder: Int
+}
+
+struct CatalogCredibilityAssessment: Sendable, Equatable {
+    var id: String
+    var sourceID: String
+    var gradeID: String
+    var gradeKey: String
+    var gradeLabel: String
+    var argument: String
 }
 
 struct CatalogSourceType: Sendable, Equatable, Identifiable {
@@ -109,6 +127,8 @@ struct CatalogSourceWorkspace: Sendable, Equatable {
     var notes: [CatalogSourceNote]
     var metadata: [CatalogMetadataEntry]
     var artifacts: [CatalogArtifact]
+    /// Nil when no assessment row (UI may display Standard without a row).
+    var credibility: CatalogCredibilityAssessment?
 }
 
 struct CatalogDateValueInput: Sendable, Equatable {
@@ -196,6 +216,14 @@ protocol GenealogyStore: Sendable {
         userID: String,
         sourceID: String,
         fileID: String,
+        label: String,
+        description: String
+    ) async throws -> CatalogArtifact
+    func updateArtifact(
+        projectDir: String,
+        userID: String,
+        artifactID: String,
+        label: String,
         description: String
     ) async throws -> CatalogArtifact
     func ingestArtifactFile(
@@ -204,6 +232,14 @@ protocol GenealogyStore: Sendable {
         artifactID: String,
         path: String
     ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool)
+    func listSourceCredibilityGrades(projectDir: String) async throws -> [CatalogCredibilityGrade]
+    func upsertSourceCredibilityAssessment(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        gradeID: String,
+        argument: String
+    ) async throws -> CatalogCredibilityAssessment
     func listSourceTypes(projectDir: String) async throws -> [CatalogSourceType]
     /// `key` is never accepted from the caller — the engine mints it as a
     /// kebab-case slug of `label`, the same rule `createMetadataField` uses.

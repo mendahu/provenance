@@ -55,7 +55,7 @@ func TestGetWorkspaceNavCounts(t *testing.T) {
 					t.Fatal(err)
 				}
 				aout, err := CreateArtifact(marshalProto(t, &engine.CreateArtifactRequest{
-					ProjectDir: dir, UserId: userID, SourceId: created.Source.Id, Description: "front",
+					ProjectDir: dir, UserId: userID, SourceId: created.Source.Id, Label: "Front", Description: "front",
 				}))
 				if err != nil {
 					t.Fatal(err)

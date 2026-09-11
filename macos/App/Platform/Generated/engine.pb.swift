@@ -60,6 +60,9 @@ public nonisolated enum Provenencia_Engine_V1_Method: SwiftProtobuf.Enum, Swift.
   case assignTypeField // = 33
   case removeTypeField // = 34
   case getWorkspaceNavCounts // = 35
+  case updateArtifact // = 36
+  case listSourceCredibilityGrades // = 37
+  case upsertSourceCredibilityAssessment // = 38
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -104,6 +107,9 @@ public nonisolated enum Provenencia_Engine_V1_Method: SwiftProtobuf.Enum, Swift.
     case 33: self = .assignTypeField
     case 34: self = .removeTypeField
     case 35: self = .getWorkspaceNavCounts
+    case 36: self = .updateArtifact
+    case 37: self = .listSourceCredibilityGrades
+    case 38: self = .upsertSourceCredibilityAssessment
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -146,6 +152,9 @@ public nonisolated enum Provenencia_Engine_V1_Method: SwiftProtobuf.Enum, Swift.
     case .assignTypeField: return 33
     case .removeTypeField: return 34
     case .getWorkspaceNavCounts: return 35
+    case .updateArtifact: return 36
+    case .listSourceCredibilityGrades: return 37
+    case .upsertSourceCredibilityAssessment: return 38
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -188,6 +197,9 @@ public nonisolated enum Provenencia_Engine_V1_Method: SwiftProtobuf.Enum, Swift.
     .assignTypeField,
     .removeTypeField,
     .getWorkspaceNavCounts,
+    .updateArtifact,
+    .listSourceCredibilityGrades,
+    .upsertSourceCredibilityAssessment,
   ]
 
 }
@@ -681,11 +693,58 @@ public nonisolated struct Provenencia_Engine_V1_Artifact: Sendable {
   /// Clears the value of `file`. Subsequent reads from it will return its default value.
   public mutating func clearFile() {self._file = nil}
 
+  /// required list headline
+  public var label: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _file: Provenencia_Engine_V1_SourceFileRef? = nil
+}
+
+/// SourceCredibilityGrade is one source_credibility_grades vocabulary row.
+public nonisolated struct Provenencia_Engine_V1_SourceCredibilityGrade: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var id: String = String()
+
+  public var key: String = String()
+
+  public var origin: String = String()
+
+  public var label: String = String()
+
+  public var sortOrder: Int32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// SourceCredibilityAssessment is the working Interpretation assessment for a Source.
+public nonisolated struct Provenencia_Engine_V1_SourceCredibilityAssessment: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var id: String = String()
+
+  public var sourceID: String = String()
+
+  public var gradeID: String = String()
+
+  public var gradeKey: String = String()
+
+  public var gradeLabel: String = String()
+
+  public var argument: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
 }
 
 public nonisolated struct Provenencia_Engine_V1_SourceType: Sendable {
@@ -1029,11 +1088,22 @@ public nonisolated struct Provenencia_Engine_V1_GetSourceWorkspaceResponse: Send
 
   public var artifacts: [Provenencia_Engine_V1_Artifact] = []
 
+  /// Omitted when no assessment row (UI may display Standard without a row).
+  public var credibility: Provenencia_Engine_V1_SourceCredibilityAssessment {
+    get {_credibility ?? Provenencia_Engine_V1_SourceCredibilityAssessment()}
+    set {_credibility = newValue}
+  }
+  /// Returns true if `credibility` has been explicitly set.
+  public var hasCredibility: Bool {self._credibility != nil}
+  /// Clears the value of `credibility`. Subsequent reads from it will return its default value.
+  public mutating func clearCredibility() {self._credibility = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _source: Provenencia_Engine_V1_Source? = nil
+  fileprivate var _credibility: Provenencia_Engine_V1_SourceCredibilityAssessment? = nil
 }
 
 public nonisolated struct Provenencia_Engine_V1_CreateSourceRequest: Sendable {
@@ -1047,6 +1117,7 @@ public nonisolated struct Provenencia_Engine_V1_CreateSourceRequest: Sendable {
 
   public var sourceTypeID: String = String()
 
+  /// required (non-empty after trim)
   public var title: String = String()
 
   public var description_p: String = String()
@@ -1314,12 +1385,58 @@ public nonisolated struct Provenencia_Engine_V1_CreateArtifactRequest: Sendable 
 
   public var description_p: String = String()
 
+  /// required
+  public var label: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
 
 public nonisolated struct Provenencia_Engine_V1_CreateArtifactResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var artifact: Provenencia_Engine_V1_Artifact {
+    get {_artifact ?? Provenencia_Engine_V1_Artifact()}
+    set {_artifact = newValue}
+  }
+  /// Returns true if `artifact` has been explicitly set.
+  public var hasArtifact: Bool {self._artifact != nil}
+  /// Clears the value of `artifact`. Subsequent reads from it will return its default value.
+  public mutating func clearArtifact() {self._artifact = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _artifact: Provenencia_Engine_V1_Artifact? = nil
+}
+
+/// UpdateArtifactRequest patches label and/or description only.
+/// File attach stays IngestArtifactFile (first-attach only).
+public nonisolated struct Provenencia_Engine_V1_UpdateArtifactRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var projectDir: String = String()
+
+  public var userID: String = String()
+
+  public var artifactID: String = String()
+
+  public var label: String = String()
+
+  public var description_p: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Provenencia_Engine_V1_UpdateArtifactResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -1359,37 +1476,110 @@ public nonisolated struct Provenencia_Engine_V1_IngestArtifactFileRequest: Senda
   public init() {}
 }
 
-public nonisolated struct Provenencia_Engine_V1_IngestArtifactFileResponse: Sendable {
+public nonisolated struct Provenencia_Engine_V1_IngestArtifactFileResponse: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   public var artifact: Provenencia_Engine_V1_Artifact {
-    get {_artifact ?? Provenencia_Engine_V1_Artifact()}
-    set {_artifact = newValue}
+    get {_storage._artifact ?? Provenencia_Engine_V1_Artifact()}
+    set {_uniqueStorage()._artifact = newValue}
   }
   /// Returns true if `artifact` has been explicitly set.
-  public var hasArtifact: Bool {self._artifact != nil}
+  public var hasArtifact: Bool {_storage._artifact != nil}
   /// Clears the value of `artifact`. Subsequent reads from it will return its default value.
-  public mutating func clearArtifact() {self._artifact = nil}
+  public mutating func clearArtifact() {_uniqueStorage()._artifact = nil}
 
   public var file: Provenencia_Engine_V1_SourceFileRef {
-    get {_file ?? Provenencia_Engine_V1_SourceFileRef()}
-    set {_file = newValue}
+    get {_storage._file ?? Provenencia_Engine_V1_SourceFileRef()}
+    set {_uniqueStorage()._file = newValue}
   }
   /// Returns true if `file` has been explicitly set.
-  public var hasFile: Bool {self._file != nil}
+  public var hasFile: Bool {_storage._file != nil}
   /// Clears the value of `file`. Subsequent reads from it will return its default value.
-  public mutating func clearFile() {self._file = nil}
+  public mutating func clearFile() {_uniqueStorage()._file = nil}
 
-  public var reused: Bool = false
+  public var reused: Bool {
+    get {_storage._reused}
+    set {_uniqueStorage()._reused = newValue}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _artifact: Provenencia_Engine_V1_Artifact? = nil
-  fileprivate var _file: Provenencia_Engine_V1_SourceFileRef? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
+}
+
+public nonisolated struct Provenencia_Engine_V1_ListSourceCredibilityGradesRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var projectDir: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Provenencia_Engine_V1_ListSourceCredibilityGradesResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var grades: [Provenencia_Engine_V1_SourceCredibilityGrade] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var projectDir: String = String()
+
+  public var userID: String = String()
+
+  public var sourceID: String = String()
+
+  /// preferred when set
+  public var gradeID: String = String()
+
+  /// with grade_origin when grade_id empty
+  public var gradeKey: String = String()
+
+  public var gradeOrigin: String = String()
+
+  public var argument: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var assessment: Provenencia_Engine_V1_SourceCredibilityAssessment {
+    get {_assessment ?? Provenencia_Engine_V1_SourceCredibilityAssessment()}
+    set {_assessment = newValue}
+  }
+  /// Returns true if `assessment` has been explicitly set.
+  public var hasAssessment: Bool {self._assessment != nil}
+  /// Clears the value of `assessment`. Subsequent reads from it will return its default value.
+  public mutating func clearAssessment() {self._assessment = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _assessment: Provenencia_Engine_V1_SourceCredibilityAssessment? = nil
 }
 
 public nonisolated struct Provenencia_Engine_V1_ListSourceTypesRequest: Sendable {
@@ -1872,7 +2062,7 @@ public nonisolated struct Provenencia_Engine_V1_Error: Sendable {
 fileprivate nonisolated let _protobuf_package = "provenencia.engine.v1"
 
 nonisolated extension Provenencia_Engine_V1_Method: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0METHOD_UNSPECIFIED\0\u{1}METHOD_PING\0\u{1}METHOD_GET_VERSION\0\u{1}METHOD_GET_INSTALL_IDENTITY\0\u{1}METHOD_COMPLETE_ONBOARDING\0\u{1}METHOD_REMOVE_INSTALL_IDENTITY\0\u{1}METHOD_GET_ACTIVE_PROJECT\0\u{1}METHOD_OPEN_PROJECT\0\u{1}METHOD_REMOVE_ACTIVE_PROJECT\0\u{1}METHOD_LIST_PROJECT_USERS\0\u{1}METHOD_SIGN_OUT\0\u{1}METHOD_GET_PROJECT_INFO\0\u{1}METHOD_LIST_SOURCES\0\u{1}METHOD_GET_SOURCE_WORKSPACE\0\u{1}METHOD_CREATE_SOURCE\0\u{1}METHOD_UPDATE_SOURCE\0\u{1}METHOD_ADD_SOURCE_NOTE\0\u{1}METHOD_UPDATE_SOURCE_NOTE\0\u{1}METHOD_DELETE_SOURCE_NOTE\0\u{1}METHOD_SET_SOURCE_METADATA\0\u{1}METHOD_CLEAR_SOURCE_METADATA\0\u{1}METHOD_CREATE_ARTIFACT\0\u{1}METHOD_INGEST_ARTIFACT_FILE\0\u{1}METHOD_LIST_SOURCE_TYPES\0\u{1}METHOD_CREATE_SOURCE_TYPE\0\u{1}METHOD_LIST_METADATA_FIELDS\0\u{1}METHOD_CREATE_METADATA_FIELD\0\u{1}METHOD_COUNT_FILES\0\u{1}METHOD_UPDATE_METADATA_FIELD\0\u{1}METHOD_DELETE_SOURCE_TYPE\0\u{1}METHOD_DELETE_METADATA_FIELD\0\u{1}METHOD_UPDATE_SOURCE_TYPE\0\u{1}METHOD_LIST_TYPE_SUGGESTIONS\0\u{1}METHOD_ASSIGN_TYPE_FIELD\0\u{1}METHOD_REMOVE_TYPE_FIELD\0\u{1}METHOD_GET_WORKSPACE_NAV_COUNTS\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0METHOD_UNSPECIFIED\0\u{1}METHOD_PING\0\u{1}METHOD_GET_VERSION\0\u{1}METHOD_GET_INSTALL_IDENTITY\0\u{1}METHOD_COMPLETE_ONBOARDING\0\u{1}METHOD_REMOVE_INSTALL_IDENTITY\0\u{1}METHOD_GET_ACTIVE_PROJECT\0\u{1}METHOD_OPEN_PROJECT\0\u{1}METHOD_REMOVE_ACTIVE_PROJECT\0\u{1}METHOD_LIST_PROJECT_USERS\0\u{1}METHOD_SIGN_OUT\0\u{1}METHOD_GET_PROJECT_INFO\0\u{1}METHOD_LIST_SOURCES\0\u{1}METHOD_GET_SOURCE_WORKSPACE\0\u{1}METHOD_CREATE_SOURCE\0\u{1}METHOD_UPDATE_SOURCE\0\u{1}METHOD_ADD_SOURCE_NOTE\0\u{1}METHOD_UPDATE_SOURCE_NOTE\0\u{1}METHOD_DELETE_SOURCE_NOTE\0\u{1}METHOD_SET_SOURCE_METADATA\0\u{1}METHOD_CLEAR_SOURCE_METADATA\0\u{1}METHOD_CREATE_ARTIFACT\0\u{1}METHOD_INGEST_ARTIFACT_FILE\0\u{1}METHOD_LIST_SOURCE_TYPES\0\u{1}METHOD_CREATE_SOURCE_TYPE\0\u{1}METHOD_LIST_METADATA_FIELDS\0\u{1}METHOD_CREATE_METADATA_FIELD\0\u{1}METHOD_COUNT_FILES\0\u{1}METHOD_UPDATE_METADATA_FIELD\0\u{1}METHOD_DELETE_SOURCE_TYPE\0\u{1}METHOD_DELETE_METADATA_FIELD\0\u{1}METHOD_UPDATE_SOURCE_TYPE\0\u{1}METHOD_LIST_TYPE_SUGGESTIONS\0\u{1}METHOD_ASSIGN_TYPE_FIELD\0\u{1}METHOD_REMOVE_TYPE_FIELD\0\u{1}METHOD_GET_WORKSPACE_NAV_COUNTS\0\u{1}METHOD_UPDATE_ARTIFACT\0\u{1}METHOD_LIST_SOURCE_CREDIBILITY_GRADES\0\u{1}METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT\0")
 }
 
 nonisolated extension Provenencia_Engine_V1_ErrorKind: SwiftProtobuf._ProtoNameProviding {
@@ -2839,7 +3029,7 @@ nonisolated extension Provenencia_Engine_V1_SourceFileRef: SwiftProtobuf.Message
 
 nonisolated extension Provenencia_Engine_V1_Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Artifact"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}ref\0\u{3}source_id\0\u{3}file_id\0\u{1}description\0\u{1}file\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}ref\0\u{3}source_id\0\u{3}file_id\0\u{1}description\0\u{1}file\0\u{1}label\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2853,6 +3043,7 @@ nonisolated extension Provenencia_Engine_V1_Artifact: SwiftProtobuf.Message, Swi
       case 4: try { try decoder.decodeSingularStringField(value: &self.fileID) }()
       case 5: try { try decoder.decodeSingularStringField(value: &self.description_p) }()
       case 6: try { try decoder.decodeSingularMessageField(value: &self._file) }()
+      case 7: try { try decoder.decodeSingularStringField(value: &self.label) }()
       default: break
       }
     }
@@ -2881,6 +3072,9 @@ nonisolated extension Provenencia_Engine_V1_Artifact: SwiftProtobuf.Message, Swi
     try { if let v = self._file {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
     } }()
+    if !self.label.isEmpty {
+      try visitor.visitSingularStringField(value: self.label, fieldNumber: 7)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -2891,6 +3085,112 @@ nonisolated extension Provenencia_Engine_V1_Artifact: SwiftProtobuf.Message, Swi
     if lhs.fileID != rhs.fileID {return false}
     if lhs.description_p != rhs.description_p {return false}
     if lhs._file != rhs._file {return false}
+    if lhs.label != rhs.label {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_SourceCredibilityGrade: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SourceCredibilityGrade"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}key\0\u{1}origin\0\u{1}label\0\u{3}sort_order\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.id) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.key) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.origin) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.label) }()
+      case 5: try { try decoder.decodeSingularInt32Field(value: &self.sortOrder) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.id.isEmpty {
+      try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
+    }
+    if !self.key.isEmpty {
+      try visitor.visitSingularStringField(value: self.key, fieldNumber: 2)
+    }
+    if !self.origin.isEmpty {
+      try visitor.visitSingularStringField(value: self.origin, fieldNumber: 3)
+    }
+    if !self.label.isEmpty {
+      try visitor.visitSingularStringField(value: self.label, fieldNumber: 4)
+    }
+    if self.sortOrder != 0 {
+      try visitor.visitSingularInt32Field(value: self.sortOrder, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_SourceCredibilityGrade, rhs: Provenencia_Engine_V1_SourceCredibilityGrade) -> Bool {
+    if lhs.id != rhs.id {return false}
+    if lhs.key != rhs.key {return false}
+    if lhs.origin != rhs.origin {return false}
+    if lhs.label != rhs.label {return false}
+    if lhs.sortOrder != rhs.sortOrder {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_SourceCredibilityAssessment: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SourceCredibilityAssessment"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}source_id\0\u{3}grade_id\0\u{3}grade_key\0\u{3}grade_label\0\u{1}argument\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.id) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.sourceID) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.gradeID) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.gradeKey) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.gradeLabel) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.argument) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.id.isEmpty {
+      try visitor.visitSingularStringField(value: self.id, fieldNumber: 1)
+    }
+    if !self.sourceID.isEmpty {
+      try visitor.visitSingularStringField(value: self.sourceID, fieldNumber: 2)
+    }
+    if !self.gradeID.isEmpty {
+      try visitor.visitSingularStringField(value: self.gradeID, fieldNumber: 3)
+    }
+    if !self.gradeKey.isEmpty {
+      try visitor.visitSingularStringField(value: self.gradeKey, fieldNumber: 4)
+    }
+    if !self.gradeLabel.isEmpty {
+      try visitor.visitSingularStringField(value: self.gradeLabel, fieldNumber: 5)
+    }
+    if !self.argument.isEmpty {
+      try visitor.visitSingularStringField(value: self.argument, fieldNumber: 6)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_SourceCredibilityAssessment, rhs: Provenencia_Engine_V1_SourceCredibilityAssessment) -> Bool {
+    if lhs.id != rhs.id {return false}
+    if lhs.sourceID != rhs.sourceID {return false}
+    if lhs.gradeID != rhs.gradeID {return false}
+    if lhs.gradeKey != rhs.gradeKey {return false}
+    if lhs.gradeLabel != rhs.gradeLabel {return false}
+    if lhs.argument != rhs.argument {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -3414,7 +3714,7 @@ nonisolated extension Provenencia_Engine_V1_GetSourceWorkspaceRequest: SwiftProt
 
 nonisolated extension Provenencia_Engine_V1_GetSourceWorkspaceResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".GetSourceWorkspaceResponse"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}source\0\u{1}notes\0\u{1}metadata\0\u{1}artifacts\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}source\0\u{1}notes\0\u{1}metadata\0\u{1}artifacts\0\u{1}credibility\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -3426,6 +3726,7 @@ nonisolated extension Provenencia_Engine_V1_GetSourceWorkspaceResponse: SwiftPro
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.notes) }()
       case 3: try { try decoder.decodeRepeatedMessageField(value: &self.metadata) }()
       case 4: try { try decoder.decodeRepeatedMessageField(value: &self.artifacts) }()
+      case 5: try { try decoder.decodeSingularMessageField(value: &self._credibility) }()
       default: break
       }
     }
@@ -3448,6 +3749,9 @@ nonisolated extension Provenencia_Engine_V1_GetSourceWorkspaceResponse: SwiftPro
     if !self.artifacts.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.artifacts, fieldNumber: 4)
     }
+    try { if let v = self._credibility {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -3456,6 +3760,7 @@ nonisolated extension Provenencia_Engine_V1_GetSourceWorkspaceResponse: SwiftPro
     if lhs.notes != rhs.notes {return false}
     if lhs.metadata != rhs.metadata {return false}
     if lhs.artifacts != rhs.artifacts {return false}
+    if lhs._credibility != rhs._credibility {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4011,7 +4316,7 @@ nonisolated extension Provenencia_Engine_V1_ClearSourceMetadataResponse: SwiftPr
 
 nonisolated extension Provenencia_Engine_V1_CreateArtifactRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".CreateArtifactRequest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}project_dir\0\u{3}user_id\0\u{3}source_id\0\u{3}file_id\0\u{1}description\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}project_dir\0\u{3}user_id\0\u{3}source_id\0\u{3}file_id\0\u{1}description\0\u{1}label\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -4024,6 +4329,7 @@ nonisolated extension Provenencia_Engine_V1_CreateArtifactRequest: SwiftProtobuf
       case 3: try { try decoder.decodeSingularStringField(value: &self.sourceID) }()
       case 4: try { try decoder.decodeSingularStringField(value: &self.fileID) }()
       case 5: try { try decoder.decodeSingularStringField(value: &self.description_p) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.label) }()
       default: break
       }
     }
@@ -4045,6 +4351,9 @@ nonisolated extension Provenencia_Engine_V1_CreateArtifactRequest: SwiftProtobuf
     if !self.description_p.isEmpty {
       try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 5)
     }
+    if !self.label.isEmpty {
+      try visitor.visitSingularStringField(value: self.label, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -4054,6 +4363,7 @@ nonisolated extension Provenencia_Engine_V1_CreateArtifactRequest: SwiftProtobuf
     if lhs.sourceID != rhs.sourceID {return false}
     if lhs.fileID != rhs.fileID {return false}
     if lhs.description_p != rhs.description_p {return false}
+    if lhs.label != rhs.label {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4087,6 +4397,90 @@ nonisolated extension Provenencia_Engine_V1_CreateArtifactResponse: SwiftProtobu
   }
 
   public static func ==(lhs: Provenencia_Engine_V1_CreateArtifactResponse, rhs: Provenencia_Engine_V1_CreateArtifactResponse) -> Bool {
+    if lhs._artifact != rhs._artifact {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_UpdateArtifactRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".UpdateArtifactRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}project_dir\0\u{3}user_id\0\u{3}artifact_id\0\u{1}label\0\u{1}description\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.projectDir) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.userID) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.artifactID) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.label) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.description_p) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.projectDir.isEmpty {
+      try visitor.visitSingularStringField(value: self.projectDir, fieldNumber: 1)
+    }
+    if !self.userID.isEmpty {
+      try visitor.visitSingularStringField(value: self.userID, fieldNumber: 2)
+    }
+    if !self.artifactID.isEmpty {
+      try visitor.visitSingularStringField(value: self.artifactID, fieldNumber: 3)
+    }
+    if !self.label.isEmpty {
+      try visitor.visitSingularStringField(value: self.label, fieldNumber: 4)
+    }
+    if !self.description_p.isEmpty {
+      try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_UpdateArtifactRequest, rhs: Provenencia_Engine_V1_UpdateArtifactRequest) -> Bool {
+    if lhs.projectDir != rhs.projectDir {return false}
+    if lhs.userID != rhs.userID {return false}
+    if lhs.artifactID != rhs.artifactID {return false}
+    if lhs.label != rhs.label {return false}
+    if lhs.description_p != rhs.description_p {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_UpdateArtifactResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".UpdateArtifactResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}artifact\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._artifact) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._artifact {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_UpdateArtifactResponse, rhs: Provenencia_Engine_V1_UpdateArtifactResponse) -> Bool {
     if lhs._artifact != rhs._artifact {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -4142,15 +4536,217 @@ nonisolated extension Provenencia_Engine_V1_IngestArtifactFileResponse: SwiftPro
   public static let protoMessageName: String = _protobuf_package + ".IngestArtifactFileResponse"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}artifact\0\u{1}file\0\u{1}reused\0")
 
+  fileprivate class _StorageClass {
+    var _artifact: Provenencia_Engine_V1_Artifact? = nil
+    var _file: Provenencia_Engine_V1_SourceFileRef? = nil
+    var _reused: Bool = false
+
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _artifact = source._artifact
+      _file = source._file
+      _reused = source._reused
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularMessageField(value: &_storage._artifact) }()
+        case 2: try { try decoder.decodeSingularMessageField(value: &_storage._file) }()
+        case 3: try { try decoder.decodeSingularBoolField(value: &_storage._reused) }()
+        default: break
+        }
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      try { if let v = _storage._artifact {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+      } }()
+      try { if let v = _storage._file {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      } }()
+      if _storage._reused != false {
+        try visitor.visitSingularBoolField(value: _storage._reused, fieldNumber: 3)
+      }
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_IngestArtifactFileResponse, rhs: Provenencia_Engine_V1_IngestArtifactFileResponse) -> Bool {
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._artifact != rhs_storage._artifact {return false}
+        if _storage._file != rhs_storage._file {return false}
+        if _storage._reused != rhs_storage._reused {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_ListSourceCredibilityGradesRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListSourceCredibilityGradesRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}project_dir\0")
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularMessageField(value: &self._artifact) }()
-      case 2: try { try decoder.decodeSingularMessageField(value: &self._file) }()
-      case 3: try { try decoder.decodeSingularBoolField(value: &self.reused) }()
+      case 1: try { try decoder.decodeSingularStringField(value: &self.projectDir) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.projectDir.isEmpty {
+      try visitor.visitSingularStringField(value: self.projectDir, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_ListSourceCredibilityGradesRequest, rhs: Provenencia_Engine_V1_ListSourceCredibilityGradesRequest) -> Bool {
+    if lhs.projectDir != rhs.projectDir {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_ListSourceCredibilityGradesResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListSourceCredibilityGradesResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}grades\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.grades) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.grades.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.grades, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_ListSourceCredibilityGradesResponse, rhs: Provenencia_Engine_V1_ListSourceCredibilityGradesResponse) -> Bool {
+    if lhs.grades != rhs.grades {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".UpsertSourceCredibilityAssessmentRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}project_dir\0\u{3}user_id\0\u{3}source_id\0\u{3}grade_id\0\u{3}grade_key\0\u{3}grade_origin\0\u{1}argument\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.projectDir) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.userID) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.sourceID) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.gradeID) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.gradeKey) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.gradeOrigin) }()
+      case 7: try { try decoder.decodeSingularStringField(value: &self.argument) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.projectDir.isEmpty {
+      try visitor.visitSingularStringField(value: self.projectDir, fieldNumber: 1)
+    }
+    if !self.userID.isEmpty {
+      try visitor.visitSingularStringField(value: self.userID, fieldNumber: 2)
+    }
+    if !self.sourceID.isEmpty {
+      try visitor.visitSingularStringField(value: self.sourceID, fieldNumber: 3)
+    }
+    if !self.gradeID.isEmpty {
+      try visitor.visitSingularStringField(value: self.gradeID, fieldNumber: 4)
+    }
+    if !self.gradeKey.isEmpty {
+      try visitor.visitSingularStringField(value: self.gradeKey, fieldNumber: 5)
+    }
+    if !self.gradeOrigin.isEmpty {
+      try visitor.visitSingularStringField(value: self.gradeOrigin, fieldNumber: 6)
+    }
+    if !self.argument.isEmpty {
+      try visitor.visitSingularStringField(value: self.argument, fieldNumber: 7)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentRequest, rhs: Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentRequest) -> Bool {
+    if lhs.projectDir != rhs.projectDir {return false}
+    if lhs.userID != rhs.userID {return false}
+    if lhs.sourceID != rhs.sourceID {return false}
+    if lhs.gradeID != rhs.gradeID {return false}
+    if lhs.gradeKey != rhs.gradeKey {return false}
+    if lhs.gradeOrigin != rhs.gradeOrigin {return false}
+    if lhs.argument != rhs.argument {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".UpsertSourceCredibilityAssessmentResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}assessment\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._assessment) }()
       default: break
       }
     }
@@ -4161,22 +4757,14 @@ nonisolated extension Provenencia_Engine_V1_IngestArtifactFileResponse: SwiftPro
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
-    try { if let v = self._artifact {
+    try { if let v = self._assessment {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
-    try { if let v = self._file {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    } }()
-    if self.reused != false {
-      try visitor.visitSingularBoolField(value: self.reused, fieldNumber: 3)
-    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Provenencia_Engine_V1_IngestArtifactFileResponse, rhs: Provenencia_Engine_V1_IngestArtifactFileResponse) -> Bool {
-    if lhs._artifact != rhs._artifact {return false}
-    if lhs._file != rhs._file {return false}
-    if lhs.reused != rhs.reused {return false}
+  public static func ==(lhs: Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentResponse, rhs: Provenencia_Engine_V1_UpsertSourceCredibilityAssessmentResponse) -> Bool {
+    if lhs._assessment != rhs._assessment {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

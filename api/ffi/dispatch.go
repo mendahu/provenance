@@ -44,7 +44,10 @@ const (
 	MethodListTypeSuggestions   = int32(engine.Method_METHOD_LIST_TYPE_SUGGESTIONS)
 	MethodAssignTypeField       = int32(engine.Method_METHOD_ASSIGN_TYPE_FIELD)
 	MethodRemoveTypeField       = int32(engine.Method_METHOD_REMOVE_TYPE_FIELD)
-	MethodGetWorkspaceNavCounts = int32(engine.Method_METHOD_GET_WORKSPACE_NAV_COUNTS)
+	MethodGetWorkspaceNavCounts               = int32(engine.Method_METHOD_GET_WORKSPACE_NAV_COUNTS)
+	MethodUpdateArtifact                      = int32(engine.Method_METHOD_UPDATE_ARTIFACT)
+	MethodListSourceCredibilityGrades         = int32(engine.Method_METHOD_LIST_SOURCE_CREDIBILITY_GRADES)
+	MethodUpsertSourceCredibilityAssessment   = int32(engine.Method_METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT)
 )
 
 // Call routes one coarse FFI operation to api/ffi/handlers.
@@ -120,6 +123,12 @@ func Call(method int32, in []byte) ([]byte, error) {
 		return handlers.RemoveTypeField(in)
 	case MethodGetWorkspaceNavCounts:
 		return handlers.GetWorkspaceNavCounts(in)
+	case MethodUpdateArtifact:
+		return handlers.UpdateArtifact(in)
+	case MethodListSourceCredibilityGrades:
+		return handlers.ListSourceCredibilityGrades(in)
+	case MethodUpsertSourceCredibilityAssessment:
+		return handlers.UpsertSourceCredibilityAssessment(in)
 	default:
 		return nil, apperr.New(apperr.CodeInternalUnknownMethod, apperr.KindInternal, strconv.Itoa(int(method)))
 	}
