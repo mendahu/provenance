@@ -563,7 +563,7 @@ struct SourcePageView: View {
                 model.toggleArtifactExpanded(art.id)
             } label: {
                 HStack(spacing: PVSpacing.space6) {
-                    PVThumbnail(.empty, size: 44)
+                    PVThumbnail(artifactThumbnail(art), size: 44)
                     Text(art.label.isEmpty ? art.ref : art.label)
                         .font(PVFont.body(size: PVTypeScale.bodySmall))
                         .foregroundStyle(PVColor.textPrimary)
@@ -691,7 +691,7 @@ struct SourcePageView: View {
 
             if let file = art.file, !art.fileID.isEmpty {
                 HStack(spacing: PVSpacing.space6) {
-                    PVThumbnail(.empty, size: 56)
+                    PVThumbnail(artifactThumbnail(art), size: 56)
                     VStack(alignment: .leading, spacing: PVSpacing.space2) {
                         Text(file.originalFilename)
                             .font(PVFont.mono(size: PVTypeScale.caption))
@@ -732,6 +732,16 @@ struct SourcePageView: View {
                 .accessibilityIdentifier("sources.page.artifact.\(art.id).addFile")
             }
         }
+    }
+
+    private func artifactThumbnail(_ art: CatalogArtifact) -> PVThumbnail.Content {
+        if let image = ProjectFiles.thumbnailImage(
+            projectDir: model.pageProjectDir,
+            relPath: art.thumbnailRelPath
+        ) {
+            return PVThumbnail.Content(image: image)
+        }
+        return .empty
     }
 
     private func fileMetaLine(_ file: CatalogFileRef) -> String {

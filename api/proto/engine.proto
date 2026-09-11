@@ -48,6 +48,7 @@ enum Method {
   METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT = 38;
   METHOD_DISMISS_SOURCE_METADATA_SUGGESTION = 39;
   METHOD_REORDER_SOURCE_METADATA = 40;
+  METHOD_ENSURE_FILE_THUMBNAIL = 41;
 }
 
 message PingRequest {
@@ -172,6 +173,8 @@ message Source {
   string source_type_id = 3;
   string title = 4;
   string description = 5;
+  // Thumbnail JPEG under objects/… for list cells (empty = placeholder).
+  string thumbnail_rel_path = 6;
 }
 
 message SourceNote {
@@ -199,6 +202,8 @@ message Artifact {
   string description = 5;
   SourceFileRef file = 6; // set when file_id present
   string label = 7; // required list headline
+  // Thumbnail JPEG under objects/… (empty when fileless / non-image / skipped).
+  string thumbnail_rel_path = 8;
 }
 
 // SourceCredibilityGrade is one source_credibility_grades vocabulary row.
@@ -632,6 +637,18 @@ message GetWorkspaceNavCountsResponse {
   VocabularyOriginCounts source_types = 2;
   VocabularyOriginCounts source_fields = 3;
   int32 files = 4;
+}
+
+// EnsureFileThumbnail lazily creates (or returns) the default thumbnail
+// derivative for a File that is the primary File of some Artifact.
+message EnsureFileThumbnailRequest {
+  string project_dir = 1;
+  string file_id = 2;
+}
+
+message EnsureFileThumbnailResponse {
+  string rel_path = 1; // objects/… path; empty when skipped
+  bool skipped = 2;    // non-image, unprocessable, or no derivative
 }
 
 // ErrorKind classifies a failure for client UX (tone, retry hints). Copy still

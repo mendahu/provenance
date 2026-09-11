@@ -50,6 +50,7 @@ const (
 	MethodUpsertSourceCredibilityAssessment   = int32(engine.Method_METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT)
 	MethodDismissSourceMetadataSuggestion     = int32(engine.Method_METHOD_DISMISS_SOURCE_METADATA_SUGGESTION)
 	MethodReorderSourceMetadata               = int32(engine.Method_METHOD_REORDER_SOURCE_METADATA)
+	MethodEnsureFileThumbnail                 = int32(engine.Method_METHOD_ENSURE_FILE_THUMBNAIL)
 )
 
 // Call routes one coarse FFI operation to api/ffi/handlers.
@@ -135,6 +136,8 @@ func Call(method int32, in []byte) ([]byte, error) {
 		return handlers.DismissSourceMetadataSuggestion(in)
 	case MethodReorderSourceMetadata:
 		return handlers.ReorderSourceMetadata(in)
+	case MethodEnsureFileThumbnail:
+		return handlers.EnsureFileThumbnail(in)
 	default:
 		return nil, apperr.New(apperr.CodeInternalUnknownMethod, apperr.KindInternal, strconv.Itoa(int(method)))
 	}

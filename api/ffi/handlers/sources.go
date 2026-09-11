@@ -25,7 +25,13 @@ func ListSources(in []byte) ([]byte, error) {
 	}
 	out := &engine.ListSourcesResponse{}
 	for _, s := range rows {
-		out.Sources = append(out.Sources, sourceProto(s))
+		sp := sourceProto(s)
+		thumb, err := firstSourceThumbnailRelPath(c, s.ID)
+		if err != nil {
+			return nil, err
+		}
+		sp.ThumbnailRelPath = thumb
+		out.Sources = append(out.Sources, sp)
 	}
 	return proto.Marshal(out)
 }

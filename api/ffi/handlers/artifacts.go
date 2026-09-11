@@ -186,6 +186,11 @@ func artifactProto(c *database.Catalog, a artifacts.Artifact) (*engine.Artifact,
 			return nil, err
 		}
 		out.File = fileRefProto(f, rel)
+		thumb, _, err := thumbnailRelPath(c, a.FileID)
+		if err != nil {
+			return nil, err
+		}
+		out.ThumbnailRelPath = thumb
 	}
 	return out, nil
 }

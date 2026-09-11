@@ -66,6 +66,23 @@ struct SourcesModelTests {
         #expect(model.typeLabel(for: model.sources[0]) == "Photograph")
     }
 
+    @Test func listSourcesFillsThumbnailFromArtifact() async {
+        let store = FakeStore()
+        store.artifactsBySource["s1"] = [
+            CatalogArtifact(
+                id: "a1", ref: "ART-1", sourceID: "s1", fileID: "f1",
+                label: "Front", description: "", thumbnailRelPath: "objects/aa/bb/thumb"
+            ),
+        ]
+        let model = makeModel(
+            store: store,
+            sources: [source(id: "s1", title: "Album", typeID: "t1")],
+            types: [photoType()]
+        )
+        await model.load()
+        #expect(model.sources.first?.thumbnailRelPath == "objects/aa/bb/thumb")
+    }
+
     @Test func searchFiltersByTitleRefAndTypeLabel() async {
         let model = makeModel(
             sources: [

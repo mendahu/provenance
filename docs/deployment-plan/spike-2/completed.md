@@ -30,6 +30,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | [S2-24](#s2-24--pr-source-page-schema-precede-label-first-attach-credibility) | PR | Artifact label, first-attach, credibility schema |
 | [S2-18](#s2-18--pr-source-page-shell--artifacts--ingest) | PR | Source page + Notes, credibility, Artifact ingest |
 | [S2-25](#s2-25--pr-source-metadata-editor-suggestions-dismiss-reorder) | PR | Metadata dismiss, order, Source page editor |
+| [S2-26](#s2-26--pr-evidence-list-thumbnails-sources--artifacts) | PR | Evidence list thumbnails (Sources + Artifacts) |
 
 ---
 
@@ -313,8 +314,21 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Depends on** | S2-18 (done), S2-23 (done) |
 | **Deliverables** | Done. **`source_metadata_layout`** migration for per-Source suggestion **dismiss** + display **order**; `ListWorkspace` filters dismissed empty suggestions and orders by layout; FFI `DismissSourceMetadataSuggestion` / `ReorderSourceMetadata`; Source page **Metadata** section (values, quick-add suggestions with X, **Add** vocabulary dialog, drag reorder via **`PVReorderableList`**); Artifact accordion expand matched to board (two-column sunken panel). `FakeStore` model tests. |
 | **Context** | Completes the Metadata half of S2-23. |
-| **Out** | Thumbnail wiring (S2-26); vocabulary admin; Claim confidence. |
+| **Out** | Vocabulary admin; Claim confidence. |
 | **Feeds** | S2-26, S2-21, S2-19 |
+
+---
+
+### S2-26 — PR: Evidence list thumbnails (Sources + Artifacts)
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-18 (done), S2-17 (done), S2-12/S2-13 (done) |
+| **Deliverables** | Done. FFI **`EnsureFileThumbnail`** (authorize File via Artifact, lazy `derivatives.EnsureThumbnail`); enrich **`ListSources`** and workspace **`Artifact`** with `thumbnail_rel_path`; Swift maps paths into `CatalogSource` / `CatalogArtifact`, loads JPEG bytes via **`ProjectFiles.thumbnailImage`**, fills **`PVThumbnail`** on Sources list and Source-page Artifact rows. Missing/fileless/non-image → placeholder. `runRPC` + FakeStore model tests. |
+| **Context** | Shared wiring for S2-21 Files list. |
+| **Out** | In-app File preview; Files destination UI (S2-21); ingest-time ensure. |
+| **Feeds** | S2-21, S2-19 |
 
 ---
 

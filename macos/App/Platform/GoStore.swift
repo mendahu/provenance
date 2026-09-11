@@ -365,6 +365,20 @@ struct GoStore: GenealogyStore {
         return (Self.mapArtifact(resp.artifact), Self.mapFile(resp.file), resp.reused)
     }
 
+    func ensureFileThumbnail(
+        projectDir: String,
+        fileID: String
+    ) async throws -> (relPath: String, skipped: Bool) {
+        var req = Provenencia_Engine_V1_EnsureFileThumbnailRequest()
+        req.projectDir = projectDir
+        req.fileID = fileID
+        let resp: Provenencia_Engine_V1_EnsureFileThumbnailResponse = try await provenenciaCall(
+            method: CoreMethod.ensureFileThumbnail,
+            request: req
+        )
+        return (resp.relPath, resp.skipped)
+    }
+
     func listSourceCredibilityGrades(projectDir: String) async throws -> [CatalogCredibilityGrade] {
         var req = Provenencia_Engine_V1_ListSourceCredibilityGradesRequest()
         req.projectDir = projectDir
@@ -626,7 +640,8 @@ struct GoStore: GenealogyStore {
             ref: s.ref,
             sourceTypeID: s.sourceTypeID,
             title: s.title,
-            description: s.description_p
+            description: s.description_p,
+            thumbnailRelPath: s.thumbnailRelPath
         )
     }
 
@@ -658,7 +673,8 @@ struct GoStore: GenealogyStore {
             fileID: a.fileID,
             label: a.label,
             description: a.description_p,
-            file: a.hasFile ? Self.mapFile(a.file) : nil
+            file: a.hasFile ? Self.mapFile(a.file) : nil,
+            thumbnailRelPath: a.thumbnailRelPath
         )
     }
 

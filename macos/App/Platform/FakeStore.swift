@@ -178,7 +178,15 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
 
     func listSources(projectDir: String) async throws -> [CatalogSource] {
         if let listSourcesError { throw listSourcesError }
-        return sourcesByProject[projectDir] ?? []
+        let rows = sourcesByProject[projectDir] ?? []
+        return rows.map { source in
+            var copy = source
+            if copy.thumbnailRelPath.isEmpty {
+                let arts = artifactsBySource[source.id] ?? []
+                copy.thumbnailRelPath = arts.first { !$0.thumbnailRelPath.isEmpty }?.thumbnailRelPath ?? ""
+            }
+            return copy
+        }
     }
 
     func getSourceWorkspace(projectDir: String, sourceID: String) async throws -> CatalogSourceWorkspace {
@@ -408,8 +416,27 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
                 var copy = arts
                 copy[idx].fileID = file.id
                 copy[idx].file = file
+                let ext = URL(fileURLWithPath: path).pathExtension.lowercased()
+                if ["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff"].contains(ext) {
+                    copy[idx].thumbnailRelPath = "objects/aa/bb/thumb-\(file.id.prefix(8))"
+                }
                 artifactsBySource[sourceID] = copy
                 return (copy[idx], file, false)
+            }
+        }
+        throw StoreBoom.boom
+    }
+
+    func ensureFileThumbnail(
+        projectDir _: String,
+        fileID: String
+    ) async throws -> (relPath: String, skipped: Bool) {
+        for arts in artifactsBySource.values {
+            if let art = arts.first(where: { $0.fileID == fileID }) {
+                if art.thumbnailRelPath.isEmpty {
+                    return ("", true)
+                }
+                return (art.thumbnailRelPath, false)
             }
         }
         throw StoreBoom.boom

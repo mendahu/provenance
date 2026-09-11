@@ -389,6 +389,10 @@ private struct ThrowingStore: GenealogyStore {
         artifactID _: String,
         path _: String
     ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool) { throw StoreBoom.boom }
+    func ensureFileThumbnail(
+        projectDir _: String,
+        fileID _: String
+    ) async throws -> (relPath: String, skipped: Bool) { throw StoreBoom.boom }
     func listSourceCredibilityGrades(projectDir _: String) async throws -> [CatalogCredibilityGrade] {
         throw StoreBoom.boom
     }

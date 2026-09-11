@@ -196,6 +196,35 @@ struct SourcePageModelTests {
         #expect(url.path == "/tmp/proj.provenencia/objects/ab/cd/abcd")
     }
 
+    @Test func thumbnailImageMissingRelPathReturnsNil() {
+        #expect(ProjectFiles.thumbnailImage(projectDir: "/tmp/x.provenencia", relPath: "") == nil)
+        #expect(
+            ProjectFiles.thumbnailImage(
+                projectDir: "/tmp/x.provenencia",
+                relPath: "objects/no/such/file"
+            ) == nil
+        )
+    }
+
+    @Test func workspaceArtifactsCarryThumbnailRelPath() async {
+        let store = makeStore(
+            artifacts: [
+                CatalogArtifact(
+                    id: "a1", ref: "ART-AAAAA", sourceID: sourceID, fileID: "f1",
+                    label: "Scan", description: "",
+                    file: CatalogFileRef(
+                        id: "f1", relPath: "objects/aa/bb/prim",
+                        originalFilename: "scan.png", mediaType: "image/png", byteSize: 12
+                    ),
+                    thumbnailRelPath: "objects/aa/bb/thumb"
+                ),
+            ]
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        #expect(model.artifacts.first?.thumbnailRelPath == "objects/aa/bb/thumb")
+    }
+
     private func authorField() -> CatalogMetadataField {
         CatalogMetadataField(
             id: "f-author", key: "author", origin: "provenencia",

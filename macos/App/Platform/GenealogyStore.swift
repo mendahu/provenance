@@ -30,6 +30,8 @@ struct CatalogSource: Sendable, Equatable, Identifiable {
     var sourceTypeID: String
     var title: String
     var description: String
+    /// Thumbnail JPEG under `objects/…` for list cells (empty = placeholder).
+    var thumbnailRelPath: String = ""
 }
 
 struct CatalogSourceNote: Sendable, Equatable {
@@ -58,6 +60,8 @@ struct CatalogArtifact: Sendable, Equatable {
     var label: String
     var description: String
     var file: CatalogFileRef?
+    /// Thumbnail JPEG under `objects/…` (empty when fileless / non-image / skipped).
+    var thumbnailRelPath: String = ""
 }
 
 struct CatalogCredibilityGrade: Sendable, Equatable, Identifiable {
@@ -252,6 +256,11 @@ protocol GenealogyStore: Sendable {
         artifactID: String,
         path: String
     ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool)
+    /// Lazily ensure a thumbnail derivative for a primary File; empty path when skipped.
+    func ensureFileThumbnail(
+        projectDir: String,
+        fileID: String
+    ) async throws -> (relPath: String, skipped: Bool)
     func listSourceCredibilityGrades(projectDir: String) async throws -> [CatalogCredibilityGrade]
     func upsertSourceCredibilityAssessment(
         projectDir: String,

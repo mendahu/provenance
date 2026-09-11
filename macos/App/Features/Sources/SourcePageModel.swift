@@ -93,6 +93,9 @@ final class SourcePageModel {
 
     var notes: [CatalogSourceNote] { workspace?.notes ?? [] }
 
+    /// Project folder for resolving `objects/…` thumbnail paths.
+    var pageProjectDir: String { projectDir }
+
     var typeComboOptions: [PVComboBoxOption] {
         types.map { PVComboBoxOption(value: $0.id, label: $0.label, subtext: $0.key) }
     }

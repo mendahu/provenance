@@ -67,6 +67,7 @@ const (
 	Method_METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT Method = 38
 	Method_METHOD_DISMISS_SOURCE_METADATA_SUGGESTION   Method = 39
 	Method_METHOD_REORDER_SOURCE_METADATA              Method = 40
+	Method_METHOD_ENSURE_FILE_THUMBNAIL                Method = 41
 )
 
 // Enum value maps for Method.
@@ -113,6 +114,7 @@ var (
 		38: "METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT",
 		39: "METHOD_DISMISS_SOURCE_METADATA_SUGGESTION",
 		40: "METHOD_REORDER_SOURCE_METADATA",
+		41: "METHOD_ENSURE_FILE_THUMBNAIL",
 	}
 	Method_value = map[string]int32{
 		"METHOD_UNSPECIFIED":                          0,
@@ -156,6 +158,7 @@ var (
 		"METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT": 38,
 		"METHOD_DISMISS_SOURCE_METADATA_SUGGESTION":   39,
 		"METHOD_REORDER_SOURCE_METADATA":              40,
+		"METHOD_ENSURE_FILE_THUMBNAIL":                41,
 	}
 )
 
@@ -1476,14 +1479,16 @@ func (x *GetProjectInfoResponse) GetProject() *ProjectInfo {
 }
 
 type Source struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Ref           string                 `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`
-	SourceTypeId  string                 `protobuf:"bytes,3,opt,name=source_type_id,json=sourceTypeId,proto3" json:"source_type_id,omitempty"`
-	Title         string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Id           string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Ref          string                 `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`
+	SourceTypeId string                 `protobuf:"bytes,3,opt,name=source_type_id,json=sourceTypeId,proto3" json:"source_type_id,omitempty"`
+	Title        string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	Description  string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	// Thumbnail JPEG under objects/… for list cells (empty = placeholder).
+	ThumbnailRelPath string `protobuf:"bytes,6,opt,name=thumbnail_rel_path,json=thumbnailRelPath,proto3" json:"thumbnail_rel_path,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Source) Reset() {
@@ -1547,6 +1552,13 @@ func (x *Source) GetTitle() string {
 func (x *Source) GetDescription() string {
 	if x != nil {
 		return x.Description
+	}
+	return ""
+}
+
+func (x *Source) GetThumbnailRelPath() string {
+	if x != nil {
+		return x.ThumbnailRelPath
 	}
 	return ""
 }
@@ -1705,16 +1717,18 @@ func (x *SourceFileRef) GetByteSize() int64 {
 }
 
 type Artifact struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Ref           string                 `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`
-	SourceId      string                 `protobuf:"bytes,3,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
-	FileId        string                 `protobuf:"bytes,4,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"` // empty when fileless
-	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	File          *SourceFileRef         `protobuf:"bytes,6,opt,name=file,proto3" json:"file,omitempty"`   // set when file_id present
-	Label         string                 `protobuf:"bytes,7,opt,name=label,proto3" json:"label,omitempty"` // required list headline
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Ref         string                 `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`
+	SourceId    string                 `protobuf:"bytes,3,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
+	FileId      string                 `protobuf:"bytes,4,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"` // empty when fileless
+	Description string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	File        *SourceFileRef         `protobuf:"bytes,6,opt,name=file,proto3" json:"file,omitempty"`   // set when file_id present
+	Label       string                 `protobuf:"bytes,7,opt,name=label,proto3" json:"label,omitempty"` // required list headline
+	// Thumbnail JPEG under objects/… (empty when fileless / non-image / skipped).
+	ThumbnailRelPath string `protobuf:"bytes,8,opt,name=thumbnail_rel_path,json=thumbnailRelPath,proto3" json:"thumbnail_rel_path,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Artifact) Reset() {
@@ -1792,6 +1806,13 @@ func (x *Artifact) GetFile() *SourceFileRef {
 func (x *Artifact) GetLabel() string {
 	if x != nil {
 		return x.Label
+	}
+	return ""
+}
+
+func (x *Artifact) GetThumbnailRelPath() string {
+	if x != nil {
+		return x.ThumbnailRelPath
 	}
 	return ""
 }
@@ -5793,6 +5814,112 @@ func (x *GetWorkspaceNavCountsResponse) GetFiles() int32 {
 	return 0
 }
 
+// EnsureFileThumbnail lazily creates (or returns) the default thumbnail
+// derivative for a File that is the primary File of some Artifact.
+type EnsureFileThumbnailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectDir    string                 `protobuf:"bytes,1,opt,name=project_dir,json=projectDir,proto3" json:"project_dir,omitempty"`
+	FileId        string                 `protobuf:"bytes,2,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnsureFileThumbnailRequest) Reset() {
+	*x = EnsureFileThumbnailRequest{}
+	mi := &file_engine_proto_msgTypes[94]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnsureFileThumbnailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnsureFileThumbnailRequest) ProtoMessage() {}
+
+func (x *EnsureFileThumbnailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[94]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnsureFileThumbnailRequest.ProtoReflect.Descriptor instead.
+func (*EnsureFileThumbnailRequest) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{94}
+}
+
+func (x *EnsureFileThumbnailRequest) GetProjectDir() string {
+	if x != nil {
+		return x.ProjectDir
+	}
+	return ""
+}
+
+func (x *EnsureFileThumbnailRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+type EnsureFileThumbnailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RelPath       string                 `protobuf:"bytes,1,opt,name=rel_path,json=relPath,proto3" json:"rel_path,omitempty"` // objects/… path; empty when skipped
+	Skipped       bool                   `protobuf:"varint,2,opt,name=skipped,proto3" json:"skipped,omitempty"`               // non-image, unprocessable, or no derivative
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnsureFileThumbnailResponse) Reset() {
+	*x = EnsureFileThumbnailResponse{}
+	mi := &file_engine_proto_msgTypes[95]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnsureFileThumbnailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnsureFileThumbnailResponse) ProtoMessage() {}
+
+func (x *EnsureFileThumbnailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[95]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnsureFileThumbnailResponse.ProtoReflect.Descriptor instead.
+func (*EnsureFileThumbnailResponse) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{95}
+}
+
+func (x *EnsureFileThumbnailResponse) GetRelPath() string {
+	if x != nil {
+		return x.RelPath
+	}
+	return ""
+}
+
+func (x *EnsureFileThumbnailResponse) GetSkipped() bool {
+	if x != nil {
+		return x.Skipped
+	}
+	return false
+}
+
 // Error is the protobuf payload on provenencia_call status 1 (failure).
 // Success payloads remain method-specific response messages.
 type Error struct {
@@ -5806,7 +5933,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_engine_proto_msgTypes[94]
+	mi := &file_engine_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5818,7 +5945,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[94]
+	mi := &file_engine_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5831,7 +5958,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{94}
+	return file_engine_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *Error) GetCode() string {
@@ -5940,13 +6067,14 @@ const file_engine_proto_rawDesc = "" +
 	"\x17updated_by_display_name\x18\x06 \x01(\tR\x14updatedByDisplayName\x12$\n" +
 	"\x0eupdated_by_ref\x18\a \x01(\tR\fupdatedByRef\"V\n" +
 	"\x16GetProjectInfoResponse\x12<\n" +
-	"\aproject\x18\x01 \x01(\v2\".provenencia.engine.v1.ProjectInfoR\aproject\"\x88\x01\n" +
+	"\aproject\x18\x01 \x01(\v2\".provenencia.engine.v1.ProjectInfoR\aproject\"\xb6\x01\n" +
 	"\x06Source\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
 	"\x03ref\x18\x02 \x01(\tR\x03ref\x12$\n" +
 	"\x0esource_type_id\x18\x03 \x01(\tR\fsourceTypeId\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x05 \x01(\tR\vdescription\"\x9c\x01\n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12,\n" +
+	"\x12thumbnail_rel_path\x18\x06 \x01(\tR\x10thumbnailRelPath\"\x9c\x01\n" +
 	"\n" +
 	"SourceNote\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
@@ -5961,7 +6089,7 @@ const file_engine_proto_rawDesc = "" +
 	"\x11original_filename\x18\x03 \x01(\tR\x10originalFilename\x12\x1d\n" +
 	"\n" +
 	"media_type\x18\x04 \x01(\tR\tmediaType\x12\x1b\n" +
-	"\tbyte_size\x18\x05 \x01(\x03R\bbyteSize\"\xd4\x01\n" +
+	"\tbyte_size\x18\x05 \x01(\x03R\bbyteSize\"\x82\x02\n" +
 	"\bArtifact\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
 	"\x03ref\x18\x02 \x01(\tR\x03ref\x12\x1b\n" +
@@ -5969,7 +6097,8 @@ const file_engine_proto_rawDesc = "" +
 	"\afile_id\x18\x04 \x01(\tR\x06fileId\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x128\n" +
 	"\x04file\x18\x06 \x01(\v2$.provenencia.engine.v1.SourceFileRefR\x04file\x12\x14\n" +
-	"\x05label\x18\a \x01(\tR\x05label\"\x87\x01\n" +
+	"\x05label\x18\a \x01(\tR\x05label\x12,\n" +
+	"\x12thumbnail_rel_path\x18\b \x01(\tR\x10thumbnailRelPath\"\x87\x01\n" +
 	"\x16SourceCredibilityGrade\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12\x16\n" +
@@ -6298,11 +6427,18 @@ const file_engine_proto_rawDesc = "" +
 	"\asources\x18\x01 \x01(\x05R\asources\x12P\n" +
 	"\fsource_types\x18\x02 \x01(\v2-.provenencia.engine.v1.VocabularyOriginCountsR\vsourceTypes\x12R\n" +
 	"\rsource_fields\x18\x03 \x01(\v2-.provenencia.engine.v1.VocabularyOriginCountsR\fsourceFields\x12\x14\n" +
-	"\x05files\x18\x04 \x01(\x05R\x05files\"i\n" +
+	"\x05files\x18\x04 \x01(\x05R\x05files\"V\n" +
+	"\x1aEnsureFileThumbnailRequest\x12\x1f\n" +
+	"\vproject_dir\x18\x01 \x01(\tR\n" +
+	"projectDir\x12\x17\n" +
+	"\afile_id\x18\x02 \x01(\tR\x06fileId\"R\n" +
+	"\x1bEnsureFileThumbnailResponse\x12\x19\n" +
+	"\brel_path\x18\x01 \x01(\tR\arelPath\x12\x18\n" +
+	"\askipped\x18\x02 \x01(\bR\askipped\"i\n" +
 	"\x05Error\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x124\n" +
 	"\x04kind\x18\x02 \x01(\x0e2 .provenencia.engine.v1.ErrorKindR\x04kind\x12\x16\n" +
-	"\x06params\x18\x03 \x03(\tR\x06params*\x88\n" +
+	"\x06params\x18\x03 \x03(\tR\x06params*\xaa\n" +
 	"\n" +
 	"\x06Method\x12\x16\n" +
 	"\x12METHOD_UNSPECIFIED\x10\x00\x12\x0f\n" +
@@ -6346,7 +6482,8 @@ const file_engine_proto_rawDesc = "" +
 	"%METHOD_LIST_SOURCE_CREDIBILITY_GRADES\x10%\x12/\n" +
 	"+METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT\x10&\x12-\n" +
 	")METHOD_DISMISS_SOURCE_METADATA_SUGGESTION\x10'\x12\"\n" +
-	"\x1eMETHOD_REORDER_SOURCE_METADATA\x10(*\x88\x01\n" +
+	"\x1eMETHOD_REORDER_SOURCE_METADATA\x10(\x12 \n" +
+	"\x1cMETHOD_ENSURE_FILE_THUMBNAIL\x10)*\x88\x01\n" +
 	"\tErrorKind\x12\x1a\n" +
 	"\x16ERROR_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fERROR_KIND_USER\x10\x01\x12\x17\n" +
@@ -6367,7 +6504,7 @@ func file_engine_proto_rawDescGZIP() []byte {
 }
 
 var file_engine_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 95)
+var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 97)
 var file_engine_proto_goTypes = []any{
 	(Method)(0),                                       // 0: provenencia.engine.v1.Method
 	(ErrorKind)(0),                                    // 1: provenencia.engine.v1.ErrorKind
@@ -6465,7 +6602,9 @@ var file_engine_proto_goTypes = []any{
 	(*VocabularyOriginCounts)(nil),                    // 93: provenencia.engine.v1.VocabularyOriginCounts
 	(*GetWorkspaceNavCountsRequest)(nil),              // 94: provenencia.engine.v1.GetWorkspaceNavCountsRequest
 	(*GetWorkspaceNavCountsResponse)(nil),             // 95: provenencia.engine.v1.GetWorkspaceNavCountsResponse
-	(*Error)(nil),                                     // 96: provenencia.engine.v1.Error
+	(*EnsureFileThumbnailRequest)(nil),                // 96: provenencia.engine.v1.EnsureFileThumbnailRequest
+	(*EnsureFileThumbnailResponse)(nil),               // 97: provenencia.engine.v1.EnsureFileThumbnailResponse
+	(*Error)(nil),                                     // 98: provenencia.engine.v1.Error
 }
 var file_engine_proto_depIdxs = []int32{
 	24, // 0: provenencia.engine.v1.CompleteOnboardingResponse.project:type_name -> provenencia.engine.v1.ProjectInfo
@@ -6525,7 +6664,7 @@ func file_engine_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_engine_proto_rawDesc), len(file_engine_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   95,
+			NumMessages:   97,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
