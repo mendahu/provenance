@@ -19,6 +19,7 @@ Use this folder when something useful pops up mid-work and would otherwise get l
 | [Omnibar search](omnibar-search.md) | Project-scoped top search across Sources, vocabulary, Files, and later Interpretation/Conclusion — jump by typing instead of sidebar hunting. |
 | [Navigation history](navigation-history.md) | Browser-like Back/Forward through workspace views (sidebar + deep links), distinct from in-page “up to list.” |
 | [Catalog access serialization](catalog-access-serialization.md) | Serialize exclusive catalog opens (and related DB/FFI performance) so concurrent RPCs queue instead of failing — beyond the workspace appear-time gate. |
+| [Image optimization](image-optimization.md) | Async in-memory thumbnail cache so SwiftUI stops sync-decoding `objects/…` thumbs on every render. |
 
 ## Completed
 

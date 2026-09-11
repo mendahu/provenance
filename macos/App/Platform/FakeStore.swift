@@ -21,6 +21,12 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var fileCountByProject: [String: Int] = [:]
     /// When set, `listSources` throws instead of returning the in-memory list.
     var listSourcesError: Error?
+    /// When set, `updateSource` throws (identity title/type/description saves).
+    var updateSourceError: Error?
+    /// When set, `reorderSourceMetadata` throws (optimistic move should revert).
+    var reorderSourceMetadataError: Error?
+    /// When set, `addSourceNote` throws (`pageError` surfacing).
+    var addSourceNoteError: Error?
     var lastResult = OnboardingResult(
         projectDir: "/tmp/robins-family.provenencia",
         userID: "00000000-0000-7000-8000-000000000001",
@@ -230,6 +236,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         title: String,
         description: String
     ) async throws -> CatalogSource {
+        if let updateSourceError { throw updateSourceError }
         var list = sourcesByProject[projectDir] ?? []
         guard let idx = list.firstIndex(where: { $0.id == sourceID }) else {
             throw StoreBoom.boom
@@ -244,6 +251,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     func addSourceNote(projectDir _: String, userID: String, sourceID: String, body: String) async throws
         -> CatalogSourceNote
     {
+        if let addSourceNoteError { throw addSourceNoteError }
         let author = catalogUsers.first { $0.userID == userID }?.displayName
             ?? identity?.displayName
             ?? ""
@@ -358,6 +366,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         sourceID: String,
         fieldIDs: [String]
     ) async throws -> [CatalogMetadataEntry] {
+        if let reorderSourceMetadataError { throw reorderSourceMetadataError }
         let current = metadataBySource[sourceID] ?? []
         var byID = Dictionary(uniqueKeysWithValues: current.map { ($0.field.id, $0) })
         var next: [CatalogMetadataEntry] = []

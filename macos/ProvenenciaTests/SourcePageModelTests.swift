@@ -83,6 +83,90 @@ struct SourcePageModelTests {
         #expect(store.sourcesByProject[projectDir]?.first?.title == "Revised title")
     }
 
+    @Test func saveTypeUpdatesCommittedType() async {
+        let store = makeStore()
+        store.sourceTypesByProject[projectDir] = [
+            photoType(),
+            CatalogSourceType(
+                id: "t2", key: "census", origin: "provenencia", label: "Census", description: ""
+            ),
+        ]
+        let model = makeModel(store: store)
+        await model.load()
+        model.identity.beginEditType()
+        model.identity.typeDraftID = "t2"
+        await model.identity.saveType()
+        #expect(model.identity.editingType == false)
+        #expect(model.identity.sourceTypeID == "t2")
+        #expect(model.identity.typeLabel == "Census")
+        #expect(store.sourcesByProject[projectDir]?.first?.sourceTypeID == "t2")
+    }
+
+    @Test func cancelEditTypeRestoresSavedType() async {
+        let store = makeStore()
+        let model = makeModel(store: store)
+        await model.load()
+        model.identity.beginEditType()
+        model.identity.typeDraftID = "t-other"
+        model.identity.cancelEditType()
+        #expect(model.identity.editingType == false)
+        #expect(model.identity.typeDraftID == "t1")
+        #expect(model.identity.sourceTypeID == "t1")
+    }
+
+    @Test func saveDescriptionUpdatesCommittedDescription() async {
+        let store = makeStore()
+        let model = makeModel(store: store)
+        await model.load()
+        model.identity.beginEditDescription()
+        model.identity.descriptionDraft = "Revised notes"
+        await model.identity.saveDescription()
+        #expect(model.identity.editingDescription == false)
+        #expect(model.identity.description == "Revised notes")
+        #expect(store.sourcesByProject[projectDir]?.first?.description == "Revised notes")
+    }
+
+    @Test func cancelEditDescriptionDiscardsDraft() async {
+        let store = makeStore()
+        let model = makeModel(store: store)
+        await model.load()
+        model.identity.beginEditDescription()
+        model.identity.descriptionDraft = "Should not stick"
+        model.identity.cancelEditDescription()
+        #expect(model.identity.editingDescription == false)
+        #expect(model.identity.description == "Held by Mary")
+        #expect(store.sourcesByProject[projectDir]?.first?.description == "Held by Mary")
+    }
+
+    @Test func updateSourceFailureSurfacesOnTitleError() async {
+        let store = makeStore()
+        store.updateSourceError = CoreInvokeError.coded(
+            status: 1, code: "internal.unknown", kind: .internal, params: []
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        model.identity.beginEditTitle()
+        model.identity.titleDraft = "Nope"
+        await model.identity.saveTitle()
+        #expect(model.identity.titleError != nil)
+        #expect(model.identity.editingTitle == true)
+        #expect(model.identity.title == "Family album")
+    }
+
+    @Test func addNoteFailureSurfacesPageError() async {
+        let store = makeStore()
+        store.addSourceNoteError = CoreInvokeError.coded(
+            status: 1, code: "internal.unknown", kind: .internal, params: []
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        model.notes.draft = "Will fail"
+        await model.notes.add()
+        #expect(model.pageError != nil)
+        #expect(model.notes.items.isEmpty)
+        #expect(model.notes.draft == "Will fail")
+    }
+
     @Test func emptyTitleDraftSetsValidationError() async {
         let model = makeModel(store: makeStore())
         await model.load()
@@ -442,6 +526,34 @@ struct SourcePageModelTests {
         #expect(model.metadata.entries.map(\.field.id) == [repo.id, author.id, issue.id])
     }
 
+    @Test func reorderSavedMetadataFailureRevertsAndSetsPageError() async {
+        let author = authorField()
+        let repo = repositoryField()
+        let store = makeStore(
+            metadata: [
+                CatalogMetadataEntry(
+                    field: author, valueText: "A", dateValueID: "",
+                    hasValue: true, suggested: false, sortOrder: 0
+                ),
+                CatalogMetadataEntry(
+                    field: repo, valueText: "B", dateValueID: "",
+                    hasValue: true, suggested: false, sortOrder: 1
+                ),
+            ],
+            fields: [author, repo]
+        )
+        store.reorderSourceMetadataError = CoreInvokeError.coded(
+            status: 1, code: "internal.unknown", kind: .internal, params: []
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        let before = model.metadata.saved.map(\.field.id)
+        await model.metadata.moveSaved(from: IndexSet(integer: 0), to: 2)
+        #expect(model.pageError != nil)
+        #expect(model.metadata.saved.map(\.field.id) == before)
+        #expect(store.metadataBySource[sourceID]?.map(\.field.id) == before)
+    }
+
     @Test func addMetadataFromDialog() async {
         let author = authorField()
         let store = makeStore(fields: [author])
@@ -453,6 +565,24 @@ struct SourcePageModelTests {
         await model.metadata.createFromAdd()
         #expect(model.metadata.isAdding == false)
         #expect(model.metadata.entries.contains { $0.field.id == author.id && $0.valueText == "Eliza" })
+    }
+
+    @Test func addMetadataRequiresFieldAndValue() async {
+        let author = authorField()
+        let store = makeStore(fields: [author])
+        let model = makeModel(store: store)
+        await model.load()
+        model.metadata.openAdd()
+        await model.metadata.createFromAdd()
+        #expect(model.metadata.addFieldError != nil)
+        #expect(model.metadata.isAdding == true)
+
+        model.metadata.addFieldID = author.id
+        model.metadata.addValue = "   "
+        await model.metadata.createFromAdd()
+        #expect(model.metadata.addValueError != nil)
+        #expect(model.metadata.isAdding == true)
+        #expect(model.metadata.entries.isEmpty)
     }
 
     @Test func cancelArtifactFieldsRestoresDrafts() async throws {
