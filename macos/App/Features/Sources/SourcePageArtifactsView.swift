@@ -215,24 +215,18 @@ struct SourcePageArtifactsView: View {
             }
 
             HStack(spacing: PVSpacing.space4) {
-                PVButton(
-                    L10n.Sources.saveArtifact,
-                    variant: .primary,
-                    size: .sm,
-                    loading: model.artifacts.savingID == art.id
-                ) {
-                    Task { await model.artifacts.saveFields(id: art.id) }
-                }
-                .disabled(!model.artifacts.canSaveFields(art.id) && model.artifacts.savingID != art.id)
-                .accessibilityIdentifier("sources.page.artifact.\(art.id).save")
+                PVInlineEditActions(
+                    isSaving: model.artifacts.savingID == art.id,
+                    saveLabel: L10n.Sources.saveArtifact,
+                    cancelLabel: L10n.Sources.cancelEdit,
+                    saveDisabled: !model.artifacts.canSaveFields(art.id),
+                    showsCancel: dirty,
+                    accessibilityIdentifierPrefix: "sources.page.artifact.\(art.id)",
+                    onSave: { Task { await model.artifacts.saveFields(id: art.id) } },
+                    onCancel: { model.artifacts.cancelFields(id: art.id) }
+                )
 
-                if dirty {
-                    PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
-                        model.artifacts.cancelFields(id: art.id)
-                    }
-                    .disabled(model.artifacts.savingID == art.id)
-                    .accessibilityIdentifier("sources.page.artifact.\(art.id).cancel")
-                } else {
+                if !dirty {
                     Text(L10n.Sources.noUnsavedChanges)
                         .font(PVFont.body(size: PVTypeScale.caption, italic: true))
                         .foregroundStyle(PVColor.textFaint)

@@ -57,71 +57,51 @@ struct SourcePageIdentityHeader: View {
 
     private var titleCluster: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space4) {
-            HStack(alignment: .firstTextBaseline, spacing: PVSpacing.space4) {
-                if model.identity.editingTitle {
-                    VStack(alignment: .leading, spacing: PVSpacing.space2) {
-                        TextField(
-                            "",
-                            text: $model.identity.titleDraft,
-                            prompt: Text(L10n.Sources.formTitle),
-                            axis: .vertical
-                        )
-                        .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
-                        .foregroundStyle(PVColor.textDisplay)
-                        .textFieldStyle(.plain)
-                        .lineLimit(1...4)
-                        .padding(.horizontal, PVSpacing.space5)
-                        .padding(.vertical, PVSpacing.space4)
-                        .background(
-                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                                .fill(PVColor.surfaceRaised)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                                .stroke(PVColor.borderFocus, lineWidth: 1.5)
-                        )
-                        .accessibilityIdentifier("sources.page.title")
-                        .onChange(of: model.identity.titleDraft) { _, _ in model.identity.titleError = nil }
-                        .onSubmit { Task { await model.identity.saveTitle() } }
-                        .disabled(model.identity.isSaving)
-
-                        if let titleError = model.identity.titleError {
-                            Text(titleError)
-                                .font(PVFont.body(size: PVTypeScale.caption))
-                                .foregroundStyle(PVColor.danger)
-                        }
-                    }
-                    .frame(maxWidth: 720, alignment: .leading)
-
-                    HStack(spacing: PVSpacing.space3) {
-                        PVButton(
-                            L10n.Sources.saveAction,
-                            variant: .primary,
-                            size: .sm,
-                            loading: model.identity.isSaving
-                        ) {
-                            Task { await model.identity.saveTitle() }
-                        }
-                        .accessibilityIdentifier("sources.page.title.save")
-                        PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
-                            model.identity.cancelEditTitle()
-                        }
-                        .disabled(model.identity.isSaving)
-                        .accessibilityIdentifier("sources.page.title.cancel")
-                    }
-                } else {
-                    Text(model.identity.title)
-                        .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
-                        .foregroundStyle(PVColor.textDisplay)
-                        .lineLimit(4)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("sources.page.title")
-
-                    PVIconButton(.penLine, label: L10n.Sources.editTitle, size: .sm) {
-                        model.identity.beginEditTitle()
-                    }
-                    .accessibilityIdentifier("sources.page.title.edit")
-                }
+            PVInlineEdit(
+                isEditing: model.identity.editingTitle,
+                isSaving: model.identity.isSaving,
+                error: model.identity.titleError,
+                saveLabel: L10n.Sources.saveAction,
+                cancelLabel: L10n.Sources.cancelEdit,
+                editLabel: L10n.Sources.editTitle,
+                axis: .horizontal,
+                accessibilityIdentifierPrefix: "sources.page.title",
+                onEdit: { model.identity.beginEditTitle() },
+                onSave: { Task { await model.identity.saveTitle() } },
+                onCancel: { model.identity.cancelEditTitle() }
+            ) {
+                Text(model.identity.title)
+                    .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
+                    .foregroundStyle(PVColor.textDisplay)
+                    .lineLimit(4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("sources.page.title")
+            } editor: {
+                TextField(
+                    "",
+                    text: $model.identity.titleDraft,
+                    prompt: Text(L10n.Sources.formTitle),
+                    axis: .vertical
+                )
+                .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
+                .foregroundStyle(PVColor.textDisplay)
+                .textFieldStyle(.plain)
+                .lineLimit(1...4)
+                .padding(.horizontal, PVSpacing.space5)
+                .padding(.vertical, PVSpacing.space4)
+                .background(
+                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                        .fill(PVColor.surfaceRaised)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                        .stroke(PVColor.borderFocus, lineWidth: 1.5)
+                )
+                .accessibilityIdentifier("sources.page.title")
+                .onChange(of: model.identity.titleDraft) { _, _ in model.identity.titleError = nil }
+                .onSubmit { Task { await model.identity.saveTitle() } }
+                .disabled(model.identity.isSaving)
+                .frame(maxWidth: 720, alignment: .leading)
             }
 
             metaRow

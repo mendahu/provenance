@@ -35,24 +35,18 @@ struct SourcePageCredibilityView: View {
             .accessibilityIdentifier("sources.page.credibility.argument")
 
             HStack(spacing: PVSpacing.space4) {
-                PVButton(
-                    L10n.Sources.saveAssessment,
-                    variant: .primary,
-                    size: .sm,
-                    loading: model.credibility.isSaving
-                ) {
-                    Task { await model.credibility.save() }
-                }
-                .disabled(!model.credibility.isDirty && !model.credibility.isSaving)
-                .accessibilityIdentifier("sources.page.credibility.save")
+                PVInlineEditActions(
+                    isSaving: model.credibility.isSaving,
+                    saveLabel: L10n.Sources.saveAssessment,
+                    cancelLabel: L10n.Sources.cancelEdit,
+                    saveDisabled: !model.credibility.isDirty,
+                    showsCancel: model.credibility.isDirty,
+                    accessibilityIdentifierPrefix: "sources.page.credibility",
+                    onSave: { Task { await model.credibility.save() } },
+                    onCancel: { model.credibility.cancel() }
+                )
 
-                if model.credibility.isDirty {
-                    PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
-                        model.credibility.cancel()
-                    }
-                    .disabled(model.credibility.isSaving)
-                    .accessibilityIdentifier("sources.page.credibility.cancel")
-                } else {
+                if !model.credibility.isDirty {
                     Text(
                         model.credibility.hasSavedAssessment
                             ? L10n.Sources.credibilitySavedStatus

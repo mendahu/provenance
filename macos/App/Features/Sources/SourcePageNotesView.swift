@@ -110,8 +110,26 @@ private struct SourcePageNoteRow: View {
             }
             .frame(width: SourcePageLayout.notesBylineWidth, alignment: .leading)
 
-            if isEditing {
-                VStack(alignment: .leading, spacing: PVSpacing.space4) {
+            PVInlineEdit(
+                isEditing: isEditing,
+                isSaving: isSaving,
+                error: bodyError,
+                saveLabel: L10n.Sources.saveNote,
+                cancelLabel: L10n.Sources.cancelEdit,
+                editLabel: L10n.Sources.editNote,
+                axis: .vertical,
+                accessibilityIdentifierPrefix: "sources.page.note.\(note.id)",
+                onEdit: onBeginEdit,
+                onSave: onSave,
+                onCancel: onCancel,
+                display: {
+                    Text(note.body)
+                        .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
+                        .foregroundStyle(PVColor.textSecondary)
+                        .padding(.vertical, PVSpacing.space3)
+                        .accessibilityIdentifier("sources.page.note.\(note.id)")
+                },
+                editor: {
                     TextField("", text: $bodyDraft, axis: .vertical)
                         .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
                         .foregroundStyle(PVColor.textPrimary)
@@ -130,59 +148,22 @@ private struct SourcePageNoteRow: View {
                         .accessibilityIdentifier("sources.page.note.\(note.id)")
                         .disabled(isSaving)
                         .onChange(of: bodyDraft) { _, _ in bodyError = nil }
-
-                    if let bodyError {
-                        Text(bodyError)
-                            .font(PVFont.body(size: PVTypeScale.caption))
-                            .foregroundStyle(PVColor.danger)
-                    }
-
-                    HStack(spacing: PVSpacing.space4) {
-                        PVButton(
-                            L10n.Sources.saveNote,
-                            variant: .primary,
-                            size: .sm,
-                            loading: isSaving
-                        ) {
-                            onSave()
-                        }
-                        .accessibilityIdentifier("sources.page.note.\(note.id).save")
-                        PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
-                            onCancel()
-                        }
-                        .disabled(isSaving)
-                        .accessibilityIdentifier("sources.page.note.\(note.id).cancel")
-
-                        Spacer(minLength: 0)
-
-                        PVIconButton(.trash, label: L10n.Sources.deleteNote, size: .sm, tone: .danger) {
-                            onDelete()
-                        }
-                        .disabled(isSaving)
-                        .accessibilityIdentifier("sources.page.note.\(note.id).delete")
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Text(note.body)
-                    .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
-                    .foregroundStyle(PVColor.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, PVSpacing.space3)
-                    .accessibilityIdentifier("sources.page.note.\(note.id)")
-
-                HStack(spacing: PVSpacing.space2) {
-                    PVIconButton(.penLine, label: L10n.Sources.editNote, size: .sm) {
-                        onBeginEdit()
-                    }
-                    .accessibilityIdentifier("sources.page.note.\(note.id).edit")
-
+                },
+                restingTrailing: {
                     PVIconButton(.trash, label: L10n.Sources.deleteNote, size: .sm, tone: .danger) {
                         onDelete()
                     }
                     .accessibilityIdentifier("sources.page.note.\(note.id).delete")
+                },
+                editingTrailing: {
+                    PVIconButton(.trash, label: L10n.Sources.deleteNote, size: .sm, tone: .danger) {
+                        onDelete()
+                    }
+                    .disabled(isSaving)
+                    .accessibilityIdentifier("sources.page.note.\(note.id).delete")
                 }
-            }
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, PVSpacing.space6)
         .overlay(alignment: .bottom) {

@@ -108,71 +108,53 @@ struct SourcePageMetadataView: View {
                     .padding(.top, 6)
                 SourcePageMetadataLabel(text: entry.field.label, topPadding: 6)
 
-                if editing {
-                    HStack(alignment: .top, spacing: PVSpacing.space3) {
-                        TextField(
-                            "",
-                            text: Binding(
-                                get: { model.metadata.drafts[fieldID] ?? entry.valueText },
-                                set: { model.metadata.drafts[fieldID] = $0 }
-                            ),
-                            axis: .vertical
-                        )
+                PVInlineEdit(
+                    isEditing: editing,
+                    isSaving: model.metadata.savingFieldID == fieldID,
+                    saveLabel: L10n.Sources.saveAction,
+                    cancelLabel: L10n.Sources.cancelEdit,
+                    editLabel: L10n.Sources.editMetadataValue,
+                    saveDisabled: (model.metadata.drafts[fieldID] ?? "")
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .isEmpty,
+                    axis: .horizontal,
+                    accessibilityIdentifierPrefix: "sources.page.metadata.\(fieldID)",
+                    onEdit: { model.metadata.beginEdit(fieldID: fieldID) },
+                    onSave: { Task { await model.metadata.save(fieldID: fieldID) } },
+                    onCancel: { model.metadata.cancelEdit() }
+                ) {
+                    Text(entry.valueText)
                         .font(PVFont.mono(size: PVTypeScale.caption))
                         .foregroundStyle(PVColor.textPrimary)
-                        .textFieldStyle(.plain)
-                        .lineLimit(1...6)
-                        .padding(.horizontal, PVInputChrome.horizontalInset)
-                        .padding(.vertical, PVSpacing.space3)
-                        .background(
-                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                                .fill(PVColor.surfaceRaised)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                                .stroke(PVColor.borderDefault, lineWidth: 1)
-                        )
-                        .onSubmit { Task { await model.metadata.save(fieldID: fieldID) } }
-                        .disabled(model.metadata.savingFieldID == fieldID)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 6)
                         .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
-
-                        PVButton(
-                            L10n.Sources.saveAction,
-                            variant: .primary,
-                            size: .sm,
-                            loading: model.metadata.savingFieldID == fieldID
-                        ) {
-                            Task { await model.metadata.save(fieldID: fieldID) }
-                        }
-                        .disabled(
-                            (model.metadata.drafts[fieldID] ?? "")
-                                .trimmingCharacters(in: .whitespacesAndNewlines)
-                                .isEmpty
-                        )
-                        .accessibilityIdentifier("sources.page.metadata.\(fieldID).save")
-
-                        PVIconButton(.dismiss, label: L10n.Sources.cancelEdit, size: .sm) {
-                            model.metadata.cancelEdit()
-                        }
-                        .disabled(model.metadata.savingFieldID == fieldID)
-                        .accessibilityIdentifier("sources.page.metadata.\(fieldID).cancel")
-                    }
-                } else {
-                    HStack(alignment: .top, spacing: PVSpacing.space3) {
-                        Text(entry.valueText)
-                            .font(PVFont.mono(size: PVTypeScale.caption))
-                            .foregroundStyle(PVColor.textPrimary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, 6)
-                            .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
-
-                        PVIconButton(.penLine, label: L10n.Sources.editMetadataValue, size: .sm) {
-                            model.metadata.beginEdit(fieldID: fieldID)
-                        }
-                        .padding(.top, 2)
-                        .accessibilityIdentifier("sources.page.metadata.\(fieldID).edit")
-                    }
+                } editor: {
+                    TextField(
+                        "",
+                        text: Binding(
+                            get: { model.metadata.drafts[fieldID] ?? entry.valueText },
+                            set: { model.metadata.drafts[fieldID] = $0 }
+                        ),
+                        axis: .vertical
+                    )
+                    .font(PVFont.mono(size: PVTypeScale.caption))
+                    .foregroundStyle(PVColor.textPrimary)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...6)
+                    .padding(.horizontal, PVInputChrome.horizontalInset)
+                    .padding(.vertical, PVSpacing.space3)
+                    .background(
+                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                            .fill(PVColor.surfaceRaised)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                            .stroke(PVColor.borderDefault, lineWidth: 1)
+                    )
+                    .onSubmit { Task { await model.metadata.save(fieldID: fieldID) } }
+                    .disabled(model.metadata.savingFieldID == fieldID)
+                    .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
                 }
 
                 metadataTypeBadge(entry.field.dataType)

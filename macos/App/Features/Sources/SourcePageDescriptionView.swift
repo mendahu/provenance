@@ -23,8 +23,29 @@ struct SourcePageDescriptionView: View {
                 }
             )
 
-            if model.identity.editingDescription {
-                VStack(alignment: .leading, spacing: PVSpacing.space4) {
+            if model.identity.editingDescription
+                || !model.identity.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            {
+                PVInlineEdit(
+                    isEditing: model.identity.editingDescription,
+                    isSaving: model.identity.isSaving,
+                    error: model.identity.descriptionError,
+                    saveLabel: L10n.Sources.saveDescription,
+                    cancelLabel: L10n.Sources.cancelEdit,
+                    editLabel: L10n.Sources.editDescription,
+                    showsEditControl: false,
+                    axis: .vertical,
+                    accessibilityIdentifierPrefix: "sources.page.description",
+                    onEdit: { model.identity.beginEditDescription() },
+                    onSave: { Task { await model.identity.saveDescription() } },
+                    onCancel: { model.identity.cancelEditDescription() }
+                ) {
+                    Text(model.identity.description)
+                        .font(PVFont.body(size: PVTypeScale.body, weight: PVFontWeight.regular))
+                        .foregroundStyle(PVColor.textSecondary)
+                        .lineSpacing((PVLineHeight.normal - 1) * PVTypeScale.body)
+                        .accessibilityIdentifier("sources.page.description")
+                } editor: {
                     TextField(
                         "",
                         text: $model.identity.descriptionDraft,
@@ -47,36 +68,7 @@ struct SourcePageDescriptionView: View {
                     )
                     .accessibilityIdentifier("sources.page.description")
                     .disabled(model.identity.isSaving)
-
-                    if let descriptionError = model.identity.descriptionError {
-                        Text(descriptionError)
-                            .font(PVFont.body(size: PVTypeScale.caption))
-                            .foregroundStyle(PVColor.danger)
-                    }
-
-                    HStack(spacing: PVSpacing.space4) {
-                        PVButton(
-                            L10n.Sources.saveDescription,
-                            variant: .primary,
-                            size: .sm,
-                            loading: model.identity.isSaving
-                        ) {
-                            Task { await model.identity.saveDescription() }
-                        }
-                        .accessibilityIdentifier("sources.page.description.save")
-                        PVButton(L10n.Sources.cancelEdit, variant: .ghost, size: .sm) {
-                            model.identity.cancelEditDescription()
-                        }
-                        .disabled(model.identity.isSaving)
-                        .accessibilityIdentifier("sources.page.description.cancel")
-                    }
                 }
-            } else if !model.identity.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text(model.identity.description)
-                    .font(PVFont.body(size: PVTypeScale.body, weight: PVFontWeight.regular))
-                    .foregroundStyle(PVColor.textSecondary)
-                    .lineSpacing((PVLineHeight.normal - 1) * PVTypeScale.body)
-                    .accessibilityIdentifier("sources.page.description")
             }
         }
     }
