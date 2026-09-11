@@ -28,7 +28,6 @@ struct DateValueEditorForm: View {
             if draft.showAdvanced {
                 advancedSection
             }
-            storedAsBar
         }
     }
 
@@ -253,27 +252,6 @@ struct DateValueEditorForm: View {
                     .foregroundStyle(PVColor.textMuted)
             }
         }
-    }
-
-    private var storedAsBar: some View {
-        HStack(spacing: PVSpacing.space5) {
-            Text(L10n.Sources.dateStoredAs)
-                .font(PVFont.body(size: PVTypeScale.micro, weight: PVFontWeight.semibold))
-                .tracking(PVTypeScale.micro * PVTracking.caps)
-                .textCase(.uppercase)
-                .foregroundStyle(PVColor.textMuted)
-            Text(draft.summary)
-                .font(PVFont.mono(size: PVTypeScale.caption))
-                .foregroundStyle(PVColor.textPrimary)
-        }
-        .padding(PVSpacing.space5)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(PVColor.surfaceSunken)
-        .clipShape(RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                .stroke(PVColor.borderSubtle, lineWidth: 1)
-        )
     }
 
     private func cascadeField(

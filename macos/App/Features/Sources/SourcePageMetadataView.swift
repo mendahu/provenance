@@ -31,9 +31,13 @@ struct SourcePageMetadataView: View {
                     .accessibilityIdentifier("sources.page.metadata.empty")
             } else {
                 if !model.metadata.saved.isEmpty {
-                    PVReorderableList(items: model.metadata.saved, onMove: { source, destination in
-                        Task { await model.metadata.moveSaved(from: source, to: destination) }
-                    }) { entry in
+                    PVReorderableList(
+                        items: model.metadata.saved,
+                        freezesHeight: model.metadata.editingFieldID != nil,
+                        onMove: { source, destination in
+                            Task { await model.metadata.moveSaved(from: source, to: destination) }
+                        }
+                    ) { entry in
                         savedRow(entry)
                     }
                     .accessibilityIdentifier("sources.page.metadata.list")
@@ -49,7 +53,17 @@ struct SourcePageMetadataView: View {
                             .padding(.top, model.metadata.saved.isEmpty ? 0 : PVSpacing.space7)
 
                         ForEach(model.metadata.suggested) { entry in
-                            suggestionRow(entry)
+                            SourcePageMetadataSuggestionRow(
+                                entry: entry,
+                                isSaving: model.metadata.savingFieldID == entry.field.id,
+                                onSave: { value in
+                                    model.metadata.drafts[entry.field.id] = value
+                                    Task { await model.metadata.save(fieldID: entry.field.id) }
+                                },
+                                onDismiss: {
+                                    Task { await model.metadata.dismissSuggestion(fieldID: entry.field.id) }
+                                }
+                            )
                         }
                     }
                     .accessibilityIdentifier("sources.page.metadata.suggestions")
@@ -91,160 +105,235 @@ struct SourcePageMetadataView: View {
                     isInvalid: model.metadata.addValueError != nil
                 )
                 .onChange(of: model.metadata.addValue) { _, _ in
-                    model.metadata.addValueError = nil
+                    if model.metadata.addValueError != nil {
+                        model.metadata.addValueError = nil
+                    }
                 }
             }
         }
     }
 
+    /// Date dialog body: wording + structure (hosted by the page shell).
+    /// Uses local drafts; parent supplies `canSave` / `saveAction` bindings so
+    /// Confirm stays accurate without live-binding the page model.
+    func dateEditorForm(
+        canSave: Binding<Bool>,
+        saveAction: Binding<(() async -> Void)?>
+    ) -> some View {
+        SourcePageDateEditorForm(
+            model: model,
+            canSave: canSave,
+            saveAction: saveAction
+        )
+    }
+
     private func savedRow(_ entry: CatalogMetadataEntry) -> some View {
-        let fieldID = entry.field.id
         let isDate = entry.field.dataType == CatalogFieldDataType.date
-        let structured = model.metadata.isStructured(entry)
-        let editing = model.metadata.editingFieldID == fieldID
-        return VStack(alignment: .leading, spacing: PVSpacing.space2) {
-            HStack(alignment: .top, spacing: SourcePageLayout.metadataColumnSpacing) {
-                PVReorderHandle()
-                    .padding(.top, 6)
-                SourcePageMetadataLabel(text: entry.field.label, topPadding: 6)
-
-                PVInlineEdit(
-                    isEditing: editing,
-                    isSaving: model.metadata.savingFieldID == fieldID,
-                    saveLabel: L10n.Sources.saveAction,
-                    cancelLabel: L10n.Sources.cancelEdit,
-                    editLabel: L10n.Sources.editMetadataValue,
-                    saveDisabled: (model.metadata.drafts[fieldID] ?? "")
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                        .isEmpty,
-                    axis: .horizontal,
-                    accessibilityIdentifierPrefix: "sources.page.metadata.\(fieldID)",
-                    onEdit: { model.metadata.beginEdit(fieldID: fieldID) },
-                    onSave: { Task { await model.metadata.save(fieldID: fieldID) } },
-                    onCancel: { model.metadata.cancelEdit() }
-                ) {
-                    Text(entry.valueText)
-                        .font(PVFont.mono(size: PVTypeScale.caption))
-                        .foregroundStyle(PVColor.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 6)
-                        .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
-                } editor: {
-                    PVTextArea(
-                        text: Binding(
-                            get: { model.metadata.drafts[fieldID] ?? entry.valueText },
-                            set: { model.metadata.drafts[fieldID] = $0 }
-                        ),
-                        lineLimit: 1...6,
-                        typography: .mono
-                    )
-                    .onSubmit { Task { await model.metadata.save(fieldID: fieldID) } }
-                    .disabled(model.metadata.savingFieldID == fieldID)
-                    .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
-                }
-
-                CatalogFieldDataTypeBadge(dataType: entry.field.dataType)
-                    .padding(.top, 4)
-            }
+        return HStack(alignment: .top, spacing: SourcePageLayout.metadataColumnSpacing) {
+            PVReorderHandle()
+                .padding(.top, 6)
+            SourcePageMetadataLabel(
+                text: entry.field.label,
+                dataType: entry.field.dataType,
+                topPadding: 6
+            )
 
             if isDate {
-                HStack(spacing: PVSpacing.space4) {
-                    Text(L10n.Sources.metadataStructuredLabel)
-                        .font(PVFont.mono(size: PVTypeScale.micro))
-                        .foregroundStyle(PVColor.textFaint)
-
-                    if structured {
-                        Text(entry.dateSummary)
-                            .font(PVFont.mono(size: PVTypeScale.micro))
-                            .foregroundStyle(PVColor.accentSoftForeground)
-                            .padding(.horizontal, PVSpacing.space3)
-                            .frame(height: 20)
-                            .background(
-                                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                    .fill(PVColor.accentSoft)
-                            )
-                    } else {
-                        Text(L10n.Sources.metadataNotStructured)
-                            .font(PVFont.body(size: PVTypeScale.micro, italic: true))
-                            .foregroundStyle(PVColor.textMuted)
-                    }
-
-                    Button {
-                        if structured {
-                            model.metadata.openEditDate(fieldID: fieldID)
-                        } else {
-                            model.metadata.openStructureDate(fieldID: fieldID)
-                        }
-                    } label: {
-                        Text(structured ? L10n.Sources.editDate : L10n.Sources.structureDate)
-                            .font(PVFont.body(size: PVTypeScale.micro))
-                            .foregroundStyle(structured ? PVColor.textPrimary : PVColor.textLink)
-                            .padding(.horizontal, 10)
-                            .frame(height: 24)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                    .strokeBorder(
-                                        PVColor.borderDefault,
-                                        style: StrokeStyle(
-                                            lineWidth: 1,
-                                            dash: structured ? [] : [4, 3]
-                                        )
-                                    )
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier(
-                        structured
-                            ? "sources.page.metadata.\(fieldID).editDate"
-                            : "sources.page.metadata.\(fieldID).structureDate"
-                    )
-                }
-                .padding(.leading, SourcePageLayout.metadataDateRowInset)
+                dateValueCell(entry)
+            } else {
+                SourcePageMetadataTextEditor(
+                    entry: entry,
+                    isEditing: model.metadata.editingFieldID == entry.field.id,
+                    isSaving: model.metadata.savingFieldID == entry.field.id,
+                    onBeginEdit: { model.metadata.beginEdit(fieldID: entry.field.id) },
+                    onSave: { value in
+                        model.metadata.drafts[entry.field.id] = value
+                        Task { await model.metadata.save(fieldID: entry.field.id) }
+                    },
+                    onCancel: { model.metadata.cancelEdit() }
+                )
             }
         }
         .padding(.vertical, PVSpacing.space3)
         .padding(.horizontal, PVSpacing.space4)
     }
 
-    private func suggestionRow(_ entry: CatalogMetadataEntry) -> some View {
+    private func dateValueCell(_ entry: CatalogMetadataEntry) -> some View {
+        let fieldID = entry.field.id
+        return HStack(alignment: .top, spacing: PVSpacing.space3) {
+            Text(entry.valueText)
+                .font(PVFont.mono(size: PVTypeScale.caption))
+                .foregroundStyle(PVColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .sourcePageMetadataValueChrome()
+                .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
+
+            PVIconButton(
+                .penLine,
+                label: L10n.Sources.editMetadataDateValue,
+                size: .sm
+            ) {
+                model.metadata.openDateEditor(fieldID: fieldID)
+            }
+            .accessibilityIdentifier("sources.page.metadata.\(fieldID).editDate")
+        }
+    }
+}
+
+/// Suggestion quick-add row with a local draft.
+private struct SourcePageMetadataSuggestionRow: View {
+    let entry: CatalogMetadataEntry
+    let isSaving: Bool
+    let onSave: (String) -> Void
+    let onDismiss: () -> Void
+
+    @State private var draft = ""
+
+    var body: some View {
         let fieldID = entry.field.id
         return PVCard(border: .dashed, cornerRadius: PVRadius.sm) {
             HStack(spacing: SourcePageLayout.metadataColumnSpacing) {
                 SourcePageMetadataLabel(text: entry.field.label, alignWithReorderHandle: true)
                 PVInput(
-                    text: Binding(
-                        get: { model.metadata.drafts[fieldID] ?? "" },
-                        set: { model.metadata.drafts[fieldID] = $0 }
-                    ),
+                    text: $draft,
                     size: .sm,
                     mono: true,
                     prompt: L10n.Sources.metadataSuggestionPlaceholder
                 )
-                .onSubmit { Task { await model.metadata.save(fieldID: fieldID) } }
+                .onSubmit { onSave(draft) }
                 .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
 
                 PVButton(
                     L10n.Sources.saveMetadataSuggestion,
                     variant: .ghost,
                     size: .sm,
-                    loading: model.metadata.savingFieldID == fieldID
+                    loading: isSaving
                 ) {
-                    Task { await model.metadata.save(fieldID: fieldID) }
+                    onSave(draft)
                 }
-                .disabled(
-                    (model.metadata.drafts[fieldID] ?? "")
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                        .isEmpty
-                )
+                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .accessibilityIdentifier("sources.page.metadata.\(fieldID).save")
 
                 PVIconButton(.dismiss, label: L10n.Sources.dismissMetadataSuggestion, size: .sm) {
-                    Task { await model.metadata.dismissSuggestion(fieldID: fieldID) }
+                    onDismiss()
                 }
                 .accessibilityIdentifier("sources.page.metadata.\(fieldID).dismiss")
             }
             .padding(.vertical, PVSpacing.space4)
             .padding(.horizontal, PVSpacing.space5)
+        }
+    }
+}
+
+/// Date dialog: local wording + structure drafts.
+private struct SourcePageDateEditorForm: View {
+    @Bindable var model: SourcePageModel
+    @Binding var canSave: Bool
+    @Binding var saveAction: (() async -> Void)?
+
+    @State private var wording = ""
+    @State private var draft = DateValueDraft.empty()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: PVSpacing.space7) {
+            PVField(
+                label: L10n.Sources.dateValueAsWritten,
+                hint: L10n.Sources.dateValueAsWrittenHint,
+                required: true
+            ) {
+                PVTextArea(
+                    text: $wording,
+                    lineLimit: 1...4,
+                    typography: .mono,
+                    activateOnAppear: true
+                )
+                .disabled(model.metadata.isSavingDate)
+                .accessibilityIdentifier("sources.page.date.valueAsWritten")
+            }
+            DateValueEditorForm(draft: $draft)
+        }
+        .onAppear(perform: seed)
+        .onChange(of: wording) { _, _ in refreshConfirm() }
+        .onChange(of: draft) { _, _ in refreshConfirm() }
+        .onChange(of: model.metadata.isSavingDate) { _, _ in refreshConfirm() }
+    }
+
+    private func seed() {
+        if let fieldID = model.metadata.dateEditorFieldID {
+            wording = model.metadata.drafts[fieldID]
+                ?? model.metadata.entries.first(where: { $0.field.id == fieldID })?.valueText
+                ?? ""
+        }
+        draft = model.metadata.dateEditorDraft
+        refreshConfirm()
+    }
+
+    private func refreshConfirm() {
+        let wordingOK = !wording.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        canSave = wordingOK && draft.isValid && !model.metadata.isSavingDate
+        saveAction = {
+            await model.metadata.saveDateEditor(wording: wording, draft: draft)
+        }
+    }
+}
+
+/// Text metadata row editor with a **local** draft so keystrokes do not rewrite
+/// `SourceMetadataSection.drafts` (and rebuild the reorderable `List`) on every
+/// character — that was dropping TextField focus and feeling multi-second laggy.
+private struct SourcePageMetadataTextEditor: View {
+    let entry: CatalogMetadataEntry
+    let isEditing: Bool
+    let isSaving: Bool
+    let onBeginEdit: () -> Void
+    let onSave: (String) -> Void
+    let onCancel: () -> Void
+
+    @State private var draft = ""
+
+    var body: some View {
+        let fieldID = entry.field.id
+        return PVInlineEdit(
+            isEditing: isEditing,
+            isSaving: isSaving,
+            saveLabel: L10n.Sources.saveMetadataValue,
+            cancelLabel: L10n.Sources.cancelEdit,
+            editLabel: L10n.Sources.editMetadataValue,
+            saveDisabled: draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            axis: .horizontal,
+            actionsStyle: .iconStack,
+            accessibilityIdentifierPrefix: "sources.page.metadata.\(fieldID)",
+            onEdit: {
+                draft = entry.valueText
+                onBeginEdit()
+            },
+            onSave: { onSave(draft) },
+            onCancel: {
+                draft = entry.valueText
+                onCancel()
+            }
+        ) {
+            Text(entry.valueText)
+                .font(PVFont.mono(size: PVTypeScale.caption))
+                .foregroundStyle(PVColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .sourcePageMetadataValueChrome()
+                .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
+        } editor: {
+            PVTextArea(
+                text: $draft,
+                lineLimit: 1...6,
+                typography: .mono,
+                activateOnAppear: true
+            )
+            .onSubmit { onSave(draft) }
+            .disabled(isSaving)
+            .accessibilityIdentifier("sources.page.metadata.\(fieldID).value")
+        }
+        .onChange(of: isEditing) { _, editing in
+            if editing {
+                draft = entry.valueText
+            }
         }
     }
 }

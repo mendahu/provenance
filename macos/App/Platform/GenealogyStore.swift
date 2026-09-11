@@ -126,8 +126,6 @@ struct CatalogMetadataEntry: Sendable, Equatable, Identifiable {
     var field: CatalogMetadataField
     var valueText: String
     var dateValueID: String
-    /// Compact GEDCOM-style summary when `dateValueID` is set.
-    var dateSummary: String = ""
     /// Full structured components when `dateValueID` is set — lets the date
     /// editor rebuild its draft from the catalog instead of a session cache.
     var date: CatalogDateValueInput?
@@ -234,8 +232,8 @@ protocol GenealogyStore: Sendable {
     func updateSourceNote(projectDir: String, userID: String, noteID: String, body: String) async throws
         -> CatalogSourceNote
     func deleteSourceNote(projectDir: String, userID: String, noteID: String) async throws
-    /// Returns the refreshed workspace entry (server-computed `dateSummary`
-    /// and structured `date` included) so callers can patch without refetching.
+    /// Returns the refreshed workspace entry (structured `date` included) so
+    /// callers can patch without refetching.
     func setSourceMetadata(
         projectDir: String,
         userID: String,

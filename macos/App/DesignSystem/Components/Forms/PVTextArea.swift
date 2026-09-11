@@ -90,19 +90,23 @@ struct PVTextArea: View {
     private let prompt: LocalizedStringResource?
     private let typography: Typography
     private let isInvalid: Bool
+    /// When true, claims focus once the field appears (inline edit / type picker).
+    private let activateOnAppear: Bool
 
     init(
         text: Binding<String>,
         lineLimit: ClosedRange<Int> = 2...8,
         prompt: LocalizedStringResource? = nil,
         typography: Typography = .body,
-        isInvalid: Bool = false
+        isInvalid: Bool = false,
+        activateOnAppear: Bool = false
     ) {
         self._text = text
         self.lineLimit = lineLimit
         self.prompt = prompt
         self.typography = typography
         self.isInvalid = isInvalid
+        self.activateOnAppear = activateOnAppear
     }
 
     @FocusState private var isFocused: Bool
@@ -124,6 +128,13 @@ struct PVTextArea: View {
                 isInvalid: isInvalid
             )
         )
+        .onAppear {
+            guard activateOnAppear else { return }
+            // Defer past the resting→editing view swap; same-cycle focus is dropped.
+            DispatchQueue.main.async {
+                isFocused = true
+            }
+        }
     }
 }
 

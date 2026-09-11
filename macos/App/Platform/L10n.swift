@@ -751,7 +751,19 @@ enum L10n {
         static let editMetadataValue = LocalizedStringResource(
             "sources.page.editMetadataValue",
             defaultValue: "Edit value",
-            comment: "Accessibility label for pencil to edit a saved metadata value"
+            comment: "Accessibility label for pencil to edit a saved text metadata value"
+        )
+
+        static let saveMetadataValue = LocalizedStringResource(
+            "sources.page.saveMetadataValue",
+            defaultValue: "Save value",
+            comment: "Accessibility label for check to save an inline metadata text edit"
+        )
+
+        static let editMetadataDateValue = LocalizedStringResource(
+            "sources.page.editMetadataDateValue",
+            defaultValue: "Edit date value",
+            comment: "Accessibility label for pencil to open the date metadata dialog"
         )
 
         static let editDescription = LocalizedStringResource(
@@ -784,52 +796,34 @@ enum L10n {
             comment: "Status under artifact fields when drafts match saved values"
         )
 
-        static let metadataStructuredLabel = LocalizedStringResource(
-            "sources.page.metadataStructuredLabel",
-            defaultValue: "structured",
-            comment: "Micro label beside structured date summary on a metadata row"
-        )
-
-        static let metadataNotStructured = LocalizedStringResource(
-            "sources.page.metadataNotStructured",
-            defaultValue: "Not structured yet",
-            comment: "Italic placeholder when a date metadata row has no DateValue"
-        )
-
-        static let structureDate = LocalizedStringResource(
-            "sources.page.structureDate",
-            defaultValue: "Structure…",
-            comment: "Button to open DateValue editor for an unstructured date field"
-        )
-
-        static let editDate = LocalizedStringResource(
-            "sources.page.editDate",
-            defaultValue: "Edit date",
-            comment: "Button to edit an existing structured DateValue"
-        )
-
         static let addDateDialogTitle = LocalizedStringResource(
             "sources.page.addDateDialogTitle",
-            defaultValue: "Add date",
+            defaultValue: "Add date value",
             comment: "Title of DateValue editor when creating structure"
         )
 
         static let editDateDialogTitle = LocalizedStringResource(
             "sources.page.editDateDialogTitle",
-            defaultValue: "Edit date",
+            defaultValue: "Edit date value",
             comment: "Title of DateValue editor when editing structure"
-        )
-
-        static let addDateConfirm = LocalizedStringResource(
-            "sources.page.addDateConfirm",
-            defaultValue: "Add date",
-            comment: "Confirm button when creating a DateValue"
         )
 
         static let saveDateConfirm = LocalizedStringResource(
             "sources.page.saveDateConfirm",
-            defaultValue: "Save date",
-            comment: "Confirm button when updating a DateValue"
+            defaultValue: "Save value",
+            comment: "Confirm button on the date metadata dialog"
+        )
+
+        static let dateValueAsWritten = LocalizedStringResource(
+            "sources.page.dateValueAsWritten",
+            defaultValue: "Value as written",
+            comment: "Label for the plain-text wording field in the date metadata dialog"
+        )
+
+        static let dateValueAsWrittenHint = LocalizedStringResource(
+            "sources.page.dateValueAsWrittenHint",
+            defaultValue: "Keep the record's own wording; the structured date below is what search and sorting use",
+            comment: "Hint under Value as written in the date metadata dialog"
         )
 
         static let dateKindLabel = LocalizedStringResource(

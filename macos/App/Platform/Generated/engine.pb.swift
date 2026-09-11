@@ -878,9 +878,6 @@ public nonisolated struct Provenencia_Engine_V1_MetadataWorkspaceEntry: Sendable
 
   public var sortOrder: Int32 = 0
 
-  /// Compact GEDCOM-style summary when date_value_id is set (empty otherwise).
-  public var dateSummary: String = String()
-
   /// Full structured components when date_value_id is set, so the client can
   /// rebuild the date editor without a session cache (unset otherwise).
   public var date: Provenencia_Engine_V1_DateValueInput {
@@ -1393,8 +1390,7 @@ public nonisolated struct Provenencia_Engine_V1_SetSourceMetadataRequest: Sendab
 }
 
 /// SetSourceMetadataResponse returns the refreshed workspace entry so the
-/// client can patch its list without refetching (server-computed date_summary
-/// and structured date included).
+/// client can patch its list without refetching (structured date included).
 public nonisolated struct Provenencia_Engine_V1_SetSourceMetadataResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -3548,7 +3544,7 @@ nonisolated extension Provenencia_Engine_V1_MetadataField: SwiftProtobuf.Message
 
 nonisolated extension Provenencia_Engine_V1_MetadataWorkspaceEntry: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".MetadataWorkspaceEntry"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}field\0\u{3}value_text\0\u{3}date_value_id\0\u{3}has_value\0\u{1}suggested\0\u{3}sort_order\0\u{3}date_summary\0\u{1}date\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}field\0\u{3}value_text\0\u{3}date_value_id\0\u{3}has_value\0\u{1}suggested\0\u{3}sort_order\0\u{2}\u{2}date\0\u{b}date_summary\0\u{c}\u{7}\u{1}")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -3562,7 +3558,6 @@ nonisolated extension Provenencia_Engine_V1_MetadataWorkspaceEntry: SwiftProtobu
       case 4: try { try decoder.decodeSingularBoolField(value: &self.hasValue_p) }()
       case 5: try { try decoder.decodeSingularBoolField(value: &self.suggested) }()
       case 6: try { try decoder.decodeSingularInt32Field(value: &self.sortOrder) }()
-      case 7: try { try decoder.decodeSingularStringField(value: &self.dateSummary) }()
       case 8: try { try decoder.decodeSingularMessageField(value: &self._date) }()
       default: break
       }
@@ -3592,9 +3587,6 @@ nonisolated extension Provenencia_Engine_V1_MetadataWorkspaceEntry: SwiftProtobu
     if self.sortOrder != 0 {
       try visitor.visitSingularInt32Field(value: self.sortOrder, fieldNumber: 6)
     }
-    if !self.dateSummary.isEmpty {
-      try visitor.visitSingularStringField(value: self.dateSummary, fieldNumber: 7)
-    }
     try { if let v = self._date {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
     } }()
@@ -3608,7 +3600,6 @@ nonisolated extension Provenencia_Engine_V1_MetadataWorkspaceEntry: SwiftProtobu
     if lhs.hasValue_p != rhs.hasValue_p {return false}
     if lhs.suggested != rhs.suggested {return false}
     if lhs.sortOrder != rhs.sortOrder {return false}
-    if lhs.dateSummary != rhs.dateSummary {return false}
     if lhs._date != rhs._date {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

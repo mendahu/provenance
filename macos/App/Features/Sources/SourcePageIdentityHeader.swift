@@ -4,6 +4,9 @@ import SwiftUI
 struct SourcePageIdentityHeader: View {
     @Bindable var model: SourcePageModel
     let onBackToList: () -> Void
+    /// Local draft so title keystrokes don't invalidate the whole Source page
+    /// observation graph on every character.
+    @State private var titleDraft = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space5) {
@@ -64,30 +67,58 @@ struct SourcePageIdentityHeader: View {
                 saveLabel: L10n.Sources.saveAction,
                 cancelLabel: L10n.Sources.cancelEdit,
                 editLabel: L10n.Sources.editTitle,
+                saveDisabled: titleDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                expandsContent: false,
                 axis: .horizontal,
                 accessibilityIdentifierPrefix: "sources.page.title",
-                onEdit: { model.identity.beginEditTitle() },
-                onSave: { Task { await model.identity.saveTitle() } },
-                onCancel: { model.identity.cancelEditTitle() }
+                onEdit: {
+                    titleDraft = model.identity.title
+                    model.identity.beginEditTitle()
+                },
+                onSave: {
+                    model.identity.titleDraft = titleDraft
+                    Task { await model.identity.saveTitle() }
+                },
+                onCancel: {
+                    model.identity.cancelEditTitle()
+                    titleDraft = ""
+                }
             ) {
+                // Transparent chrome matching `PVTextArea` display so edit
+                // mode does not shift the glyphs.
                 Text(model.identity.title)
                     .font(PVFont.display(size: PVTypeScale.h1, weight: PVFontWeight.semibold))
                     .foregroundStyle(PVColor.textDisplay)
                     .lineLimit(4)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, PVInputChrome.horizontalInset)
+                    .padding(.vertical, PVTextArea.Typography.display.verticalPadding)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                            .stroke(Color.clear, lineWidth: 1)
+                    )
                     .accessibilityIdentifier("sources.page.title")
             } editor: {
                 PVTextArea(
-                    text: $model.identity.titleDraft,
+                    text: $titleDraft,
                     lineLimit: 1...4,
                     prompt: L10n.Sources.formTitle,
-                    typography: .display
+                    typography: .display,
+                    isInvalid: model.identity.titleError != nil,
+                    activateOnAppear: true
                 )
                 .accessibilityIdentifier("sources.page.title")
-                .onChange(of: model.identity.titleDraft) { _, _ in model.identity.titleError = nil }
-                .onSubmit { Task { await model.identity.saveTitle() } }
+                .onChange(of: titleDraft) { _, _ in
+                    if model.identity.titleError != nil {
+                        model.identity.titleError = nil
+                    }
+                }
+                .onSubmit {
+                    model.identity.titleDraft = titleDraft
+                    Task { await model.identity.saveTitle() }
+                }
                 .disabled(model.identity.isSaving)
-                .frame(maxWidth: 720, alignment: .leading)
+                .frame(minWidth: 240, maxWidth: 720, alignment: .leading)
             }
 
             metaRow

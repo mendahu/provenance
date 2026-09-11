@@ -2,14 +2,30 @@ import SwiftUI
 
 /// Tone for `PVIconButton` — `neutral` is the default chrome color,
 /// `danger` tints the glyph for a destructive action (the web board sets
-/// `style={{ color: 'var(--danger)' }}` on the delete button).
+/// `style={{ color: 'var(--danger)' }}` on the delete button), and
+/// `accent` is a filled primary control (metadata inline Save).
 enum PVIconButtonTone {
-    case neutral, danger
+    case neutral, danger, accent
 
     fileprivate var foreground: Color {
         switch self {
         case .neutral: PVColor.textSecondary
         case .danger: PVColor.danger
+        case .accent: PVColor.accentForeground
+        }
+    }
+
+    fileprivate var restingFill: Color {
+        switch self {
+        case .accent: PVColor.accent
+        case .neutral, .danger: .clear
+        }
+    }
+
+    fileprivate var hoverFill: Color {
+        switch self {
+        case .accent: PVColor.accentHover
+        case .neutral, .danger: PVColor.surfaceHover
         }
     }
 }
@@ -87,7 +103,7 @@ private struct PVIconButtonBody: View {
                 .frame(width: size.height, height: size.height)
                 .background(
                     RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
-                        .fill(showHover ? PVColor.surfaceHover : .clear)
+                        .fill(showHover ? tone.hoverFill : tone.restingFill)
                 )
         }
     }
@@ -97,6 +113,7 @@ private struct PVIconButtonBody: View {
     HStack(spacing: PVSpacing.space5) {
         PVIconButton(.sidebarToggle, label: "Collapse sidebar") {}
         PVIconButton(.dismiss, label: "Dismiss", size: .sm) {}
+        PVIconButton(.check, label: "Save value", size: .sm, tone: .accent) {}
         PVIconButton(.account, label: "Account", size: .lg) {}
         PVIconButton(.trash, label: "Delete field", size: .sm, tone: .danger) {}
         PVIconButton(.trash, label: "In use on 3 sources", size: .sm, tone: .danger) {}

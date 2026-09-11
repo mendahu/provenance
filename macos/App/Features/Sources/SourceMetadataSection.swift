@@ -61,11 +61,11 @@ final class SourceMetadataSection {
 
     /// The entry already carries a structured DateValue.
     func isStructured(_ entry: CatalogMetadataEntry) -> Bool {
-        !entry.dateValueID.isEmpty || !entry.dateSummary.isEmpty
+        !entry.dateValueID.isEmpty
     }
 
     /// True when the open date editor reopens an existing structured
-    /// DateValue (Edit date) rather than structuring one for the first time.
+    /// DateValue (Edit date value) rather than structuring one for the first time.
     var isDateEditMode: Bool {
         guard let fieldID = dateEditorFieldID,
               let entry = entries.first(where: { $0.field.id == fieldID })
@@ -81,6 +81,13 @@ final class SourceMetadataSection {
         let ref = context.source?.ref ?? "…"
         let text = "\(ref) · Metadata · \(entry.field.label)"
         return LocalizedStringResource(String.LocalizationValue(text))
+    }
+
+    /// Confirm enabled when wording is non-empty and the structured draft is valid.
+    var canSaveDateEditor: Bool {
+        guard let fieldID = dateEditorFieldID else { return false }
+        let wording = (drafts[fieldID] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return !isSavingDate && !wording.isEmpty && dateEditorDraft.isValid
     }
 
     /// Seeds edit buffers for saved values and drops buffers for rows that no
@@ -234,15 +241,20 @@ final class SourceMetadataSection {
 
     // MARK: Date editor
 
-    func openStructureDate(fieldID: String) {
+    /// Single entry point for the date metadata pencil: wording + structure
+    /// share one dialog. Seeds wording from the saved value and the structured
+    /// draft when a DateValue already exists.
+    func openDateEditor(fieldID: String) {
+        guard let entry = entries.first(where: { $0.field.id == fieldID }),
+              entry.hasValue,
+              entry.field.dataType == CatalogFieldDataType.date
+        else { return }
+        if editingFieldID != nil {
+            cancelEdit()
+        }
+        drafts[fieldID] = entry.valueText
         dateEditorFieldID = fieldID
-        dateEditorDraft = DateValueDraft.empty()
-        isEditingDate = true
-    }
-
-    func openEditDate(fieldID: String) {
-        dateEditorFieldID = fieldID
-        if let date = entries.first(where: { $0.field.id == fieldID })?.date {
+        if let date = entry.date {
             dateEditorDraft = DateValueDraft(from: date)
         } else {
             dateEditorDraft = DateValueDraft.empty()
@@ -250,18 +262,42 @@ final class SourceMetadataSection {
         isEditingDate = true
     }
 
+    /// Test / call-site alias: open the date dialog for a not-yet-structured row.
+    func openStructureDate(fieldID: String) {
+        openDateEditor(fieldID: fieldID)
+    }
+
+    /// Test / call-site alias: open the date dialog for a structured row.
+    func openEditDate(fieldID: String) {
+        openDateEditor(fieldID: fieldID)
+    }
+
     func cancelDateEditor() {
         guard !isSavingDate else { return }
+        if let fieldID = dateEditorFieldID,
+           let entry = entries.first(where: { $0.field.id == fieldID })
+        {
+            drafts[fieldID] = entry.valueText
+        }
         isEditingDate = false
         dateEditorFieldID = nil
         dateEditorDraft = DateValueDraft.empty()
     }
 
     func saveDateEditor() async {
+        await saveDateEditor(
+            wording: dateEditorFieldID.flatMap { drafts[$0] } ?? "",
+            draft: dateEditorDraft
+        )
+    }
+
+    /// Saves wording + structure from a local dialog draft (avoids binding the
+    /// dialog TextFields to the page observation graph while typing).
+    func saveDateEditor(wording: String, draft: DateValueDraft) async {
         guard let fieldID = dateEditorFieldID else { return }
         guard !isSavingDate else { return }
-        guard dateEditorDraft.isValid else { return }
-        let value = (drafts[fieldID] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard draft.isValid else { return }
+        let value = wording.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else {
             context.pageError = String(localized: L10n.Sources.metadataValueRequired)
             return
@@ -275,7 +311,7 @@ final class SourceMetadataSection {
                 sourceID: context.sourceID,
                 fieldID: fieldID,
                 valueText: value,
-                date: dateEditorDraft.toInput()
+                date: draft.toInput()
             )
             replaceEntry(entry)
             isEditingDate = false

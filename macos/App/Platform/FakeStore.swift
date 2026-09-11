@@ -298,20 +298,16 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     ) async throws -> CatalogMetadataEntry {
         var list = metadataBySource[sourceID] ?? []
         let dateID: String
-        let summary: String
         let stored: CatalogDateValueInput?
         if let date {
             dateID = "dv-\(fieldID.prefix(8))"
-            summary = DateValueDraft(from: date).summary
             stored = date
         } else if let existing = list.first(where: { $0.field.id == fieldID }) {
             // Text-only updates keep any existing structured DateValue.
             dateID = existing.dateValueID
-            summary = existing.dateSummary
             stored = existing.date
         } else {
             dateID = ""
-            summary = ""
             stored = nil
         }
         let entry: CatalogMetadataEntry
@@ -319,7 +315,6 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
             list[idx].valueText = valueText
             list[idx].hasValue = true
             list[idx].dateValueID = dateID
-            list[idx].dateSummary = summary
             list[idx].date = stored
             entry = list[idx]
         } else {
@@ -332,7 +327,6 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
                 field: field,
                 valueText: valueText,
                 dateValueID: dateID,
-                dateSummary: summary,
                 date: stored,
                 hasValue: true,
                 suggested: false,

@@ -748,7 +748,6 @@ struct GoStore: GenealogyStore {
             field: Self.mapMetadataField(e.field),
             valueText: e.valueText,
             dateValueID: e.dateValueID,
-            dateSummary: e.dateSummary,
             date: e.hasDate ? Self.mapDateValue(e.date) : nil,
             hasValue: e.hasValue_p,
             suggested: e.suggested,

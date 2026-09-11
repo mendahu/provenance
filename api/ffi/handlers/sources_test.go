@@ -235,7 +235,7 @@ func TestSetSourceMetadata(t *testing.T) {
 				if entry.GetField().GetId() != sr.FieldId {
 					t.Fatalf("field %s want %s", entry.GetField().GetId(), sr.FieldId)
 				}
-				if entry.GetDateValueId() != "" || entry.GetDateSummary() != "" || entry.GetDate() != nil {
+				if entry.GetDateValueId() != "" || entry.GetDate() != nil {
 					t.Fatalf("unexpected date on text entry: %+v", entry)
 				}
 			},
@@ -254,9 +254,6 @@ func TestSetSourceMetadata(t *testing.T) {
 				entry := unmarshalSetMetadataEntry(t, raw)
 				if entry.GetDateValueId() == "" {
 					t.Fatal("missing date_value_id")
-				}
-				if entry.GetDateSummary() != "ABT 1890" {
-					t.Fatalf("summary %q", entry.GetDateSummary())
 				}
 				d := entry.GetDate()
 				if d.GetKind() != "point" || d.GetQualifier() != "ABT" || d.GetStartYear() != 1890 {

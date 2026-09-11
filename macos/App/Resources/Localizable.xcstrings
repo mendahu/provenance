@@ -2287,18 +2287,6 @@
         }
       }
     },
-    "sources.page.addDateConfirm": {
-      "comment": "Confirm button when creating a DateValue",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add date"
-          }
-        }
-      }
-    },
     "sources.page.addDateDialogTitle": {
       "comment": "Title of DateValue editor when creating structure",
       "extractionState": "manual",
@@ -2306,7 +2294,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add date"
+            "value": "Add date value"
           }
         }
       }
@@ -3079,18 +3067,6 @@
         }
       }
     },
-    "sources.page.editDate": {
-      "comment": "Button to edit an existing structured DateValue",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit date"
-          }
-        }
-      }
-    },
     "sources.page.editDateDialogTitle": {
       "comment": "Title of DateValue editor when editing structure",
       "extractionState": "manual",
@@ -3098,7 +3074,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Edit date"
+            "value": "Edit date value"
           }
         }
       }
@@ -3140,7 +3116,7 @@
       }
     },
     "sources.page.editMetadataValue": {
-      "comment": "Accessibility label for pencil to edit a saved metadata value",
+      "comment": "Accessibility label for pencil to edit a saved text metadata value",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -3303,30 +3279,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Metadata describes the source itself — what the record says about its own making: a registration number, a call number, the reel it sits on. Facts the record asserts about people or events are not metadata; those become citations and asserted facts, so they can move on to the entities they describe."
-          }
-        }
-      }
-    },
-    "sources.page.metadataNotStructured": {
-      "comment": "Italic placeholder when a date metadata row has no DateValue",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not structured yet"
-          }
-        }
-      }
-    },
-    "sources.page.metadataStructuredLabel": {
-      "comment": "Micro label beside structured date summary on a metadata row",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "structured"
           }
         }
       }
@@ -3548,13 +3500,13 @@
       }
     },
     "sources.page.saveDateConfirm": {
-      "comment": "Confirm button when updating a DateValue",
+      "comment": "Confirm button on the date metadata dialog",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save date"
+            "value": "Save value"
           }
         }
       }
@@ -3579,18 +3531,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save"
-          }
-        }
-      }
-    },
-    "sources.page.structureDate": {
-      "comment": "Button to open DateValue editor for an unstructured date field",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Structure…"
           }
         }
       }
@@ -4779,6 +4719,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Millisecond must be between 0 and 999."
+          }
+        }
+      }
+    },
+    "sources.page.editMetadataDateValue": {
+      "comment": "Accessibility label for pencil to open the date metadata dialog",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit date value"
+          }
+        }
+      }
+    },
+    "sources.page.dateValueAsWritten": {
+      "comment": "Label for the plain-text wording field in the date metadata dialog",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Value as written"
+          }
+        }
+      }
+    },
+    "sources.page.dateValueAsWrittenHint": {
+      "comment": "Hint under Value as written in the date metadata dialog",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the record's own wording; the structured date below is what search and sorting use"
+          }
+        }
+      }
+    },
+    "sources.page.saveMetadataValue": {
+      "comment": "Accessibility label for check to save an inline metadata text edit",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save value"
           }
         }
       }

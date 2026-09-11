@@ -3,6 +3,8 @@ import SwiftUI
 /// Credibility assessment: grade chips, argument, save/cancel.
 struct SourcePageCredibilityView: View {
     @Bindable var model: SourcePageModel
+    /// Local argument so typing does not rewrite the page observation graph.
+    @State private var argumentLocal = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space5) {
@@ -39,7 +41,7 @@ struct SourcePageCredibilityView: View {
             .accessibilityIdentifier("sources.page.credibility.grades")
 
             PVInput(
-                text: $model.credibility.argumentDraft,
+                text: $argumentLocal,
                 size: .sm,
                 prompt: L10n.Sources.credibilityArgumentPlaceholder
             )
@@ -50,14 +52,20 @@ struct SourcePageCredibilityView: View {
                     isSaving: model.credibility.isSaving,
                     saveLabel: L10n.Sources.saveAssessment,
                     cancelLabel: L10n.Sources.cancelEdit,
-                    saveDisabled: !model.credibility.isDirty,
-                    showsCancel: model.credibility.isDirty,
+                    saveDisabled: !isDirty,
+                    showsCancel: isDirty,
                     accessibilityIdentifierPrefix: "sources.page.credibility",
-                    onSave: { Task { await model.credibility.save() } },
-                    onCancel: { model.credibility.cancel() }
+                    onSave: {
+                        model.credibility.argumentDraft = argumentLocal
+                        Task { await model.credibility.save() }
+                    },
+                    onCancel: {
+                        model.credibility.cancel()
+                        argumentLocal = model.credibility.argumentDraft
+                    }
                 )
 
-                if !model.credibility.isDirty {
+                if !isDirty {
                     Text(
                         model.credibility.hasSavedAssessment
                             ? L10n.Sources.credibilitySavedStatus
@@ -68,5 +76,16 @@ struct SourcePageCredibilityView: View {
                 }
             }
         }
+        .onAppear { argumentLocal = model.credibility.argumentDraft }
+        .onChange(of: model.credibility.argumentDraft) { _, newValue in
+            // Sync after load / cancel / successful save (model owns the source of truth).
+            argumentLocal = newValue
+        }
+    }
+
+    private var isDirty: Bool {
+        model.credibility.draftKey != model.credibility.savedKey
+            || argumentLocal.trimmingCharacters(in: .whitespacesAndNewlines)
+            != model.credibility.savedArgument.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

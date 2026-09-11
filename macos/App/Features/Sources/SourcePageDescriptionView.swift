@@ -3,6 +3,8 @@ import SwiftUI
 /// Description section: resting prose or explicit edit/save/cancel.
 struct SourcePageDescriptionView: View {
     @Bindable var model: SourcePageModel
+    /// Local draft so description keystrokes do not invalidate the Source page.
+    @State private var descriptionDraft = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
@@ -16,7 +18,7 @@ struct SourcePageDescriptionView: View {
                             size: .sm,
                             icon: .penLine
                         ) {
-                            model.identity.beginEditDescription()
+                            beginEdit()
                         }
                         .accessibilityIdentifier("sources.page.description.edit")
                     }
@@ -36,9 +38,15 @@ struct SourcePageDescriptionView: View {
                     showsEditControl: false,
                     axis: .vertical,
                     accessibilityIdentifierPrefix: "sources.page.description",
-                    onEdit: { model.identity.beginEditDescription() },
-                    onSave: { Task { await model.identity.saveDescription() } },
-                    onCancel: { model.identity.cancelEditDescription() }
+                    onEdit: { beginEdit() },
+                    onSave: {
+                        model.identity.descriptionDraft = descriptionDraft
+                        Task { await model.identity.saveDescription() }
+                    },
+                    onCancel: {
+                        model.identity.cancelEditDescription()
+                        descriptionDraft = ""
+                    }
                 ) {
                     Text(model.identity.description)
                         .font(PVFont.body(size: PVTypeScale.body, weight: PVFontWeight.regular))
@@ -47,15 +55,21 @@ struct SourcePageDescriptionView: View {
                         .accessibilityIdentifier("sources.page.description")
                 } editor: {
                     PVTextArea(
-                        text: $model.identity.descriptionDraft,
+                        text: $descriptionDraft,
                         lineLimit: 3...12,
                         prompt: L10n.Sources.descriptionPlaceholder,
-                        typography: .bodyLarge
+                        typography: .bodyLarge,
+                        activateOnAppear: true
                     )
                     .accessibilityIdentifier("sources.page.description")
                     .disabled(model.identity.isSaving)
                 }
             }
         }
+    }
+
+    private func beginEdit() {
+        descriptionDraft = model.identity.description
+        model.identity.beginEditDescription()
     }
 }

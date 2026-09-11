@@ -2234,8 +2234,6 @@ type MetadataWorkspaceEntry struct {
 	HasValue    bool                   `protobuf:"varint,4,opt,name=has_value,json=hasValue,proto3" json:"has_value,omitempty"`
 	Suggested   bool                   `protobuf:"varint,5,opt,name=suggested,proto3" json:"suggested,omitempty"`
 	SortOrder   int32                  `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	// Compact GEDCOM-style summary when date_value_id is set (empty otherwise).
-	DateSummary string `protobuf:"bytes,7,opt,name=date_summary,json=dateSummary,proto3" json:"date_summary,omitempty"`
 	// Full structured components when date_value_id is set, so the client can
 	// rebuild the date editor without a session cache (unset otherwise).
 	Date          *DateValueInput `protobuf:"bytes,8,opt,name=date,proto3" json:"date,omitempty"`
@@ -2313,13 +2311,6 @@ func (x *MetadataWorkspaceEntry) GetSortOrder() int32 {
 		return x.SortOrder
 	}
 	return 0
-}
-
-func (x *MetadataWorkspaceEntry) GetDateSummary() string {
-	if x != nil {
-		return x.DateSummary
-	}
-	return ""
 }
 
 func (x *MetadataWorkspaceEntry) GetDate() *DateValueInput {
@@ -3423,8 +3414,7 @@ func (x *SetSourceMetadataRequest) GetDate() *DateValueInput {
 }
 
 // SetSourceMetadataResponse returns the refreshed workspace entry so the
-// client can patch its list without refetching (server-computed date_summary
-// and structured date included).
+// client can patch its list without refetching (structured date included).
 type SetSourceMetadataResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Entry         *MetadataWorkspaceEntry `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
@@ -6175,7 +6165,7 @@ const file_engine_proto_rawDesc = "" +
 	"\x05label\x18\x04 \x01(\tR\x05label\x12\x1b\n" +
 	"\tdata_type\x18\x05 \x01(\tR\bdataType\x12 \n" +
 	"\vdescription\x18\x06 \x01(\tR\vdescription\x12\x17\n" +
-	"\aused_by\x18\a \x01(\x05R\x06usedBy\"\xcf\x02\n" +
+	"\aused_by\x18\a \x01(\x05R\x06usedBy\"\xc0\x02\n" +
 	"\x16MetadataWorkspaceEntry\x12:\n" +
 	"\x05field\x18\x01 \x01(\v2$.provenencia.engine.v1.MetadataFieldR\x05field\x12\x1d\n" +
 	"\n" +
@@ -6184,9 +6174,8 @@ const file_engine_proto_rawDesc = "" +
 	"\thas_value\x18\x04 \x01(\bR\bhasValue\x12\x1c\n" +
 	"\tsuggested\x18\x05 \x01(\bR\tsuggested\x12\x1d\n" +
 	"\n" +
-	"sort_order\x18\x06 \x01(\x05R\tsortOrder\x12!\n" +
-	"\fdate_summary\x18\a \x01(\tR\vdateSummary\x129\n" +
-	"\x04date\x18\b \x01(\v2%.provenencia.engine.v1.DateValueInputR\x04date\"\x8a\a\n" +
+	"sort_order\x18\x06 \x01(\x05R\tsortOrder\x129\n" +
+	"\x04date\x18\b \x01(\v2%.provenencia.engine.v1.DateValueInputR\x04dateJ\x04\b\a\x10\bR\fdate_summary\"\x8a\a\n" +
 	"\x0eDateValueInput\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x1c\n" +
 	"\tqualifier\x18\x02 \x01(\tR\tqualifier\x12\x1a\n" +

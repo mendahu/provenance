@@ -470,7 +470,6 @@ func metadataEntryProto(c *database.Catalog, e sourcemetadata.WorkspaceEntry) *e
 		out.DateValueId = uuidString(e.Value.DateValueID)
 		if len(e.Value.DateValueID) == 16 {
 			if dv, err := datevalues.Lookup(c, e.Value.DateValueID); err == nil {
-				out.DateSummary = datevalues.FormatSummary(dv)
 				out.Date = dateValueProto(dv)
 			}
 		}

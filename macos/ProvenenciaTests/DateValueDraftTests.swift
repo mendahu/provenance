@@ -4,51 +4,38 @@ import Testing
 
 @Suite
 struct DateValueDraftTests {
-    @Test func summaryPointYearABT() {
+    @Test func pointYearABTIsValid() {
         var d = DateValueDraft.empty()
         d.qualifier = "ABT"
         d.startYear = 1890
-        #expect(d.summary == "ABT 1890")
         #expect(d.isValid)
     }
 
-    @Test func summaryPointFullDay() {
+    @Test func pointFullDayIsValid() {
         var d = DateValueDraft.empty()
         d.startYear = 1985
         d.startMonth = 5
         d.startDay = 14
-        #expect(d.summary == "14 May 1985")
         #expect(d.isValid)
     }
 
-    @Test func summaryPointMonth() {
-        var d = DateValueDraft.empty()
-        d.startYear = 1911
-        d.startMonth = 3
-        #expect(d.summary == "Mar 1911")
-        #expect(d.isValid)
-    }
-
-    @Test func summaryRangeYears() {
+    @Test func rangeYearsIsValid() {
         var d = DateValueDraft.empty()
         d.setKind("range")
         d.startYear = 1880
         d.endYear = 1885
-        #expect(d.summary == "BET 1880 AND 1885")
         #expect(d.isValid)
         #expect(d.endError == nil)
     }
 
-    @Test func summaryPhraseOnly() {
+    @Test func phraseOnlyIsValid() {
         var d = DateValueDraft.empty()
         d.phrase = "Christmas"
-        #expect(d.summary == "Christmas")
         #expect(d.isValid)
     }
 
-    @Test func emptySummaryAndInvalidWithoutPhrase() {
+    @Test func emptyWithoutPhraseIsInvalid() {
         let d = DateValueDraft.empty()
-        #expect(d.summary == "")
         #expect(!d.isValid)
     }
 

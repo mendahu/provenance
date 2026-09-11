@@ -28,7 +28,14 @@ struct PVInlineEdit<Display: View, Editor: View, RestingTrailing: View, EditingT
     var saveDisabled: Bool = false
     /// When false, the resting pencil is omitted (caller hosts Edit elsewhere).
     var showsEditControl: Bool = true
+    /// When true (default), the display/editor expands and pushes trailing
+    /// actions to the far edge. When false, content hugs its text so the
+    /// pencil / Save sit immediately after (Source title).
+    var expandsContent: Bool = true
     var axis: Axis = .vertical
+    /// Labeled text buttons (default) vs stacked check / dismiss icons
+    /// (metadata board).
+    var actionsStyle: PVInlineEditActions.Style = .labeled
     var accessibilityIdentifierPrefix: String? = nil
     let onEdit: () -> Void
     let onSave: () -> Void
@@ -52,7 +59,7 @@ struct PVInlineEdit<Display: View, Editor: View, RestingTrailing: View, EditingT
     private var restingBody: some View {
         HStack(alignment: .top, spacing: PVSpacing.space3) {
             display()
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .modifier(PVInlineEditContentFlex(expands: expandsContent))
             if showsEditControl {
                 PVIconButton(.penLine, label: editLabel, size: .sm, action: onEdit)
                     .accessibilityIdentifier(prefixed("edit"))
@@ -70,7 +77,7 @@ struct PVInlineEdit<Display: View, Editor: View, RestingTrailing: View, EditingT
                     editor()
                     errorCaption
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .modifier(PVInlineEditContentFlex(expands: expandsContent))
                 actions
                 editingTrailing()
             }
@@ -103,6 +110,7 @@ struct PVInlineEdit<Display: View, Editor: View, RestingTrailing: View, EditingT
             cancelLabel: cancelLabel,
             saveDisabled: saveDisabled,
             showsCancel: true,
+            style: actionsStyle,
             accessibilityIdentifierPrefix: accessibilityIdentifierPrefix,
             onSave: onSave,
             onCancel: onCancel
@@ -127,7 +135,9 @@ extension PVInlineEdit where RestingTrailing == EmptyView, EditingTrailing == Em
         editLabel: LocalizedStringResource,
         saveDisabled: Bool = false,
         showsEditControl: Bool = true,
+        expandsContent: Bool = true,
         axis: Axis = .vertical,
+        actionsStyle: PVInlineEditActions.Style = .labeled,
         accessibilityIdentifierPrefix: String? = nil,
         onEdit: @escaping () -> Void,
         onSave: @escaping () -> Void,
@@ -144,7 +154,9 @@ extension PVInlineEdit where RestingTrailing == EmptyView, EditingTrailing == Em
             editLabel: editLabel,
             saveDisabled: saveDisabled,
             showsEditControl: showsEditControl,
+            expandsContent: expandsContent,
             axis: axis,
+            actionsStyle: actionsStyle,
             accessibilityIdentifierPrefix: accessibilityIdentifierPrefix,
             onEdit: onEdit,
             onSave: onSave,
@@ -157,19 +169,51 @@ extension PVInlineEdit where RestingTrailing == EmptyView, EditingTrailing == Em
     }
 }
 
-/// Shared Save / Cancel row used by `PVInlineEdit` and always-editable
-/// surfaces (artifact fields, credibility) that only need the action chrome.
+/// Expands to fill the row (metadata) or hugs text so trailing actions sit
+/// immediately after the content (title).
+private struct PVInlineEditContentFlex: ViewModifier {
+    var expands: Bool
+
+    func body(content: Content) -> some View {
+        if expands {
+            content.frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            content.fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// Shared Save / Cancel chrome used by `PVInlineEdit` and always-editable
+/// surfaces (artifact fields, credibility) that only need the action row.
 struct PVInlineEditActions: View {
+    /// How Save / Cancel are rendered.
+    enum Style {
+        /// Primary + ghost text buttons in a horizontal row.
+        case labeled
+        /// Stacked icon buttons: filled check (Save) over dismiss (Cancel).
+        case iconStack
+    }
+
     let isSaving: Bool
     var saveLabel: LocalizedStringResource
     var cancelLabel: LocalizedStringResource
     var saveDisabled: Bool = false
     var showsCancel: Bool = true
+    var style: Style = .labeled
     var accessibilityIdentifierPrefix: String? = nil
     let onSave: () -> Void
     let onCancel: () -> Void
 
     var body: some View {
+        switch style {
+        case .labeled:
+            labeledBody
+        case .iconStack:
+            iconStackBody
+        }
+    }
+
+    private var labeledBody: some View {
         HStack(spacing: PVSpacing.space4) {
             PVButton(
                 saveLabel,
@@ -183,6 +227,27 @@ struct PVInlineEditActions: View {
 
             if showsCancel {
                 PVButton(cancelLabel, variant: .ghost, size: .sm, action: onCancel)
+                    .disabled(isSaving)
+                    .accessibilityIdentifier(prefixed("cancel"))
+            }
+        }
+    }
+
+    private var iconStackBody: some View {
+        VStack(spacing: PVSpacing.space2) {
+            if isSaving {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: PVControlSize.sm.height, height: PVControlSize.sm.height)
+                    .accessibilityIdentifier(prefixed("save"))
+            } else {
+                PVIconButton(.check, label: saveLabel, size: .sm, tone: .accent, action: onSave)
+                    .disabled(saveDisabled)
+                    .accessibilityIdentifier(prefixed("save"))
+            }
+
+            if showsCancel {
+                PVIconButton(.dismiss, label: cancelLabel, size: .sm, action: onCancel)
                     .disabled(isSaving)
                     .accessibilityIdentifier(prefixed("cancel"))
             }
@@ -237,6 +302,34 @@ struct PVInlineEditActions: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(PVSpacing.space4)
             .background(
+                RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
+                    .stroke(PVColor.borderDefault, lineWidth: 1)
+            )
+    }
+    .padding(PVSpacing.space6)
+    .frame(width: 420)
+}
+
+#Preview("Editing icon stack") {
+    PVInlineEdit(
+        isEditing: true,
+        isSaving: false,
+        saveLabel: LocalizedStringResource("Save value"),
+        cancelLabel: LocalizedStringResource("Cancel"),
+        editLabel: LocalizedStringResource("Edit value"),
+        axis: .horizontal,
+        actionsStyle: .iconStack,
+        onEdit: {},
+        onSave: {},
+        onCancel: {}
+    ) {
+        Text("display")
+    } editor: {
+        Text("Norfolk Record Office")
+            .font(PVFont.mono(size: PVTypeScale.caption))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(PVSpacing.space3)
+            .overlay(
                 RoundedRectangle(cornerRadius: PVRadius.sm, style: .continuous)
                     .stroke(PVColor.borderDefault, lineWidth: 1)
             )

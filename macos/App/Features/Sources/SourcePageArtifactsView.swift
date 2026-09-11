@@ -63,6 +63,11 @@ struct SourcePageArtifactsView: View {
                     isInvalid: model.artifacts.draftLabelError != nil
                 )
                 .accessibilityIdentifier("sources.page.addArtifact.label")
+                .onChange(of: model.artifacts.draft.label) { _, _ in
+                    if model.artifacts.draftLabelError != nil {
+                        model.artifacts.draftLabelError = nil
+                    }
+                }
             }
             PVField(
                 label: L10n.Sources.artifactDescription,
@@ -128,8 +133,27 @@ struct SourcePageArtifactsView: View {
 
     private func artifactDetail(_ art: CatalogArtifact) -> some View {
         HStack(alignment: .top, spacing: PVSpacing.space8) {
-            artifactFieldsColumn(art)
-                .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
+            SourcePageArtifactFieldsEditor(
+                artifact: art,
+                isSaving: model.artifacts.savingID == art.id,
+                fieldError: model.artifacts.fieldErrors[art.id],
+                pageError: model.pageError,
+                onSave: { label, description in
+                    model.artifacts.labels[art.id] = label
+                    model.artifacts.descriptions[art.id] = description
+                    Task { await model.artifacts.saveFields(id: art.id) }
+                },
+                onCancel: {
+                    model.artifacts.cancelFields(id: art.id)
+                },
+                onClearFieldError: {
+                    if model.artifacts.fieldErrors[art.id] != nil {
+                        model.artifacts.fieldErrors[art.id] = nil
+                    }
+                }
+            )
+            .frame(minWidth: 280, maxWidth: .infinity, alignment: .leading)
+
             artifactPrimaryFileColumn(art)
                 .frame(minWidth: 300, maxWidth: .infinity, alignment: .leading)
         }
@@ -143,71 +167,6 @@ struct SourcePageArtifactsView: View {
             Rectangle()
                 .fill(PVColor.borderSubtle)
                 .frame(height: 1)
-        }
-    }
-
-    private func artifactFieldsColumn(_ art: CatalogArtifact) -> some View {
-        let dirty = model.artifacts.fieldsDirty(art.id)
-        return VStack(alignment: .leading, spacing: PVSpacing.space6) {
-            PVField(
-                label: L10n.Sources.artifactLabel,
-                hint: L10n.Sources.artifactLabelHint,
-                error: model.artifacts.fieldErrors[art.id],
-                required: true
-            ) {
-                PVInput(
-                    text: Binding(
-                        get: { model.artifacts.labels[art.id] ?? art.label },
-                        set: {
-                            model.artifacts.labels[art.id] = $0
-                            model.artifacts.fieldErrors[art.id] = nil
-                        }
-                    ),
-                    size: .sm,
-                    isInvalid: model.artifacts.fieldErrors[art.id] != nil
-                )
-                .onSubmit { Task { await model.artifacts.saveFields(id: art.id) } }
-            }
-
-            PVField(
-                label: L10n.Sources.artifactDescription,
-                hint: L10n.Sources.artifactDescriptionHint
-            ) {
-                PVTextArea(
-                    text: Binding(
-                        get: { model.artifacts.descriptions[art.id] ?? art.description },
-                        set: { model.artifacts.descriptions[art.id] = $0 }
-                    ),
-                    lineLimit: 3...8
-                )
-                .accessibilityIdentifier("sources.page.artifact.\(art.id).description")
-                .onSubmit { Task { await model.artifacts.saveFields(id: art.id) } }
-            }
-
-            HStack(spacing: PVSpacing.space4) {
-                PVInlineEditActions(
-                    isSaving: model.artifacts.savingID == art.id,
-                    saveLabel: L10n.Sources.saveArtifact,
-                    cancelLabel: L10n.Sources.cancelEdit,
-                    saveDisabled: !model.artifacts.canSaveFields(art.id),
-                    showsCancel: dirty,
-                    accessibilityIdentifierPrefix: "sources.page.artifact.\(art.id)",
-                    onSave: { Task { await model.artifacts.saveFields(id: art.id) } },
-                    onCancel: { model.artifacts.cancelFields(id: art.id) }
-                )
-
-                if !dirty {
-                    Text(L10n.Sources.noUnsavedChanges)
-                        .font(PVFont.body(size: PVTypeScale.caption, italic: true))
-                        .foregroundStyle(PVColor.textFaint)
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            if let pageError = model.pageError {
-                PVCallout(tone: .danger, message: pageError)
-            }
         }
     }
 
@@ -268,5 +227,98 @@ struct SourcePageArtifactsView: View {
     private func fileMetaLine(_ file: CatalogFileRef) -> String {
         let size = ByteCountFormatter.string(fromByteCount: file.byteSize, countStyle: .file)
         return "\(file.mediaType) · \(size)"
+    }
+}
+
+/// Expanded artifact label/description editor with local drafts.
+private struct SourcePageArtifactFieldsEditor: View {
+    let artifact: CatalogArtifact
+    let isSaving: Bool
+    let fieldError: String?
+    let pageError: String?
+    let onSave: (_ label: String, _ description: String) -> Void
+    let onCancel: () -> Void
+    let onClearFieldError: () -> Void
+
+    @State private var labelDraft = ""
+    @State private var descriptionDraft = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: PVSpacing.space6) {
+            PVField(
+                label: L10n.Sources.artifactLabel,
+                hint: L10n.Sources.artifactLabelHint,
+                error: fieldError,
+                required: true
+            ) {
+                PVInput(
+                    text: $labelDraft,
+                    size: .sm,
+                    isInvalid: fieldError != nil
+                )
+                .onChange(of: labelDraft) { _, _ in onClearFieldError() }
+                .onSubmit { onSave(labelDraft, descriptionDraft) }
+            }
+
+            PVField(
+                label: L10n.Sources.artifactDescription,
+                hint: L10n.Sources.artifactDescriptionHint
+            ) {
+                PVTextArea(
+                    text: $descriptionDraft,
+                    lineLimit: 3...8
+                )
+                .accessibilityIdentifier("sources.page.artifact.\(artifact.id).description")
+                .onSubmit { onSave(labelDraft, descriptionDraft) }
+            }
+
+            HStack(spacing: PVSpacing.space4) {
+                PVInlineEditActions(
+                    isSaving: isSaving,
+                    saveLabel: L10n.Sources.saveArtifact,
+                    cancelLabel: L10n.Sources.cancelEdit,
+                    saveDisabled: !isDirty || isSaving || labelDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                    showsCancel: isDirty,
+                    accessibilityIdentifierPrefix: "sources.page.artifact.\(artifact.id)",
+                    onSave: { onSave(labelDraft, descriptionDraft) },
+                    onCancel: {
+                        labelDraft = artifact.label
+                        descriptionDraft = artifact.description
+                        onCancel()
+                    }
+                )
+
+                if !isDirty {
+                    Text(L10n.Sources.noUnsavedChanges)
+                        .font(PVFont.body(size: PVTypeScale.caption, italic: true))
+                        .foregroundStyle(PVColor.textFaint)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            if let pageError {
+                PVCallout(tone: .danger, message: pageError)
+            }
+        }
+        .onAppear { seedFromArtifact() }
+        .onChange(of: artifact.label) { _, _ in
+            if !isDirty { seedFromArtifact() }
+        }
+        .onChange(of: artifact.description) { _, _ in
+            if !isDirty { seedFromArtifact() }
+        }
+    }
+
+    private var isDirty: Bool {
+        labelDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+            != artifact.label.trimmingCharacters(in: .whitespacesAndNewlines)
+            || descriptionDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+            != artifact.description.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func seedFromArtifact() {
+        labelDraft = artifact.label
+        descriptionDraft = artifact.description
     }
 }

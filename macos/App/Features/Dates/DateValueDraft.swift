@@ -1,7 +1,7 @@
 import Foundation
 
 /// Editable draft of a genealogical DateValue for the shared Structure/Edit date modal.
-/// Validation and `summary` mirror `core/database/datevalues` (cascade + FormatSummary).
+/// Validation mirrors `core/database/datevalues` cascade rules.
 struct DateValueDraft: Equatable, Sendable {
     var kind: String
     var qualifier: String
@@ -280,36 +280,6 @@ struct DateValueDraft: Equatable, Sendable {
         }
     }
 
-    // MARK: Summary (FormatSummary)
-
-    /// Compact GEDCOM-style display (e.g. `ABT 1890`, `14 May 1985`, `BET 1880 AND 1885`).
-    var summary: String {
-        let p = phrase.trimmingCharacters(in: .whitespacesAndNewlines)
-        switch kind {
-        case "range":
-            var a = Self.formatSide(startSide, tz: startTZ)
-            var b = Self.formatSide(endSide, tz: endTZ)
-            if a.isEmpty, b.isEmpty { return "" }
-            if a.isEmpty { a = "…" }
-            if b.isEmpty { b = "…" }
-            var out = "BET \(a) AND \(b)"
-            if !p.isEmpty { out += " (\(p))" }
-            return out
-        case "point":
-            let a = Self.formatSide(startSide, tz: startTZ)
-            if a.isEmpty {
-                return p
-            }
-            var out = a
-            let q = qualifier.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !q.isEmpty { out = "\(q) \(out)" }
-            if !p.isEmpty { out += " (\(p))" }
-            return out
-        default:
-            return ""
-        }
-    }
-
     func toInput() -> CatalogDateValueInput {
         CatalogDateValueInput(
             kind: kind,
@@ -375,11 +345,6 @@ struct DateValueDraft: Equatable, Sendable {
         }
     }
 
-    private static let monthAbbrev = [
-        "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ]
-
     private static func pointQualifierOK(_ qual: String) -> Bool {
         switch qual {
         case "", "ABT", "BEF", "AFT": return true
@@ -417,33 +382,6 @@ struct DateValueDraft: Equatable, Sendable {
             if va > vb { return false }
         }
         return true
-    }
-
-    private static func formatSide(_ s: Side, tz: String) -> String {
-        guard let year = s.year else { return "" }
-        var out = "\(year)"
-        if let month = s.month, (1...12).contains(month) {
-            if let day = s.day {
-                out = "\(day) \(monthAbbrev[month]) \(year)"
-            } else {
-                out = "\(monthAbbrev[month]) \(year)"
-            }
-        }
-        if let hour = s.hour, s.day != nil {
-            let mi = s.minute ?? 0
-            out += String(format: " %02d:%02d", hour, mi)
-            if let second = s.second {
-                out += String(format: ":%02d", second)
-                if let ms = s.millisecond {
-                    out += String(format: ".%03d", ms)
-                }
-            }
-            let tzTrim = tz.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !tzTrim.isEmpty {
-                out += " \(tzTrim)"
-            }
-        }
-        return out
     }
 }
 

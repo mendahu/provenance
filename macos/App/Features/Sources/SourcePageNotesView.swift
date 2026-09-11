@@ -3,6 +3,9 @@ import SwiftUI
 /// Notes stream: existing rows with explicit edit/save/cancel, plus the composer.
 struct SourcePageNotesView: View {
     @Bindable var model: SourcePageModel
+    /// Composer text stays local until Add — avoids rebuilding the notes list
+    /// on every keystroke.
+    @State private var composerDraft = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
@@ -24,12 +27,15 @@ struct SourcePageNotesView: View {
                     SourcePageNoteRow(
                         note: note,
                         isEditing: model.notes.editingNoteID == note.id,
-                        bodyDraft: $model.notes.bodyDraft,
-                        bodyError: $model.notes.bodyError,
+                        bodyError: model.notes.bodyError,
                         isSaving: model.notes.isSaving && model.notes.editingNoteID == note.id,
                         onBeginEdit: { model.notes.beginEdit(id: note.id) },
-                        onSave: { Task { await model.notes.saveEdit() } },
+                        onSave: { body in
+                            model.notes.bodyDraft = body
+                            Task { await model.notes.saveEdit() }
+                        },
                         onCancel: { model.notes.cancelEdit() },
+                        onClearError: { model.notes.bodyError = nil },
                         onDelete: {
                             Task { await model.notes.delete(id: note.id) }
                         }
@@ -45,7 +51,7 @@ struct SourcePageNotesView: View {
 
                 VStack(alignment: .trailing, spacing: PVSpacing.space4) {
                     PVTextArea(
-                        text: $model.notes.draft,
+                        text: $composerDraft,
                         lineLimit: 2...8,
                         prompt: L10n.Sources.notePlaceholder
                     )
@@ -58,9 +64,15 @@ struct SourcePageNotesView: View {
                         icon: .plus,
                         loading: model.notes.isSaving
                     ) {
-                        Task { await model.notes.add() }
+                        model.notes.draft = composerDraft
+                        Task {
+                            await model.notes.add()
+                            if model.notes.draft.isEmpty {
+                                composerDraft = ""
+                            }
+                        }
                     }
-                    .disabled(model.notes.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(composerDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("sources.page.addNote")
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -74,13 +86,15 @@ struct SourcePageNotesView: View {
 private struct SourcePageNoteRow: View {
     let note: CatalogSourceNote
     let isEditing: Bool
-    @Binding var bodyDraft: String
-    @Binding var bodyError: String?
+    let bodyError: String?
     let isSaving: Bool
     let onBeginEdit: () -> Void
-    let onSave: () -> Void
+    let onSave: (String) -> Void
     let onCancel: () -> Void
+    let onClearError: () -> Void
     let onDelete: () -> Void
+
+    @State private var draft = ""
 
     var body: some View {
         HStack(alignment: .top, spacing: PVSpacing.space6) {
@@ -105,9 +119,15 @@ private struct SourcePageNoteRow: View {
                 editLabel: L10n.Sources.editNote,
                 axis: .vertical,
                 accessibilityIdentifierPrefix: "sources.page.note.\(note.id)",
-                onEdit: onBeginEdit,
-                onSave: onSave,
-                onCancel: onCancel,
+                onEdit: {
+                    draft = note.body
+                    onBeginEdit()
+                },
+                onSave: { onSave(draft) },
+                onCancel: {
+                    draft = note.body
+                    onCancel()
+                },
                 display: {
                     Text(note.body)
                         .font(PVFont.body(size: PVTypeScale.bodySmall, weight: PVFontWeight.regular))
@@ -117,12 +137,15 @@ private struct SourcePageNoteRow: View {
                 },
                 editor: {
                     PVTextArea(
-                        text: $bodyDraft,
-                        lineLimit: 1...12
+                        text: $draft,
+                        lineLimit: 1...12,
+                        activateOnAppear: true
                     )
                     .accessibilityIdentifier("sources.page.note.\(note.id)")
                     .disabled(isSaving)
-                    .onChange(of: bodyDraft) { _, _ in bodyError = nil }
+                    .onChange(of: draft) { _, _ in
+                        if bodyError != nil { onClearError() }
+                    }
                 },
                 restingTrailing: {
                     PVIconButton(.trash, label: L10n.Sources.deleteNote, size: .sm, tone: .danger) {
@@ -145,6 +168,11 @@ private struct SourcePageNoteRow: View {
             Rectangle()
                 .fill(PVColor.borderSubtle)
                 .frame(height: 1)
+        }
+        .onChange(of: isEditing) { _, editing in
+            if editing {
+                draft = note.body
+            }
         }
     }
 }

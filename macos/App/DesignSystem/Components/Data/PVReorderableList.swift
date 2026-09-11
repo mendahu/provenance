@@ -61,28 +61,38 @@ private struct PVReorderRowHeightsKey: PreferenceKey {
 ///
 /// Heights are measured from the rows so multi-line values and narrow
 /// windows grow the list instead of clipping with a guessed frame.
+/// While `freezesHeight` is true (inline edit), preference updates are
+/// ignored so the List does not rebuild and steal TextField focus.
 struct PVReorderableList<Item: Identifiable, Row: View>: View {
     private let items: [Item]
     private let onMove: (IndexSet, Int) -> Void
+    private let freezesHeight: Bool
     private let row: (Item) -> Row
 
     @State private var rowHeights: [AnyHashable: CGFloat] = [:]
+    @State private var lockedHeight: CGFloat?
 
     init(
         items: [Item],
+        freezesHeight: Bool = false,
         onMove: @escaping (IndexSet, Int) -> Void,
         @ViewBuilder row: @escaping (Item) -> Row
     ) {
         self.items = items
+        self.freezesHeight = freezesHeight
         self.onMove = onMove
         self.row = row
     }
 
-    private var contentHeight: CGFloat {
+    private var measuredHeight: CGFloat {
         let sum = items.reduce(CGFloat(0)) { partial, item in
             partial + (rowHeights[AnyHashable(item.id)] ?? 44)
         }
         return max(sum, 1)
+    }
+
+    private var contentHeight: CGFloat {
+        lockedHeight ?? measuredHeight
     }
 
     var body: some View {
@@ -109,12 +119,31 @@ struct PVReorderableList<Item: Identifiable, Row: View>: View {
         .environment(\.defaultMinListRowHeight, 1)
         .frame(height: contentHeight)
         .scrollDisabled(true)
+        .onChange(of: freezesHeight) { _, frozen in
+            if frozen {
+                lockedHeight = measuredHeight
+            } else {
+                lockedHeight = nil
+            }
+        }
         .onPreferenceChange(PVReorderRowHeightsKey.self) { values in
             let next = Dictionary(uniqueKeysWithValues: items.compactMap { item -> (AnyHashable, CGFloat)? in
                 let key = AnyHashable(item.id)
                 guard let height = values[key] else { return nil }
                 return (key, height)
             })
+            if freezesHeight {
+                // Allow one-way growth so the edit chrome is not clipped, but
+                // ignore shrink/noise updates that would rebuild the List and
+                // drop TextField focus mid-keystroke.
+                let nextSum = max(next.values.reduce(CGFloat(0), +), 1)
+                let current = lockedHeight ?? measuredHeight
+                if nextSum > current + 0.5 {
+                    rowHeights = next
+                    lockedHeight = nextSum
+                }
+                return
+            }
             if next != rowHeights {
                 rowHeights = next
             }

@@ -6,6 +6,10 @@ import SwiftUI
 struct SourcePageView: View {
     @State private var model: SourcePageModel
     let onBackToList: () -> Void
+    /// Date dialog confirm wiring — kept off the page observation graph so
+    /// structure/wording keystrokes stay local to the dialog form.
+    @State private var dateEditorCanSave = false
+    @State private var dateEditorSaveAction: (() async -> Void)?
 
     init(
         sourceID: String,
@@ -93,16 +97,25 @@ struct SourcePageView: View {
                     ? L10n.Sources.editDateDialogTitle
                     : L10n.Sources.addDateDialogTitle,
                 subtitle: model.metadata.dateEditorSubtitle,
-                confirm: model.metadata.isDateEditMode
-                    ? L10n.Sources.saveDateConfirm
-                    : L10n.Sources.addDateConfirm,
+                confirm: L10n.Sources.saveDateConfirm,
                 cancel: L10n.Sources.cancelAction
             ),
             isRunning: model.metadata.isSavingDate,
-            confirmDisabled: !canSaveDateEditor,
-            onConfirm: { Task { await model.metadata.saveDateEditor() } }
+            confirmDisabled: !dateEditorCanSave,
+            onConfirm: {
+                Task { await dateEditorSaveAction?() }
+            }
         ) {
-            DateValueEditorForm(draft: $model.metadata.dateEditorDraft)
+            SourcePageMetadataView(model: model).dateEditorForm(
+                canSave: $dateEditorCanSave,
+                saveAction: $dateEditorSaveAction
+            )
+        }
+        .onChange(of: model.metadata.isEditingDate) { _, open in
+            if !open {
+                dateEditorCanSave = false
+                dateEditorSaveAction = nil
+            }
         }
         .task { await model.load() }
         .accessibilityIdentifier("sources.page")
@@ -163,7 +176,4 @@ struct SourcePageView: View {
         )
     }
 
-    private var canSaveDateEditor: Bool {
-        model.metadata.dateEditorDraft.isValid && !model.metadata.isSavingDate
-    }
 }
