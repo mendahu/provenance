@@ -45,7 +45,7 @@ Uniqueness is **`UNIQUE (key, origin)`**. Lookup is always `(key, origin)`, neve
 - `sourcevocab.Install` upserts registry types/fields and suggestion joins.
 - Call **only** from `onboarding.createCatalog` (after `database.Create` +
   `users.EnsureRefs`).
-- **Do not** call `Install` from `OpenCatalog` or on every open.
+- **Do not** call `Install` from `OpenCatalog`, `catalogsession.Do`, or on every open.
 - **Do not** heal deleted `provenencia` rows or restored suggestion joins on open.
 - Calling `Install` twice would refresh labels via Upsert — create path calls it once.
 - Types/fields of any origin may be deleted when unused (`ErrInUse` while referenced).
@@ -53,20 +53,26 @@ Uniqueness is **`UNIQUE (key, origin)`**. Lookup is always `(key, origin)`, neve
 ## Where create vs open run
 
 `database.Create` / `database.Open` stay **migrate-only** (tests, low-level).
-Researcher-facing paths go through onboarding:
+Researcher-facing paths:
 
 ```
 core/onboarding/ready.go
-  createCatalog → database.Create + users.EnsureRefs + sourcevocab.Install
-  OpenCatalog   → database.Open + users.EnsureRefs
+  createCatalog → database.Create + users.EnsureRefs + sourcevocab.Install (+ grades)
+  OpenCatalog   → database.Open + users.EnsureRefs   # one-shot / tests
+
+core/catalogsession
+  Do(projectDir, fn) → open once like OpenCatalog, hold + serialize
 ```
 
-Complete / Open / ProjectInfo / ListContributors must use **`createCatalog` /
-`OpenCatalog`**, not raw `database.Create`/`Open`. Do **not** scatter
-`sourcevocab.Install` at each use-case.
+Complete uses **`createCatalog`** (create-then-close). Open / ProjectInfo /
+ListContributors and catalog FFI handlers use **`catalogsession.Do`** (or
+`withProjectCatalog` in handlers), not raw `database.Create`/`Open` and not
+open-per-call `OpenCatalog`. See `.cursor/skills/use-catalog-session/SKILL.md`.
+
+Do **not** scatter `sourcevocab.Install` at each use-case.
 
 When adding another seed domain’s create-time install, call it from
-**`createCatalog` only** (not open), unless that domain explicitly needs
+**`createCatalog` only** (not open / not `Do`), unless that domain explicitly needs
 open-time policy of its own.
 
 ## Future vocabulary domains (Interpretation, names, …)
@@ -84,7 +90,7 @@ Join/suggestion tables have **no `origin`** column.
 ## Do not
 
 - Seed via SQL migrations (unless a later explicit backfill policy says otherwise)
-- Call `sourcevocab.Install` from FFI handlers, Swift, or `OpenCatalog`
+- Call `sourcevocab.Install` from FFI handlers, Swift, `OpenCatalog`, or `catalogsession.Do`
 - Put seed install inside `database.Open`/`Create` (import cycle; couples migrate to product policy)
 - Treat `provenencia` as a `builtin` boolean — use `origin`
 - Expand the full horizon catalog in one PR “just because” it is listed in the docs

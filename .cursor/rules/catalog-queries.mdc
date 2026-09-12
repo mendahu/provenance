@@ -11,3 +11,4 @@ Follow the project skill `.cursor/skills/add-catalog-query/SKILL.md`.
 - One folder per domain: `core/database/<domain>/` (see `users/`). Functions take `*database.Catalog` and `DB()`.
 - Do not add per-table files to `core/database/` or methods on `Catalog`. Domain errors stay in the table package.
 - DDL still goes through catalog migrations, not query packages.
+- Researcher callers obtain `*database.Catalog` from `catalogsession.Do` / FFI `withProjectCatalog`, not open-per-call. See `.cursor/skills/use-catalog-session/SKILL.md`.

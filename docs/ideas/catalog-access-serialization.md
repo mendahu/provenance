@@ -214,7 +214,8 @@ After A+B is live: **measure** queue wait vs query time. **Direction C** batchin
 
 ## Related docs
 
-- [`application-stack.md`](../application-stack.md) §10 / §12 (WAL, pool, single writer)
+- [`.cursor/skills/use-catalog-session/SKILL.md`](../../.cursor/skills/use-catalog-session/SKILL.md) — agent how-to for `Do` / FFI `withProjectCatalog`
+- [`application-stack.md`](../application-stack.md) §10 / §12 (WAL, pool, single writer, held session)
 - [`archive/aggregate-workspace-nav-counts.md`](archive/aggregate-workspace-nav-counts.md)
 - [`macos-client-patterns.md`](../macos-client-patterns.md) (`GenealogyStore` / FakeStore)
 - Spike 3 omnibar will add more concurrent catalog traffic — strengthens the case for scheduling this nearby
