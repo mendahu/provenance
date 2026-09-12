@@ -1,11 +1,18 @@
 package handlers
 
 import (
+	"bytes"
+
 	"github.com/mendahu/provenencia/api/proto/engine"
+	"github.com/mendahu/provenencia/core/apperr"
+	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/datevalues"
 	"github.com/mendahu/provenencia/core/database/files"
+	"github.com/mendahu/provenencia/core/database/sourcecredibilitygrades"
+	"github.com/mendahu/provenencia/core/database/sourcefields"
 	"github.com/mendahu/provenencia/core/database/sourcemetadata"
 	"github.com/mendahu/provenencia/core/database/sources"
+	"github.com/mendahu/provenencia/core/database/sourcetypes"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -25,7 +32,13 @@ func ListSources(in []byte) ([]byte, error) {
 	}
 	out := &engine.ListSourcesResponse{}
 	for _, s := range rows {
-		out.Sources = append(out.Sources, sourceProto(s))
+		sp := sourceProto(s)
+		thumb, err := firstSourceThumbnailRelPath(c, s.ID)
+		if err != nil {
+			return nil, err
+		}
+		sp.ThumbnailRelPath = thumb
+		out.Sources = append(out.Sources, sp)
 	}
 	return proto.Marshal(out)
 }
@@ -65,16 +78,37 @@ func GetSourceWorkspace(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	types, err := sourcetypes.List(c)
+	if err != nil {
+		return nil, err
+	}
+	grades, err := sourcecredibilitygrades.List(c)
+	if err != nil {
+		return nil, err
+	}
+	fields, err := sourcefields.List(c)
+	if err != nil {
+		return nil, err
+	}
 
 	out := &engine.GetSourceWorkspaceResponse{Source: sourceProto(s)}
 	for _, n := range notes {
 		out.Notes = append(out.Notes, noteProto(n))
 	}
 	for _, e := range meta {
-		out.Metadata = append(out.Metadata, metadataEntryProto(e))
+		out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
 	}
 	out.Artifacts = arts
 	out.Credibility = cred
+	for _, t := range types {
+		out.Types = append(out.Types, sourceTypeProto(t))
+	}
+	for _, g := range grades {
+		out.Grades = append(out.Grades, credibilityGradeProto(g))
+	}
+	for _, f := range fields {
+		out.Fields = append(out.Fields, metadataFieldProto(f))
+	}
 	return proto.Marshal(out)
 }
 
@@ -196,20 +230,11 @@ func UpdateSourceNote(in []byte) ([]byte, error) {
 	if err := sources.UpdateNote(c, userID, noteID, req.GetBody()); err != nil {
 		return nil, err
 	}
-	db, err := c.DB()
+	n, err := sources.GetNote(c, noteID)
 	if err != nil {
 		return nil, err
 	}
-	var sourceID []byte
-	var body string
-	if err := db.QueryRow(`SELECT source_id, body FROM source_notes WHERE id = ?`, noteID).Scan(&sourceID, &body); err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.UpdateSourceNoteResponse{Note: &engine.SourceNote{
-		Id:       uuidString(noteID),
-		SourceId: uuidString(sourceID),
-		Body:     body,
-	}})
+	return proto.Marshal(&engine.UpdateSourceNoteResponse{Note: noteProto(n)})
 }
 
 func DeleteSourceNote(in []byte) ([]byte, error) {
@@ -266,20 +291,40 @@ func SetSourceMetadata(in []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		// Text-only updates keep any existing structured DateValue.
+		existing, listErr := sourcemetadata.ListBySource(c, sourceID)
+		if listErr != nil {
+			return nil, listErr
+		}
+		for _, row := range existing {
+			if bytes.Equal(row.FieldID, fieldID) {
+				dateID = row.DateValueID
+				break
+			}
+		}
 	}
-	row, err := sourcemetadata.Set(c, userID, sourcemetadata.Input{
+	if _, err := sourcemetadata.Set(c, userID, sourcemetadata.Input{
 		SourceID:    sourceID,
 		FieldID:     fieldID,
 		ValueText:   req.GetValueText(),
 		DateValueID: dateID,
-	})
+	}); err != nil {
+		return nil, err
+	}
+	entries, err := sourcemetadata.ListWorkspace(c, sourceID)
 	if err != nil {
 		return nil, err
 	}
-	return proto.Marshal(&engine.SetSourceMetadataResponse{
-		ValueText:   row.ValueText,
-		DateValueId: uuidString(row.DateValueID),
-	})
+	for _, e := range entries {
+		if bytes.Equal(e.Field.ID, fieldID) {
+			return proto.Marshal(&engine.SetSourceMetadataResponse{
+				Entry: metadataEntryProto(c, e),
+			})
+		}
+	}
+	// Set succeeded, so the row is always in the workspace list.
+	return nil, apperr.New(apperr.CodeInternalUnknown, apperr.KindInternal)
 }
 
 func ClearSourceMetadata(in []byte) ([]byte, error) {
@@ -310,6 +355,82 @@ func ClearSourceMetadata(in []byte) ([]byte, error) {
 	return proto.Marshal(&engine.ClearSourceMetadataResponse{})
 }
 
+func DismissSourceMetadataSuggestion(in []byte) ([]byte, error) {
+	var req engine.DismissSourceMetadataSuggestionRequest
+	if err := proto.Unmarshal(in, &req); err != nil {
+		return nil, unmarshalErr("dismiss_source_metadata_suggestion", err)
+	}
+	userID, err := parseUserID(req.GetUserId())
+	if err != nil {
+		return nil, err
+	}
+	sourceID, err := parseID(req.GetSourceId())
+	if err != nil {
+		return nil, err
+	}
+	fieldID, err := parseID(req.GetFieldId())
+	if err != nil {
+		return nil, err
+	}
+	c, err := openProjectCatalog(req.GetProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+	if err := sourcemetadata.DismissSuggestion(c, userID, sourceID, fieldID); err != nil {
+		return nil, err
+	}
+	entries, err := sourcemetadata.ListWorkspace(c, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	out := &engine.DismissSourceMetadataSuggestionResponse{}
+	for _, e := range entries {
+		out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
+	}
+	return proto.Marshal(out)
+}
+
+func ReorderSourceMetadata(in []byte) ([]byte, error) {
+	var req engine.ReorderSourceMetadataRequest
+	if err := proto.Unmarshal(in, &req); err != nil {
+		return nil, unmarshalErr("reorder_source_metadata", err)
+	}
+	userID, err := parseUserID(req.GetUserId())
+	if err != nil {
+		return nil, err
+	}
+	sourceID, err := parseID(req.GetSourceId())
+	if err != nil {
+		return nil, err
+	}
+	fieldIDs := make([][]byte, 0, len(req.GetFieldIds()))
+	for _, id := range req.GetFieldIds() {
+		fid, err := parseID(id)
+		if err != nil {
+			return nil, err
+		}
+		fieldIDs = append(fieldIDs, fid)
+	}
+	c, err := openProjectCatalog(req.GetProjectDir())
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+	if err := sourcemetadata.Reorder(c, userID, sourceID, fieldIDs); err != nil {
+		return nil, err
+	}
+	entries, err := sourcemetadata.ListWorkspace(c, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	out := &engine.ReorderSourceMetadataResponse{}
+	for _, e := range entries {
+		out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
+	}
+	return proto.Marshal(out)
+}
+
 func sourceProto(s sources.Source) *engine.Source {
 	return &engine.Source{
 		Id:           uuidString(s.ID),
@@ -322,13 +443,15 @@ func sourceProto(s sources.Source) *engine.Source {
 
 func noteProto(n sources.Note) *engine.SourceNote {
 	return &engine.SourceNote{
-		Id:       uuidString(n.ID),
-		SourceId: uuidString(n.SourceID),
-		Body:     n.Body,
+		Id:                uuidString(n.ID),
+		SourceId:          uuidString(n.SourceID),
+		Body:              n.Body,
+		AuthorDisplayName: n.AuthorDisplayName,
+		CreatedAt:         n.CreatedAt,
 	}
 }
 
-func metadataEntryProto(e sourcemetadata.WorkspaceEntry) *engine.MetadataWorkspaceEntry {
+func metadataEntryProto(c *database.Catalog, e sourcemetadata.WorkspaceEntry) *engine.MetadataWorkspaceEntry {
 	out := &engine.MetadataWorkspaceEntry{
 		Field: &engine.MetadataField{
 			Id:          uuidString(e.Field.ID),
@@ -345,6 +468,11 @@ func metadataEntryProto(e sourcemetadata.WorkspaceEntry) *engine.MetadataWorkspa
 		out.HasValue = true
 		out.ValueText = e.Value.ValueText
 		out.DateValueId = uuidString(e.Value.DateValueID)
+		if len(e.Value.DateValueID) == 16 {
+			if dv, err := datevalues.Lookup(c, e.Value.DateValueID); err == nil {
+				out.Date = dateValueProto(dv)
+			}
+		}
 	}
 	return out
 }
@@ -357,6 +485,41 @@ func fileRefProto(f files.File, relPath string) *engine.SourceFileRef {
 		MediaType:        f.MediaType,
 		ByteSize:         f.ByteSize,
 	}
+}
+
+// dateValueProto is the inverse of dateValueFromProto: it carries a stored
+// DateValue's components back to the client (MetadataWorkspaceEntry.date).
+func dateValueProto(v datevalues.Value) *engine.DateValueInput {
+	d := &engine.DateValueInput{
+		Kind:      v.Kind,
+		Qualifier: v.Qualifier,
+		Calendar:  v.Calendar,
+		StartTz:   v.StartTZ,
+		EndTz:     v.EndTZ,
+		Phrase:    v.Phrase,
+	}
+	toInt32 := func(p *int) *int32 {
+		if p == nil {
+			return nil
+		}
+		n := int32(*p)
+		return &n
+	}
+	d.StartYear = toInt32(v.StartYear)
+	d.StartMonth = toInt32(v.StartMonth)
+	d.StartDay = toInt32(v.StartDay)
+	d.StartHour = toInt32(v.StartHour)
+	d.StartMinute = toInt32(v.StartMinute)
+	d.StartSecond = toInt32(v.StartSecond)
+	d.StartMillisecond = toInt32(v.StartMillisecond)
+	d.EndYear = toInt32(v.EndYear)
+	d.EndMonth = toInt32(v.EndMonth)
+	d.EndDay = toInt32(v.EndDay)
+	d.EndHour = toInt32(v.EndHour)
+	d.EndMinute = toInt32(v.EndMinute)
+	d.EndSecond = toInt32(v.EndSecond)
+	d.EndMillisecond = toInt32(v.EndMillisecond)
+	return d
 }
 
 func dateValueFromProto(d *engine.DateValueInput) datevalues.Value {

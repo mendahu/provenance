@@ -30,12 +30,18 @@ struct CatalogSource: Sendable, Equatable, Identifiable {
     var sourceTypeID: String
     var title: String
     var description: String
+    /// Thumbnail JPEG under `objects/…` for list cells (empty = placeholder).
+    var thumbnailRelPath: String = ""
 }
 
 struct CatalogSourceNote: Sendable, Equatable {
     var id: String
     var sourceID: String
     var body: String
+    /// Create attribution from audit (not a domain column).
+    var authorDisplayName: String
+    /// RFC3339 UTC create time from audit.
+    var createdAt: String
 }
 
 struct CatalogFileRef: Sendable, Equatable {
@@ -54,6 +60,8 @@ struct CatalogArtifact: Sendable, Equatable {
     var label: String
     var description: String
     var file: CatalogFileRef?
+    /// Thumbnail JPEG under `objects/…` (empty when fileless / non-image / skipped).
+    var thumbnailRelPath: String = ""
 }
 
 struct CatalogCredibilityGrade: Sendable, Equatable, Identifiable {
@@ -113,10 +121,14 @@ struct CatalogMetadataField: Sendable, Equatable, Identifiable {
     var usedBy: Int = 0
 }
 
-struct CatalogMetadataEntry: Sendable, Equatable {
+struct CatalogMetadataEntry: Sendable, Equatable, Identifiable {
+    var id: String { field.id }
     var field: CatalogMetadataField
     var valueText: String
     var dateValueID: String
+    /// Full structured components when `dateValueID` is set — lets the date
+    /// editor rebuild its draft from the catalog instead of a session cache.
+    var date: CatalogDateValueInput?
     var hasValue: Bool
     var suggested: Bool
     var sortOrder: Int32
@@ -129,16 +141,34 @@ struct CatalogSourceWorkspace: Sendable, Equatable {
     var artifacts: [CatalogArtifact]
     /// Nil when no assessment row (UI may display Standard without a row).
     var credibility: CatalogCredibilityAssessment?
+    /// Page vocabulary folded into the same catalog open so the Source page
+    /// loads with one RPC (type picker, credibility chips, Add-metadata list).
+    var types: [CatalogSourceType] = []
+    var grades: [CatalogCredibilityGrade] = []
+    var fields: [CatalogMetadataField] = []
 }
 
 struct CatalogDateValueInput: Sendable, Equatable {
     var kind: String
-    var qualifier: String
-    var calendar: String
+    var qualifier: String = ""
+    var calendar: String = "gregorian"
     var startYear: Int32?
     var startMonth: Int32?
     var startDay: Int32?
-    var phrase: String
+    var startHour: Int32?
+    var startMinute: Int32?
+    var startSecond: Int32?
+    var startMillisecond: Int32?
+    var startTZ: String = ""
+    var endYear: Int32?
+    var endMonth: Int32?
+    var endDay: Int32?
+    var endHour: Int32?
+    var endMinute: Int32?
+    var endSecond: Int32?
+    var endMillisecond: Int32?
+    var endTZ: String = ""
+    var phrase: String = ""
 }
 
 /// Origin split returned by `GetWorkspaceNavCounts` for vocabulary
@@ -202,6 +232,8 @@ protocol GenealogyStore: Sendable {
     func updateSourceNote(projectDir: String, userID: String, noteID: String, body: String) async throws
         -> CatalogSourceNote
     func deleteSourceNote(projectDir: String, userID: String, noteID: String) async throws
+    /// Returns the refreshed workspace entry (structured `date` included) so
+    /// callers can patch without refetching.
     func setSourceMetadata(
         projectDir: String,
         userID: String,
@@ -209,8 +241,23 @@ protocol GenealogyStore: Sendable {
         fieldID: String,
         valueText: String,
         date: CatalogDateValueInput?
-    ) async throws -> (valueText: String, dateValueID: String)
+    ) async throws -> CatalogMetadataEntry
     func clearSourceMetadata(projectDir: String, userID: String, sourceID: String, fieldID: String) async throws
+    /// Permanently dismiss an unfilled type suggestion for this Source.
+    /// Returns the updated workspace metadata list.
+    func dismissSourceMetadataSuggestion(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        fieldID: String
+    ) async throws -> [CatalogMetadataEntry]
+    /// Persist display order for visible metadata rows (field ids in order).
+    func reorderSourceMetadata(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        fieldIDs: [String]
+    ) async throws -> [CatalogMetadataEntry]
     func createArtifact(
         projectDir: String,
         userID: String,
@@ -232,6 +279,11 @@ protocol GenealogyStore: Sendable {
         artifactID: String,
         path: String
     ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool)
+    /// Lazily ensure a thumbnail derivative for a primary File; empty path when skipped.
+    func ensureFileThumbnail(
+        projectDir: String,
+        fileID: String
+    ) async throws -> (relPath: String, skipped: Bool)
     func listSourceCredibilityGrades(projectDir: String) async throws -> [CatalogCredibilityGrade]
     func upsertSourceCredibilityAssessment(
         projectDir: String,

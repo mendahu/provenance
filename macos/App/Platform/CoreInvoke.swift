@@ -56,6 +56,8 @@ enum CoreMethod {
     static let deleteSourceNote = Int32(Provenencia_Engine_V1_Method.deleteSourceNote.rawValue)
     static let setSourceMetadata = Int32(Provenencia_Engine_V1_Method.setSourceMetadata.rawValue)
     static let clearSourceMetadata = Int32(Provenencia_Engine_V1_Method.clearSourceMetadata.rawValue)
+    static let dismissSourceMetadataSuggestion = Int32(Provenencia_Engine_V1_Method.dismissSourceMetadataSuggestion.rawValue)
+    static let reorderSourceMetadata = Int32(Provenencia_Engine_V1_Method.reorderSourceMetadata.rawValue)
     static let createArtifact = Int32(Provenencia_Engine_V1_Method.createArtifact.rawValue)
     static let updateArtifact = Int32(Provenencia_Engine_V1_Method.updateArtifact.rawValue)
     static let ingestArtifactFile = Int32(Provenencia_Engine_V1_Method.ingestArtifactFile.rawValue)
@@ -74,6 +76,7 @@ enum CoreMethod {
     static let assignTypeField = Int32(Provenencia_Engine_V1_Method.assignTypeField.rawValue)
     static let removeTypeField = Int32(Provenencia_Engine_V1_Method.removeTypeField.rawValue)
     static let getWorkspaceNavCounts = Int32(Provenencia_Engine_V1_Method.getWorkspaceNavCounts.rawValue)
+    static let ensureFileThumbnail = Int32(Provenencia_Engine_V1_Method.ensureFileThumbnail.rawValue)
 }
 
 func provenenciaInvoke(method: Int32, request: Data) throws -> Data {

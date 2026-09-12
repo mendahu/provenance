@@ -3,7 +3,7 @@ import Observation
 
 /// State for the **Sources** workspace destination (S2-04 board / S2-17 PR):
 /// browse/search/filter/sort Sources as an evidence list, create via a thin
-/// dialog, and open a separate Source page (stub until S2-18).
+/// dialog, and open a separate Source page (S2-18).
 @MainActor
 @Observable
 final class SourcesModel {
@@ -48,8 +48,13 @@ final class SourcesModel {
     private(set) var isSaving = false
     var toast: VocabularyToast?
 
-    /// Non-nil when the Source page stub is showing that id.
+    /// Non-nil when the Source page is showing that id.
     private(set) var openedSourceID: String?
+
+    /// Exposed so `SourcesView` can mount `SourcePageView` without duplicating init.
+    var pageProjectDir: String { projectDir }
+    var pageUserID: String { userID }
+    var pageStore: any GenealogyStore { store }
 
     private let projectDir: String
     private let userID: String
@@ -250,6 +255,13 @@ final class SourcesModel {
 
     func closeSource() {
         openedSourceID = nil
+    }
+
+    /// Keeps the list row in sync when the Source page edits identity.
+    func applyUpdatedSource(_ source: CatalogSource) {
+        if let idx = sources.firstIndex(where: { $0.id == source.id }) {
+            sources[idx] = source
+        }
     }
 
     private func publishCounts() {

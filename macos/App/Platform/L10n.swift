@@ -14,6 +14,12 @@ enum L10n {
             comment: "Accessibility label for a PVToast's dismiss button"
         )
 
+        static let reorderHandle = LocalizedStringResource(
+            "designSystem.reorder.handle",
+            defaultValue: "Drag to reorder",
+            comment: "Accessibility label for a PVReorderHandle drag affordance"
+        )
+
         static let tableSortNone = LocalizedStringResource(
             "designSystem.table.sortNone",
             defaultValue: "Not sorted. Activate to sort ascending",
@@ -437,9 +443,8 @@ enum L10n {
         }
     }
 
-    /// The **Sources** workspace destination (S2-17): browse Sources as an
-    /// evidence list, create via a thin dialog, open a separate Source page
-    /// (stub until S2-18).
+    /// The **Sources** workspace destination (S2-17–18): browse Sources as an
+    /// evidence list, create via a thin dialog, open a separate Source page.
     enum Sources {
         static let description = LocalizedStringResource(
             "sources.list.description",
@@ -663,17 +668,769 @@ enum L10n {
             return String(format: format, locale: .current, title)
         }
 
-        static let stubBack = LocalizedStringResource(
-            "sources.stub.back",
-            defaultValue: "Back to Sources",
-            comment: "Button on the Source page stub returning to the Sources list"
+        // MARK: Source page (S2-18)
+
+        static let breadcrumbSources = LocalizedStringResource(
+            "sources.page.breadcrumbSources",
+            defaultValue: "Sources",
+            comment: "Breadcrumb link back to the Sources list"
         )
 
-        static let stubNote = LocalizedStringResource(
-            "sources.stub.note",
-            defaultValue: "The full Source page — notes, metadata, artifacts and file ingest — arrives in a later update.",
-            comment: "Placeholder body on the S2-17 Source page stub"
+        static let pageTitleRequired = LocalizedStringResource(
+            "sources.page.titleRequired",
+            defaultValue: "A source needs a title.",
+            comment: "Inline validation when Source page title is cleared"
         )
+
+        static let descriptionPlaceholder = LocalizedStringResource(
+            "sources.page.descriptionPlaceholder",
+            defaultValue: "What this source is, and where you consulted it",
+            comment: "Placeholder for the Source description field"
+        )
+
+        static let descriptionHeading = LocalizedStringResource(
+            "sources.page.descriptionHeading",
+            defaultValue: "Description",
+            comment: "Section heading above Source description"
+        )
+
+        static let credibilityHeading = LocalizedStringResource(
+            "sources.page.credibilityHeading",
+            defaultValue: "Credibility",
+            comment: "Heading for the Source credibility control"
+        )
+
+        static let credibilityArgumentPlaceholder = LocalizedStringResource(
+            "sources.page.credibilityArgumentPlaceholder",
+            defaultValue: "Why this grade — optional",
+            comment: "Placeholder for optional credibility argument"
+        )
+
+        static let credibilityHint = LocalizedStringResource(
+            "sources.page.credibilityHint",
+            defaultValue: "How far you trust this source as evidence.",
+            comment: "Italic aside when a credibility assessment is saved"
+        )
+
+        static let credibilityHintUnset = LocalizedStringResource(
+            "sources.page.credibilityHintUnset",
+            defaultValue: "Not assessed — treated as standard",
+            comment: "Italic aside when no credibility assessment row exists"
+        )
+
+        static let saveAssessment = LocalizedStringResource(
+            "sources.page.saveAssessment",
+            defaultValue: "Save assessment",
+            comment: "Button to save credibility grade and argument"
+        )
+
+        static let cancelEdit = LocalizedStringResource(
+            "sources.page.cancelEdit",
+            defaultValue: "Cancel",
+            comment: "Cancel an in-progress edit on the Source page"
+        )
+
+        static let saveAction = LocalizedStringResource(
+            "sources.page.saveAction",
+            defaultValue: "Save",
+            comment: "Primary save for title or type edit"
+        )
+
+        static let editTitle = LocalizedStringResource(
+            "sources.page.editTitle",
+            defaultValue: "Edit title",
+            comment: "Accessibility label for pencil to edit Source title"
+        )
+
+        static let editType = LocalizedStringResource(
+            "sources.page.editType",
+            defaultValue: "Edit type",
+            comment: "Accessibility label for pencil to edit Source type"
+        )
+
+        static let editMetadataValue = LocalizedStringResource(
+            "sources.page.editMetadataValue",
+            defaultValue: "Edit value",
+            comment: "Accessibility label for pencil to edit a saved text metadata value"
+        )
+
+        static let saveMetadataValue = LocalizedStringResource(
+            "sources.page.saveMetadataValue",
+            defaultValue: "Save value",
+            comment: "Accessibility label for check to save an inline metadata text edit"
+        )
+
+        static let editMetadataDateValue = LocalizedStringResource(
+            "sources.page.editMetadataDateValue",
+            defaultValue: "Edit date value",
+            comment: "Accessibility label for pencil to open the date metadata dialog"
+        )
+
+        static let editDescription = LocalizedStringResource(
+            "sources.page.editDescription",
+            defaultValue: "Edit",
+            comment: "Button to enter description edit mode"
+        )
+
+        static let saveDescription = LocalizedStringResource(
+            "sources.page.saveDescription",
+            defaultValue: "Save description",
+            comment: "Button to save Source description"
+        )
+
+        static let credibilitySavedStatus = LocalizedStringResource(
+            "sources.page.credibilitySavedStatus",
+            defaultValue: "Saved assessment",
+            comment: "Status when credibility draft matches saved assessment"
+        )
+
+        static let credibilityUnsavedStatus = LocalizedStringResource(
+            "sources.page.credibilityUnsavedStatus",
+            defaultValue: "No assessment saved",
+            comment: "Status when there is no credibility row and draft is clean at standard"
+        )
+
+        static let noUnsavedChanges = LocalizedStringResource(
+            "sources.page.noUnsavedChanges",
+            defaultValue: "No unsaved changes",
+            comment: "Status under artifact fields when drafts match saved values"
+        )
+
+        static let addDateDialogTitle = LocalizedStringResource(
+            "sources.page.addDateDialogTitle",
+            defaultValue: "Add date value",
+            comment: "Title of DateValue editor when creating structure"
+        )
+
+        static let editDateDialogTitle = LocalizedStringResource(
+            "sources.page.editDateDialogTitle",
+            defaultValue: "Edit date value",
+            comment: "Title of DateValue editor when editing structure"
+        )
+
+        static let saveDateConfirm = LocalizedStringResource(
+            "sources.page.saveDateConfirm",
+            defaultValue: "Save value",
+            comment: "Confirm button on the date metadata dialog"
+        )
+
+        static let dateValueAsWritten = LocalizedStringResource(
+            "sources.page.dateValueAsWritten",
+            defaultValue: "Value as written",
+            comment: "Label for the plain-text wording field in the date metadata dialog"
+        )
+
+        static let dateValueAsWrittenHint = LocalizedStringResource(
+            "sources.page.dateValueAsWrittenHint",
+            defaultValue: "Keep the record's own wording; the structured date below is what search and sorting use",
+            comment: "Hint under Value as written in the date metadata dialog"
+        )
+
+        static let dateKindLabel = LocalizedStringResource(
+            "sources.page.dateKindLabel",
+            defaultValue: "Kind",
+            comment: "Label above DateValue kind segmented control"
+        )
+
+        static let dateKindPoint = LocalizedStringResource(
+            "sources.page.dateKindPoint",
+            defaultValue: "Single date",
+            comment: "DateValue kind: point"
+        )
+
+        static let dateKindRange = LocalizedStringResource(
+            "sources.page.dateKindRange",
+            defaultValue: "Between two bounds",
+            comment: "DateValue kind: range"
+        )
+
+        static let dateKindRangeHint = LocalizedStringResource(
+            "sources.page.dateKindRangeHint",
+            defaultValue: "A single date somewhere in this window — not how long something lasted",
+            comment: "Hint under Between kind"
+        )
+
+        static let dateQualifierLabel = LocalizedStringResource(
+            "sources.page.dateQualifierLabel",
+            defaultValue: "Qualifier",
+            comment: "Label above DateValue qualifier chips"
+        )
+
+        static let dateQualifierAsStated = LocalizedStringResource(
+            "sources.page.dateQualifierAsStated",
+            defaultValue: "As stated",
+            comment: "DateValue qualifier empty"
+        )
+
+        static let dateQualifierAbout = LocalizedStringResource(
+            "sources.page.dateQualifierAbout",
+            defaultValue: "About",
+            comment: "DateValue qualifier ABT"
+        )
+
+        static let dateQualifierBefore = LocalizedStringResource(
+            "sources.page.dateQualifierBefore",
+            defaultValue: "Before",
+            comment: "DateValue qualifier BEF"
+        )
+
+        static let dateQualifierAfter = LocalizedStringResource(
+            "sources.page.dateQualifierAfter",
+            defaultValue: "After",
+            comment: "DateValue qualifier AFT"
+        )
+
+        static let dateEarliestHeading = LocalizedStringResource(
+            "sources.page.dateEarliestHeading",
+            defaultValue: "Earliest — not before",
+            comment: "Uppercase heading for range start side"
+        )
+
+        static let dateLatestHeading = LocalizedStringResource(
+            "sources.page.dateLatestHeading",
+            defaultValue: "Latest — not after",
+            comment: "Uppercase heading for range end side"
+        )
+
+        static let datePointHeading = LocalizedStringResource(
+            "sources.page.datePointHeading",
+            defaultValue: "Date",
+            comment: "Uppercase heading for point date cascade"
+        )
+
+        static let dateLeaveEmptyHint = LocalizedStringResource(
+            "sources.page.dateLeaveEmptyHint",
+            defaultValue: "Leave a part empty when the record does not say",
+            comment: "Hint beside date cascade heading"
+        )
+
+        static let dateYear = LocalizedStringResource(
+            "sources.page.dateYear",
+            defaultValue: "Year",
+            comment: "DateValue year field label"
+        )
+
+        static let dateMonth = LocalizedStringResource(
+            "sources.page.dateMonth",
+            defaultValue: "Month",
+            comment: "DateValue month field label"
+        )
+
+        static let dateDay = LocalizedStringResource(
+            "sources.page.dateDay",
+            defaultValue: "Day",
+            comment: "DateValue day field label"
+        )
+
+        static let dateHour = LocalizedStringResource(
+            "sources.page.dateHour",
+            defaultValue: "Hour",
+            comment: "DateValue hour field label"
+        )
+
+        static let dateMinute = LocalizedStringResource(
+            "sources.page.dateMinute",
+            defaultValue: "Min",
+            comment: "DateValue minute field label"
+        )
+
+        static let dateSecond = LocalizedStringResource(
+            "sources.page.dateSecond",
+            defaultValue: "Sec",
+            comment: "DateValue second field label"
+        )
+
+        static let dateMillisecond = LocalizedStringResource(
+            "sources.page.dateMillisecond",
+            defaultValue: "Ms",
+            comment: "DateValue millisecond field label"
+        )
+
+        static let dateTimeZone = LocalizedStringResource(
+            "sources.page.dateTimeZone",
+            defaultValue: "Time zone",
+            comment: "DateValue free-text timezone label"
+        )
+
+        static let dateAddTime = LocalizedStringResource(
+            "sources.page.dateAddTime",
+            defaultValue: "Add time…",
+            comment: "Link to reveal optional time fields"
+        )
+
+        static let dateHideTime = LocalizedStringResource(
+            "sources.page.dateHideTime",
+            defaultValue: "Hide time",
+            comment: "Link to hide optional time fields"
+        )
+
+        static let dateShowAdvanced = LocalizedStringResource(
+            "sources.page.dateShowAdvanced",
+            defaultValue: "Calendar and phrase…",
+            comment: "Link to reveal calendar and phrase"
+        )
+
+        static let dateHideAdvanced = LocalizedStringResource(
+            "sources.page.dateHideAdvanced",
+            defaultValue: "Hide calendar and phrase",
+            comment: "Link to hide calendar and phrase"
+        )
+
+        static let dateCalendar = LocalizedStringResource(
+            "sources.page.dateCalendar",
+            defaultValue: "Calendar",
+            comment: "DateValue calendar picker label"
+        )
+
+        static let datePhrase = LocalizedStringResource(
+            "sources.page.datePhrase",
+            defaultValue: "Phrase",
+            comment: "DateValue phrase field label"
+        )
+
+        static let datePhraseHint = LocalizedStringResource(
+            "sources.page.datePhraseHint",
+            defaultValue: "A short gloss carried on the date itself — not the source's wording",
+            comment: "Hint under DateValue phrase"
+        )
+
+        static let dateStoredAs = LocalizedStringResource(
+            "sources.page.dateStoredAs",
+            defaultValue: "Stored as",
+            comment: "Label beside DateValue summary preview"
+        )
+
+        static let dateRangeOrderError = LocalizedStringResource(
+            "sources.page.dateRangeOrderError",
+            defaultValue: "The latest bound falls before the earliest bound. The date has to sit inside the window.",
+            comment: "Inline error when range end precedes start"
+        )
+
+        static let dateYearOutOfRange = LocalizedStringResource(
+            "sources.page.dateYearOutOfRange",
+            defaultValue: "Enter a year between 1 and 9999.",
+            comment: "Inline error when DateValue year is out of range"
+        )
+
+        static let dateMonthOutOfRange = LocalizedStringResource(
+            "sources.page.dateMonthOutOfRange",
+            defaultValue: "Month must be between 1 and 12.",
+            comment: "Inline error when DateValue month is out of range"
+        )
+
+        static let dateDayOutOfRange = LocalizedStringResource(
+            "sources.page.dateDayOutOfRange",
+            defaultValue: "Day must be between 1 and 31.",
+            comment: "Inline error when DateValue day is out of range"
+        )
+
+        static let dateHourOutOfRange = LocalizedStringResource(
+            "sources.page.dateHourOutOfRange",
+            defaultValue: "Hour must be between 0 and 23.",
+            comment: "Inline error when DateValue hour is out of range"
+        )
+
+        static let dateMinuteOutOfRange = LocalizedStringResource(
+            "sources.page.dateMinuteOutOfRange",
+            defaultValue: "Minute must be between 0 and 59.",
+            comment: "Inline error when DateValue minute is out of range"
+        )
+
+        static let dateSecondOutOfRange = LocalizedStringResource(
+            "sources.page.dateSecondOutOfRange",
+            defaultValue: "Second must be between 0 and 59.",
+            comment: "Inline error when DateValue second is out of range"
+        )
+
+        static let dateMillisecondOutOfRange = LocalizedStringResource(
+            "sources.page.dateMillisecondOutOfRange",
+            defaultValue: "Millisecond must be between 0 and 999.",
+            comment: "Inline error when DateValue millisecond is out of range"
+        )
+
+        static func metadataFieldCount(_ count: Int) -> String {
+            if count == 1 {
+                return String(localized: LocalizedStringResource(
+                    "sources.page.metadataFieldCountOne",
+                    defaultValue: "1 field",
+                    comment: "Metadata section count when exactly one saved field"
+                ))
+            }
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.metadataFieldCountMany",
+                defaultValue: "%d fields",
+                comment: "Metadata section count; argument is saved field count"
+            ))
+            return String(format: format, locale: .current, count)
+        }
+
+        static func artifactsCount(_ count: Int) -> String {
+            if count == 1 {
+                return String(localized: LocalizedStringResource(
+                    "sources.page.artifactsCountOne",
+                    defaultValue: "1 artifact",
+                    comment: "Artifacts section count when exactly one"
+                ))
+            }
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.artifactsCountMany",
+                defaultValue: "%d artifacts",
+                comment: "Artifacts section count; argument is artifact count"
+            ))
+            return String(format: format, locale: .current, count)
+        }
+
+        static let metadataHeading = LocalizedStringResource(
+            "sources.page.metadataHeading",
+            defaultValue: "Metadata",
+            comment: "Heading for the Metadata section on the Source page"
+        )
+
+        static let addMetadata = LocalizedStringResource(
+            "sources.page.addMetadata",
+            defaultValue: "Add field",
+            comment: "Button to open Add metadata field dialog"
+        )
+
+        static let metadataIntro = LocalizedStringResource(
+            "sources.page.metadataIntro",
+            defaultValue: "Metadata describes the source itself — what the record says about its own making: a registration number, a call number, the reel it sits on. Facts the record asserts about people or events are not metadata; those become citations and asserted facts, so they can move on to the entities they describe.",
+            comment: "Prose under the Metadata section heading"
+        )
+
+        static let metadataEmptyMessage = LocalizedStringResource(
+            "sources.page.metadataEmptyMessage",
+            defaultValue: "No metadata yet — accept a type suggestion or add a field from the vocabulary.",
+            comment: "Empty state when a Source has no metadata rows"
+        )
+
+        static let dismissMetadataSuggestion = LocalizedStringResource(
+            "sources.page.dismissMetadataSuggestion",
+            defaultValue: "Dismiss this suggestion",
+            comment: "Accessibility label for dismissing a type metadata suggestion"
+        )
+
+        static let addMetadataDialogTitle = LocalizedStringResource(
+            "sources.page.addMetadataDialogTitle",
+            defaultValue: "Add metadata",
+            comment: "Title of the Add metadata dialog"
+        )
+
+        static let addMetadataDialogSubtitle = LocalizedStringResource(
+            "sources.page.addMetadataDialogSubtitle",
+            defaultValue: "Pick any field from this project’s vocabulary, then enter the value as written on the record.",
+            comment: "Subtitle of the Add metadata dialog"
+        )
+
+        static let addMetadataConfirm = LocalizedStringResource(
+            "sources.page.addMetadataConfirm",
+            defaultValue: "Add",
+            comment: "Confirm button on the Add metadata dialog"
+        )
+
+        static let metadataField = LocalizedStringResource(
+            "sources.page.metadataField",
+            defaultValue: "Field",
+            comment: "Label for metadata field picker"
+        )
+
+        static let metadataFieldHint = LocalizedStringResource(
+            "sources.page.metadataFieldHint",
+            defaultValue: "Search the whole source metadata vocabulary",
+            comment: "Hint under metadata field picker"
+        )
+
+        static let metadataValue = LocalizedStringResource(
+            "sources.page.metadataValue",
+            defaultValue: "Value",
+            comment: "Label for metadata value entry"
+        )
+
+        static let metadataValueHint = LocalizedStringResource(
+            "sources.page.metadataValueHint",
+            defaultValue: "Enter it as written on the record",
+            comment: "Hint under metadata value field"
+        )
+
+        static let metadataFieldRequired = LocalizedStringResource(
+            "sources.page.metadataFieldRequired",
+            defaultValue: "Choose a field.",
+            comment: "Validation when Add metadata is submitted without a field"
+        )
+
+        static let metadataValueRequired = LocalizedStringResource(
+            "sources.page.metadataValueRequired",
+            defaultValue: "Enter a value.",
+            comment: "Validation when Add metadata is submitted without a value"
+        )
+
+        static let metadataSuggestionPlaceholder = LocalizedStringResource(
+            "sources.page.metadataSuggestionPlaceholder",
+            defaultValue: "Add a value…",
+            comment: "Placeholder on an empty type-suggestion metadata row"
+        )
+
+        static let metadataSuggestionsHeading = LocalizedStringResource(
+            "sources.page.metadataSuggestionsHeading",
+            defaultValue: "Suggested by this type",
+            comment: "Subheading above type-suggested metadata fields without values"
+        )
+
+        static let saveMetadataSuggestion = LocalizedStringResource(
+            "sources.page.saveMetadataSuggestion",
+            defaultValue: "Save",
+            comment: "Button to save a value on a type-suggested metadata row"
+        )
+
+        static let artifactsHeading = LocalizedStringResource(
+            "sources.page.artifactsHeading",
+            defaultValue: "Artifacts",
+            comment: "Heading for the Artifacts section on the Source page"
+        )
+
+        static let addArtifact = LocalizedStringResource(
+            "sources.page.addArtifact",
+            defaultValue: "Add artifact",
+            comment: "Button to open the Add Artifact dialog"
+        )
+
+        static let artifactsEmptyTitle = LocalizedStringResource(
+            "sources.page.artifactsEmptyTitle",
+            defaultValue: "No artifacts yet",
+            comment: "Empty state title when a Source has no Artifacts"
+        )
+
+        static let artifactsEmptyMessage = LocalizedStringResource(
+            "sources.page.artifactsEmptyMessage",
+            defaultValue: "Add a scan, photo, or a fileless stand-in for something you only saw in person.",
+            comment: "Empty state message for Artifacts"
+        )
+
+        static let artifactLabel = LocalizedStringResource(
+            "sources.page.artifactLabel",
+            defaultValue: "Label",
+            comment: "Field label for an Artifact's required list headline"
+        )
+
+        static let artifactLabelHint = LocalizedStringResource(
+            "sources.page.artifactLabelHint",
+            defaultValue: "Name it so the row is recognisable in the list",
+            comment: "Hint under Artifact label field"
+        )
+
+        static let artifactDescription = LocalizedStringResource(
+            "sources.page.artifactDescription",
+            defaultValue: "Description",
+            comment: "Field label for optional Artifact description"
+        )
+
+        static let artifactDescriptionHint = LocalizedStringResource(
+            "sources.page.artifactDescriptionHint",
+            defaultValue: "Optional — folio, entry number, condition of the scan",
+            comment: "Hint under Artifact description on the page"
+        )
+
+        static let artifactLabelRequired = LocalizedStringResource(
+            "sources.page.artifactLabelRequired",
+            defaultValue: "Give the artifact a label.",
+            comment: "Validation when Add Artifact is submitted without a label"
+        )
+
+        static let saveArtifact = LocalizedStringResource(
+            "sources.page.saveArtifact",
+            defaultValue: "Save artifact",
+            comment: "Button to save edited Artifact label and description"
+        )
+
+        static let openFile = LocalizedStringResource(
+            "sources.page.openFile",
+            defaultValue: "Open",
+            comment: "Button to open an Artifact's primary File in an external app"
+        )
+
+        static let primaryFileHeading = LocalizedStringResource(
+            "sources.page.primaryFileHeading",
+            defaultValue: "Primary file",
+            comment: "Uppercase section label above an Artifact's primary File card"
+        )
+
+        static let openFileCaption = LocalizedStringResource(
+            "sources.page.openFileCaption",
+            defaultValue: "Opens in the system's default app · the file is immutable once ingested",
+            comment: "Caption under the Open file control"
+        )
+
+        static let addFile = LocalizedStringResource(
+            "sources.page.addFile",
+            defaultValue: "Add file…",
+            comment: "Button to attach a first file to a fileless Artifact"
+        )
+
+        static let filelessHint = LocalizedStringResource(
+            "sources.page.filelessHint",
+            defaultValue: "Physical only — you have recorded the item without a scan. Attach a file when one exists; the artifact keeps its reference either way.",
+            comment: "Callout when an Artifact has no primary File"
+        )
+
+        static let notesHeading = LocalizedStringResource(
+            "sources.page.notesHeading",
+            defaultValue: "Notes",
+            comment: "Heading for the Notes stream on the Source page"
+        )
+
+        static let notesEmptyTitle = LocalizedStringResource(
+            "sources.page.notesEmptyTitle",
+            defaultValue: "No notes yet — record what the record itself cannot say.",
+            comment: "Empty-state title when a Source has no notes"
+        )
+
+        static let notesEmptyMessage = LocalizedStringResource(
+            "sources.page.notesEmptyMessage",
+            defaultValue: "Legibility, gaps in the film, what to order on the next visit.",
+            comment: "Empty-state body under Notes"
+        )
+
+        static let notePlaceholder = LocalizedStringResource(
+            "sources.page.notePlaceholder",
+            defaultValue: "Add a note about this source",
+            comment: "Placeholder for the new-note composer"
+        )
+
+        /// Composer byline beside the draft field (`Jake Robins · now`).
+        static func noteComposerAttribution(displayName: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.noteComposerAttribution",
+                defaultValue: "%@ · now",
+                comment: "Note composer byline; argument is the session display name"
+            ))
+            return String(format: format, locale: .current, displayName)
+        }
+
+        static let addNote = LocalizedStringResource(
+            "sources.page.addNote",
+            defaultValue: "Add note",
+            comment: "Button to save a new Source note"
+        )
+
+        static let editNote = LocalizedStringResource(
+            "sources.page.editNote",
+            defaultValue: "Edit note",
+            comment: "Accessibility label for pencil to edit a Source note"
+        )
+
+        static let saveNote = LocalizedStringResource(
+            "sources.page.saveNote",
+            defaultValue: "Save note",
+            comment: "Button to commit an edited Source note"
+        )
+
+        static let noteBodyRequired = LocalizedStringResource(
+            "sources.page.noteBodyRequired",
+            defaultValue: "A note needs some text.",
+            comment: "Validation when saving an empty Source note body"
+        )
+
+        static let deleteNote = LocalizedStringResource(
+            "sources.page.deleteNote",
+            defaultValue: "Delete note",
+            comment: "Accessibility label for deleting a Source note"
+        )
+
+        static let addArtifactDialogTitle = LocalizedStringResource(
+            "sources.page.addArtifactDialogTitle",
+            defaultValue: "Add artifact",
+            comment: "Title of the Add Artifact dialog"
+        )
+
+        static let addArtifactDialogSubtitle = LocalizedStringResource(
+            "sources.page.addArtifactDialogSubtitle",
+            defaultValue: "A concrete representation of this source — scan, photo, or physical-only stand-in.",
+            comment: "Subtitle of the Add Artifact dialog"
+        )
+
+        static let addArtifactConfirm = LocalizedStringResource(
+            "sources.page.addArtifactConfirm",
+            defaultValue: "Add artifact",
+            comment: "Confirm button on the Add Artifact dialog"
+        )
+
+        static let optionalFile = LocalizedStringResource(
+            "sources.page.optionalFile",
+            defaultValue: "File",
+            comment: "Label for optional file pick on Add Artifact"
+        )
+
+        static let chooseFile = LocalizedStringResource(
+            "sources.page.chooseFile",
+            defaultValue: "Choose file…",
+            comment: "Button to pick a file in Add Artifact"
+        )
+
+        static let clearFile = LocalizedStringResource(
+            "sources.page.clearFile",
+            defaultValue: "Clear",
+            comment: "Clear a chosen file before creating an Artifact"
+        )
+
+        static let filePickPrompt = LocalizedStringResource(
+            "sources.page.filePickPrompt",
+            defaultValue: "Choose",
+            comment: "NSOpenPanel confirm button for Artifact file pick"
+        )
+
+        static let filePickMessage = LocalizedStringResource(
+            "sources.page.filePickMessage",
+            defaultValue: "Choose a file to attach to this artifact. Provenencia copies it into the project.",
+            comment: "NSOpenPanel message for Artifact file pick"
+        )
+
+        static let fileOpenMissing = LocalizedStringResource(
+            "sources.page.fileOpenMissing",
+            defaultValue: "That file is missing from the project folder.",
+            comment: "Error when Open cannot find the object on disk"
+        )
+
+        static let pageFormType = LocalizedStringResource(
+            "sources.page.formType",
+            defaultValue: "Type",
+            comment: "Source type field on the Source page"
+        )
+
+        static func toastArtifactCreatedTitle(ref: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.toastArtifactCreatedTitle",
+                defaultValue: "%@",
+                comment: "Toast title after creating an Artifact; argument is ART- ref"
+            ))
+            return String(format: format, locale: .current, ref)
+        }
+
+        static let toastArtifactCreatedFileless = String(localized: LocalizedStringResource(
+            "sources.page.toastArtifactCreatedFileless",
+            defaultValue: "Created with no file yet — physical only.",
+            comment: "Toast body after creating a fileless Artifact"
+        ))
+
+        static let toastArtifactCreatedWithFile = String(localized: LocalizedStringResource(
+            "sources.page.toastArtifactCreatedWithFile",
+            defaultValue: "Created and the file was ingested.",
+            comment: "Toast body after creating an Artifact with a file"
+        ))
+
+        static let toastFileAttachedTitle = String(localized: LocalizedStringResource(
+            "sources.page.toastFileAttachedTitle",
+            defaultValue: "File attached",
+            comment: "Toast title after first-attach ingest"
+        ))
+
+        static func toastFileAttachedBody(name: String) -> String {
+            let format = String(localized: LocalizedStringResource(
+                "sources.page.toastFileAttachedBody",
+                defaultValue: "%@ was ingested into the project.",
+                comment: "Toast body after ingest; argument is original filename"
+            ))
+            return String(format: format, locale: .current, name)
+        }
     }
 
     enum SourceFields {

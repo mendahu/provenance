@@ -60,7 +60,7 @@ struct SourceFieldsListPane: View {
                     .truncationMode(.middle)
             },
             PVTableColumn(id: "dataType", title: L10n.SourceFields.columnDataType, width: Self.dataTypeColumnWidth) { field in
-                SourceFieldDataTypeBadge(dataType: field.dataType)
+                CatalogFieldDataTypeBadge(dataType: field.dataType)
             },
         ]
     }

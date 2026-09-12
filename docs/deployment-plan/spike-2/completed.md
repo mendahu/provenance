@@ -27,6 +27,10 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | [S2-22](#s2-22--pr-pvtable--custom-chrome-table-with-keyboarda11y) | PR | `PVTable` (custom-chrome table + keyboard/a11y) |
 | [S2-16](#s2-16--pr-swift-source-types-list--associations) | PR | Swift Source types |
 | [S2-17](#s2-17--pr-swift-sources-list) | PR | Swift Sources list |
+| [S2-24](#s2-24--pr-source-page-schema-precede-label-first-attach-credibility) | PR | Artifact label, first-attach, credibility schema |
+| [S2-18](#s2-18--pr-source-page-shell--artifacts--ingest) | PR | Source page + Notes, credibility, Artifact ingest |
+| [S2-25](#s2-25--pr-source-metadata-editor-suggestions-dismiss-reorder) | PR | Metadata dismiss, order, Source page editor |
+| [S2-26](#s2-26--pr-evidence-list-thumbnails-sources--artifacts) | PR | Evidence list thumbnails (Sources + Artifacts) |
 
 ---
 
@@ -273,6 +277,58 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Context** | Mount under S2-14 **Sources** pane. Match S2-04: **not** master–detail; create is confirm-style dialog → Source page; presentation is list-not-table. Thumbnail placeholders OK until S2-18 owns real thumbs. |
 | **Out** | Source page body, Artifact detail, ingest, derivative/thumbnail ensure (S2-18). |
 | **Feeds** | S2-18; S2-21 (prefer reusing `PVList`) |
+
+---
+
+### S2-24 — PR: Source page schema precede (label, first-attach, credibility)
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-23 (done), S2-13 |
+| **Deliverables** | Done. **Engine/docs only (no Source page UI):** (1) Artifact **`label`** column (required) — migration + query/proto/FFI create/update/get/list; (2) **first-attach only** — `IngestArtifactFile` rejects when Artifact already has a File; align [`source-layer-data-model.md`](../../source-layer-data-model.md); (3) **Source credibility** — migrate `source_credibility_grades` + `source_credibility_assessments`, seed `provenencia` grades (`low_trust` / `standard` / `high_trust`), audited get/upsert assessment + list grades, expose on Source workspace FFI (do **not** add a column on `sources`). Go + `FakeStore`/protocol stubs + tests. |
+| **Context** | Unblocked S2-18 UI. Credibility semantics: [`research-judgment-model.md`](../../research-judgment-model.md) §2. |
+| **Out** | Source page SwiftUI; metadata suggestion dismiss / `sort_order`; thumbnail ensure/list; Files browser. |
+| **Feeds** | S2-18 |
+
+---
+
+### S2-18 — PR: Source page shell + Artifacts + ingest
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-24 (done), S2-17 (done), S2-23 (done) |
+| **Deliverables** | Done. Replaced the S2-17 Source page stub: **`PVBreadcrumbs`** to Sources list; editable identity (**title**, type, **description**); **Notes** stream (add/edit/delete); **credibility** control (grade + optional argument); **Artifacts** in-place accordion (`label` + `ART-…` + thumbnail **placeholder**); expand shows label/description + primary File identity; **Open** via `NSWorkspace`; **Add Artifact** centered modal (required label + optional File); **Add file…** on fileless only — **no Replace**. `FakeStore` model tests; user-selected file entitlement. Metadata UI deferred to S2-25; real thumbs to S2-26. |
+| **Context** | Thin vertical slice of S2-23. Swift does not write `objects/` itself. |
+| **Out** | Metadata suggestions / dismiss / drag reorder (S2-25); derivative thumbnail ensure/list UI (S2-26); in-app File preview; Replace file; Citations / Observations / Nodes; project Files browser (S2-21). |
+| **Feeds** | S2-25, S2-26, S2-21 |
+
+---
+
+### S2-25 — PR: Source metadata editor (suggestions, dismiss, reorder)
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-18 (done), S2-23 (done) |
+| **Deliverables** | Done. **`source_metadata_layout`** migration for per-Source suggestion **dismiss** + display **order**; `ListWorkspace` filters dismissed empty suggestions and orders by layout; FFI `DismissSourceMetadataSuggestion` / `ReorderSourceMetadata`; Source page **Metadata** section (values, quick-add suggestions with X, **Add** vocabulary dialog, drag reorder via **`PVReorderableList`**); Artifact accordion expand matched to board (two-column sunken panel). `FakeStore` model tests. |
+| **Context** | Completes the Metadata half of S2-23. |
+| **Out** | Vocabulary admin; Claim confidence. |
+| **Feeds** | S2-26, S2-21, S2-19 |
+
+---
+
+### S2-26 — PR: Evidence list thumbnails (Sources + Artifacts)
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-18 (done), S2-17 (done), S2-12/S2-13 (done) |
+| **Deliverables** | Done. FFI **`EnsureFileThumbnail`** (authorize File via Artifact, lazy `derivatives.EnsureThumbnail`); enrich **`ListSources`** and workspace **`Artifact`** with `thumbnail_rel_path`; Swift maps paths into `CatalogSource` / `CatalogArtifact`, loads JPEG bytes via **`ProjectFiles.thumbnailImage`**, fills **`PVThumbnail`** on Sources list and Source-page Artifact rows. Missing/fileless/non-image → placeholder. `runRPC` + FakeStore model tests. |
+| **Context** | Shared wiring for S2-21 Files list. |
+| **Out** | In-app File preview; Files destination UI (S2-21); ingest-time ensure. |
+| **Feeds** | S2-21, S2-19 |
 
 ---
 

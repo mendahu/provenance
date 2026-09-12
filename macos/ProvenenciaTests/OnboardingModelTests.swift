@@ -353,9 +353,21 @@ private struct ThrowingStore: GenealogyStore {
         fieldID _: String,
         valueText _: String,
         date _: CatalogDateValueInput?
-    ) async throws -> (valueText: String, dateValueID: String) { throw StoreBoom.boom }
+    ) async throws -> CatalogMetadataEntry { throw StoreBoom.boom }
     func clearSourceMetadata(projectDir _: String, userID _: String, sourceID _: String, fieldID _: String)
         async throws { throw StoreBoom.boom }
+    func dismissSourceMetadataSuggestion(
+        projectDir _: String,
+        userID _: String,
+        sourceID _: String,
+        fieldID _: String
+    ) async throws -> [CatalogMetadataEntry] { throw StoreBoom.boom }
+    func reorderSourceMetadata(
+        projectDir _: String,
+        userID _: String,
+        sourceID _: String,
+        fieldIDs _: [String]
+    ) async throws -> [CatalogMetadataEntry] { throw StoreBoom.boom }
     func createArtifact(
         projectDir _: String,
         userID _: String,
@@ -377,6 +389,10 @@ private struct ThrowingStore: GenealogyStore {
         artifactID _: String,
         path _: String
     ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool) { throw StoreBoom.boom }
+    func ensureFileThumbnail(
+        projectDir _: String,
+        fileID _: String
+    ) async throws -> (relPath: String, skipped: Bool) { throw StoreBoom.boom }
     func listSourceCredibilityGrades(projectDir _: String) async throws -> [CatalogCredibilityGrade] {
         throw StoreBoom.boom
     }

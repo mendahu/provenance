@@ -182,7 +182,7 @@ final class SourceFieldsModel {
         }
         formError = nil
         mode = .adding(resumeID: resumeID)
-        draft = Draft(label: "", dataType: SourceFieldDataType.text, description: "")
+        draft = Draft(label: "", dataType: CatalogFieldDataType.text, description: "")
     }
 
     func cancelAdd() {

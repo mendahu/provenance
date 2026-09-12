@@ -187,6 +187,9 @@ func TestSources(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				if n.AuthorDisplayName != "Jake" || n.CreatedAt == "" {
+					t.Fatalf("add attribution %+v", n)
+				}
 				if latestAction(t, c) != "create_source_note" {
 					t.Fatalf("action %q", latestAction(t, c))
 				}
@@ -199,6 +202,13 @@ func TestSources(t *testing.T) {
 				notes, err := ListNotes(c, s.ID)
 				if err != nil || len(notes) != 1 || notes[0].Body != "Revised" {
 					t.Fatalf("notes %v %+v", err, notes)
+				}
+				if notes[0].AuthorDisplayName != "Jake" || notes[0].CreatedAt == "" {
+					t.Fatalf("list attribution %+v", notes[0])
+				}
+				got, err := GetNote(c, n.ID)
+				if err != nil || got.Body != "Revised" || got.AuthorDisplayName != "Jake" {
+					t.Fatalf("get %v %+v", err, got)
 				}
 				if err := DeleteNote(c, userID, n.ID); err != nil {
 					t.Fatal(err)

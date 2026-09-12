@@ -46,6 +46,9 @@ enum Method {
   METHOD_UPDATE_ARTIFACT = 36;
   METHOD_LIST_SOURCE_CREDIBILITY_GRADES = 37;
   METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT = 38;
+  METHOD_DISMISS_SOURCE_METADATA_SUGGESTION = 39;
+  METHOD_REORDER_SOURCE_METADATA = 40;
+  METHOD_ENSURE_FILE_THUMBNAIL = 41;
 }
 
 message PingRequest {
@@ -170,12 +173,17 @@ message Source {
   string source_type_id = 3;
   string title = 4;
   string description = 5;
+  // Thumbnail JPEG under objects/… for list cells (empty = placeholder).
+  string thumbnail_rel_path = 6;
 }
 
 message SourceNote {
   string id = 1;
   string source_id = 2;
   string body = 3;
+  // Create attribution from audit (not domain columns on source_notes).
+  string author_display_name = 4;
+  string created_at = 5; // RFC3339 UTC
 }
 
 message SourceFileRef {
@@ -194,6 +202,8 @@ message Artifact {
   string description = 5;
   SourceFileRef file = 6; // set when file_id present
   string label = 7; // required list headline
+  // Thumbnail JPEG under objects/… (empty when fileless / non-image / skipped).
+  string thumbnail_rel_path = 8;
 }
 
 // SourceCredibilityGrade is one source_credibility_grades vocabulary row.
@@ -258,9 +268,14 @@ message MetadataWorkspaceEntry {
   bool has_value = 4;
   bool suggested = 5;
   int32 sort_order = 6;
+  reserved 7;
+  reserved "date_summary";
+  // Full structured components when date_value_id is set, so the client can
+  // rebuild the date editor without a session cache (unset otherwise).
+  DateValueInput date = 8;
 }
 
-// DateValueInput is the dogfood subset for SetSourceMetadata (maps to datevalues.Insert).
+// DateValueInput maps to datevalues.Insert (kind point|range; see docs/structured-date-model.md).
 message DateValueInput {
   string kind = 1;
   string qualifier = 2;
@@ -304,6 +319,12 @@ message GetSourceWorkspaceResponse {
   repeated Artifact artifacts = 4;
   // Omitted when no assessment row (UI may display Standard without a row).
   SourceCredibilityAssessment credibility = 5;
+  // Page vocabulary folded into the same exclusive catalog open so the
+  // Source page loads with one RPC (types picker, credibility chips, and
+  // the Add-metadata field list).
+  repeated SourceType types = 6;
+  repeated SourceCredibilityGrade grades = 7;
+  repeated MetadataField fields = 8;
 }
 
 message CreateSourceRequest {
@@ -370,9 +391,10 @@ message SetSourceMetadataRequest {
   DateValueInput date = 6; // optional; when kind set, inserts a DateValue
 }
 
+// SetSourceMetadataResponse returns the refreshed workspace entry so the
+// client can patch its list without refetching (structured date included).
 message SetSourceMetadataResponse {
-  string value_text = 1;
-  string date_value_id = 2;
+  MetadataWorkspaceEntry entry = 1;
 }
 
 message ClearSourceMetadataRequest {
@@ -383,6 +405,32 @@ message ClearSourceMetadataRequest {
 }
 
 message ClearSourceMetadataResponse {}
+
+// DismissSourceMetadataSuggestionRequest permanently hides an unfilled type
+// suggestion for this Source (source_metadata_layout.dismissed).
+message DismissSourceMetadataSuggestionRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  string field_id = 4;
+}
+
+message DismissSourceMetadataSuggestionResponse {
+  repeated MetadataWorkspaceEntry metadata = 1;
+}
+
+// ReorderSourceMetadataRequest sets display order for the Source's visible
+// metadata rows (valued + suggestions) via source_metadata_layout.sort_order.
+message ReorderSourceMetadataRequest {
+  string project_dir = 1;
+  string user_id = 2;
+  string source_id = 3;
+  repeated string field_ids = 4;
+}
+
+message ReorderSourceMetadataResponse {
+  repeated MetadataWorkspaceEntry metadata = 1;
+}
 
 message CreateArtifactRequest {
   string project_dir = 1;
@@ -601,6 +649,18 @@ message GetWorkspaceNavCountsResponse {
   VocabularyOriginCounts source_types = 2;
   VocabularyOriginCounts source_fields = 3;
   int32 files = 4;
+}
+
+// EnsureFileThumbnail lazily creates (or returns) the default thumbnail
+// derivative for a File that is the primary File of some Artifact.
+message EnsureFileThumbnailRequest {
+  string project_dir = 1;
+  string file_id = 2;
+}
+
+message EnsureFileThumbnailResponse {
+  string rel_path = 1; // objects/… path; empty when skipped
+  bool skipped = 2;    // non-image, unprocessable, or no derivative
 }
 
 // ErrorKind classifies a failure for client UX (tone, retry hints). Copy still

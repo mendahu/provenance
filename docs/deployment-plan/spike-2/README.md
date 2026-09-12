@@ -120,19 +120,12 @@ Open work only (completed steps: [`completed.md`](completed.md)):
 ```text
 S2-20 Design — Files list (project file browser)
         │
-S2-24 PR — Source page schema precede (label, first-attach, credibility)
-        │
         ▼
-S2-18 PR — Source page shell + Artifacts + ingest
-        ├── S2-25 PR — Source metadata editor (suggestions / dismiss / reorder)
-        └── S2-26 PR — Evidence list thumbnails (Sources + Artifacts)
-                │
-                ▼
-S2-21 PR — Swift Files list (+ Source link)
+S2-21 PR — Swift Files list (+ Source link)   ← prefers S2-26 thumbs (done)
 S2-19 PR — Dogfood polish (copy, empty states, errors, tests)
 ```
 
-Core schema / Go, workspace chrome, Source fields/types UI, Sources list (S2-17), and Design **S2-01…S2-04** / **S2-23** are **done** — see [`completed.md`](completed.md) and [`design/archive/`](design/archive/). Remaining Design: **S2-20**. Remaining feature UI: **S2-24** → **S2-18**, then **S2-25** / **S2-26** (can parallel after S2-18), then **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
+Core schema / Go, workspace chrome, Source fields/types UI, Sources list (S2-17), Source page schema (S2-24), Source page UI (S2-18 / S2-25), evidence thumbnails (S2-26), and Design **S2-01…S2-04** / **S2-23** are **done** — see [`completed.md`](completed.md) and [`design/archive/`](design/archive/). Remaining Design: **S2-20**. Remaining feature UI: **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
 
 ---
 
@@ -151,57 +144,6 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | **Deliverables** | Board for the **Files** destination: list rows with **thumbnail**, **media type**, **original filename**; **link to associated Source** (via Artifact). No ingest/delete on this board. Prefer not listing derivative-only Files as peer rows. |
 | **Context** | Source doc §§6–8. Association is indirect (`artifacts.file_id` → Source). Sidebar Files destination already exists; only `CountFiles` is wired today. |
 | **Out** | Ingest (S2-18); delete; Interpretation. |
-| **Feeds** | S2-21 |
-
----
-
-### S2-24 — PR: Source page schema precede (label, first-attach, credibility)
-
-| | |
-| --- | --- |
-| **Kind** | PR |
-| **Depends on** | S2-23 (done), S2-13 |
-| **Deliverables** | **Engine/docs only (no Source page UI):** (1) Artifact **`label`** column (required) — migration + query/proto/FFI create/update/get/list; (2) **first-attach only** — `IngestArtifactFile` rejects when Artifact already has a File; align [`source-layer-data-model.md`](../../source-layer-data-model.md); (3) **Source credibility** — migrate `source_credibility_grades` + `source_credibility_assessments`, seed `provenencia` grades (`low_trust` / `standard` / `high_trust`), audited get/upsert assessment + list grades, expose on Source workspace FFI (do **not** add a column on `sources`). Go + `FakeStore`/protocol stubs + tests. |
-| **Context** | Unblocks S2-18 UI. Credibility semantics: [`research-judgment-model.md`](../../research-judgment-model.md) §2. Keep this PR free of Swift feature UI and free of metadata dismiss/reorder schema (S2-25). |
-| **Out** | Source page SwiftUI; metadata suggestion dismiss / `sort_order`; thumbnail ensure/list; Files browser. |
-| **Feeds** | S2-18 |
-
----
-
-### S2-18 — PR: Source page shell + Artifacts + ingest
-
-| | |
-| --- | --- |
-| **Kind** | PR |
-| **Depends on** | S2-24, S2-17 (done), S2-23 (done) |
-| **Deliverables** | Replace the S2-17 Source page stub: **breadcrumb** to Sources list; editable identity (**title**, type, **description**); **Notes** stream (add/edit/delete); **credibility** control (grade + optional argument); **Artifacts** in-place accordion (`label` + `ART-…` + thumbnail **placeholder** OK); expand shows label/description + primary File identity; **Open** via `NSWorkspace` (external app); **Add Artifact** centered modal (same as Add Source: required label + optional File); **Add file…** on fileless only — **no Replace**. DS as needed: `PVBreadcrumbs`, disclosure/expandable list, file-pick control. `FakeStore` model tests; file-access usage copy/entitlements. |
-| **Context** | Thin vertical slice of S2-23: page + Artifacts + ingest path. Defer rich Metadata editor (S2-25) and real list thumbnails (S2-26). Do not invent multi-primary-file attach. Swift must not write `objects/` itself. |
-| **Out** | Metadata suggestions / dismiss / drag reorder (S2-25); derivative thumbnail ensure/list UI (S2-26); in-app File preview; Replace file; Citations / Observations / Nodes; project Files browser (S2-21). |
-| **Feeds** | S2-25, S2-26, S2-21 |
-
----
-
-### S2-25 — PR: Source metadata editor (suggestions, dismiss, reorder)
-
-| | |
-| --- | --- |
-| **Kind** | PR |
-| **Depends on** | S2-18, S2-23 (done) |
-| **Deliverables** | **Schema/FFI:** per-Source **persistent dismiss** of type metadata suggestions; **`sort_order`** (or equivalent) on `source_metadata` + reorder API. **UI** on the Source page Metadata area: all associated values; type suggestions as quick-add (in-place value + save) with dismiss (X); separate **Add** → vocabulary picker → value → save; **drag reorder**. Reorderable-row DS if not already present. `FakeStore` tests. |
-| **Context** | Completes the Metadata half of S2-23. Keep Notes/Artifacts/credibility out of this PR unless a tiny glue change is required. |
-| **Out** | Thumbnail wiring (S2-26); vocabulary admin; Claim confidence. |
-
----
-
-### S2-26 — PR: Evidence list thumbnails (Sources + Artifacts)
-
-| | |
-| --- | --- |
-| **Kind** | PR |
-| **Depends on** | S2-18 (preferred — Artifact rows exist), S2-17 (done — Sources `PVList`), S2-12/S2-13 (derivative pipeline) |
-| **Deliverables** | FFI/helpers to **ensure or list** thumbnail derivative `rel_path` for list cells; Swift reads bytes from `objects/…` and fills `PVThumbnail` on **Sources** list rows and **Artifact** rows on the Source page. Missing/fileless → placeholder (not error). Tests for ensure/list happy path + skip. |
-| **Context** | Shared wiring S2-21 will reuse. Can land in parallel with S2-25 after S2-18. |
-| **Out** | In-app File preview; Files destination UI (S2-21); ingest UX changes. |
 | **Feeds** | S2-21 |
 
 ---
@@ -233,10 +175,6 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 
 | Step | Title sketch |
 | --- | --- |
-| S2-24 | Add Artifact labels, first-attach ingest, and Source credibility schema |
-| S2-18 | Open a Source page with Notes, credibility, and Artifact ingest |
-| S2-25 | Edit Source metadata with dismissible suggestions and reorder |
-| S2-26 | Show real thumbnails on Sources and Artifact lists |
 | S2-21 | Browse project Files and jump to their Source |
 | S2-19 | Harden the Source catalog for first dogfood |
 
@@ -247,10 +185,10 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 | Track | Steps |
 | --- | --- |
 | **Design (Claude Design)** | S2-01…S2-04 / S2-23 done; remaining **S2-20** |
-| **Core schema / Go** | S2-05…S2-13 — done ([`completed.md`](completed.md)); **S2-24** (and S2-25 schema) reopen thin migrations |
-| **FFI + Mac** | S2-14…S2-17 / S2-22 — done; remaining **S2-24** → **S2-18**, then **S2-25** ∥ **S2-26** → **S2-21** → **S2-19** |
+| **Core schema / Go** | S2-05…S2-13 / **S2-24** / **S2-25** layout — done ([`completed.md`](completed.md)) |
+| **FFI + Mac** | S2-14…S2-18 / S2-22 / S2-24 / **S2-25** / **S2-26** — done; remaining **S2-21** → **S2-19** |
 
-Prefer **many small PRs**. Do not recombine S2-24…S2-26 into one Source-page mega-PR. Do not fold the workspace shell into feature destination PRs.
+Prefer **many small PRs**. Do not fold the workspace shell into feature destination PRs.
 
 ---
 

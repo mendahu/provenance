@@ -71,11 +71,12 @@ source_types
             +--< source_notes
             |
             +--< source_metadata >-- source_metadata_fields
-            |                           ^
-            |                           |
-            |               source_type_metadata_fields
-            |                           |
-            +---------------------------+
+            |                                  ^  ^
+            +--< source_metadata_layout >------+  |
+            |                                     |
+            |                         source_type_metadata_fields
+            |                                     |
+            +-------------------------------------+
             |
             +--< artifacts >-- files
                                 |
@@ -229,14 +230,40 @@ Date metadata may preserve both the entered/source wording and a structured repr
 ```text
 publication_date
   value_text = "about the year 1890"
-  date_value_id = DateValue(ABT 1890)
+  date_value_id = DateValue(point, ABT, 1890)
 ```
 
-The text remains useful for fidelity even when a structured date exists.
+The text remains useful for fidelity even when a structured date exists. `date_values.phrase` is optional wording on the DateValue itself (verbal/seasonal dates), not a substitute for this `value_text`.
 
 The schema and semantics of `date_values` are defined in [`structured-date-model.md`](structured-date-model.md).
 
 Application validation should enforce the intended relationship between `source_metadata_fields.data_type` and `date_value_id`; SQLite cannot express that cross-table constraint with a simple `CHECK`.
+
+## 5.4 `source_metadata_layout`
+
+Type suggestions (§5.2) are shared by every Source of a type, and `source_metadata` rows exist only once a field holds a value. Neither can record how one Source's metadata area should look. That presentation state — which suggestions this Source has waved off, and in what order its fields read — is per-Source and belongs to its own table.
+
+```sql
+CREATE TABLE source_metadata_layout (
+    source_id       BLOB NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    field_id        BLOB NOT NULL REFERENCES source_metadata_fields(id) ON DELETE CASCADE,
+    sort_order      INTEGER NOT NULL,
+    dismissed       INTEGER NOT NULL DEFAULT 0 CHECK (dismissed IN (0, 1)),
+
+    PRIMARY KEY (source_id, field_id)
+) STRICT;
+```
+
+A row may exist for a field with no value, which is what makes a dismiss durable. Rows are sparse: a Source the researcher has never reordered or dismissed from has none at all.
+
+`ListWorkspace` is the single reader that merges the three tables into the Source page metadata area:
+
+- **Dismiss** — a suggested field with `dismissed = 1` is omitted while it holds no value. A field that has a value stays visible regardless, so dismissing an already-filled field is a no-op rather than a way to hide catalog data.
+- **Order** — once a Source has any layout row, entries are returned by `sort_order`; fields with no row yet sort after them, keeping suggestion-then-extra order among themselves. A Source with no layout rows keeps the type's suggestion order followed by extra values.
+
+Reorder rewrites `sort_order` as `0..n-1` over the fields it is given and leaves `dismissed` alone. Setting a value for a field with no layout row appends one at the end of the existing order, so filling in a field does not disturb a hand-sorted Source.
+
+Dismiss and reorder are researcher decisions about their own catalog, so both are audited (`dismiss_source_metadata_suggestion`, `reorder_source_metadata`).
 
 ---
 
@@ -418,6 +445,7 @@ source_notes
 source_metadata_fields
 source_type_metadata_fields
 source_metadata
+source_metadata_layout
 artifacts
 ```
 
@@ -440,7 +468,7 @@ The audit tables are cross-cutting infrastructure and are defined separately in 
 2. Source types and metadata fields use a seeded, controlled, origin-namespaced vocabulary (`UNIQUE (key, origin)`) rather than an enum; see [`seeded-vocabulary.md`](seeded-vocabulary.md) §1.1.
 3. Source metadata is descriptive and minimally structured.
 4. Metadata values are text by default; shared structured genealogical dates are the intentional exception.
-5. Source types may suggest metadata fields but do not require them.
+5. Source types may suggest metadata fields but do not require them; how one Source presents those suggestions (dismissed, ordered) lives in `source_metadata_layout` rather than on the shared type join or on `source_metadata`.
 6. External provenencia belongs to the Source and must not be required to access ingested evidence.
 7. Artifacts are concrete representations of Sources and do not have an `artifact_type` taxonomy.
 8. An Artifact has zero or one primary File.

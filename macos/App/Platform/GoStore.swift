@@ -138,7 +138,10 @@ struct GoStore: GenealogyStore {
             notes: resp.notes.map(Self.mapNote),
             metadata: resp.metadata.map(Self.mapMetadataEntry),
             artifacts: resp.artifacts.map(Self.mapArtifact),
-            credibility: resp.hasCredibility ? Self.mapCredibility(resp.credibility) : nil
+            credibility: resp.hasCredibility ? Self.mapCredibility(resp.credibility) : nil,
+            types: resp.types.map(Self.mapSourceType),
+            grades: resp.grades.map(Self.mapCredibilityGrade),
+            fields: resp.fields.map(Self.mapMetadataField)
         )
     }
 
@@ -232,7 +235,7 @@ struct GoStore: GenealogyStore {
         fieldID: String,
         valueText: String,
         date: CatalogDateValueInput?
-    ) async throws -> (valueText: String, dateValueID: String) {
+    ) async throws -> CatalogMetadataEntry {
         var req = Provenencia_Engine_V1_SetSourceMetadataRequest()
         req.projectDir = projectDir
         req.userID = userID
@@ -245,16 +248,29 @@ struct GoStore: GenealogyStore {
             d.qualifier = date.qualifier
             d.calendar = date.calendar
             d.phrase = date.phrase
+            d.startTz = date.startTZ
+            d.endTz = date.endTZ
             if let y = date.startYear { d.startYear = y }
             if let m = date.startMonth { d.startMonth = m }
             if let day = date.startDay { d.startDay = day }
+            if let h = date.startHour { d.startHour = h }
+            if let mi = date.startMinute { d.startMinute = mi }
+            if let s = date.startSecond { d.startSecond = s }
+            if let ms = date.startMillisecond { d.startMillisecond = ms }
+            if let y = date.endYear { d.endYear = y }
+            if let m = date.endMonth { d.endMonth = m }
+            if let day = date.endDay { d.endDay = day }
+            if let h = date.endHour { d.endHour = h }
+            if let mi = date.endMinute { d.endMinute = mi }
+            if let s = date.endSecond { d.endSecond = s }
+            if let ms = date.endMillisecond { d.endMillisecond = ms }
             req.date = d
         }
         let resp: Provenencia_Engine_V1_SetSourceMetadataResponse = try await provenenciaCall(
             method: CoreMethod.setSourceMetadata,
             request: req
         )
-        return (resp.valueText, resp.dateValueID)
+        return Self.mapMetadataEntry(resp.entry)
     }
 
     func clearSourceMetadata(projectDir: String, userID: String, sourceID: String, fieldID: String) async throws {
@@ -267,6 +283,42 @@ struct GoStore: GenealogyStore {
             method: CoreMethod.clearSourceMetadata,
             request: req
         )
+    }
+
+    func dismissSourceMetadataSuggestion(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        fieldID: String
+    ) async throws -> [CatalogMetadataEntry] {
+        var req = Provenencia_Engine_V1_DismissSourceMetadataSuggestionRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.sourceID = sourceID
+        req.fieldID = fieldID
+        let resp: Provenencia_Engine_V1_DismissSourceMetadataSuggestionResponse = try await provenenciaCall(
+            method: CoreMethod.dismissSourceMetadataSuggestion,
+            request: req
+        )
+        return resp.metadata.map(Self.mapMetadataEntry)
+    }
+
+    func reorderSourceMetadata(
+        projectDir: String,
+        userID: String,
+        sourceID: String,
+        fieldIDs: [String]
+    ) async throws -> [CatalogMetadataEntry] {
+        var req = Provenencia_Engine_V1_ReorderSourceMetadataRequest()
+        req.projectDir = projectDir
+        req.userID = userID
+        req.sourceID = sourceID
+        req.fieldIds = fieldIDs
+        let resp: Provenencia_Engine_V1_ReorderSourceMetadataResponse = try await provenenciaCall(
+            method: CoreMethod.reorderSourceMetadata,
+            request: req
+        )
+        return resp.metadata.map(Self.mapMetadataEntry)
     }
 
     func createArtifact(
@@ -327,6 +379,20 @@ struct GoStore: GenealogyStore {
             request: req
         )
         return (Self.mapArtifact(resp.artifact), Self.mapFile(resp.file), resp.reused)
+    }
+
+    func ensureFileThumbnail(
+        projectDir: String,
+        fileID: String
+    ) async throws -> (relPath: String, skipped: Bool) {
+        var req = Provenencia_Engine_V1_EnsureFileThumbnailRequest()
+        req.projectDir = projectDir
+        req.fileID = fileID
+        let resp: Provenencia_Engine_V1_EnsureFileThumbnailResponse = try await provenenciaCall(
+            method: CoreMethod.ensureFileThumbnail,
+            request: req
+        )
+        return (resp.relPath, resp.skipped)
     }
 
     func listSourceCredibilityGrades(projectDir: String) async throws -> [CatalogCredibilityGrade] {
@@ -590,12 +656,19 @@ struct GoStore: GenealogyStore {
             ref: s.ref,
             sourceTypeID: s.sourceTypeID,
             title: s.title,
-            description: s.description_p
+            description: s.description_p,
+            thumbnailRelPath: s.thumbnailRelPath
         )
     }
 
     private static func mapNote(_ n: Provenencia_Engine_V1_SourceNote) -> CatalogSourceNote {
-        CatalogSourceNote(id: n.id, sourceID: n.sourceID, body: n.body)
+        CatalogSourceNote(
+            id: n.id,
+            sourceID: n.sourceID,
+            body: n.body,
+            authorDisplayName: n.authorDisplayName,
+            createdAt: n.createdAt
+        )
     }
 
     private static func mapFile(_ f: Provenencia_Engine_V1_SourceFileRef) -> CatalogFileRef {
@@ -616,7 +689,8 @@ struct GoStore: GenealogyStore {
             fileID: a.fileID,
             label: a.label,
             description: a.description_p,
-            file: a.hasFile ? Self.mapFile(a.file) : nil
+            file: a.hasFile ? Self.mapFile(a.file) : nil,
+            thumbnailRelPath: a.thumbnailRelPath
         )
     }
 
@@ -674,9 +748,35 @@ struct GoStore: GenealogyStore {
             field: Self.mapMetadataField(e.field),
             valueText: e.valueText,
             dateValueID: e.dateValueID,
+            date: e.hasDate ? Self.mapDateValue(e.date) : nil,
             hasValue: e.hasValue_p,
             suggested: e.suggested,
             sortOrder: e.sortOrder
+        )
+    }
+
+    private static func mapDateValue(_ d: Provenencia_Engine_V1_DateValueInput) -> CatalogDateValueInput {
+        CatalogDateValueInput(
+            kind: d.kind,
+            qualifier: d.qualifier,
+            calendar: d.calendar,
+            startYear: d.hasStartYear ? d.startYear : nil,
+            startMonth: d.hasStartMonth ? d.startMonth : nil,
+            startDay: d.hasStartDay ? d.startDay : nil,
+            startHour: d.hasStartHour ? d.startHour : nil,
+            startMinute: d.hasStartMinute ? d.startMinute : nil,
+            startSecond: d.hasStartSecond ? d.startSecond : nil,
+            startMillisecond: d.hasStartMillisecond ? d.startMillisecond : nil,
+            startTZ: d.startTz,
+            endYear: d.hasEndYear ? d.endYear : nil,
+            endMonth: d.hasEndMonth ? d.endMonth : nil,
+            endDay: d.hasEndDay ? d.endDay : nil,
+            endHour: d.hasEndHour ? d.endHour : nil,
+            endMinute: d.hasEndMinute ? d.endMinute : nil,
+            endSecond: d.hasEndSecond ? d.endSecond : nil,
+            endMillisecond: d.hasEndMillisecond ? d.endMillisecond : nil,
+            endTZ: d.endTz,
+            phrase: d.phrase
         )
     }
 }

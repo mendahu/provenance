@@ -224,6 +224,11 @@ struct PVComboBox<Row: View>: View {
     /// invent their own (`docs/macos-client-patterns.md` §5).
     let label: LocalizedStringResource
     var accessibilityIdentifierPrefix: String?
+    /// When true, focus the field and open the list as soon as the control
+    /// appears — for edit-in-place flows that swap a chip for a blank picker.
+    /// Default stays false so sheet first-responder (e.g. Add Source) does not
+    /// pop the list on open.
+    var activateOnAppear: Bool = false
     @ViewBuilder var row: (PVComboBoxOption, String) -> Row
 
     @State private var query = ""
@@ -316,6 +321,11 @@ struct PVComboBox<Row: View>: View {
             }
             .onChange(of: isOpen) { _, open in
                 if !open { activeIndex = -1 }
+            }
+            .onAppear {
+                guard activateOnAppear else { return }
+                isFocused = true
+                open()
             }
     }
 
@@ -605,7 +615,8 @@ extension PVComboBox where Row == PVComboBoxPlainRow {
         isInvalid: Bool = false,
         maxListHeight: CGFloat = 288,
         label: LocalizedStringResource,
-        accessibilityIdentifierPrefix: String? = nil
+        accessibilityIdentifierPrefix: String? = nil,
+        activateOnAppear: Bool = false
     ) {
         self.init(
             selection: selection,
@@ -616,7 +627,8 @@ extension PVComboBox where Row == PVComboBoxPlainRow {
             isInvalid: isInvalid,
             maxListHeight: maxListHeight,
             label: label,
-            accessibilityIdentifierPrefix: accessibilityIdentifierPrefix
+            accessibilityIdentifierPrefix: accessibilityIdentifierPrefix,
+            activateOnAppear: activateOnAppear
         ) { option, query in
             PVComboBoxPlainRow(option: option, query: query)
         }

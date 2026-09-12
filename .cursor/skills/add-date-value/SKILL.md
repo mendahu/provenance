@@ -3,7 +3,7 @@ name: add-date-value
 description: >-
   Uses or extends Provenencia shared genealogical date_values (core/database/datevalues).
   Use when inserting/looking up DateValues, changing kind/qualifier/precision/timezone
-  rules, date_value_id FKs, ABT/BEF/AFT, exact/year/range dates, structured-date-model,
+  rules, date_value_id FKs, ABT/BEF/AFT, point/range dates, structured-date-model,
   or Source/Interpretation/Conclusion date metadata.
 ---
 
@@ -23,35 +23,37 @@ core/database/datevalues/
 
 Call sites: `datevalues.Insert(c, v)` / `datevalues.Lookup(c, id)`. Minted id is UUIDv7 BLOB. Domain errors: `datevalues.ErrInvalid` (`datevalues.invalid`).
 
-## Kinds (validated by Insert)
+## Model (authoritative)
 
-| Kind | Meaning | End side | Qualifier |
-| --- | --- | --- | --- |
-| `exact` | Calendar day required (Y/M/D); optional cascading time | Forbidden (incl. `end_tz`) | `""` / `ABT` / `BEF` / `AFT` |
-| `year` | `start_year` only | Forbidden | `""` / `ABT` / `BEF` / `AFT` |
-| `range` | Start + end, each cascading from year; `start <= end` | Required | Empty only |
+Every DateValue is **one** genealogical date.
 
-Constants: `KindExact`, `KindYear`, `KindRange`.
+| `kind` | Meaning |
+| --- | --- |
+| `point` | One date; precision = which components are set (year / month / day / time…). |
+| `range` | One date in a bounded window (`BET`); start = earliest, end = latest. Not an event duration. |
 
-### Qualifiers (point kinds only)
+| `qualifier` (point only) | Meaning |
+| --- | --- |
+| `""` | As stated |
+| `ABT` | About |
+| `BEF` | Before / no later than the point |
+| `AFT` | After / no earlier than the point |
 
-- `ABT` — about / approximately  
-- `BEF` — before / no later than `start_*`  
-- `AFT` — after / no earlier than `start_*`  
-
-Closed spans use `range`, not BEF+AFT together.
+`range` → qualifier empty (**between** is the kind, not a qualifier).
 
 ### Precision
 
-Cascade on each side: year → month → day → hour → minute → second → millisecond. No gaps. Missing finer fields = **unknown**, not midnight/zero.
+Cascade on each side: year → month → day → hour → minute → second → millisecond. No gaps. Stop at any level. Missing finer = **unknown**, not midnight. `point` forbids `end_*`. Domain `value_text` holds attachment fidelity; DateValue `phrase` is optional wording on the value itself.
 
 ### Timezone
 
-`StartTZ` / `EndTZ` are **free text** (IANA, offset, historical label, “local time”). Empty = unspecified. Do **not** parse to UTC in this package; do not treat empty as UTC.
+`StartTZ` / `EndTZ` are **free text**. Empty = unspecified. Do **not** parse to UTC in this package.
+
+Phrase-only `point` values (no civil components) are valid when `Phrase` is set. `range` still requires a year on each side.
 
 ## Cross-layer use
 
-Referencing tables use `date_value_id BLOB REFERENCES date_values(id)`. Prefer keeping source wording in the domain row’s `value_text` (or similar) and attaching structured `date_value_id` — fidelity first.
+Referencing tables use `date_value_id BLOB REFERENCES date_values(id)`. Prefer keeping source wording in the domain row’s `value_text` (or similar) and attaching structured `date_value_id`.
 
 DateValues are value objects (UUID for persistence only). Concluded/refined zones or dates later should usually be **new** DateValue rows (or later-layer assertions), not silent mutation of Source evidence.
 
@@ -68,5 +70,6 @@ DateValues are value objects (UUID for persistence only). Concluded/refined zone
 - Store only UTC and discard civil components
 - Require timezone whenever hour is set
 - Put DateValue CRUD on `Catalog` or under `core/database/*.go` root
-- Freeze a full GEDCOM date language in one PR without updating the structured-date doc
+- Treat `range` as FROM–TO event duration
+- Reintroduce `exact`/`year` kinds — use `point` + components
 - Grep `00000N.sql` contents in unit tests to “prove” schema

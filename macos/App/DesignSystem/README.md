@@ -145,6 +145,8 @@ red `Text`), plus `Badge`/`EmptyState`/`Callout` (added for the S2-02
 | Thumbnail | `Components/Core/PVThumbnail.swift` (added for S2-17 Sources list rows; image / glyph / empty / loading tile) |
 | List | `Components/Data/PVList.swift` (added for S2-17 evidence browse — not `PVTable`; Files remounts it in S2-21) |
 | Dialog | `Components/Feedback/PVDialog.swift` (added for S2-17 Add Source; sheet form with content slot + footer — see note below) |
+| Breadcrumbs | `Components/Navigation/PVBreadcrumbs.swift` (added for S2-18 Source page trail; Sources → `SRC-…`) |
+| ReorderableList | `Components/Data/PVReorderableList.swift` (+ `PVReorderHandle`; added for S2-25 Metadata drag order) |
 
 The other design-system components have **no files yet** — add them on
 demand, following the pattern above, when a screen needs one:
@@ -157,7 +159,6 @@ demand, following the pattern above, when a screen needs one:
 | Checkbox | Forms | Checkbox control |
 | Radio | Forms | Radio control |
 | Switch | Forms | Toggle switch |
-| Breadcrumbs | Navigation | Path trail |
 | Tabs | Navigation | Tab strip |
 | EvidenceBadge | Research | The 5-grade confidence marker (proven/probable/possible/disputed/undocumented) |
 | FactRow | Research | One asserted fact: type glyph, date, value, place, grade, conflict note |

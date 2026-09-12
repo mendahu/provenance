@@ -21,6 +21,12 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var fileCountByProject: [String: Int] = [:]
     /// When set, `listSources` throws instead of returning the in-memory list.
     var listSourcesError: Error?
+    /// When set, `updateSource` throws (identity title/type/description saves).
+    var updateSourceError: Error?
+    /// When set, `reorderSourceMetadata` throws (optimistic move should revert).
+    var reorderSourceMetadataError: Error?
+    /// When set, `addSourceNote` throws (`pageError` surfacing).
+    var addSourceNoteError: Error?
     var lastResult = OnboardingResult(
         projectDir: "/tmp/robins-family.provenencia",
         userID: "00000000-0000-7000-8000-000000000001",
@@ -43,8 +49,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         catalogUsers: [InstallIdentity] = [
             InstallIdentity(
                 userID: "00000000-0000-7000-8000-000000000001",
-                displayName: "Jane Smith",
-                ref: "USR-A1B2C"
+                displayName: "Jake Robins",
+                ref: "USR-F4N2P"
             )
         ]
     ) {
@@ -178,7 +184,15 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
 
     func listSources(projectDir: String) async throws -> [CatalogSource] {
         if let listSourcesError { throw listSourcesError }
-        return sourcesByProject[projectDir] ?? []
+        let rows = sourcesByProject[projectDir] ?? []
+        return rows.map { source in
+            var copy = source
+            if copy.thumbnailRelPath.isEmpty {
+                let arts = artifactsBySource[source.id] ?? []
+                copy.thumbnailRelPath = arts.first { !$0.thumbnailRelPath.isEmpty }?.thumbnailRelPath ?? ""
+            }
+            return copy
+        }
     }
 
     func getSourceWorkspace(projectDir: String, sourceID: String) async throws -> CatalogSourceWorkspace {
@@ -189,7 +203,10 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
             notes: notesBySource[sourceID] ?? [],
             metadata: metadataBySource[sourceID] ?? [],
             artifacts: artifactsBySource[sourceID] ?? [],
-            credibility: credibilityBySource[sourceID]
+            credibility: credibilityBySource[sourceID],
+            types: sourceTypesByProject[projectDir] ?? [],
+            grades: credibilityGradesByProject[projectDir] ?? [],
+            fields: fieldsByProject[projectDir] ?? []
         )
     }
 
@@ -219,6 +236,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         title: String,
         description: String
     ) async throws -> CatalogSource {
+        if let updateSourceError { throw updateSourceError }
         var list = sourcesByProject[projectDir] ?? []
         guard let idx = list.firstIndex(where: { $0.id == sourceID }) else {
             throw StoreBoom.boom
@@ -230,10 +248,22 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         return list[idx]
     }
 
-    func addSourceNote(projectDir _: String, userID _: String, sourceID: String, body: String) async throws
+    func addSourceNote(projectDir _: String, userID: String, sourceID: String, body: String) async throws
         -> CatalogSourceNote
     {
-        let note = CatalogSourceNote(id: UUID().uuidString.lowercased(), sourceID: sourceID, body: body)
+        if let addSourceNoteError { throw addSourceNoteError }
+        let author = catalogUsers.first { $0.userID == userID }?.displayName
+            ?? identity?.displayName
+            ?? ""
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        let note = CatalogSourceNote(
+            id: UUID().uuidString.lowercased(),
+            sourceID: sourceID,
+            body: body,
+            authorDisplayName: author,
+            createdAt: formatter.string(from: Date())
+        )
         notesBySource[sourceID, default: []].append(note)
         return note
     }
@@ -259,25 +289,93 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func setSourceMetadata(
-        projectDir _: String,
+        projectDir: String,
         userID _: String,
         sourceID: String,
         fieldID: String,
         valueText: String,
-        date _: CatalogDateValueInput?
-    ) async throws -> (valueText: String, dateValueID: String) {
-        let field = CatalogMetadataField(
-            id: fieldID, key: "field", origin: "user", label: "Field", dataType: "text", description: ""
-        )
-        let entry = CatalogMetadataEntry(
-            field: field, valueText: valueText, dateValueID: "", hasValue: true, suggested: false, sortOrder: 0
-        )
-        metadataBySource[sourceID, default: []].append(entry)
-        return (valueText, "")
+        date: CatalogDateValueInput?
+    ) async throws -> CatalogMetadataEntry {
+        var list = metadataBySource[sourceID] ?? []
+        let dateID: String
+        let stored: CatalogDateValueInput?
+        if let date {
+            dateID = "dv-\(fieldID.prefix(8))"
+            stored = date
+        } else if let existing = list.first(where: { $0.field.id == fieldID }) {
+            // Text-only updates keep any existing structured DateValue.
+            dateID = existing.dateValueID
+            stored = existing.date
+        } else {
+            dateID = ""
+            stored = nil
+        }
+        let entry: CatalogMetadataEntry
+        if let idx = list.firstIndex(where: { $0.field.id == fieldID }) {
+            list[idx].valueText = valueText
+            list[idx].hasValue = true
+            list[idx].dateValueID = dateID
+            list[idx].date = stored
+            entry = list[idx]
+        } else {
+            let field = (fieldsByProject[projectDir] ?? []).first { $0.id == fieldID }
+                ?? CatalogMetadataField(
+                    id: fieldID, key: "field", origin: "user", label: "Field", dataType: "text", description: ""
+                )
+            let order = Int32(list.count)
+            entry = CatalogMetadataEntry(
+                field: field,
+                valueText: valueText,
+                dateValueID: dateID,
+                date: stored,
+                hasValue: true,
+                suggested: false,
+                sortOrder: order
+            )
+            list.append(entry)
+        }
+        metadataBySource[sourceID] = list
+        return entry
     }
 
     func clearSourceMetadata(projectDir _: String, userID _: String, sourceID: String, fieldID: String) async throws {
         metadataBySource[sourceID] = (metadataBySource[sourceID] ?? []).filter { $0.field.id != fieldID }
+    }
+
+    func dismissSourceMetadataSuggestion(
+        projectDir _: String,
+        userID _: String,
+        sourceID: String,
+        fieldID: String
+    ) async throws -> [CatalogMetadataEntry] {
+        var list = metadataBySource[sourceID] ?? []
+        list.removeAll { $0.field.id == fieldID && !$0.hasValue }
+        metadataBySource[sourceID] = list
+        return list
+    }
+
+    func reorderSourceMetadata(
+        projectDir _: String,
+        userID _: String,
+        sourceID: String,
+        fieldIDs: [String]
+    ) async throws -> [CatalogMetadataEntry] {
+        if let reorderSourceMetadataError { throw reorderSourceMetadataError }
+        let current = metadataBySource[sourceID] ?? []
+        var byID = Dictionary(uniqueKeysWithValues: current.map { ($0.field.id, $0) })
+        var next: [CatalogMetadataEntry] = []
+        for (i, id) in fieldIDs.enumerated() {
+            guard var entry = byID.removeValue(forKey: id) else { continue }
+            entry.sortOrder = Int32(i)
+            next.append(entry)
+        }
+        for (_, leftover) in byID {
+            var entry = leftover
+            entry.sortOrder = Int32(next.count)
+            next.append(entry)
+        }
+        metadataBySource[sourceID] = next
+        return next
     }
 
     func createArtifact(
@@ -346,8 +444,27 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
                 var copy = arts
                 copy[idx].fileID = file.id
                 copy[idx].file = file
+                let ext = URL(fileURLWithPath: path).pathExtension.lowercased()
+                if ["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff"].contains(ext) {
+                    copy[idx].thumbnailRelPath = "objects/aa/bb/thumb-\(file.id.prefix(8))"
+                }
                 artifactsBySource[sourceID] = copy
                 return (copy[idx], file, false)
+            }
+        }
+        throw StoreBoom.boom
+    }
+
+    func ensureFileThumbnail(
+        projectDir _: String,
+        fileID: String
+    ) async throws -> (relPath: String, skipped: Bool) {
+        for arts in artifactsBySource.values {
+            if let art = arts.first(where: { $0.fileID == fileID }) {
+                if art.thumbnailRelPath.isEmpty {
+                    return ("", true)
+                }
+                return (art.thumbnailRelPath, false)
             }
         }
         throw StoreBoom.boom
@@ -365,13 +482,13 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func upsertSourceCredibilityAssessment(
-        projectDir _: String,
+        projectDir: String,
         userID _: String,
         sourceID: String,
         gradeID: String,
         argument: String
     ) async throws -> CatalogCredibilityAssessment {
-        let grades = try await listSourceCredibilityGrades(projectDir: "")
+        let grades = try await listSourceCredibilityGrades(projectDir: projectDir)
         let grade = grades.first { $0.id == gradeID } ?? grades[1]
         let assessment = CatalogCredibilityAssessment(
             id: credibilityBySource[sourceID]?.id ?? UUID().uuidString.lowercased(),

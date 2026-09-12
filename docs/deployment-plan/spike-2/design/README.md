@@ -20,6 +20,16 @@ Finished briefs live in [`archive/`](archive/). Sprint task list: [`../README.md
 | S2-04 | [`archive/S2-04-sources-list.md`](archive/S2-04-sources-list.md) | PR S2-17 |
 | S2-23 | [`archive/S2-23-source-detail.md`](archive/S2-23-source-detail.md) | PRs S2-24 → S2-18 → S2-25 / S2-26 |
 
+## Board exports (implementation reference)
+
+Claude Design HTML exports checked in for implementation sync (not briefs):
+
+| Export | Path |
+| --- | --- |
+| Source page (Sep 2026 revision) | [`boards/source-page.dc.html`](boards/source-page.dc.html) |
+| Sync notes | [`boards/source-page-github.md`](boards/source-page-github.md) |
+| DateValue editor template | [`templates/date-value-editor.dc.html`](templates/date-value-editor.dc.html) |
+
 ## How to use
 
 1. Open the existing Provenencia Claude Design project / design-system bundle used for onboarding (see `macos/App/DesignSystem/README.md` in the repo).

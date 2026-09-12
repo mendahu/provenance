@@ -9,6 +9,7 @@ import (
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/audit"
 	"github.com/mendahu/provenencia/core/database/project"
+	"github.com/mendahu/provenencia/core/database/users"
 )
 
 const (
@@ -16,16 +17,58 @@ const (
 	sqlUpdateNote = `UPDATE source_notes SET body = ? WHERE id = ?`
 	sqlDeleteNote = `DELETE FROM source_notes WHERE id = ?`
 	sqlGetNote    = `SELECT id, source_id, body FROM source_notes WHERE id = ?`
-	sqlListNotes  = `SELECT id, source_id, body FROM source_notes
-		WHERE source_id = ? ORDER BY id`
+	// Create attribution lives in audit, not on source_notes (see source-layer-data-model §4.1).
+	sqlListNotes = `SELECT n.id, n.source_id, n.body,
+		COALESCE((
+			SELECT u.display_name
+			FROM audit_changes c
+			JOIN audit_transactions t ON t.id = c.audit_transaction_id
+			LEFT JOIN users u ON u.id = t.user_id
+			WHERE c.entity_type = 'source_note' AND c.entity_id = n.id AND c.action = 'create'
+			ORDER BY t.revision ASC
+			LIMIT 1
+		), ''),
+		COALESCE((
+			SELECT t.created_at
+			FROM audit_changes c
+			JOIN audit_transactions t ON t.id = c.audit_transaction_id
+			WHERE c.entity_type = 'source_note' AND c.entity_id = n.id AND c.action = 'create'
+			ORDER BY t.revision ASC
+			LIMIT 1
+		), '')
+		FROM source_notes n
+		WHERE n.source_id = ?
+		ORDER BY n.id`
+	sqlGetNoteAttributed = `SELECT n.id, n.source_id, n.body,
+		COALESCE((
+			SELECT u.display_name
+			FROM audit_changes c
+			JOIN audit_transactions t ON t.id = c.audit_transaction_id
+			LEFT JOIN users u ON u.id = t.user_id
+			WHERE c.entity_type = 'source_note' AND c.entity_id = n.id AND c.action = 'create'
+			ORDER BY t.revision ASC
+			LIMIT 1
+		), ''),
+		COALESCE((
+			SELECT t.created_at
+			FROM audit_changes c
+			JOIN audit_transactions t ON t.id = c.audit_transaction_id
+			WHERE c.entity_type = 'source_note' AND c.entity_id = n.id AND c.action = 'create'
+			ORDER BY t.revision ASC
+			LIMIT 1
+		), '')
+		FROM source_notes n
+		WHERE n.id = ?`
 	sqlSourceExists = `SELECT 1 FROM sources WHERE id = ?`
 )
 
-// Note is one source_notes row.
+// Note is one source_notes row plus create attribution from audit for UI.
 type Note struct {
-	ID       []byte
-	SourceID []byte
-	Body     string
+	ID                []byte
+	SourceID          []byte
+	Body              string
+	AuthorDisplayName string // users.display_name from create_source_note
+	CreatedAt         string // RFC3339 UTC from create audit transaction
 }
 
 // AddNote inserts a note and records create_source_note.
@@ -56,13 +99,14 @@ func AddNote(c *database.Catalog, userID, sourceID []byte, body string) (Note, e
 		return Note{}, err
 	}
 	idBytes := id[:]
+	createdAt := project.NowUTC()
 	if _, err := tx.Exec(sqlInsertNote, idBytes, sourceID, body); err != nil {
 		return Note{}, mapConstraint(err)
 	}
 	if _, err := audit.Record(tx, audit.Revision{
 		UserID:     userID,
 		ActionType: "create_source_note",
-		CreatedAt:  project.NowUTC(),
+		CreatedAt:  createdAt,
 		Changes: []audit.Change{{
 			EntityType: "source_note",
 			EntityID:   idBytes,
@@ -79,10 +123,16 @@ func AddNote(c *database.Catalog, userID, sourceID []byte, body string) (Note, e
 	if err := tx.Commit(); err != nil {
 		return Note{}, err
 	}
+	author := ""
+	if u, err := users.Lookup(c, userID); err == nil {
+		author = u.DisplayName
+	}
 	return Note{
-		ID:       append([]byte(nil), idBytes...),
-		SourceID: append([]byte(nil), sourceID...),
-		Body:     body,
+		ID:                append([]byte(nil), idBytes...),
+		SourceID:          append([]byte(nil), sourceID...),
+		Body:              body,
+		AuthorDisplayName: author,
+		CreatedAt:         createdAt,
 	}, nil
 }
 
@@ -186,7 +236,7 @@ func DeleteNote(c *database.Catalog, userID, noteID []byte) error {
 	return tx.Commit()
 }
 
-// ListNotes returns notes for a Source, ordered by id.
+// ListNotes returns notes for a Source with create attribution, ordered by id.
 func ListNotes(c *database.Catalog, sourceID []byte) ([]Note, error) {
 	db, err := c.DB()
 	if err != nil {
@@ -203,12 +253,34 @@ func ListNotes(c *database.Catalog, sourceID []byte) ([]Note, error) {
 	var out []Note
 	for rows.Next() {
 		var n Note
-		if err := rows.Scan(&n.ID, &n.SourceID, &n.Body); err != nil {
+		if err := rows.Scan(&n.ID, &n.SourceID, &n.Body, &n.AuthorDisplayName, &n.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, n)
 	}
 	return out, rows.Err()
+}
+
+// GetNote returns one note with create attribution.
+func GetNote(c *database.Catalog, noteID []byte) (Note, error) {
+	db, err := c.DB()
+	if err != nil {
+		return Note{}, err
+	}
+	if len(noteID) != 16 {
+		return Note{}, ErrInvalid
+	}
+	var n Note
+	err = db.QueryRow(sqlGetNoteAttributed, noteID).Scan(
+		&n.ID, &n.SourceID, &n.Body, &n.AuthorDisplayName, &n.CreatedAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Note{}, ErrInvalid
+	}
+	if err != nil {
+		return Note{}, err
+	}
+	return n, nil
 }
 
 func getNoteTx(tx *sql.Tx, id []byte) (Note, error) {

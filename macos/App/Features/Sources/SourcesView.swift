@@ -1,17 +1,20 @@
 import SwiftUI
 
-/// The **Sources** workspace destination (S2-04 board / S2-17 PR): evidence
-/// list (not `PVTable`), Add Source dialog, and navigation to a Source page
-/// stub. Mounts inside the S2-01 workspace content host.
+/// The **Sources** workspace destination (S2-04 board / S2-17–18): evidence
+/// list (not `PVTable`), Add Source dialog, and navigation to the Source page.
+/// Mounts inside the S2-01 workspace content host.
 struct SourcesView: View {
     @State private var model: SourcesModel
+    private let sessionDisplayName: String
 
     init(
         projectDir: String,
         userID: String,
+        sessionDisplayName: String = "",
         store: any GenealogyStore,
         catalogCounts: CatalogCounts? = nil
     ) {
+        self.sessionDisplayName = sessionDisplayName
         _model = State(
             initialValue: SourcesModel(
                 projectDir: projectDir,
@@ -25,10 +28,14 @@ struct SourcesView: View {
     var body: some View {
         Group {
             if let opened = model.openedSourceID {
-                SourcePageStubView(
-                    source: model.openedSource,
-                    typeLabel: model.openedSource.map(model.typeLabel(for:)) ?? "",
-                    onBack: { model.closeSource() }
+                SourcePageView(
+                    sourceID: opened,
+                    projectDir: model.pageProjectDir,
+                    userID: model.pageUserID,
+                    sessionDisplayName: sessionDisplayName,
+                    store: model.pageStore,
+                    onBackToList: { model.closeSource() },
+                    onSourceUpdated: { model.applyUpdatedSource($0) }
                 )
                 .id(opened)
             } else {
@@ -227,7 +234,15 @@ struct SourcesView: View {
                 primary: { $0.title },
                 secondary: { model.typeLabel(for: $0) },
                 meta: { $0.ref },
-                thumbnail: { _ in .empty },
+                thumbnail: { source in
+                    if let image = ProjectFiles.thumbnailImage(
+                        projectDir: model.pageProjectDir,
+                        relPath: source.thumbnailRelPath
+                    ) {
+                        return PVThumbnail.Content(image: image)
+                    }
+                    return .empty
+                },
                 onActivate: { model.openSource(id: $0) },
                 rowAccessibilityIdentifier: { "sources.row.\($0.id)" }
             )
