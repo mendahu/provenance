@@ -18,6 +18,7 @@ struct WorkspaceView: View {
     let userID: String
     @State private var workspace: WorkspaceModel
     @State private var catalogCounts: CatalogCounts
+    @State private var countsToast: VocabularyToast?
     @Environment(SignOutCoordinator.self) private var signOutCoordinator
 
     init(model: OnboardingModel, projectDir: String, userID: String) {
@@ -43,8 +44,16 @@ struct WorkspaceView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(catalogCounts)
+        .vocabularyToastOverlay($countsToast, identifier: "workspace.counts.toast")
         .task {
             await catalogCounts.refreshAll()
+            if let message = catalogCounts.lastRefreshError {
+                countsToast = VocabularyToast(
+                    title: String(localized: L10n.Workspace.countsRefreshFailedTitle),
+                    body: message,
+                    tone: .danger
+                )
+            }
         }
         .onAppear {
             signOutCoordinator.isAvailable = true
@@ -57,7 +66,13 @@ struct WorkspaceView: View {
             let store = model.store
             let dir = projectDir
             Task {
-                try? await store.closeCatalogSession(projectDir: dir)
+                do {
+                    try await store.closeCatalogSession(projectDir: dir)
+                } catch {
+                    #if DEBUG
+                    assertionFailure("closeCatalogSession failed: \(error)")
+                    #endif
+                }
             }
         }
         .accessibilityIdentifier("workspace")

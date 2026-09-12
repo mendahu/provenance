@@ -380,6 +380,12 @@ enum L10n {
             comment: "Placeholder note for the descoped Files destination"
         )
 
+        static let countsRefreshFailedTitle = LocalizedStringResource(
+            "workspace.counts.refreshFailedTitle",
+            defaultValue: "Couldn’t refresh catalog counts",
+            comment: "Toast title when GetWorkspaceNavCounts fails at workspace appear"
+        )
+
         static let collapseSidebar = LocalizedStringResource(
             "workspace.sidebar.collapse",
             defaultValue: "Collapse labels",
@@ -2330,8 +2336,8 @@ enum L10n {
         )
         static let catalogAlreadyOpen = LocalizedStringResource(
             "error.catalog.already_open",
-            defaultValue: "Project already open.",
-            comment: "FFI error catalog.already_open"
+            defaultValue: "Catalog session conflict — something opened the project database outside the app session.",
+            comment: "FFI error catalog.already_open; bypass of held catalogsession"
         )
         static let catalogNotAProject = LocalizedStringResource(
             "error.catalog.not_a_project",

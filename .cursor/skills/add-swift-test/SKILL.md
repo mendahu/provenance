@@ -15,6 +15,7 @@ Product logic under test lives in `macos/App/`. Tests live in **`macos/Provenenc
 
 - Models (`OnboardingModel`), path helpers (`InstallPaths`), store fakes.
 - Inject `FakeStore` and `OnboardingFolders` with dirs under `FileManager.default.temporaryDirectory`.
+- When adding a catalog `GenealogyStore` API on `FakeStore`, call `markCatalogSessionHeld` (same as real traffic) so `CatalogSessionStoreTests` / overlap coverage stay honest.
 - **No** `GoStore`, `provenencia_call`, dylib, or generated `engine.pb.swift`.
 - **No** XCUITest / view snapshots unless the user asks.
 

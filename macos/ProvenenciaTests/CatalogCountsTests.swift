@@ -54,6 +54,37 @@ struct CatalogCountsTests {
         #expect(counts.sourceTypes?.total == 0)
         #expect(counts.sourceFields?.total == 0)
         #expect(counts.files == 0)
+        #expect(counts.lastRefreshError == nil)
+    }
+
+    @Test func refreshAllFailureSetsLastRefreshErrorAndLeavesBadgesUnset() async {
+        let store = FakeStore()
+        enum Boom: Error { case boom }
+        store.workspaceNavCountsError = Boom.boom
+
+        let counts = makeCounts(store: store)
+        await counts.refreshAll()
+
+        #expect(counts.lastRefreshError == String(localized: L10n.Errors.unknown))
+        #expect(counts.sources == nil)
+        #expect(counts.sourceTypes == nil)
+        #expect(counts.sourceFields == nil)
+        #expect(counts.files == nil)
+        #expect(counts.badge(for: .sources) == nil)
+    }
+
+    @Test func refreshAllSuccessClearsLastRefreshError() async {
+        let store = FakeStore()
+        enum Boom: Error { case boom }
+        store.workspaceNavCountsError = Boom.boom
+        let counts = makeCounts(store: store)
+        await counts.refreshAll()
+        #expect(counts.lastRefreshError != nil)
+
+        store.workspaceNavCountsError = nil
+        await counts.refreshAll()
+        #expect(counts.lastRefreshError == nil)
+        #expect(counts.sources == 0)
     }
 
     @Test func publishReplacesVocabularySummariesWithoutStoreRoundTrip() {

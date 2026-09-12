@@ -25,6 +25,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var lastClosedCatalogProjectDir: String?
     /// When set, `listSources` throws instead of returning the in-memory list.
     var listSourcesError: Error?
+    /// When set, `workspaceNavCounts` throws instead of returning counts.
+    var workspaceNavCountsError: Error?
     /// When set, `updateSource` throws (identity title/type/description saves).
     var updateSourceError: Error?
     /// When set, `reorderSourceMetadata` throws (optimistic move should revert).
@@ -213,6 +215,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func getSourceWorkspace(projectDir: String, sourceID: String) async throws -> CatalogSourceWorkspace {
+        markCatalogSessionHeld(projectDir)
         let source = (sourcesByProject[projectDir] ?? []).first { $0.id == sourceID }
             ?? CatalogSource(id: sourceID, ref: "SRC-XXXXX", sourceTypeID: "", title: "", description: "")
         return CatalogSourceWorkspace(
@@ -521,7 +524,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func listSourceTypes(projectDir: String) async throws -> [CatalogSourceType] {
-        (sourceTypesByProject[projectDir] ?? []).map(withSuggestedFieldCount)
+        markCatalogSessionHeld(projectDir)
+        return (sourceTypesByProject[projectDir] ?? []).map(withSuggestedFieldCount)
     }
 
     /// The engine derives this column in its list query, so the fake keeps it
@@ -635,7 +639,8 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func listMetadataFields(projectDir: String) async throws -> [CatalogMetadataField] {
-        fieldsByProject[projectDir] ?? []
+        markCatalogSessionHeld(projectDir)
+        return fieldsByProject[projectDir] ?? []
     }
 
     func createMetadataField(
@@ -711,11 +716,13 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func countFiles(projectDir: String) async throws -> Int {
-        fileCountByProject[projectDir] ?? 0
+        markCatalogSessionHeld(projectDir)
+        return fileCountByProject[projectDir] ?? 0
     }
 
     func workspaceNavCounts(projectDir: String) async throws -> WorkspaceNavCounts {
         markCatalogSessionHeld(projectDir)
+        if let workspaceNavCountsError { throw workspaceNavCountsError }
         let types = sourceTypesByProject[projectDir] ?? []
         let fields = fieldsByProject[projectDir] ?? []
         return WorkspaceNavCounts(

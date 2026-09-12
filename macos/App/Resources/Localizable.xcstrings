@@ -172,13 +172,13 @@
       }
     },
     "error.catalog.already_open": {
-      "comment": "FFI error catalog.already_open",
+      "comment": "FFI error catalog.already_open; bypass of held catalogsession",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Project already open."
+            "value": "Catalog session conflict — something opened the project database outside the app session."
           }
         }
       }
@@ -4503,6 +4503,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "Type updated"
+          }
+        }
+      }
+    },
+    "workspace.counts.refreshFailedTitle": {
+      "comment": "Toast title when GetWorkspaceNavCounts fails at workspace appear",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t refresh catalog counts"
           }
         }
       }
