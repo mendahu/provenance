@@ -137,7 +137,6 @@ struct SourcePageArtifactsView: View {
                 artifact: art,
                 isSaving: model.artifacts.savingID == art.id,
                 fieldError: model.artifacts.fieldErrors[art.id],
-                pageError: model.pageError,
                 onSave: { label, description in
                     model.artifacts.labels[art.id] = label
                     model.artifacts.descriptions[art.id] = description
@@ -235,7 +234,6 @@ private struct SourcePageArtifactFieldsEditor: View {
     let artifact: CatalogArtifact
     let isSaving: Bool
     let fieldError: String?
-    let pageError: String?
     let onSave: (_ label: String, _ description: String) -> Void
     let onCancel: () -> Void
     let onClearFieldError: () -> Void
@@ -295,10 +293,6 @@ private struct SourcePageArtifactFieldsEditor: View {
                 }
 
                 Spacer(minLength: 0)
-            }
-
-            if let pageError {
-                PVCallout(tone: .danger, message: pageError)
             }
         }
         .onAppear { seedFromArtifact() }

@@ -45,6 +45,8 @@ final class SourcesModel {
     var draft = Draft(sourceTypeID: "", title: "", description: "")
     var typeError: String?
     var titleError: String?
+    /// FFI / store failure on Create Source (not field validation).
+    var createError: String?
     private(set) var isSaving = false
     var toast: VocabularyToast?
 
@@ -187,6 +189,7 @@ final class SourcesModel {
     func openAdd() {
         typeError = nil
         titleError = nil
+        createError = nil
         draft = Draft(
             sourceTypeID: types.count == 1 ? (types.first?.id ?? "") : "",
             title: "",
@@ -206,6 +209,7 @@ final class SourcesModel {
         isAdding = false
         typeError = nil
         titleError = nil
+        createError = nil
     }
 
     func create() async {
@@ -221,6 +225,7 @@ final class SourcesModel {
         }
         typeError = typeErr
         titleError = titleErr
+        createError = nil
         guard typeErr == nil, titleErr == nil else { return }
 
         isSaving = true
@@ -238,6 +243,7 @@ final class SourcesModel {
             isAdding = false
             typeError = nil
             titleError = nil
+            createError = nil
             toast = VocabularyToast(
                 title: L10n.Sources.toastCreatedTitle(ref: created.ref),
                 body: L10n.Sources.toastCreatedBody(title: created.title),
@@ -245,7 +251,7 @@ final class SourcesModel {
             )
             openedSourceID = created.id
         } catch {
-            titleError = L10n.Errors.message(for: error)
+            createError = L10n.Errors.message(for: error)
         }
     }
 

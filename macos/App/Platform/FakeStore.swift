@@ -27,6 +27,10 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var reorderSourceMetadataError: Error?
     /// When set, `addSourceNote` throws (`pageError` surfacing).
     var addSourceNoteError: Error?
+    /// When set, `ingestArtifactFile` throws before mutating artifacts.
+    var ingestArtifactFileError: Error?
+    /// When set, `createSourceType` throws instead of the built-in duplicate/slug checks.
+    var createSourceTypeError: Error?
     var lastResult = OnboardingResult(
         projectDir: "/tmp/robins-family.provenencia",
         userID: "00000000-0000-7000-8000-000000000001",
@@ -424,6 +428,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         artifactID: String,
         path: String
     ) async throws -> (artifact: CatalogArtifact, file: CatalogFileRef, reused: Bool) {
+        if let ingestArtifactFileError { throw ingestArtifactFileError }
         let file = CatalogFileRef(
             id: UUID().uuidString.lowercased(),
             relPath: "objects/aa/bb/aabb",
@@ -520,12 +525,18 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
         label: String,
         description: String
     ) async throws -> CatalogSourceType {
+        if let createSourceTypeError { throw createSourceTypeError }
         let key = FieldSlug.kebab(label)
         if key.isEmpty {
             throw StoreBoom.boom
         }
         if (sourceTypesByProject[projectDir] ?? []).contains(where: { $0.origin == "user" && $0.key == key }) {
-            throw StoreBoom.boom
+            throw CoreInvokeError.coded(
+                status: 1,
+                code: "sourcetypes.duplicate_key",
+                kind: .conflict,
+                params: [key]
+            )
         }
         let type = CatalogSourceType(
             id: UUID().uuidString.lowercased(),
@@ -626,7 +637,12 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
             throw StoreBoom.boom
         }
         if (fieldsByProject[projectDir] ?? []).contains(where: { $0.origin == "user" && $0.key == key }) {
-            throw StoreBoom.boom
+            throw CoreInvokeError.coded(
+                status: 1,
+                code: "sourcefields.duplicate_key",
+                kind: .conflict,
+                params: [key]
+            )
         }
         let field = CatalogMetadataField(
             id: UUID().uuidString.lowercased(),

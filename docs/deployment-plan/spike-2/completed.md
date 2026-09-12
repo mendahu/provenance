@@ -31,6 +31,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | [S2-18](#s2-18--pr-source-page-shell--artifacts--ingest) | PR | Source page + Notes, credibility, Artifact ingest |
 | [S2-25](#s2-25--pr-source-metadata-editor-suggestions-dismiss-reorder) | PR | Metadata dismiss, order, Source page editor |
 | [S2-26](#s2-26--pr-evidence-list-thumbnails-sources--artifacts) | PR | Evidence list thumbnails (Sources + Artifacts) |
+| [S2-19](#s2-19--pr-dogfood-polish-and-regression-net) | PR | Dogfood polish (copy, a11y, tests) + Spike 2 closeout |
 
 ---
 
@@ -329,6 +330,19 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Context** | Shared wiring for Sources / Artifact thumbs (originally also for descoped S2-21 Files list). |
 | **Out** | In-app File preview; Files destination UI (S2-21 descoped); ingest-time ensure. |
 | **Feeds** | S2-19 |
+
+---
+
+### S2-19 — PR: Dogfood polish and regression net
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Depends on** | S2-14, S2-15, S2-22, S2-16, S2-17, S2-24, S2-18, S2-25, S2-26 |
+| **Deliverables** | Done. Empty/error copy pass (`pageError` page banner + clear, list/vocab `loadError`, Add Source dialog-level create error, Description/Metadata empties, notes empty title split, stale workspace placeholders pruned). Accessibility identifiers for dialog/confirm actions, vocabulary search/forms, and date editor controls. FFI regression: duplicate type/field key codes, ingest missing path → `ingest.invalid`, audit after `create_source` / `create_artifact` / `create_file`. Swift FakeStore + model tests for duplicate key L10n and ingest.invalid. Spike archived in [`../README.md`](../README.md); dogfood note: [`dogfood.md`](dogfood.md). |
+| **Context** | Closes Spike 2 Definition of done for first dogfood without a SemVer bump. |
+| **Out** | Product SemVer bump / release tag; XCUITest target; project Files list (S2-20/S2-21). |
+| **Feeds** | — |
 
 ---
 

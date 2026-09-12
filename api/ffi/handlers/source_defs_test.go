@@ -84,8 +84,9 @@ func TestCreateSourceTypeMintsKeyFromLabel(t *testing.T) {
 				dir, userID, _ := sourceFixture(t)
 				return &engine.CreateSourceTypeRequest{ProjectDir: dir, UserId: userID, Label: "Deed"}
 			},
-			calls:   2,
-			wantErr: true,
+			calls:     2,
+			wantErr:   true,
+			wantErrIs: sourcetypes.ErrDuplicateKey,
 		},
 	})
 }
@@ -125,8 +126,9 @@ func TestCreateMetadataFieldMintsKeyFromLabel(t *testing.T) {
 				dir, userID, _ := sourceFixture(t)
 				return &engine.CreateMetadataFieldRequest{ProjectDir: dir, UserId: userID, Label: "Folio", DataType: "text"}
 			},
-			calls:   2,
-			wantErr: true,
+			calls:     2,
+			wantErr:   true,
+			wantErrIs: sourcefields.ErrDuplicateKey,
 		},
 	})
 }

@@ -25,10 +25,18 @@ struct SourcePageMetadataView: View {
                 .frame(maxWidth: PVSpacing.measureProse, alignment: .leading)
 
             if model.metadata.saved.isEmpty, model.metadata.suggested.isEmpty {
-                Text(L10n.Sources.metadataEmptyMessage)
-                    .font(PVFont.body(size: PVTypeScale.caption))
-                    .foregroundStyle(PVColor.textMuted)
-                    .accessibilityIdentifier("sources.page.metadata.empty")
+                PVEmptyState(
+                    icon: .list,
+                    title: L10n.Sources.metadataEmptyTitle,
+                    message: String(localized: L10n.Sources.metadataEmptyMessage),
+                    compact: true
+                ) {
+                    PVButton(L10n.Sources.addMetadata, variant: .primary, size: .sm, icon: .plus) {
+                        model.metadata.openAdd()
+                    }
+                    .accessibilityIdentifier("sources.page.metadata.empty.add")
+                }
+                .accessibilityIdentifier("sources.page.metadata.empty")
             } else {
                 if !model.metadata.saved.isEmpty {
                     PVReorderableList(
@@ -100,15 +108,16 @@ struct SourcePageMetadataView: View {
                 error: model.metadata.addValueError,
                 required: true
             ) {
-                PVInput(
-                    text: $model.metadata.addValue,
-                    isInvalid: model.metadata.addValueError != nil
-                )
-                .onChange(of: model.metadata.addValue) { _, _ in
-                    if model.metadata.addValueError != nil {
-                        model.metadata.addValueError = nil
-                    }
+            PVInput(
+                text: $model.metadata.addValue,
+                isInvalid: model.metadata.addValueError != nil
+            )
+            .accessibilityIdentifier("sources.page.addMetadata.value")
+            .onChange(of: model.metadata.addValue) { _, _ in
+                if model.metadata.addValueError != nil {
+                    model.metadata.addValueError = nil
                 }
+            }
             }
         }
     }
@@ -251,7 +260,7 @@ private struct SourcePageDateEditorForm: View {
                 .disabled(model.metadata.isSavingDate)
                 .accessibilityIdentifier("sources.page.date.valueAsWritten")
             }
-            DateValueEditorForm(draft: $draft)
+            DateValueEditorForm(draft: $draft, accessibilityIdentifierPrefix: "sources.page.date")
         }
         .onAppear(perform: seed)
         .onChange(of: wording) { _, _ in refreshConfirm() }

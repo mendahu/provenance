@@ -34,6 +34,8 @@ struct PVDialogContent<Form: View>: View {
     let copy: PVDialogCopy
     let isRunning: Bool
     let confirmDisabled: Bool
+    /// When set, confirm/cancel mint `{prefix}.confirm` / `{prefix}.cancel`.
+    let accessibilityIdentifierPrefix: String?
     let onConfirm: () -> Void
     let onCancel: () -> Void
     @ViewBuilder let form: () -> Form
@@ -46,6 +48,7 @@ struct PVDialogContent<Form: View>: View {
         copy: PVDialogCopy,
         isRunning: Bool = false,
         confirmDisabled: Bool = false,
+        accessibilityIdentifierPrefix: String? = nil,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void,
         @ViewBuilder form: @escaping () -> Form
@@ -53,6 +56,7 @@ struct PVDialogContent<Form: View>: View {
         self.copy = copy
         self.isRunning = isRunning
         self.confirmDisabled = confirmDisabled
+        self.accessibilityIdentifierPrefix = accessibilityIdentifierPrefix
         self.onConfirm = onConfirm
         self.onCancel = onCancel
         self.form = form
@@ -96,10 +100,12 @@ struct PVDialogContent<Form: View>: View {
                 .keyboardShortcut(.cancelAction)
                 .disabled(isRunning)
                 .focused($cancelFocused)
+                .modifier(OptionalAccessibilityIdentifier(prefix: accessibilityIdentifierPrefix, suffix: "cancel"))
             Button(String(localized: copy.confirm)) { onConfirm() }
                 .buttonStyle(.pv(.primary, size: .lg))
                 .keyboardShortcut(.defaultAction)
                 .disabled(isRunning || confirmDisabled)
+                .modifier(OptionalAccessibilityIdentifier(prefix: accessibilityIdentifierPrefix, suffix: "confirm"))
                 .overlay(alignment: .trailing) {
                     if isRunning {
                         ProgressView()
@@ -118,6 +124,20 @@ struct PVDialogContent<Form: View>: View {
     }
 }
 
+/// Applies `{prefix}.{suffix}` only when a prefix is provided.
+private struct OptionalAccessibilityIdentifier: ViewModifier {
+    let prefix: String?
+    let suffix: String
+
+    func body(content: Content) -> some View {
+        if let prefix {
+            content.accessibilityIdentifier("\(prefix).\(suffix)")
+        } else {
+            content
+        }
+    }
+}
+
 extension View {
     /// Sheet-based form dialog. Dismissal is left to the caller's binding so
     /// an async Create can stay on screen while it runs and keep field errors
@@ -127,6 +147,7 @@ extension View {
         copy: PVDialogCopy,
         isRunning: Bool = false,
         confirmDisabled: Bool = false,
+        accessibilityIdentifierPrefix: String? = nil,
         onConfirm: @escaping () -> Void,
         @ViewBuilder form: @escaping () -> Form
     ) -> some View {
@@ -135,6 +156,7 @@ extension View {
                 copy: copy,
                 isRunning: isRunning,
                 confirmDisabled: confirmDisabled,
+                accessibilityIdentifierPrefix: accessibilityIdentifierPrefix,
                 onConfirm: onConfirm,
                 onCancel: { isPresented.wrappedValue = false },
                 form: form

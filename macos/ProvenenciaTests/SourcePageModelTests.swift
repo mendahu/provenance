@@ -305,6 +305,26 @@ struct SourcePageModelTests {
         #expect(model.artifacts.items.isEmpty)
     }
 
+    @Test func ingestMissingFileSurfacesIngestInvalid() async {
+        let store = makeStore()
+        store.ingestArtifactFileError = CoreInvokeError.coded(
+            status: 1,
+            code: "ingest.invalid",
+            kind: .user,
+            params: []
+        )
+        let model = makeModel(store: store)
+        await model.load()
+        model.artifacts.openAdd()
+        model.artifacts.draft.label = "Scan"
+        model.artifacts.draft.filePath = "/tmp/provenencia-missing-\(UUID().uuidString).bin"
+
+        await model.artifacts.create()
+
+        #expect(model.artifacts.draftLabelError == String(localized: L10n.Errors.ingestInvalid))
+        #expect(model.artifacts.isAdding)
+    }
+
     @Test func ingestThenRejectSecondAttach() async throws {
         let store = makeStore()
         let model = makeModel(store: store)

@@ -2,7 +2,7 @@
 
 ## Status
 
-**Current.** Planning notes for the next implementation sprint: validate the Source-layer model end-to-end (tables → Go CRUD/ingest → FFI → macOS catalog UI), with design work in Claude Design interleaved where the UX is non-trivial.
+**Done.** Source-layer catalog validated end-to-end (schema → Go CRUD/ingest → FFI → macOS workspace UI). Finished steps: [`completed.md`](completed.md). How to dogfood: [`dogfood.md`](dogfood.md). Design briefs: [`design/archive/`](design/archive/).
 
 Authoritative models:
 
@@ -15,7 +15,7 @@ Authoritative models:
 - [`application-stack.md`](../../application-stack.md) (FFI granularity, `objects/` ingest)
 - [`macos-client-patterns.md`](../../macos-client-patterns.md)
 
-Claude Design handoffs live in [`design/`](design/) — self-contained requirement briefs, not the task list below. Design **S2-01…S2-04** / **S2-23** done ([`design/archive/`](design/archive/), [`completed.md`](completed.md)). **S2-20** / **S2-21** (project Files list) are **descoped** — see [Descoped](#descoped).
+Claude Design handoffs live in [`design/`](design/) — self-contained requirement briefs, not the task list below. Design **S2-01…S2-04** / **S2-23** done ([`design/archive/`](design/archive/), [`completed.md`](completed.md)). **S2-20** / **S2-21** (project Files list) are **descoped** — see [Descoped](#descoped). Dogfood checklist: [`dogfood.md`](dogfood.md).
 
 Spike 1 left an explicit gate: **the first researched mutation must write audit**, not decorative empty tables without a write path. This spike owns that gate.
 
@@ -117,28 +117,13 @@ IDs stay stable even if order of *starting* work shifts; **Depends on** is the m
 
 ## Dependency sketch
 
-Open work only (completed steps: [`completed.md`](completed.md)):
-
-```text
-S2-19 PR — Dogfood polish (copy, empty states, errors, tests)
-```
-
-Core schema / Go, workspace chrome, Source fields/types UI, Sources list (S2-17), Source page schema (S2-24), Source page UI (S2-18 / S2-25), evidence thumbnails (S2-26), and Design **S2-01…S2-04** / **S2-23** are **done** — see [`completed.md`](completed.md) and [`design/archive/`](design/archive/). **S2-20** / **S2-21** descoped. Remaining: **S2-19**.
+None — Spike 2 is complete. All PR/Design steps (and descoped S2-20/S2-21) are recorded in [`completed.md`](completed.md) and [Descoped](#descoped).
 
 ---
 
 ## Open steps
 
-To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](completed.md). Descoped IDs stay listed under [Descoped](#descoped) so numbering stays stable.
-
-### S2-19 — PR: Dogfood polish and regression net
-
-| | |
-| --- | --- |
-| **Kind** | PR |
-| **Depends on** | S2-14, S2-15, S2-22, S2-16, S2-17, S2-24, S2-18, S2-25, S2-26 |
-| **Deliverables** | Empty/error copy pass; accessibility identifiers for workspace nav + Source flows; Go+Swift test gaps closed for happy paths and one failure each (duplicate type key, ingest missing file, audit present after create). Update [`deployment-plan/README.md`](../README.md) when archiving this spike. Optional: short “how to dogfood Source catalog” note in README or spike retro. |
-| **Out** | Product SemVer bump only if cutting a release ([`versioning.md`](../../versioning.md)). |
+_None._ Finished Design/PR write-ups live in [`completed.md`](completed.md). Descoped IDs stay listed under [Descoped](#descoped) so numbering stays stable.
 
 ---
 
@@ -184,7 +169,7 @@ IDs kept for history; do not implement in Spike 2.
 | --- | --- |
 | **Design (Claude Design)** | S2-01…S2-04 / S2-23 done; **S2-20** descoped |
 | **Core schema / Go** | S2-05…S2-13 / **S2-24** / **S2-25** layout — done ([`completed.md`](completed.md)) |
-| **FFI + Mac** | S2-14…S2-18 / S2-22 / S2-24 / **S2-25** / **S2-26** — done; **S2-21** descoped; remaining **S2-19** |
+| **FFI + Mac** | S2-14…S2-18 / S2-22 / S2-24 / **S2-25** / **S2-26** / **S2-19** — done; **S2-21** descoped |
 
 Prefer **many small PRs**. Do not fold the workspace shell into feature destination PRs.
 

@@ -42,13 +42,21 @@ struct SourceTypesView: View {
         VStack(spacing: 0) {
             header
             PVDivider()
-            HStack(spacing: 0) {
-                SourceTypesListPane(model: model)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                PVDivider(axis: .vertical)
-                SourceTypesDetailPane(model: model)
-                    .frame(width: detailPaneWidth)
-                    .frame(maxHeight: .infinity)
+            if let loadError = model.loadError, model.types.isEmpty {
+                PVCallout(tone: .danger, message: L10n.Errors.message(for: loadError))
+                    .padding(.horizontal, PVSpacing.gutterPage)
+                    .padding(.top, PVSpacing.space8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .accessibilityIdentifier("sourceTypes.loadError")
+            } else {
+                HStack(spacing: 0) {
+                    SourceTypesListPane(model: model)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    PVDivider(axis: .vertical)
+                    SourceTypesDetailPane(model: model)
+                        .frame(width: detailPaneWidth)
+                        .frame(maxHeight: .infinity)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -58,6 +66,7 @@ struct SourceTypesView: View {
             item: pendingDelete,
             copy: deleteCopy(for:),
             isRunning: model.isDeleting,
+            accessibilityIdentifierPrefix: "sourceTypes.delete",
             onConfirm: { Task { await model.confirmDelete() } }
         ) { type in
             deleteDetail(for: type)

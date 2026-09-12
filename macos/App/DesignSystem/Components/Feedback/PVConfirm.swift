@@ -125,6 +125,8 @@ struct PVConfirmSheetContent<Detail: View>: View {
     let copy: PVConfirmCopy
     let tone: PVConfirmTone
     let isRunning: Bool
+    /// When set, confirm/cancel mint `{prefix}.confirm` / `{prefix}.cancel`.
+    let accessibilityIdentifierPrefix: String?
     let onConfirm: () -> Void
     let onCancel: () -> Void
     @ViewBuilder let detail: () -> Detail
@@ -138,6 +140,7 @@ struct PVConfirmSheetContent<Detail: View>: View {
         copy: PVConfirmCopy,
         tone: PVConfirmTone = .danger,
         isRunning: Bool = false,
+        accessibilityIdentifierPrefix: String? = nil,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void,
         @ViewBuilder detail: @escaping () -> Detail
@@ -145,6 +148,7 @@ struct PVConfirmSheetContent<Detail: View>: View {
         self.copy = copy
         self.tone = tone
         self.isRunning = isRunning
+        self.accessibilityIdentifierPrefix = accessibilityIdentifierPrefix
         self.onConfirm = onConfirm
         self.onCancel = onCancel
         self.detail = detail
@@ -206,9 +210,11 @@ struct PVConfirmSheetContent<Detail: View>: View {
                 .keyboardShortcut(.cancelAction)
                 .disabled(isRunning)
                 .focused($cancelFocused)
+                .modifier(ConfirmOptionalAccessibilityIdentifier(prefix: accessibilityIdentifierPrefix, suffix: "cancel"))
             Button(String(localized: copy.confirm), role: tone.buttonRole) { onConfirm() }
                 .buttonStyle(.pv(tone.buttonVariant, size: .lg))
                 .disabled(isRunning)
+                .modifier(ConfirmOptionalAccessibilityIdentifier(prefix: accessibilityIdentifierPrefix, suffix: "confirm"))
                 .overlay(alignment: .trailing) {
                     if isRunning {
                         ProgressView()
@@ -252,6 +258,7 @@ extension View {
         copy: @escaping (Item) -> PVConfirmCopy,
         tone: PVConfirmTone = .danger,
         isRunning: Bool = false,
+        accessibilityIdentifierPrefix: String? = nil,
         onConfirm: @escaping () -> Void,
         @ViewBuilder detail: @escaping (Item) -> Detail
     ) -> some View {
@@ -260,10 +267,25 @@ extension View {
                 copy: copy(value),
                 tone: tone,
                 isRunning: isRunning,
+                accessibilityIdentifierPrefix: accessibilityIdentifierPrefix,
                 onConfirm: onConfirm,
                 onCancel: { item.wrappedValue = nil },
                 detail: { detail(value) }
             )
+        }
+    }
+}
+
+/// Applies `{prefix}.{suffix}` only when a prefix is provided.
+private struct ConfirmOptionalAccessibilityIdentifier: ViewModifier {
+    let prefix: String?
+    let suffix: String
+
+    func body(content: Content) -> some View {
+        if let prefix {
+            content.accessibilityIdentifier("\(prefix).\(suffix)")
+        } else {
+            content
         }
     }
 }

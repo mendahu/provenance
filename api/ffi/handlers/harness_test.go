@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,9 +23,11 @@ type rpcTest struct {
 	raw     []byte
 	calls   int // default 1; last call is the one wantErr/want/after apply to
 	wantErr bool
-	want    proto.Message // populated fields must match (proto3 zeros are skipped)
-	exact   bool          // proto.Equal(want) including zeros; requires want
-	after   func(*testing.T, []byte, proto.Message)
+	// When wantErr is set, optionally require errors.Is(err, wantErrIs).
+	wantErrIs error
+	want      proto.Message // populated fields must match (proto3 zeros are skipped)
+	exact     bool          // proto.Equal(want) including zeros; requires want
+	after     func(*testing.T, []byte, proto.Message)
 }
 
 func runRPC(t *testing.T, fn func([]byte) ([]byte, error), tests []rpcTest) {
@@ -46,6 +50,9 @@ func runRPC(t *testing.T, fn func([]byte) ([]byte, error), tests []rpcTest) {
 			if tt.wantErr {
 				if err == nil {
 					t.Fatal("expected error")
+				}
+				if tt.wantErrIs != nil && !errors.Is(err, tt.wantErrIs) {
+					t.Fatalf("got %v want %v", err, tt.wantErrIs)
 				}
 				return
 			}
@@ -214,4 +221,47 @@ func assertActiveMatchesComplete(t *testing.T, out []byte, req proto.Message) {
 		Found:      true,
 		ProjectDir: done.GetProjectDir(),
 	})
+}
+
+func assertAuditActionPresent(t *testing.T, projectDir, wantAction string) {
+	t.Helper()
+	c, err := database.Open(projectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	db, err := c.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM audit_transactions WHERE action_type = ?`, wantAction).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n < 1 {
+		t.Fatalf("expected at least one audit transaction with action_type %q", wantAction)
+	}
+}
+
+func assertLatestAuditAction(t *testing.T, projectDir, wantAction string) {
+	t.Helper()
+	c, err := database.Open(projectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	db, err := c.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var actionType string
+	if err := db.QueryRow(`SELECT action_type FROM audit_transactions ORDER BY revision DESC LIMIT 1`).Scan(&actionType); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			t.Fatal("expected audit transaction")
+		}
+		t.Fatal(err)
+	}
+	if actionType != wantAction {
+		t.Fatalf("audit action_type = %q, want %q", actionType, wantAction)
+	}
 }

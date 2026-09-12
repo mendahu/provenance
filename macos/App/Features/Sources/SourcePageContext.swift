@@ -23,6 +23,11 @@ final class SourcePageContext {
     var pageError: String?
     var toast: VocabularyToast?
 
+    /// Clears the shared banner before a new section mutation.
+    func clearPageError() {
+        pageError = nil
+    }
+
     init(
         sourceID: String,
         projectDir: String,

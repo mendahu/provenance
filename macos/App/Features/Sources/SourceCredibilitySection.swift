@@ -72,6 +72,7 @@ final class SourceCredibilitySection {
         }
         isSaving = true
         defer { isSaving = false }
+        context.clearPageError()
         do {
             let assessment = try await context.store.upsertSourceCredibilityAssessment(
                 projectDir: context.projectDir,

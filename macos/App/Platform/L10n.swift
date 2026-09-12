@@ -356,34 +356,16 @@ enum L10n {
             comment: "Workspace sidebar destination and page title: Sources"
         )
 
-        static let sourcesPlaceholderNote = LocalizedStringResource(
-            "workspace.section.sources.placeholderNote",
-            defaultValue: "The Source catalog list and detail arrive in a later update.",
-            comment: "Legacy placeholder note for Sources; the S2-17 destination replaces it"
-        )
-
         static let sourceTypesTitle = LocalizedStringResource(
             "workspace.section.sourceTypes.title",
             defaultValue: "Source types",
             comment: "Workspace sidebar destination and page title: Source types"
         )
 
-        static let sourceTypesPlaceholderNote = LocalizedStringResource(
-            "workspace.section.sourceTypes.placeholderNote",
-            defaultValue: "Editing the Source type vocabulary arrives in a later update.",
-            comment: "Placeholder note shown in the empty Source types content host"
-        )
-
         static let sourceFieldsTitle = LocalizedStringResource(
             "workspace.section.sourceFields.title",
             defaultValue: "Source fields",
             comment: "Workspace sidebar destination and page title: Source fields"
-        )
-
-        static let sourceFieldsPlaceholderNote = LocalizedStringResource(
-            "workspace.section.sourceFields.placeholderNote",
-            defaultValue: "Editing the Source metadata fields arrives in a later update.",
-            comment: "Placeholder note shown in the empty Source fields content host"
         )
 
         static let filesTitle = LocalizedStringResource(
@@ -394,8 +376,8 @@ enum L10n {
 
         static let filesPlaceholderNote = LocalizedStringResource(
             "workspace.section.files.placeholderNote",
-            defaultValue: "Artifact ingest and file preview arrive in a later update.",
-            comment: "Placeholder note shown in the empty Files content host"
+            defaultValue: "A project-wide Files browser is not in this release. Open files from a Source’s artifacts.",
+            comment: "Placeholder note for the descoped Files destination"
         )
 
         static let collapseSidebar = LocalizedStringResource(
@@ -686,6 +668,18 @@ enum L10n {
             "sources.page.descriptionPlaceholder",
             defaultValue: "What this source is, and where you consulted it",
             comment: "Placeholder for the Source description field"
+        )
+
+        static let descriptionEmptyTitle = LocalizedStringResource(
+            "sources.page.descriptionEmptyTitle",
+            defaultValue: "No description yet",
+            comment: "Empty-state title when a Source has no description"
+        )
+
+        static let descriptionEmptyMessage = LocalizedStringResource(
+            "sources.page.descriptionEmptyMessage",
+            defaultValue: "Say what this source is, and where you consulted it.",
+            comment: "Empty-state body when a Source has no description"
         )
 
         static let descriptionHeading = LocalizedStringResource(
@@ -1098,10 +1092,16 @@ enum L10n {
             comment: "Prose under the Metadata section heading"
         )
 
+        static let metadataEmptyTitle = LocalizedStringResource(
+            "sources.page.metadataEmptyTitle",
+            defaultValue: "No metadata yet",
+            comment: "Empty-state title when a Source has no metadata rows"
+        )
+
         static let metadataEmptyMessage = LocalizedStringResource(
             "sources.page.metadataEmptyMessage",
-            defaultValue: "No metadata yet — accept a type suggestion or add a field from the vocabulary.",
-            comment: "Empty state when a Source has no metadata rows"
+            defaultValue: "Accept a type suggestion or add a field from the vocabulary.",
+            comment: "Empty-state body when a Source has no metadata rows"
         )
 
         static let dismissMetadataSuggestion = LocalizedStringResource(
@@ -1280,13 +1280,13 @@ enum L10n {
 
         static let notesEmptyTitle = LocalizedStringResource(
             "sources.page.notesEmptyTitle",
-            defaultValue: "No notes yet — record what the record itself cannot say.",
+            defaultValue: "No notes yet",
             comment: "Empty-state title when a Source has no notes"
         )
 
         static let notesEmptyMessage = LocalizedStringResource(
             "sources.page.notesEmptyMessage",
-            defaultValue: "Legibility, gaps in the film, what to order on the next visit.",
+            defaultValue: "Record what the record itself cannot say — legibility, gaps in the film, what to order on the next visit.",
             comment: "Empty-state body under Notes"
         )
 

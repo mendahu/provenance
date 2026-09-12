@@ -272,7 +272,7 @@ struct SourceTypesModelTests {
         await model.submit()
 
         #expect(model.isAdding)
-        #expect(model.formError != nil)
+        #expect(model.formError == L10n.Errors.sourceTypesDuplicateKey(key: "family-scrapbook"))
         #expect(model.types.count == 1)
     }
 

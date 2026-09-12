@@ -55,6 +55,7 @@ func TestCreateSourceAndWorkspace(t *testing.T) {
 					t.Fatalf("%+v", created.Source)
 				}
 				cr := req.(*engine.CreateSourceRequest)
+				assertLatestAuditAction(t, cr.ProjectDir, "create_source")
 				wsOut, err := GetSourceWorkspace(marshalProto(t, &engine.GetSourceWorkspaceRequest{
 					ProjectDir: cr.ProjectDir,
 					SourceId:   created.Source.Id,

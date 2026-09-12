@@ -46,7 +46,12 @@ struct SourcePageView: View {
                             .padding(.top, PVSpacing.space9)
                     } else if let loadError = model.loadError, model.workspace == nil {
                         PVCallout(tone: .danger, message: L10n.Errors.message(for: loadError))
+                            .accessibilityIdentifier("sources.page.loadError")
                     } else {
+                        if let pageError = model.pageError {
+                            PVCallout(tone: .danger, message: pageError)
+                                .accessibilityIdentifier("sources.page.error")
+                        }
                         overviewColumns
                         SourcePageArtifactsView(model: model)
                         SourcePageNotesView(model: model)
@@ -72,6 +77,7 @@ struct SourcePageView: View {
             ),
             isRunning: model.artifacts.isSavingDraft,
             confirmDisabled: !model.artifacts.canSubmitDraft,
+            accessibilityIdentifierPrefix: "sources.page.addArtifact",
             onConfirm: { Task { await model.artifacts.create() } }
         ) {
             SourcePageArtifactsView(model: model).addForm
@@ -86,6 +92,7 @@ struct SourcePageView: View {
             ),
             isRunning: model.metadata.isSavingAdd,
             confirmDisabled: !model.metadata.canSubmitAdd,
+            accessibilityIdentifierPrefix: "sources.page.addMetadata",
             onConfirm: { Task { await model.metadata.createFromAdd() } }
         ) {
             SourcePageMetadataView(model: model).addForm
@@ -102,6 +109,7 @@ struct SourcePageView: View {
             ),
             isRunning: model.metadata.isSavingDate,
             confirmDisabled: !dateEditorCanSave,
+            accessibilityIdentifierPrefix: "sources.page.date",
             onConfirm: {
                 Task { await dateEditorSaveAction?() }
             }

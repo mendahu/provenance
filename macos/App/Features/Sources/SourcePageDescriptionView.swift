@@ -64,6 +64,24 @@ struct SourcePageDescriptionView: View {
                     .accessibilityIdentifier("sources.page.description")
                     .disabled(model.identity.isSaving)
                 }
+            } else {
+                PVEmptyState(
+                    icon: .scrollText,
+                    title: L10n.Sources.descriptionEmptyTitle,
+                    message: String(localized: L10n.Sources.descriptionEmptyMessage),
+                    compact: true
+                ) {
+                    PVButton(
+                        L10n.Sources.editDescription,
+                        variant: .primary,
+                        size: .sm,
+                        icon: .penLine
+                    ) {
+                        beginEdit()
+                    }
+                    .accessibilityIdentifier("sources.page.description.empty.edit")
+                }
+                .accessibilityIdentifier("sources.page.description.empty")
             }
         }
     }

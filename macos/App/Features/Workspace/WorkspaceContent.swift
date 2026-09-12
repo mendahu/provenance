@@ -4,8 +4,8 @@ import SwiftUI
 /// context plus project identity (W-9, W-10), and the active
 /// destination's content below it. **Sources** (S2-17), **Source fields**
 /// (S2-15), and **Source types** (S2-16) mount their own full-height views
-/// below that header; Files still shows the labeled empty placeholder until
-/// S2-21 lands.
+/// below that header; Files still shows the labeled empty placeholder
+/// (project Files list was descoped with S2-20/S2-21).
 struct WorkspaceContent: View {
     let section: WorkspaceModel.Section
     let project: ProjectInfo?

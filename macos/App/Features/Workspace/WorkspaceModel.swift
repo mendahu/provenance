@@ -31,12 +31,9 @@ final class WorkspaceModel {
         }
 
         var placeholderNote: LocalizedStringResource {
-            switch self {
-            case .sources: L10n.Workspace.sourcesPlaceholderNote
-            case .sourceTypes: L10n.Workspace.sourceTypesPlaceholderNote
-            case .sourceFields: L10n.Workspace.sourceFieldsPlaceholderNote
-            case .files: L10n.Workspace.filesPlaceholderNote
-            }
+            // Only Files still uses the workspace placeholder host; Sources /
+            // types / fields mount real destinations.
+            L10n.Workspace.filesPlaceholderNote
         }
 
         var icon: PVSymbol {

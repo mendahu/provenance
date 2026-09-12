@@ -38,13 +38,21 @@ struct SourceFieldsView: View {
         VStack(spacing: 0) {
             header
             PVDivider()
-            HStack(spacing: 0) {
-                SourceFieldsListPane(model: model)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                PVDivider(axis: .vertical)
-                SourceFieldsDetailPane(model: model)
-                    .frame(width: detailPaneWidth)
-                    .frame(maxHeight: .infinity)
+            if let loadError = model.loadError, model.fields.isEmpty {
+                PVCallout(tone: .danger, message: L10n.Errors.message(for: loadError))
+                    .padding(.horizontal, PVSpacing.gutterPage)
+                    .padding(.top, PVSpacing.space8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .accessibilityIdentifier("sourceFields.loadError")
+            } else {
+                HStack(spacing: 0) {
+                    SourceFieldsListPane(model: model)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    PVDivider(axis: .vertical)
+                    SourceFieldsDetailPane(model: model)
+                        .frame(width: detailPaneWidth)
+                        .frame(maxHeight: .infinity)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -54,6 +62,7 @@ struct SourceFieldsView: View {
             item: pendingDelete,
             copy: deleteCopy(for:),
             isRunning: model.isDeleting,
+            accessibilityIdentifierPrefix: "sourceFields.delete",
             onConfirm: { Task { await model.confirmDelete() } }
         ) { field in
             deleteDetail(for: field)
