@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	"github.com/mendahu/provenencia/api/proto/engine"
+	"github.com/mendahu/provenencia/core/catalogsession"
+	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/sourcefields"
 	"github.com/mendahu/provenencia/core/database/sourcetypes"
-	"github.com/mendahu/provenencia/core/onboarding"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -229,13 +230,13 @@ func TestUpdateMetadataField(t *testing.T) {
 			name: "rejects editing a plugin field",
 			reqFn: func(t *testing.T) proto.Message {
 				dir, userID, _ := sourceFixture(t)
-				c, err := onboarding.OpenCatalog(dir)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer c.Close()
-				id, err := sourcefields.Upsert(c, sourcefields.Field{
-					Key: "memorial_id", Origin: "plugin:findagrave", Label: "Memorial id", DataType: sourcefields.DataTypeText,
+				var id []byte
+				err := catalogsession.Do(dir, func(c *database.Catalog) error {
+					var err error
+					id, err = sourcefields.Upsert(c, sourcefields.Field{
+						Key: "memorial_id", Origin: "plugin:findagrave", Label: "Memorial id", DataType: sourcefields.DataTypeText,
+					})
+					return err
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -445,13 +446,13 @@ func TestUpdateSourceType(t *testing.T) {
 			name: "rejects editing a plugin type",
 			reqFn: func(t *testing.T) proto.Message {
 				dir, userID, _ := sourceFixture(t)
-				c, err := onboarding.OpenCatalog(dir)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer c.Close()
-				id, err := sourcetypes.Upsert(c, sourcetypes.Type{
-					Key: "grave_memorial", Origin: "plugin:findagrave", Label: "Grave memorial",
+				var id []byte
+				err := catalogsession.Do(dir, func(c *database.Catalog) error {
+					var err error
+					id, err = sourcetypes.Upsert(c, sourcetypes.Type{
+						Key: "grave_memorial", Origin: "plugin:findagrave", Label: "Grave memorial",
+					})
+					return err
 				})
 				if err != nil {
 					t.Fatal(err)

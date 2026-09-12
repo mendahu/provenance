@@ -49,6 +49,7 @@ enum Method {
   METHOD_DISMISS_SOURCE_METADATA_SUGGESTION = 39;
   METHOD_REORDER_SOURCE_METADATA = 40;
   METHOD_ENSURE_FILE_THUMBNAIL = 41;
+  METHOD_CLOSE_CATALOG_SESSION = 42;
 }
 
 message PingRequest {
@@ -662,6 +663,12 @@ message EnsureFileThumbnailResponse {
   string rel_path = 1; // objects/… path; empty when skipped
   bool skipped = 2;    // non-image, unprocessable, or no derivative
 }
+
+message CloseCatalogSessionRequest {
+  string project_dir = 1; // required; releases the held session for this project
+}
+
+message CloseCatalogSessionResponse {}
 
 // ErrorKind classifies a failure for client UX (tone, retry hints). Copy still
 // comes from the client's L10n map keyed by Error.code.

@@ -29,25 +29,28 @@ func CreateArtifact(in []byte) ([]byte, error) {
 			return nil, err
 		}
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
-	a, err := artifacts.Create(c, userID, artifacts.CreateInput{
-		SourceID:    sourceID,
-		FileID:      fileID,
-		Label:       req.GetLabel(),
-		Description: req.GetDescription(),
+	var out *engine.CreateArtifactResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		a, err := artifacts.Create(c, userID, artifacts.CreateInput{
+			SourceID:    sourceID,
+			FileID:      fileID,
+			Label:       req.GetLabel(),
+			Description: req.GetDescription(),
+		})
+		if err != nil {
+			return err
+		}
+		ap, err := artifactProto(c, a)
+		if err != nil {
+			return err
+		}
+		out = &engine.CreateArtifactResponse{Artifact: ap}
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	ap, err := artifactProto(c, a)
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.CreateArtifactResponse{Artifact: ap})
+	return proto.Marshal(out)
 }
 
 func UpdateArtifact(in []byte) ([]byte, error) {
@@ -63,36 +66,38 @@ func UpdateArtifact(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.UpdateArtifactResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		prev, err := artifacts.Get(c, artifactID)
+		if err != nil {
+			return err
+		}
+		updated := artifacts.Artifact{
+			ID:          prev.ID,
+			Ref:         prev.Ref,
+			SourceID:    prev.SourceID,
+			FileID:      prev.FileID,
+			Label:       req.GetLabel(),
+			Description: req.GetDescription(),
+		}
+		if err := artifacts.Update(c, userID, updated); err != nil {
+			return err
+		}
+		got, err := artifacts.Get(c, artifactID)
+		if err != nil {
+			return err
+		}
+		ap, err := artifactProto(c, got)
+		if err != nil {
+			return err
+		}
+		out = &engine.UpdateArtifactResponse{Artifact: ap}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-
-	prev, err := artifacts.Get(c, artifactID)
-	if err != nil {
-		return nil, err
-	}
-	updated := artifacts.Artifact{
-		ID:          prev.ID,
-		Ref:         prev.Ref,
-		SourceID:    prev.SourceID,
-		FileID:      prev.FileID,
-		Label:       req.GetLabel(),
-		Description: req.GetDescription(),
-	}
-	if err := artifacts.Update(c, userID, updated); err != nil {
-		return nil, err
-	}
-	got, err := artifacts.Get(c, artifactID)
-	if err != nil {
-		return nil, err
-	}
-	ap, err := artifactProto(c, got)
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.UpdateArtifactResponse{Artifact: ap})
+	return proto.Marshal(out)
 }
 
 func IngestArtifactFile(in []byte) ([]byte, error) {
@@ -108,47 +113,49 @@ func IngestArtifactFile(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
-
-	prev, err := artifacts.Get(c, artifactID)
-	if err != nil {
-		return nil, err
-	}
-	if len(prev.FileID) == 16 {
-		return nil, artifacts.ErrFileAlreadyAttached
-	}
-	res, err := ingest.File(c, req.GetPath(), userID)
-	if err != nil {
-		return nil, err
-	}
-	updated := artifacts.Artifact{
-		ID:          prev.ID,
-		Ref:         prev.Ref,
-		SourceID:    prev.SourceID,
-		FileID:      res.File.ID,
-		Label:       prev.Label,
-		Description: prev.Description,
-	}
-	if err := artifacts.Update(c, userID, updated); err != nil {
-		return nil, err
-	}
-	got, err := artifacts.Get(c, artifactID)
-	if err != nil {
-		return nil, err
-	}
-	ap, err := artifactProto(c, got)
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.IngestArtifactFileResponse{
-		Artifact: ap,
-		File:     fileRefProto(res.File, res.RelPath),
-		Reused:   res.Reused,
+	var out *engine.IngestArtifactFileResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		prev, err := artifacts.Get(c, artifactID)
+		if err != nil {
+			return err
+		}
+		if len(prev.FileID) == 16 {
+			return artifacts.ErrFileAlreadyAttached
+		}
+		res, err := ingest.File(c, req.GetPath(), userID)
+		if err != nil {
+			return err
+		}
+		updated := artifacts.Artifact{
+			ID:          prev.ID,
+			Ref:         prev.Ref,
+			SourceID:    prev.SourceID,
+			FileID:      res.File.ID,
+			Label:       prev.Label,
+			Description: prev.Description,
+		}
+		if err := artifacts.Update(c, userID, updated); err != nil {
+			return err
+		}
+		got, err := artifacts.Get(c, artifactID)
+		if err != nil {
+			return err
+		}
+		ap, err := artifactProto(c, got)
+		if err != nil {
+			return err
+		}
+		out = &engine.IngestArtifactFileResponse{
+			Artifact: ap,
+			File:     fileRefProto(res.File, res.RelPath),
+			Reused:   res.Reused,
+		}
+		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+	return proto.Marshal(out)
 }
 
 func listArtifactsProto(c *database.Catalog, sourceID []byte) ([]*engine.Artifact, error) {

@@ -6,18 +6,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mendahu/provenencia/core/apperr"
+	"github.com/mendahu/provenencia/core/catalogsession"
 	"github.com/mendahu/provenencia/core/database"
-	"github.com/mendahu/provenencia/core/onboarding"
 )
 
 var errInvalidID = apperr.New(apperr.CodeSourcesInvalid, apperr.KindUser)
 
-func openProjectCatalog(projectDir string) (*database.Catalog, error) {
-	projectDir = strings.TrimSpace(projectDir)
-	if projectDir == "" {
-		return nil, database.ErrNotAProject
-	}
-	return onboarding.OpenCatalog(projectDir)
+// withProjectCatalog runs fn on the held exclusive catalog session for projectDir.
+func withProjectCatalog(projectDir string, fn func(*database.Catalog) error) error {
+	return catalogsession.Do(projectDir, fn)
 }
 
 func parseUserID(s string) ([]byte, error) {

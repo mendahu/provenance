@@ -14,18 +14,20 @@ func ListSourceTypes(in []byte) ([]byte, error) {
 	if err := proto.Unmarshal(in, &req); err != nil {
 		return nil, unmarshalErr("list_source_types", err)
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.ListSourceTypesResponse
+	err := withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		rows, err := sourcetypes.List(c)
+		if err != nil {
+			return err
+		}
+		out = &engine.ListSourceTypesResponse{}
+		for _, t := range rows {
+			out.Types = append(out.Types, sourceTypeProto(t))
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	defer c.Close()
-	rows, err := sourcetypes.List(c)
-	if err != nil {
-		return nil, err
-	}
-	out := &engine.ListSourceTypesResponse{}
-	for _, t := range rows {
-		out.Types = append(out.Types, sourceTypeProto(t))
 	}
 	return proto.Marshal(out)
 }
@@ -38,16 +40,19 @@ func CreateSourceType(in []byte) ([]byte, error) {
 	if _, err := parseUserID(req.GetUserId()); err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.CreateSourceTypeResponse
+	err := withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		got, err := sourcetypes.Create(c, req.GetLabel(), req.GetDescription())
+		if err != nil {
+			return err
+		}
+		out = &engine.CreateSourceTypeResponse{Type: sourceTypeProto(got)}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	got, err := sourcetypes.Create(c, req.GetLabel(), req.GetDescription())
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.CreateSourceTypeResponse{Type: sourceTypeProto(got)})
+	return proto.Marshal(out)
 }
 
 func UpdateSourceType(in []byte) ([]byte, error) {
@@ -62,22 +67,25 @@ func UpdateSourceType(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.UpdateSourceTypeResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		got, err := sourcetypes.Update(c, typeID, req.GetLabel(), req.GetDescription())
+		if err != nil {
+			return err
+		}
+		if got.UsedBy, err = sourcetypes.UsedBy(c, typeID); err != nil {
+			return err
+		}
+		if got.SuggestedFields, err = sourcevocab.CountSuggestions(c, typeID); err != nil {
+			return err
+		}
+		out = &engine.UpdateSourceTypeResponse{Type: sourceTypeProto(got)}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	got, err := sourcetypes.Update(c, typeID, req.GetLabel(), req.GetDescription())
-	if err != nil {
-		return nil, err
-	}
-	if got.UsedBy, err = sourcetypes.UsedBy(c, typeID); err != nil {
-		return nil, err
-	}
-	if got.SuggestedFields, err = sourcevocab.CountSuggestions(c, typeID); err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.UpdateSourceTypeResponse{Type: sourceTypeProto(got)})
+	return proto.Marshal(out)
 }
 
 func ListTypeSuggestions(in []byte) ([]byte, error) {
@@ -89,16 +97,19 @@ func ListTypeSuggestions(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.ListTypeSuggestionsResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		suggestions, err := suggestionsProto(c, typeID)
+		if err != nil {
+			return err
+		}
+		out = &engine.ListTypeSuggestionsResponse{Suggestions: suggestions}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	out, err := suggestionsProto(c, typeID)
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.ListTypeSuggestionsResponse{Suggestions: out})
+	return proto.Marshal(out)
 }
 
 func AssignTypeField(in []byte) ([]byte, error) {
@@ -106,19 +117,26 @@ func AssignTypeField(in []byte) ([]byte, error) {
 	if err := proto.Unmarshal(in, &req); err != nil {
 		return nil, unmarshalErr("assign_type_field", err)
 	}
-	typeID, fieldID, c, err := openSuggestionJoin(req.GetUserId(), req.GetTypeId(), req.GetFieldId(), req.GetProjectDir())
+	typeID, fieldID, err := parseSuggestionJoin(req.GetUserId(), req.GetTypeId(), req.GetFieldId())
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	if err := sourcevocab.AppendSuggestion(c, typeID, fieldID); err != nil {
-		return nil, err
-	}
-	out, err := suggestionsProto(c, typeID)
+	var out *engine.AssignTypeFieldResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		if err := sourcevocab.AppendSuggestion(c, typeID, fieldID); err != nil {
+			return err
+		}
+		suggestions, err := suggestionsProto(c, typeID)
+		if err != nil {
+			return err
+		}
+		out = &engine.AssignTypeFieldResponse{Suggestions: suggestions}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	return proto.Marshal(&engine.AssignTypeFieldResponse{Suggestions: out})
+	return proto.Marshal(out)
 }
 
 func RemoveTypeField(in []byte) ([]byte, error) {
@@ -126,40 +144,43 @@ func RemoveTypeField(in []byte) ([]byte, error) {
 	if err := proto.Unmarshal(in, &req); err != nil {
 		return nil, unmarshalErr("remove_type_field", err)
 	}
-	typeID, fieldID, c, err := openSuggestionJoin(req.GetUserId(), req.GetTypeId(), req.GetFieldId(), req.GetProjectDir())
+	typeID, fieldID, err := parseSuggestionJoin(req.GetUserId(), req.GetTypeId(), req.GetFieldId())
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	if err := sourcevocab.DeleteSuggestion(c, typeID, fieldID); err != nil {
-		return nil, err
-	}
-	out, err := suggestionsProto(c, typeID)
+	var out *engine.RemoveTypeFieldResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		if err := sourcevocab.DeleteSuggestion(c, typeID, fieldID); err != nil {
+			return err
+		}
+		suggestions, err := suggestionsProto(c, typeID)
+		if err != nil {
+			return err
+		}
+		out = &engine.RemoveTypeFieldResponse{Suggestions: suggestions}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	return proto.Marshal(&engine.RemoveTypeFieldResponse{Suggestions: out})
+	return proto.Marshal(out)
 }
 
-// openSuggestionJoin validates the user and both join sides, then opens the
-// catalog — the shared preamble of assign and remove. The caller closes it.
-func openSuggestionJoin(userID, typeID, fieldID, projectDir string) ([]byte, []byte, *database.Catalog, error) {
+// parseSuggestionJoin validates the user and both join sides — the shared
+// preamble of assign and remove.
+func parseSuggestionJoin(userID, typeID, fieldID string) ([]byte, []byte, error) {
 	if _, err := parseUserID(userID); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	tid, err := parseID(typeID)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	fid, err := parseID(fieldID)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	c, err := openProjectCatalog(projectDir)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return tid, fid, c, nil
+	return tid, fid, nil
 }
 
 func suggestionsProto(c *database.Catalog, typeID []byte) ([]*engine.TypeSuggestion, error) {
@@ -182,18 +203,20 @@ func ListMetadataFields(in []byte) ([]byte, error) {
 	if err := proto.Unmarshal(in, &req); err != nil {
 		return nil, unmarshalErr("list_metadata_fields", err)
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.ListMetadataFieldsResponse
+	err := withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		rows, err := sourcefields.List(c)
+		if err != nil {
+			return err
+		}
+		out = &engine.ListMetadataFieldsResponse{}
+		for _, f := range rows {
+			out.Fields = append(out.Fields, metadataFieldProto(f))
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	defer c.Close()
-	rows, err := sourcefields.List(c)
-	if err != nil {
-		return nil, err
-	}
-	out := &engine.ListMetadataFieldsResponse{}
-	for _, f := range rows {
-		out.Fields = append(out.Fields, metadataFieldProto(f))
 	}
 	return proto.Marshal(out)
 }
@@ -206,16 +229,19 @@ func CreateMetadataField(in []byte) ([]byte, error) {
 	if _, err := parseUserID(req.GetUserId()); err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.CreateMetadataFieldResponse
+	err := withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		got, err := sourcefields.Create(c, req.GetLabel(), req.GetDataType(), req.GetDescription())
+		if err != nil {
+			return err
+		}
+		out = &engine.CreateMetadataFieldResponse{Field: metadataFieldProto(got)}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	got, err := sourcefields.Create(c, req.GetLabel(), req.GetDataType(), req.GetDescription())
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.CreateMetadataFieldResponse{Field: metadataFieldProto(got)})
+	return proto.Marshal(out)
 }
 
 func UpdateMetadataField(in []byte) ([]byte, error) {
@@ -230,19 +256,22 @@ func UpdateMetadataField(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.UpdateMetadataFieldResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		got, err := sourcefields.Update(c, fieldID, req.GetLabel(), req.GetDataType(), req.GetDescription())
+		if err != nil {
+			return err
+		}
+		if got.UsedBy, err = sourcefields.UsedBy(c, fieldID); err != nil {
+			return err
+		}
+		out = &engine.UpdateMetadataFieldResponse{Field: metadataFieldProto(got)}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	got, err := sourcefields.Update(c, fieldID, req.GetLabel(), req.GetDataType(), req.GetDescription())
-	if err != nil {
-		return nil, err
-	}
-	if got.UsedBy, err = sourcefields.UsedBy(c, fieldID); err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.UpdateMetadataFieldResponse{Field: metadataFieldProto(got)})
+	return proto.Marshal(out)
 }
 
 func DeleteSourceType(in []byte) ([]byte, error) {
@@ -257,15 +286,18 @@ func DeleteSourceType(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.DeleteSourceTypeResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		if err := sourcetypes.Delete(c, typeID); err != nil {
+			return err
+		}
+		out = &engine.DeleteSourceTypeResponse{}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	if err := sourcetypes.Delete(c, typeID); err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.DeleteSourceTypeResponse{})
+	return proto.Marshal(out)
 }
 
 func DeleteMetadataField(in []byte) ([]byte, error) {
@@ -280,15 +312,18 @@ func DeleteMetadataField(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.DeleteMetadataFieldResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		if err := sourcefields.Delete(c, fieldID); err != nil {
+			return err
+		}
+		out = &engine.DeleteMetadataFieldResponse{}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	if err := sourcefields.Delete(c, fieldID); err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.DeleteMetadataFieldResponse{})
+	return proto.Marshal(out)
 }
 
 func sourceTypeProto(t sourcetypes.Type) *engine.SourceType {

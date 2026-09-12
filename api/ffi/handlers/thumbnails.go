@@ -22,28 +22,30 @@ func EnsureFileThumbnail(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
+	var out *engine.EnsureFileThumbnailResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		ok, err := artifacts.HasPrimaryFile(c, fileID)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return artifacts.ErrInvalid
+		}
 
-	ok, err := artifacts.HasPrimaryFile(c, fileID)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, artifacts.ErrInvalid
-	}
-
-	rel, skipped, err := thumbnailRelPath(c, fileID)
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.EnsureFileThumbnailResponse{
-		RelPath: rel,
-		Skipped: skipped,
+		rel, skipped, err := thumbnailRelPath(c, fileID)
+		if err != nil {
+			return err
+		}
+		out = &engine.EnsureFileThumbnailResponse{
+			RelPath: rel,
+			Skipped: skipped,
+		}
+		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+	return proto.Marshal(out)
 }
 
 // thumbnailRelPath ensures the default thumbnail for sourceFileID and returns

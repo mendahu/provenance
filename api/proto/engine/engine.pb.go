@@ -68,6 +68,7 @@ const (
 	Method_METHOD_DISMISS_SOURCE_METADATA_SUGGESTION   Method = 39
 	Method_METHOD_REORDER_SOURCE_METADATA              Method = 40
 	Method_METHOD_ENSURE_FILE_THUMBNAIL                Method = 41
+	Method_METHOD_CLOSE_CATALOG_SESSION                Method = 42
 )
 
 // Enum value maps for Method.
@@ -115,6 +116,7 @@ var (
 		39: "METHOD_DISMISS_SOURCE_METADATA_SUGGESTION",
 		40: "METHOD_REORDER_SOURCE_METADATA",
 		41: "METHOD_ENSURE_FILE_THUMBNAIL",
+		42: "METHOD_CLOSE_CATALOG_SESSION",
 	}
 	Method_value = map[string]int32{
 		"METHOD_UNSPECIFIED":                          0,
@@ -159,6 +161,7 @@ var (
 		"METHOD_DISMISS_SOURCE_METADATA_SUGGESTION":   39,
 		"METHOD_REORDER_SOURCE_METADATA":              40,
 		"METHOD_ENSURE_FILE_THUMBNAIL":                41,
+		"METHOD_CLOSE_CATALOG_SESSION":                42,
 	}
 )
 
@@ -5951,6 +5954,86 @@ func (x *EnsureFileThumbnailResponse) GetSkipped() bool {
 	return false
 }
 
+type CloseCatalogSessionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectDir    string                 `protobuf:"bytes,1,opt,name=project_dir,json=projectDir,proto3" json:"project_dir,omitempty"` // required; releases the held session for this project
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CloseCatalogSessionRequest) Reset() {
+	*x = CloseCatalogSessionRequest{}
+	mi := &file_engine_proto_msgTypes[96]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CloseCatalogSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CloseCatalogSessionRequest) ProtoMessage() {}
+
+func (x *CloseCatalogSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[96]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CloseCatalogSessionRequest.ProtoReflect.Descriptor instead.
+func (*CloseCatalogSessionRequest) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{96}
+}
+
+func (x *CloseCatalogSessionRequest) GetProjectDir() string {
+	if x != nil {
+		return x.ProjectDir
+	}
+	return ""
+}
+
+type CloseCatalogSessionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CloseCatalogSessionResponse) Reset() {
+	*x = CloseCatalogSessionResponse{}
+	mi := &file_engine_proto_msgTypes[97]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CloseCatalogSessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CloseCatalogSessionResponse) ProtoMessage() {}
+
+func (x *CloseCatalogSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_engine_proto_msgTypes[97]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CloseCatalogSessionResponse.ProtoReflect.Descriptor instead.
+func (*CloseCatalogSessionResponse) Descriptor() ([]byte, []int) {
+	return file_engine_proto_rawDescGZIP(), []int{97}
+}
+
 // Error is the protobuf payload on provenencia_call status 1 (failure).
 // Success payloads remain method-specific response messages.
 type Error struct {
@@ -5964,7 +6047,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_engine_proto_msgTypes[96]
+	mi := &file_engine_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5976,7 +6059,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_engine_proto_msgTypes[96]
+	mi := &file_engine_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5989,7 +6072,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_engine_proto_rawDescGZIP(), []int{96}
+	return file_engine_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *Error) GetCode() string {
@@ -6467,11 +6550,15 @@ const file_engine_proto_rawDesc = "" +
 	"\afile_id\x18\x02 \x01(\tR\x06fileId\"R\n" +
 	"\x1bEnsureFileThumbnailResponse\x12\x19\n" +
 	"\brel_path\x18\x01 \x01(\tR\arelPath\x12\x18\n" +
-	"\askipped\x18\x02 \x01(\bR\askipped\"i\n" +
+	"\askipped\x18\x02 \x01(\bR\askipped\"=\n" +
+	"\x1aCloseCatalogSessionRequest\x12\x1f\n" +
+	"\vproject_dir\x18\x01 \x01(\tR\n" +
+	"projectDir\"\x1d\n" +
+	"\x1bCloseCatalogSessionResponse\"i\n" +
 	"\x05Error\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x124\n" +
 	"\x04kind\x18\x02 \x01(\x0e2 .provenencia.engine.v1.ErrorKindR\x04kind\x12\x16\n" +
-	"\x06params\x18\x03 \x03(\tR\x06params*\xaa\n" +
+	"\x06params\x18\x03 \x03(\tR\x06params*\xcc\n" +
 	"\n" +
 	"\x06Method\x12\x16\n" +
 	"\x12METHOD_UNSPECIFIED\x10\x00\x12\x0f\n" +
@@ -6516,7 +6603,8 @@ const file_engine_proto_rawDesc = "" +
 	"+METHOD_UPSERT_SOURCE_CREDIBILITY_ASSESSMENT\x10&\x12-\n" +
 	")METHOD_DISMISS_SOURCE_METADATA_SUGGESTION\x10'\x12\"\n" +
 	"\x1eMETHOD_REORDER_SOURCE_METADATA\x10(\x12 \n" +
-	"\x1cMETHOD_ENSURE_FILE_THUMBNAIL\x10)*\x88\x01\n" +
+	"\x1cMETHOD_ENSURE_FILE_THUMBNAIL\x10)\x12 \n" +
+	"\x1cMETHOD_CLOSE_CATALOG_SESSION\x10**\x88\x01\n" +
 	"\tErrorKind\x12\x1a\n" +
 	"\x16ERROR_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fERROR_KIND_USER\x10\x01\x12\x17\n" +
@@ -6537,7 +6625,7 @@ func file_engine_proto_rawDescGZIP() []byte {
 }
 
 var file_engine_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 97)
+var file_engine_proto_msgTypes = make([]protoimpl.MessageInfo, 99)
 var file_engine_proto_goTypes = []any{
 	(Method)(0),                                       // 0: provenencia.engine.v1.Method
 	(ErrorKind)(0),                                    // 1: provenencia.engine.v1.ErrorKind
@@ -6637,7 +6725,9 @@ var file_engine_proto_goTypes = []any{
 	(*GetWorkspaceNavCountsResponse)(nil),             // 95: provenencia.engine.v1.GetWorkspaceNavCountsResponse
 	(*EnsureFileThumbnailRequest)(nil),                // 96: provenencia.engine.v1.EnsureFileThumbnailRequest
 	(*EnsureFileThumbnailResponse)(nil),               // 97: provenencia.engine.v1.EnsureFileThumbnailResponse
-	(*Error)(nil),                                     // 98: provenencia.engine.v1.Error
+	(*CloseCatalogSessionRequest)(nil),                // 98: provenencia.engine.v1.CloseCatalogSessionRequest
+	(*CloseCatalogSessionResponse)(nil),               // 99: provenencia.engine.v1.CloseCatalogSessionResponse
+	(*Error)(nil),                                     // 100: provenencia.engine.v1.Error
 }
 var file_engine_proto_depIdxs = []int32{
 	24, // 0: provenencia.engine.v1.CompleteOnboardingResponse.project:type_name -> provenencia.engine.v1.ProjectInfo
@@ -6702,7 +6792,7 @@ func file_engine_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_engine_proto_rawDesc), len(file_engine_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   97,
+			NumMessages:   99,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

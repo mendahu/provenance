@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/mendahu/provenencia/api/proto/engine"
+	"github.com/mendahu/provenencia/core/catalogsession"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/identity"
 	"github.com/mendahu/provenencia/core/onboarding"
@@ -34,6 +35,7 @@ func runRPC(t *testing.T, fn func([]byte) ([]byte, error), tests []rpcTest) {
 	t.Helper()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Cleanup(func() { _ = catalogsession.CloseAll() })
 			in, req := tt.input(t)
 			n := tt.calls
 			if n == 0 {
@@ -225,43 +227,45 @@ func assertActiveMatchesComplete(t *testing.T, out []byte, req proto.Message) {
 
 func assertAuditActionPresent(t *testing.T, projectDir, wantAction string) {
 	t.Helper()
-	c, err := database.Open(projectDir)
+	err := catalogsession.Do(projectDir, func(c *database.Catalog) error {
+		db, err := c.DB()
+		if err != nil {
+			return err
+		}
+		var n int
+		if err := db.QueryRow(`SELECT COUNT(*) FROM audit_transactions WHERE action_type = ?`, wantAction).Scan(&n); err != nil {
+			return err
+		}
+		if n < 1 {
+			t.Fatalf("expected at least one audit transaction with action_type %q", wantAction)
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
-	}
-	defer c.Close()
-	db, err := c.DB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	var n int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM audit_transactions WHERE action_type = ?`, wantAction).Scan(&n); err != nil {
-		t.Fatal(err)
-	}
-	if n < 1 {
-		t.Fatalf("expected at least one audit transaction with action_type %q", wantAction)
 	}
 }
 
 func assertLatestAuditAction(t *testing.T, projectDir, wantAction string) {
 	t.Helper()
-	c, err := database.Open(projectDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer c.Close()
-	db, err := c.DB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	var actionType string
-	if err := db.QueryRow(`SELECT action_type FROM audit_transactions ORDER BY revision DESC LIMIT 1`).Scan(&actionType); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			t.Fatal("expected audit transaction")
+	err := catalogsession.Do(projectDir, func(c *database.Catalog) error {
+		db, err := c.DB()
+		if err != nil {
+			return err
 		}
+		var actionType string
+		if err := db.QueryRow(`SELECT action_type FROM audit_transactions ORDER BY revision DESC LIMIT 1`).Scan(&actionType); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				t.Fatal("expected audit transaction")
+			}
+			return err
+		}
+		if actionType != wantAction {
+			t.Fatalf("audit action_type = %q, want %q", actionType, wantAction)
+		}
+		return nil
+	})
+	if err != nil {
 		t.Fatal(err)
-	}
-	if actionType != wantAction {
-		t.Fatalf("audit action_type = %q, want %q", actionType, wantAction)
 	}
 }

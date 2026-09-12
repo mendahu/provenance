@@ -7,10 +7,11 @@ import (
 	"github.com/mendahu/provenencia/core/database/users"
 )
 
-// createCatalog and OpenCatalog are the only researcher-facing catalog entry
-// points in onboarding. database.Create/Open stay migrate-only for tests and
-// low-level use. Refs are reconciled on create and open; Source vocabulary and
-// credibility grades are installed once at create only (never healed on open).
+// createCatalog installs a new catalog (create path). OpenCatalog is a one-shot
+// open for tests and low-level use. Researcher FFI and onboarding open/list
+// paths use core/catalogsession (held session + serial queue). database.Create/Open
+// stay migrate-only. Refs are reconciled on create and open; Source vocabulary
+// and credibility grades are installed once at create only (never healed on open).
 func createCatalog(parent, folder string) (*database.Catalog, error) {
 	c, err := database.Create(parent, folder)
 	if err != nil {
@@ -31,8 +32,8 @@ func createCatalog(parent, folder string) (*database.Catalog, error) {
 	return c, nil
 }
 
-// OpenCatalog opens a project for researcher use (migrate + ensure user refs).
-// FFI Source handlers and onboarding open paths must use this, not database.Open.
+// OpenCatalog opens a project once (migrate + ensure user refs). Prefer
+// catalogsession.Do for researcher paths so opens are amortized and serialized.
 // Does not re-install or heal Source vocabulary or credibility grades.
 func OpenCatalog(projectDir string) (*database.Catalog, error) {
 	c, err := database.Open(projectDir)

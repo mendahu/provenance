@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mendahu/provenencia/core/catalogsession"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/users"
 	"github.com/mendahu/provenencia/core/identity"
@@ -40,17 +41,18 @@ func TestOpen(t *testing.T) {
 				if act.ProjectDir != created.ProjectDir {
 					t.Fatalf("active %s", act.ProjectDir)
 				}
-				p, err := database.Open(created.ProjectDir)
+				err = catalogsession.Do(created.ProjectDir, func(p *database.Catalog) error {
+					u, err := users.Lookup(p, res.Identity.UserID[:])
+					if err != nil {
+						return err
+					}
+					if u.DisplayName != "Jake" {
+						t.Fatalf("users %q", u.DisplayName)
+					}
+					return nil
+				})
 				if err != nil {
 					t.Fatal(err)
-				}
-				defer p.Close()
-				u, err := users.Lookup(p, res.Identity.UserID[:])
-				if err != nil {
-					t.Fatal(err)
-				}
-				if u.DisplayName != "Jake" {
-					t.Fatalf("users %q", u.DisplayName)
 				}
 			},
 		},
@@ -229,13 +231,14 @@ func TestOpen(t *testing.T) {
 				if loaded.UserID != created.Identity.UserID || loaded.DisplayName != "Jake" {
 					t.Fatalf("%+v", loaded)
 				}
-				p, err := database.Open(created.ProjectDir)
+				err = catalogsession.Do(created.ProjectDir, func(p *database.Catalog) error {
+					if _, err := users.Lookup(p, u1.UserID[:]); err == nil {
+						t.Fatal("u1 should not be in users")
+					}
+					return nil
+				})
 				if err != nil {
 					t.Fatal(err)
-				}
-				defer p.Close()
-				if _, err := users.Lookup(p, u1.UserID[:]); err == nil {
-					t.Fatal("u1 should not be in users")
 				}
 			},
 		},
@@ -243,6 +246,7 @@ func TestOpen(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Cleanup(func() { _ = catalogsession.CloseAll() })
 			tt.run(t, t.TempDir(), t.TempDir())
 		})
 	}
@@ -313,6 +317,7 @@ func TestProjectInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Cleanup(func() { _ = catalogsession.CloseAll() })
 			tt.run(t)
 		})
 	}
