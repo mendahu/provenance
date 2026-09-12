@@ -6,14 +6,14 @@
 
 Authoritative models:
 
-- [`source-layer-data-model.md`](../../source-layer-data-model.md)
-- [`artifact-file-storage.md`](../../artifact-file-storage.md) (pointer → Source layer)
-- [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §2
-- [`audit-revision-history.md`](../../audit-revision-history.md)
-- [`structured-date-model.md`](../../structured-date-model.md)
-- [`catalog-refs.md`](../../catalog-refs.md)
-- [`application-stack.md`](../../application-stack.md) (FFI granularity, `objects/` ingest)
-- [`macos-client-patterns.md`](../../macos-client-patterns.md)
+- [`source-layer-data-model.md`](../../../source-layer-data-model.md)
+- [`artifact-file-storage.md`](../../../artifact-file-storage.md) (pointer → Source layer)
+- [`seeded-vocabulary.md`](../../../seeded-vocabulary.md) §2
+- [`audit-revision-history.md`](../../../audit-revision-history.md)
+- [`structured-date-model.md`](../../../structured-date-model.md)
+- [`catalog-refs.md`](../../../catalog-refs.md)
+- [`application-stack.md`](../../../application-stack.md) (FFI granularity, `objects/` ingest)
+- [`macos-client-patterns.md`](../../../macos-client-patterns.md)
 
 Claude Design handoffs live in [`design/`](design/) — self-contained requirement briefs, not the task list below. Design **S2-01…S2-04** / **S2-23** done ([`design/archive/`](design/archive/), [`completed.md`](completed.md)). **S2-20** / **S2-21** (project Files list) are **descoped** — see [Descoped](#descoped). Dogfood checklist: [`dogfood.md`](dogfood.md).
 
@@ -56,16 +56,16 @@ Onboarding (Spike 1) → signed in
 - Audit write path (`audit_transactions` / `audit_changes`) used by every Source-layer mutation.
 - Shared `date_values` table (schema + minimal Go helpers) so date-typed Source metadata can land without a second migration later.
 - Full Source-layer table set from the Source doc: `source_types`, `sources`, `source_notes`, `source_metadata_fields`, `source_type_metadata_fields`, `source_metadata`, `artifacts`, `files`, `file_derivatives`.
-- Small **seed** of types/fields (not the entire [`seeded-vocabulary.md`](../../seeded-vocabulary.md) horizon list). Create-time starter today: `birth_certificate` plus a few suggested fields; opens do not heal or expand the set.
+- Small **seed** of types/fields (not the entire [`seeded-vocabulary.md`](../../../seeded-vocabulary.md) horizon list). Create-time starter today: `birth_certificate` plus a few suggested fields; opens do not heal or expand the set.
 - Go domain packages for CRUD + ingest; FFI use-cases (coarse verbs); SwiftUI Source catalog UI inside the workspace, consuming `GenealogyStore`.
 - Claude Design boards for workspace chrome, Source fields, Source types, Sources list, and Source page (Source → Artifact → File).
-- Refs: mint `SRC-…` / `ART-…` via `core/ref` on insert ([`catalog-refs.md`](../../catalog-refs.md)).
+- Refs: mint `SRC-…` / `ART-…` via `core/ref` on insert ([`catalog-refs.md`](../../../catalog-refs.md)).
 
 ## Out of scope (later spikes)
 
 - **Project Files list** (design S2-20 + Swift S2-21) — descoped; ingest/open stay on the Source page.
 - Interpretation beyond Source credibility on the Source page (Citations, Observations, Nodes) and Conclusion — do not add sidebar placeholders for them in this spike.
-- Claim confidence and Citation transcription certainty ([`research-judgment-model.md`](../../research-judgment-model.md)).
+- Claim confidence and Citation transcription certainty ([`research-judgment-model.md`](../../../research-judgment-model.md)).
 - Full GEDCOM / import adapters.
 - Destructive primary File deletion; orphan GC of historically referenced Files.
 - Rich audit UI / timeline browser (writes must exist; browsing history can wait).
@@ -77,13 +77,13 @@ Onboarding (Spike 1) → signed in
 
 ## Non-negotiable constraints (from docs)
 
-1. **Audit atomicity** — domain write + audit revision in one SQLite transaction ([`audit-revision-history.md`](../../audit-revision-history.md) §5).
+1. **Audit atomicity** — domain write + audit revision in one SQLite transaction ([`audit-revision-history.md`](../../../audit-revision-history.md) §5).
 2. **No `created_at` / `updated_by` on Source tables** — attribution lives in audit.
-3. **File bytes never travel over protobuf** — ingest use-case; read path returns relative `objects/…` path; Swift reads bytes ([`application-stack.md`](../../application-stack.md)).
+3. **File bytes never travel over protobuf** — ingest use-case; read path returns relative `objects/…` path; Swift reads bytes ([`application-stack.md`](../../../application-stack.md)).
 4. **Content-addressed immutability** — `objects/{hh}/{hh}/{full hex}`; File bytes never change in place. Better/clearer scan = **new Artifact** (not pointer-swap under an existing `ART-…`; Citations locate into Artifacts).
 5. **Derivatives belong to Files**, not Artifacts; generation need not audit.
 6. **Swift stays thin** — Go owns schema, ingest, validation; models + `FakeStore` for tests.
-7. **Seed small; grow from use** ([`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1).
+7. **Seed small; grow from use** ([`seeded-vocabulary.md`](../../../seeded-vocabulary.md) §1).
 
 ---
 
@@ -133,7 +133,7 @@ IDs kept for history; do not implement in Spike 2.
 
 ### S2-20 — Design: Files list (project file browser) — **descoped**
 
-**Claude Design brief (frozen):** [`design/S2-20-files-list.md`](design/S2-20-files-list.md)
+**Claude Design brief (frozen):** [`design/archive/S2-20-files-list.md`](design/archive/S2-20-files-list.md)
 
 | | |
 | --- | --- |

@@ -6,20 +6,22 @@ Authoritative domain and stack decisions remain in the sibling docs under [`docs
 
 ## Current
 
-_None scheduled._ Next work will land as a new spike folder when scoped.
+| Spike | Goal |
+| --- | --- |
+| [Spike 3](spike-3/) | Workspace chrome + first-class nav history and catalog search: Back/Forward (persisted, `project.uuid`), toolbar omnibar with Go registry + FTS5 ranking (successive PRs). Notes: [`navigation-history.md`](spike-3/navigation-history.md), [`omnibar-search.md`](spike-3/omnibar-search.md). |
 
 ## Completed
 
 | Spike | Goal |
 | --- | --- |
-| [Spike 2](spike-2/) | Validate the Source layer: app workspace chrome (sidebar), audit + schema + Go CRUD/ingest + FFI + macOS Source catalog UI (create Sources, Artifacts, Files, extensible types/metadata). Design steps in Claude Design interleaved with PRs. Dogfood: [`spike-2/dogfood.md`](spike-2/dogfood.md). |
+| [Spike 2](archive/spike-2/) | Validate the Source layer: app workspace chrome (sidebar), audit + schema + Go CRUD/ingest + FFI + macOS Source catalog UI (create Sources, Artifacts, Files, extensible types/metadata). Design steps in Claude Design interleaved with PRs. Dogfood: [`archive/spike-2/dogfood.md`](archive/spike-2/dogfood.md). |
 | [Spike 1](archive/spike-1.md) | Scaffold the macOS app, local SQLite project, and first-run onboarding. **Retired the cgo SQLite + Swift dylib risk** (plan A: `mattn/go-sqlite3` inside `libprovenencia.dylib`). |
 
-Spike 2 folder (kept in place; Status **Done**):
+Spike 2 archive:
 
-- [`spike-2/README.md`](spike-2/README.md) — spike overview (no open steps)
-- [`spike-2/completed.md`](spike-2/completed.md) — finished Spike 2 steps
-- [`spike-2/dogfood.md`](spike-2/dogfood.md) — how to dogfood the Source catalog
-- [`spike-2/design/`](spike-2/design/) — Claude Design briefs; completed briefs in [`spike-2/design/archive/`](spike-2/design/archive/)
+- [`archive/spike-2/README.md`](archive/spike-2/README.md) — spike overview (no open steps)
+- [`archive/spike-2/completed.md`](archive/spike-2/completed.md) — finished Spike 2 steps
+- [`archive/spike-2/dogfood.md`](archive/spike-2/dogfood.md) — how to dogfood the Source catalog
+- [`archive/spike-2/design/`](archive/spike-2/design/) — Claude Design briefs; completed briefs in [`archive/spike-2/design/archive/`](archive/spike-2/design/archive/)
 
 Older milestone notes live in [`archive/`](archive/).

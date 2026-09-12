@@ -46,7 +46,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Kind** | Design (Claude Design) |
 | **Depends on** | — |
 | **Deliverables** | Done. Board + brief for the post-onboarding **app workspace**: leading sidebar with **Sources**, **Source types**, and **Source fields**; main content host; project label + contributor identity in chrome; Sign Out in the app menu only; label expand/collapse toggle; selected vs idle nav states; short-window sidebar scroll. No “coming soon” nav stubs. |
-| **Context** | [`application-stack.md`](../../application-stack.md) (Mac owns windows/navigation); design system README lists `SidebarNav` as add-on-demand — this board decides whether to port that component or a bespoke onboarding-aligned rail. Preserve Provenencia visual language (tokens already in `macos/App/DesignSystem/`). One clear composition: sidebar + one primary content column, not a multi-panel dashboard. |
+| **Context** | [`application-stack.md`](../../../application-stack.md) (Mac owns windows/navigation); design system README lists `SidebarNav` as add-on-demand — this board decides whether to port that component or a bespoke onboarding-aligned rail. Preserve Provenencia visual language (tokens already in `macos/App/DesignSystem/`). One clear composition: sidebar + one primary content column, not a multi-panel dashboard. |
 | **Out** | Feature destination layouts (S2-02+); Settings product; future-layer nav stubs. |
 | **Feeds** | S2-14 (and constrains how S2-15+ mount content) |
 
@@ -61,7 +61,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done) — mounts in the **Source fields** destination |
 | **Deliverables** | Done. Board for the **Source fields** destination: searchable list/table of `source_metadata_fields` (label + data type; origin visible in one list, not split lists); detail/edit (label, description; **data type immutable after create**); add/create flow with **auto slug key from label** (not user-typed). No delete. Add chrome (modal/sheet vs nested pane + back) is a Design choice. Lives inside the workspace content host — not a separate window chrome. |
-| **Context** | Source doc §5.1; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1.1 (`origin`). Simplest Spike 2 UI; no dependency on Sources catalog or type↔field suggestions. **`user` and create-time `provenencia` rows are editable; plugin rows are view-only.** |
+| **Context** | Source doc §5.1; [`seeded-vocabulary.md`](../../../seeded-vocabulary.md) §1.1 (`origin`). Simplest Spike 2 UI; no dependency on Sources catalog or type↔field suggestions. **`user` and create-time `provenencia` rows are editable; plugin rows are view-only.** |
 | **Out** | Delete/retire fields; attaching fields to types (S2-03); Source instance metadata values; Source types admin; Citations/credibility. |
 | **Feeds** | S2-15 (and supplies the field pool for S2-03) |
 
@@ -76,7 +76,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done); S2-02 (Source fields vocabulary — association picker pool) |
 | **Deliverables** | Done. Board for the **Source types** destination: list (label + key; origin visible); detail/expanded view with description + associated metadata fields from `source_type_metadata_fields`; assign associations from existing Source fields; **remove associations**; add/create type flow; **delete a type** only while unused and not plugin-owned (added when the brief was refined — T-12). **Design decision:** master–detail split, not in-list expand or a breadcrumb push. |
-| **Context** | Source doc §§3, 5.2; [`seeded-vocabulary.md`](../../seeded-vocabulary.md) §1.1. One complexity step above S2-02 because suggestions join fields. Prefer `provenencia` type rows view-only for label/description; association edit on seeded types OK for dogfood. |
+| **Context** | Source doc §§3, 5.2; [`seeded-vocabulary.md`](../../../seeded-vocabulary.md) §1.1. One complexity step above S2-02 because suggestions join fields. Prefer `provenencia` type rows view-only for label/description; association edit on seeded types OK for dogfood. |
 | **Out** | Force-deleting a Source type sources still use; field vocabulary CRUD (S2-02); Source instance UI; Artifacts. |
 | **Feeds** | S2-16 |
 
@@ -106,7 +106,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Kind** | Design (Claude Design) |
 | **Depends on** | S2-01 (done); S2-04 (done); S2-02 / S2-03 (notes/metadata + type display) |
 | **Deliverables** | Done. Board for the **individual Source page** (view/edit only — no create/draft): identity + editable title/description; **Source credibility** (three-point grade + optional argument); **Notes** and **Metadata** as distinct areas; Artifacts list with **in-place accordion**; primary File opens **externally**; **Add Artifact** centered modal; **Add file…** fileless-only — **no Replace**; **breadcrumb** to Sources list. |
-| **Context** | Source doc §§4, 6–8; credibility: [`research-judgment-model.md`](../../research-judgment-model.md) §2. Feeds S2-18 schema/FFI gaps (Artifact `label`, suggestion dismiss, metadata order, credibility tables, first-attach-only ingest). |
+| **Context** | Source doc §§4, 6–8; credibility: [`research-judgment-model.md`](../../../research-judgment-model.md) §2. Feeds S2-18 schema/FFI gaps (Artifact `label`, suggestion dismiss, metadata order, credibility tables, first-attach-only ingest). |
 | **Out** | Redesigning the Sources list; delete; Replace file; Citations / Observations / Nodes; Claim confidence; in-app File preview; project Files browser (S2-20). |
 | **Feeds** | S2-24 → S2-18 (and S2-25 / S2-26) |
 
@@ -119,7 +119,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Kind** | PR |
 | **Depends on** | — (merge before any Source mutation PR) |
 | **Deliverables** | Done. Migration `000003` + `core/database/audit.Record` on `sql.Tx`; create/update/delete JSON and monotonic revision tested. |
-| **Context** | Spike 1 explicit gate. Skills: [`add-catalog-migration`](../../../.cursor/skills/add-catalog-migration/SKILL.md), [`add-catalog-query`](../../../.cursor/skills/add-catalog-query/SKILL.md). Entity types will include `source`, `artifact`, `file`, `source_metadata`, etc. as later PRs land — helper should accept `entity_type` string. |
+| **Context** | Spike 1 explicit gate. Skills: [`add-catalog-migration`](../../../../.cursor/skills/add-catalog-migration/SKILL.md), [`add-catalog-query`](../../../../.cursor/skills/add-catalog-query/SKILL.md). Entity types will include `source`, `artifact`, `file`, `source_metadata`, etc. as later PRs land — helper should accept `entity_type` string. |
 | **Notes** | Do not audit the audit tables. `user_id` from install/session UUID already in `users`. |
 
 ---
@@ -154,7 +154,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Kind** | PR |
 | **Depends on** | S2-05, S2-07 |
 | **Deliverables** | Done. Migration `000006` + `sources` package; SRC refs; audited create/update Source and note add/update/delete; list/get by id/ref. |
-| **Context** | Source doc §4; [`catalog-refs.md`](../../catalog-refs.md); `ref.PrefixSource`. |
+| **Context** | Source doc §4; [`catalog-refs.md`](../../../catalog-refs.md); `ref.PrefixSource`. |
 | **Out** | FFI/UI; metadata; artifacts. |
 
 ---
@@ -211,7 +211,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Kind** | PR |
 | **Depends on** | S2-08…S2-11 (S2-12 optional) |
 | **Deliverables** | Done. Proto + handlers for Source list/workspace/CRUD, notes, metadata, artifacts, ingest, types/fields; GenealogyStore/FakeStore/GoStore; L10n for new apperr codes; runRPC tests. |
-| **Context** | Skills: [`add-ffi-handler`](../../../.cursor/skills/add-ffi-handler/SKILL.md); stack § FFI granularity. Extend `GenealogyStore` + `FakeStore` in the same PR or with S2-15 — prefer same PR if FakeStore otherwise blocks Swift tests. |
+| **Context** | Skills: [`add-ffi-handler`](../../../../.cursor/skills/add-ffi-handler/SKILL.md); stack § FFI granularity. Extend `GenealogyStore` + `FakeStore` in the same PR or with S2-15 — prefer same PR if FakeStore otherwise blocks Swift tests. |
 
 ---
 
@@ -222,7 +222,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Kind** | PR |
 | **Depends on** | S2-01 (design enough); Spike 1 onboarding “signed in” as the entry point to replace |
 | **Deliverables** | Done. Post-sign-in **app workspace** with sidebar + content host; destinations **Sources**, **Source types**, **Source fields** (placeholder panes); session/project chrome per S2-01; **Sign Out** via app menu only; selection-driven content; L10n for nav labels; chrome in `Features/Workspace/`. |
-| **Context** | [`macos-client-patterns.md`](../../macos-client-patterns.md); [`application-stack.md`](../../application-stack.md) (navigation is a Mac concern). This step is **chrome only** — no Source CRUD UI. |
+| **Context** | [`macos-client-patterns.md`](../../../macos-client-patterns.md); [`application-stack.md`](../../../application-stack.md) (navigation is a Mac concern). This step is **chrome only** — no Source CRUD UI. |
 | **Out** | Feature destination content (S2-15+); interpreting other layers. |
 | **Notes** | Shipped as discrete chrome (not folded into Source catalog). |
 
@@ -243,7 +243,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 
 ### S2-22 — PR: `PVTable` — custom-chrome table with keyboard/a11y
 
-**Implementation brief (full checklist for the implementing agent):** [`S2-22-pv-table.md`](S2-22-pv-table.md)
+**Implementation brief (full checklist for the implementing agent):** [`S2-22-pv-table.md`](../S2-22-pv-table.md)
 
 | | |
 | --- | --- |
@@ -287,8 +287,8 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-23 (done), S2-13 |
-| **Deliverables** | Done. **Engine/docs only (no Source page UI):** (1) Artifact **`label`** column (required) — migration + query/proto/FFI create/update/get/list; (2) **first-attach only** — `IngestArtifactFile` rejects when Artifact already has a File; align [`source-layer-data-model.md`](../../source-layer-data-model.md); (3) **Source credibility** — migrate `source_credibility_grades` + `source_credibility_assessments`, seed `provenencia` grades (`low_trust` / `standard` / `high_trust`), audited get/upsert assessment + list grades, expose on Source workspace FFI (do **not** add a column on `sources`). Go + `FakeStore`/protocol stubs + tests. |
-| **Context** | Unblocked S2-18 UI. Credibility semantics: [`research-judgment-model.md`](../../research-judgment-model.md) §2. |
+| **Deliverables** | Done. **Engine/docs only (no Source page UI):** (1) Artifact **`label`** column (required) — migration + query/proto/FFI create/update/get/list; (2) **first-attach only** — `IngestArtifactFile` rejects when Artifact already has a File; align [`source-layer-data-model.md`](../../../source-layer-data-model.md); (3) **Source credibility** — migrate `source_credibility_grades` + `source_credibility_assessments`, seed `provenencia` grades (`low_trust` / `standard` / `high_trust`), audited get/upsert assessment + list grades, expose on Source workspace FFI (do **not** add a column on `sources`). Go + `FakeStore`/protocol stubs + tests. |
+| **Context** | Unblocked S2-18 UI. Credibility semantics: [`research-judgment-model.md`](../../../research-judgment-model.md) §2. |
 | **Out** | Source page SwiftUI; metadata suggestion dismiss / `sort_order`; thumbnail ensure/list; Files browser. |
 | **Feeds** | S2-18 |
 
@@ -339,7 +339,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | --- | --- |
 | **Kind** | PR |
 | **Depends on** | S2-14, S2-15, S2-22, S2-16, S2-17, S2-24, S2-18, S2-25, S2-26 |
-| **Deliverables** | Done. Empty/error copy pass (`pageError` page banner + clear, list/vocab `loadError`, Add Source dialog-level create error, Description/Metadata empties, notes empty title split, stale workspace placeholders pruned). Accessibility identifiers for dialog/confirm actions, vocabulary search/forms, and date editor controls. FFI regression: duplicate type/field key codes, ingest missing path → `ingest.invalid`, audit after `create_source` / `create_artifact` / `create_file`. Swift FakeStore + model tests for duplicate key L10n and ingest.invalid. Spike archived in [`../README.md`](../README.md); dogfood note: [`dogfood.md`](dogfood.md). |
+| **Deliverables** | Done. Empty/error copy pass (`pageError` page banner + clear, list/vocab `loadError`, Add Source dialog-level create error, Description/Metadata empties, notes empty title split, stale workspace placeholders pruned). Accessibility identifiers for dialog/confirm actions, vocabulary search/forms, and date editor controls. FFI regression: duplicate type/field key codes, ingest missing path → `ingest.invalid`, audit after `create_source` / `create_artifact` / `create_file`. Swift FakeStore + model tests for duplicate key L10n and ingest.invalid. Spike archived in [`../../README.md`](../../README.md); dogfood note: [`dogfood.md`](dogfood.md). |
 | **Context** | Closes Spike 2 Definition of done for first dogfood without a SemVer bump. |
 | **Out** | Product SemVer bump / release tag; XCUITest target; project Files list (S2-20/S2-21). |
 | **Feeds** | — |

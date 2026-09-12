@@ -4,8 +4,8 @@
 **Spike:** Provenencia Spike 2 (Source layer validation)  
 **Implements later as:** PRs **S2-24** (schema precede) → **S2-18** (page + Artifacts) → **S2-25** (Metadata) / **S2-26** (thumbnails)
 **Depends on:** S2-01 workspace chrome (done); S2-04 Sources list (how researchers arrive here); S2-02 / S2-03 vocabulary (metadata editor + type display)  
-**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`S2-02-source-fields.md`](S2-02-source-fields.md), [`S2-03-source-types.md`](S2-03-source-types.md), [`../S2-20-files-list.md`](../S2-20-files-list.md)  
-**Judgment model:** [`research-judgment-model.md`](../../../../research-judgment-model.md) §2 (Source credibility assessments)
+**Related briefs:** [`S2-04-sources-list.md`](S2-04-sources-list.md), [`S2-02-source-fields.md`](S2-02-source-fields.md), [`S2-03-source-types.md`](S2-03-source-types.md), [`S2-20-files-list.md`](S2-20-files-list.md)  
+**Judgment model:** [`research-judgment-model.md`](../../../../../research-judgment-model.md) §2 (Source credibility assessments)
 
 Paste this entire document into Claude Design as the requirements for one board/flow.
 
@@ -35,7 +35,7 @@ Include **add flows** on this page: **Add Artifact** (same centered dimming moda
 
 ## 2. Domain model (UI must reflect)
 
-Authoritative: [`source-layer-data-model.md`](../../../../source-layer-data-model.md) §§4, 6–8; stack rules for ingest (bytes never in protobuf). Source **credibility** is Interpretation judgment ([`research-judgment-model.md`](../../../../research-judgment-model.md) §2) — **not** a column on `sources` — but the **Source page is the right UI** to set it during intake.
+Authoritative: [`source-layer-data-model.md`](../../../../../source-layer-data-model.md) §§4, 6–8; stack rules for ingest (bytes never in protobuf). Source **credibility** is Interpretation judgment ([`research-judgment-model.md`](../../../../../research-judgment-model.md) §2) — **not** a column on `sources` — but the **Source page is the right UI** to set it during intake.
 
 ### 2.1 Source
 
@@ -248,9 +248,9 @@ S2-23 feeds **several** PRs (do not recombine into one mega-PR):
 | Gap | Owner |
 | --- | --- |
 | Artifact ↔ File association | **Exists:** `CreateArtifact`, `IngestArtifactFile`. |
-| No primary-File replace | **S2-24:** reject `IngestArtifactFile` when Artifact already has a File; update [`source-layer-data-model.md`](../../../../source-layer-data-model.md). |
+| No primary-File replace | **S2-24:** reject `IngestArtifactFile` when Artifact already has a File; update [`source-layer-data-model.md`](../../../../../source-layer-data-model.md). |
 | Artifact `label` column | **S2-24:** migration + query/FFI/proto. |
-| Source credibility assessments | **S2-24** schema/FFI/seed; **S2-18** Source page UI. See [`research-judgment-model.md`](../../../../research-judgment-model.md) §2. Do **not** add a credibility column on `sources`. |
+| Source credibility assessments | **S2-24** schema/FFI/seed; **S2-18** Source page UI. See [`research-judgment-model.md`](../../../../../research-judgment-model.md) §2. Do **not** add a credibility column on `sources`. |
 | Source page shell + Artifacts + ingest + external open | **S2-18** (thumbnail placeholders OK). |
 | Per-Source suggestion dismiss + metadata `sort_order` + Metadata UI | **S2-25**. |
 | List / workspace thumbnail refs | **S2-26** (Sources + Artifact rows); S2-21 reuses. |

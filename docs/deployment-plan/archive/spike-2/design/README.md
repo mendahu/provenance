@@ -12,7 +12,7 @@ _None._ Spike 2 Design work is complete (see [Completed](#completed)); product p
 
 | Step | Brief | Notes |
 | --- | --- | --- |
-| S2-20 | [`S2-20-files-list.md`](S2-20-files-list.md) | Project Files list + PR S2-21 — not building in Spike 2 |
+| S2-20 | [`archive/S2-20-files-list.md`](archive/S2-20-files-list.md) | Project Files list + PR S2-21 — not building in Spike 2 |
 
 ## Completed
 
