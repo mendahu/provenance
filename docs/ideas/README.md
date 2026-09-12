@@ -19,7 +19,7 @@ Use this folder when something useful pops up mid-work and would otherwise get l
 | [Share packages](share-packages.md) | One-button export of a Source (or later a canonical entity) as a readable, standards-friendly bundle for other researchers. |
 | [Catalog access serialization](catalog-access-serialization.md) | Serialize exclusive catalog opens (and related DB/FFI performance) so concurrent RPCs queue instead of failing — beyond the workspace appear-time gate. |
 | [Image optimization](image-optimization.md) | Async in-memory thumbnail cache so SwiftUI stops sync-decoding `objects/…` thumbs on every render. |
-| [File-type fallback thumbnails](file-type-fallback-thumbnails.md) | Typed glyph fallbacks for non-image Files, plus a Source primary Artifact for list/header thumbnail rollup. |
+| [File-type fallback thumbnails](file-type-fallback-thumbnails.md) | MIME glyphs + curated Source-type icons (fileless / cover) + Source primary Artifact thumbnail rollup. |
 
 ## Completed
 
