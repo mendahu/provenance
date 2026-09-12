@@ -113,7 +113,7 @@ func Ensure(c *database.Catalog, sourceFileID []byte, spec Spec) (Result, error)
 		return Result{}, ErrUnprocessable
 	}
 
-	rel, err := files.StorageRelPath(src.ChecksumSHA256)
+	rel, err := files.StorageRelPath(src.ChecksumSHA256, src.MediaType)
 	if err != nil {
 		return Result{}, err
 	}
@@ -125,7 +125,7 @@ func Ensure(c *database.Catalog, sourceFileID []byte, spec Spec) (Result, error)
 
 	sum := sha256.Sum256(derivedJPEG)
 	checksum := hex.EncodeToString(sum[:])
-	derivedRel, err := files.StorageRelPath(checksum)
+	derivedRel, err := files.StorageRelPath(checksum, "image/jpeg")
 	if err != nil {
 		return Result{}, err
 	}

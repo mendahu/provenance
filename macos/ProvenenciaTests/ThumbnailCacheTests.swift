@@ -1,0 +1,95 @@
+import AppKit
+import Foundation
+import Testing
+@testable import Provenencia
+
+@Suite
+@MainActor
+struct ThumbnailCacheTests {
+    @Test func emptyRelPathReturnsNilWithoutCaching() async {
+        let cache = ThumbnailCache()
+        let image = await cache.image(
+            projectDir: "/tmp/x.provenencia",
+            relPath: "  "
+        )
+        #expect(image == nil)
+        #expect(cache.entryCount == 0)
+    }
+
+    @Test func missingFileCachesSentinel() async {
+        let cache = ThumbnailCache()
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("thumb-cache-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+        let first = await cache.image(
+            projectDir: dir.path,
+            relPath: "objects/ab/cd/missing"
+        )
+        #expect(first == nil)
+        #expect(cache.entryCount == 1)
+
+        let second = await cache.image(
+            projectDir: dir.path,
+            relPath: "objects/ab/cd/missing"
+        )
+        #expect(second == nil)
+        #expect(cache.entryCount == 1)
+    }
+
+    @Test func loadsAndHitsCache() async throws {
+        let cache = ThumbnailCache()
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("thumb-cache-\(UUID().uuidString)", isDirectory: true)
+        let objectDir = dir.appendingPathComponent("objects/aa/bb", isDirectory: true)
+        try FileManager.default.createDirectory(at: objectDir, withIntermediateDirectories: true)
+
+        let fileURL = objectDir.appendingPathComponent("thumb.jpg")
+        // Minimal 1×1 PNG
+        let png = Data(base64Encoded:
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        )!
+        try png.write(to: fileURL)
+
+        let first = await cache.image(
+            projectDir: dir.path,
+            relPath: "objects/aa/bb/thumb.jpg"
+        )
+        #expect(first != nil)
+        #expect(cache.entryCount == 1)
+
+        let second = await cache.image(
+            projectDir: dir.path,
+            relPath: "objects/aa/bb/thumb.jpg"
+        )
+        #expect(second != nil)
+        #expect(cache.entryCount == 1)
+    }
+
+    @Test func coalescesInflightLoads() async throws {
+        let cache = ThumbnailCache()
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("thumb-cache-\(UUID().uuidString)", isDirectory: true)
+        let objectDir = dir.appendingPathComponent("objects/cc/dd", isDirectory: true)
+        try FileManager.default.createDirectory(at: objectDir, withIntermediateDirectories: true)
+
+        let fileURL = objectDir.appendingPathComponent("shared.jpg")
+        let png = Data(base64Encoded:
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        )!
+        try png.write(to: fileURL)
+
+        async let a = cache.image(
+            projectDir: dir.path,
+            relPath: "objects/cc/dd/shared.jpg"
+        )
+        async let b = cache.image(
+            projectDir: dir.path,
+            relPath: "objects/cc/dd/shared.jpg"
+        )
+        let (imgA, imgB) = await (a, b)
+        #expect(imgA != nil)
+        #expect(imgB != nil)
+        #expect(cache.entryCount == 1)
+    }
+}

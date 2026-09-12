@@ -11,19 +11,55 @@ import (
 
 func TestStorageRelPath(t *testing.T) {
 	const sum = "8fce3b0000000000000000000000000000000000000000000000000000000000"
-	got, err := StorageRelPath(sum)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name      string
+		mediaType string
+		want      string
+	}{
+		{name: "jpeg", mediaType: "image/jpeg", want: "objects/8f/ce/" + sum + ".jpg"},
+		{name: "jpeg with charset", mediaType: "image/jpeg; charset=binary", want: "objects/8f/ce/" + sum + ".jpg"},
+		{name: "png", mediaType: "image/png", want: "objects/8f/ce/" + sum + ".png"},
+		{name: "pdf", mediaType: "application/pdf", want: "objects/8f/ce/" + sum + ".pdf"},
+		{name: "unknown", mediaType: "application/octet-stream", want: "objects/8f/ce/" + sum},
+		{name: "empty", mediaType: "", want: "objects/8f/ce/" + sum},
 	}
-	want := "objects/8f/ce/" + sum
-	if got != want {
-		t.Fatalf("got %q want %q", got, want)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := StorageRelPath(sum, tt.mediaType)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != tt.want {
+				t.Fatalf("got %q want %q", got, tt.want)
+			}
+		})
 	}
-	if _, err := StorageRelPath("abcd"); !errors.Is(err, ErrInvalid) {
+	if _, err := StorageRelPath("abcd", ""); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("short %v", err)
 	}
-	if _, err := StorageRelPath("8FCE3B0000000000000000000000000000000000000000000000000000000000"); !errors.Is(err, ErrInvalid) {
+	if _, err := StorageRelPath("8FCE3B0000000000000000000000000000000000000000000000000000000000", "image/jpeg"); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("upper %v", err)
+	}
+}
+
+func TestExtensionForMediaType(t *testing.T) {
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{in: "image/jpeg", want: ".jpg"},
+		{in: "IMAGE/PNG", want: ".png"},
+		{in: "video/quicktime", want: ".mov"},
+		{in: "audio/x-wav", want: ".wav"},
+		{in: "text/plain; charset=utf-8", want: ""},
+		{in: "", want: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			if got := ExtensionForMediaType(tt.in); got != tt.want {
+				t.Fatalf("got %q want %q", got, tt.want)
+			}
+		})
 	}
 }
 

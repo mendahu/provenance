@@ -96,7 +96,7 @@ func File(c *database.Catalog, absPath string, userID []byte) (Result, error) {
 		return Result{}, err
 	}
 
-	relPath, err := files.StorageRelPath(checksum)
+	relPath, err := files.StorageRelPath(checksum, mediaType)
 	if err != nil {
 		_ = os.Remove(tmpPath)
 		return Result{}, err

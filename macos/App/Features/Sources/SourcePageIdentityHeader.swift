@@ -13,7 +13,11 @@ struct SourcePageIdentityHeader: View {
             breadcrumbs
             if model.workspace != nil {
                 HStack(alignment: .top, spacing: PVSpacing.space7) {
-                    PVThumbnail(sourceThumbnail, size: 72)
+                    CachedThumbnail(
+                        projectDir: model.pageProjectDir,
+                        relPath: model.source?.thumbnailRelPath ?? "",
+                        size: 72
+                    )
                     titleCluster
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -46,16 +50,6 @@ struct SourcePageIdentityHeader: View {
             ),
         ])
         .accessibilityIdentifier("sources.page.breadcrumbs")
-    }
-
-    private var sourceThumbnail: PVThumbnail.Content {
-        if let image = ProjectFiles.thumbnailImage(
-            projectDir: model.pageProjectDir,
-            relPath: model.source?.thumbnailRelPath ?? ""
-        ) {
-            return PVThumbnail.Content(image: image)
-        }
-        return .empty
     }
 
     private var titleCluster: some View {

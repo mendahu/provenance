@@ -68,7 +68,7 @@ func thumbnailRelPath(c *database.Catalog, sourceFileID []byte) (relPath string,
 	if err != nil {
 		return "", false, err
 	}
-	rel, err := files.StorageRelPath(f.ChecksumSHA256)
+	rel, err := files.StorageRelPath(f.ChecksumSHA256, f.MediaType)
 	if err != nil {
 		return "", false, err
 	}

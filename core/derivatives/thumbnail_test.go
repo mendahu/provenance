@@ -23,7 +23,7 @@ func installSourceFile(t *testing.T, c *database.Catalog, data []byte, mediaType
 	t.Helper()
 	sum := sha256.Sum256(data)
 	checksum := hex.EncodeToString(sum[:])
-	rel, err := files.StorageRelPath(checksum)
+	rel, err := files.StorageRelPath(checksum, mediaType)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestEnsureThumbnailIdempotent(t *testing.T) {
 	if derived.MediaType != "image/jpeg" || derived.OriginalFilename != "" {
 		t.Fatalf("%+v", derived)
 	}
-	rel, err := files.StorageRelPath(derived.ChecksumSHA256)
+	rel, err := files.StorageRelPath(derived.ChecksumSHA256, derived.MediaType)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func TestEnsureThumbnailFromGeneratedPNG(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rel, _ := files.StorageRelPath(derived.ChecksumSHA256)
+	rel, _ := files.StorageRelPath(derived.ChecksumSHA256, derived.MediaType)
 	raw, err := os.ReadFile(filepath.Join(c.Dir(), filepath.FromSlash(rel)))
 	if err != nil {
 		t.Fatal(err)
@@ -270,7 +270,7 @@ func TestEnsureThumbnailRejectsUnsafeSources(t *testing.T) {
 			srcID: func(t *testing.T) []byte {
 				id := installSourceFile(t, c, bombPNG(t, 4, 4), "image/png", "swap.png")
 				sum := sha256.Sum256(bombPNG(t, 4, 4))
-				rel, err := files.StorageRelPath(hex.EncodeToString(sum[:]))
+				rel, err := files.StorageRelPath(hex.EncodeToString(sum[:]), "image/png")
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -367,7 +367,7 @@ func TestEnsureCustomSpecAlongsideThumbnail(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rel, _ := files.StorageRelPath(derived.ChecksumSHA256)
+	rel, _ := files.StorageRelPath(derived.ChecksumSHA256, derived.MediaType)
 	raw, err := os.ReadFile(filepath.Join(c.Dir(), filepath.FromSlash(rel)))
 	if err != nil {
 		t.Fatal(err)

@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import SwiftUI
 
 /// Resolves content-addressed object paths under a `.provenencia` project and
 /// opens user-selected files for ingest. Swift never writes `objects/` itself.
@@ -23,15 +22,6 @@ enum ProjectFiles {
             return false
         }
         return NSWorkspace.shared.open(url)
-    }
-
-    /// Loads a list-cell thumbnail from `objects/…`. Missing/invalid → nil (placeholder).
-    static func thumbnailImage(projectDir: String, relPath: String) -> Image? {
-        let trimmed = relPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        let url = objectURL(projectDir: projectDir, relPath: trimmed)
-        guard let nsImage = NSImage(contentsOf: url) else { return nil }
-        return Image(nsImage: nsImage)
     }
 
     /// Presents a single-file open panel. Returns an absolute path, or nil if cancelled.

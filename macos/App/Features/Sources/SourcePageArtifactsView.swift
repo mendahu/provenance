@@ -108,7 +108,11 @@ struct SourcePageArtifactsView: View {
                         .foregroundStyle(PVColor.textMuted)
                         .rotationEffect(.degrees(expanded ? 90 : 0))
                         .frame(width: SourcePageLayout.artifactChevronWidth)
-                    PVThumbnail(artifactThumbnail(art), size: SourcePageLayout.artifactRowThumbnailSize)
+                    CachedThumbnail(
+                        projectDir: model.pageProjectDir,
+                        relPath: art.thumbnailRelPath,
+                        size: SourcePageLayout.artifactRowThumbnailSize
+                    )
                     Text(art.label.isEmpty ? art.ref : art.label)
                         .font(PVFont.body(size: PVTypeScale.bodySmall))
                         .foregroundStyle(PVColor.textPrimary)
@@ -180,7 +184,11 @@ struct SourcePageArtifactsView: View {
             if let file = art.file, !art.fileID.isEmpty {
                 PVCard(cornerRadius: PVRadius.sm, padding: PVSpacing.space6) {
                     HStack(spacing: PVSpacing.space6) {
-                        PVThumbnail(artifactThumbnail(art), size: 56)
+                        CachedThumbnail(
+                            projectDir: model.pageProjectDir,
+                            relPath: art.thumbnailRelPath,
+                            size: 56
+                        )
                         VStack(alignment: .leading, spacing: PVSpacing.space2) {
                             Text(file.originalFilename)
                                 .font(PVFont.mono(size: PVTypeScale.caption))
@@ -211,16 +219,6 @@ struct SourcePageArtifactsView: View {
                 .accessibilityIdentifier("sources.page.artifact.\(art.id).addFile")
             }
         }
-    }
-
-    private func artifactThumbnail(_ art: CatalogArtifact) -> PVThumbnail.Content {
-        if let image = ProjectFiles.thumbnailImage(
-            projectDir: model.pageProjectDir,
-            relPath: art.thumbnailRelPath
-        ) {
-            return PVThumbnail.Content(image: image)
-        }
-        return .empty
     }
 
     private func fileMetaLine(_ file: CatalogFileRef) -> String {

@@ -23,7 +23,7 @@ const (
 	sqlCount          = `SELECT COUNT(*) FROM files`
 )
 
-// File is one files row. Storage path is derived from ChecksumSHA256, not stored.
+// File is one files row. Storage path is derived from ChecksumSHA256 + MediaType, not stored.
 type File struct {
 	ID               []byte
 	ChecksumSHA256   string
@@ -33,13 +33,52 @@ type File struct {
 	ByteSize  int64
 }
 
-// StorageRelPath returns objects/{hh}/{hh}/{fullhex} for a 64-char lowercase hex checksum.
-func StorageRelPath(checksumHex string) (string, error) {
+// ExtensionForMediaType returns a leading-dot suffix for known MIME types
+// (e.g. ".jpg"), or "" when unknown / empty. Strips ";…" parameters.
+func ExtensionForMediaType(mediaType string) string {
+	mediaType = strings.TrimSpace(mediaType)
+	if i := strings.IndexByte(mediaType, ';'); i >= 0 {
+		mediaType = mediaType[:i]
+	}
+	mediaType = strings.ToLower(strings.TrimSpace(mediaType))
+	switch mediaType {
+	case "image/jpeg":
+		return ".jpg"
+	case "image/png":
+		return ".png"
+	case "image/gif":
+		return ".gif"
+	case "image/webp":
+		return ".webp"
+	case "image/bmp":
+		return ".bmp"
+	case "image/tiff", "image/tif":
+		return ".tiff"
+	case "application/pdf":
+		return ".pdf"
+	case "video/mp4":
+		return ".mp4"
+	case "video/quicktime":
+		return ".mov"
+	case "audio/mpeg":
+		return ".mp3"
+	case "audio/wav", "audio/wave", "audio/x-wav":
+		return ".wav"
+	default:
+		return ""
+	}
+}
+
+// StorageRelPath returns objects/{hh}/{hh}/{fullhex}{ext} for a 64-char
+// lowercase hex checksum. ext is MIME-derived (see ExtensionForMediaType);
+// unknown media types keep the bare hex basename.
+func StorageRelPath(checksumHex, mediaType string) (string, error) {
 	checksumHex = strings.TrimSpace(checksumHex)
 	if len(checksumHex) != 64 || !isLowerHex(checksumHex) {
 		return "", ErrInvalid
 	}
-	return "objects/" + checksumHex[0:2] + "/" + checksumHex[2:4] + "/" + checksumHex, nil
+	base := "objects/" + checksumHex[0:2] + "/" + checksumHex[2:4] + "/" + checksumHex
+	return base + ExtensionForMediaType(mediaType), nil
 }
 
 // Lookup returns a File by id, or sql.ErrNoRows.

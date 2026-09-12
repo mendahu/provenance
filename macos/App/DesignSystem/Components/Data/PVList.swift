@@ -84,13 +84,13 @@ enum PVListDensity {
 
 // MARK: - List
 
-struct PVList<Row: Identifiable, ID: Hashable>: View where Row.ID == ID {
+struct PVList<Row: Identifiable, ID: Hashable, Thumbnail: View>: View where Row.ID == ID {
     let rows: [Row]
     let label: LocalizedStringResource
     let primary: (Row) -> String
     let secondary: ((Row) -> String?)?
     let meta: ((Row) -> String?)?
-    let thumbnail: ((Row) -> PVThumbnail.Content)?
+    let thumbnail: ((Row) -> Thumbnail)?
     let showsChevron: Bool
     let density: PVListDensity
     let onActivate: (ID) -> Void
@@ -107,7 +107,7 @@ struct PVList<Row: Identifiable, ID: Hashable>: View where Row.ID == ID {
         primary: @escaping (Row) -> String,
         secondary: ((Row) -> String?)? = nil,
         meta: ((Row) -> String?)? = nil,
-        thumbnail: ((Row) -> PVThumbnail.Content)? = nil,
+        @ViewBuilder thumbnail: @escaping (Row) -> Thumbnail,
         showsChevron: Bool = true,
         density: PVListDensity = .comfortable,
         onActivate: @escaping (ID) -> Void,
@@ -158,7 +158,7 @@ struct PVList<Row: Identifiable, ID: Hashable>: View where Row.ID == ID {
         return PVHoverEffect(isPressed: false, hoverAnimation: PVMotion.fastStandard) { showHover in
             HStack(spacing: PVSpacing.space5) {
                 if let thumbnail {
-                    PVThumbnail(thumbnail(row))
+                    thumbnail(row)
                 }
                 VStack(alignment: .leading, spacing: PVSpacing.space1) {
                     Text(primary(row))
@@ -276,6 +276,31 @@ struct PVList<Row: Identifiable, ID: Hashable>: View where Row.ID == ID {
     }
 }
 
+extension PVList where Thumbnail == EmptyView {
+    init(
+        rows: [Row],
+        label: LocalizedStringResource,
+        primary: @escaping (Row) -> String,
+        secondary: ((Row) -> String?)? = nil,
+        meta: ((Row) -> String?)? = nil,
+        showsChevron: Bool = true,
+        density: PVListDensity = .comfortable,
+        onActivate: @escaping (ID) -> Void,
+        rowAccessibilityIdentifier: ((Row) -> String)? = nil
+    ) {
+        self.rows = rows
+        self.label = label
+        self.primary = primary
+        self.secondary = secondary
+        self.meta = meta
+        self.thumbnail = nil
+        self.showsChevron = showsChevron
+        self.density = density
+        self.onActivate = onActivate
+        self.rowAccessibilityIdentifier = rowAccessibilityIdentifier
+    }
+}
+
 #Preview {
     struct PreviewRow: Identifiable {
         let id: String
@@ -296,7 +321,9 @@ struct PVList<Row: Identifiable, ID: Hashable>: View where Row.ID == ID {
         primary: { $0.title },
         secondary: { $0.type },
         meta: { $0.ref },
-        thumbnail: { $0.hasThumb ? PVThumbnail.Content(icon: .photo) : .empty },
+        thumbnail: { row in
+            PVThumbnail(row.hasThumb ? PVThumbnail.Content(icon: .photo) : .empty)
+        },
         onActivate: { _ in }
     )
     .frame(width: 640, height: 220)
