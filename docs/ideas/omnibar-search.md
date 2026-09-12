@@ -124,4 +124,4 @@ Local-first catalogs invite keyboard navigation. Short refs were designed to be 
 - [`conclusion-layer-data-model.md`](../conclusion-layer-data-model.md)
 - [`macos-client-patterns.md`](../macos-client-patterns.md)
 - [`navigation-history.md`](navigation-history.md) (Back/Forward after omnibar jumps)
-- Deployment briefs that already assume local list search: [`S2-04-sources-list.md`](../deployment-plan/spike-2/design/archive/S2-04-sources-list.md), [`S2-20-files-list.md`](../deployment-plan/spike-2/design/S2-20-files-list.md)
+- Deployment briefs that already assume local list search: [`S2-04-sources-list.md`](../deployment-plan/spike-2/design/archive/S2-04-sources-list.md); [`S2-20-files-list.md`](../deployment-plan/spike-2/design/S2-20-files-list.md) (descoped — Files list not in Spike 2)

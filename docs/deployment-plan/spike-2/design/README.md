@@ -6,9 +6,13 @@ Finished briefs live in [`archive/`](archive/). Sprint task list: [`../README.md
 
 ## Open
 
-| Step | Brief | Feeds implementation |
+_None._ Remaining Spike 2 work is polish (**S2-19**), not Design.
+
+## Descoped
+
+| Step | Brief | Notes |
 | --- | --- | --- |
-| S2-20 | [`S2-20-files-list.md`](S2-20-files-list.md) | PR S2-21 |
+| S2-20 | [`S2-20-files-list.md`](S2-20-files-list.md) | Project Files list + PR S2-21 — not building in Spike 2 |
 
 ## Completed
 
@@ -46,6 +50,6 @@ Claude Design HTML exports checked in for implementation sync (not briefs):
 - Short human ids (`SRC-…`, `ART-…`, `USR-…`) are shown in mono; UUIDs are not primary UI.
 - Vocabulary rows use `origin` (`provenencia` / `user` / `plugin:…`) — surface origin in admin UIs; do not invent a separate “builtin” flag.
 - An Artifact has **zero or one** primary File; multiple scans are multiple Artifacts. Derivatives belong to Files.
-- Workspace sidebar destinations for Spike 2: **Sources**, **Source types**, **Source fields**, **Files**.
+- Workspace sidebar destinations for Spike 2: **Sources**, **Source types**, **Source fields** (a **Files** placeholder may remain from S2-14; project Files list was S2-20/S2-21 and is descoped).
 - **Sources** uses a **separate Source page** (not master–detail like types/fields): list is S2-04; Source → Artifact → File is S2-23.
 - **Sources list** is **list-style** (thumbnail rows), **not** `PVTable`. Vocabulary (fields/types) keeps the table.

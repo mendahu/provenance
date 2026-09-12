@@ -1,8 +1,10 @@
 # S2-20 — Files list (project file browser)
 
+> **Descoped (Spike 2).** Do not hand this brief to Claude Design or implement PR S2-21. File ingest/open stay on the Source page. Kept for history — see [`../README.md`](../README.md)#descoped.
+
 **Kind:** Claude Design board  
 **Spike:** Provenencia Spike 2 (Source layer validation)  
-**Implements later as:** PR S2-21  
+**Implements later as:** PR S2-21 _(descoped)_  
 **Depends on:** S2-01 workspace chrome (done — **Files** destination already shipped as a placeholder); S2-23 Source page (link target for “open Source”)  
 **Related briefs:** [`archive/S2-04-sources-list.md`](archive/S2-04-sources-list.md), [`archive/S2-23-source-detail.md`](archive/S2-23-source-detail.md)
 

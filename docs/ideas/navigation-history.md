@@ -91,4 +91,4 @@ Evidence work is link-shaped: Source ↔ File ↔ (later) Citation ↔ Person. W
 - [`macos-client-patterns.md`](../macos-client-patterns.md)
 - [`S2-01-workspace-chrome.md`](../deployment-plan/spike-2/design/archive/S2-01-workspace-chrome.md)
 - [`S2-04-sources-list.md`](../deployment-plan/spike-2/design/archive/S2-04-sources-list.md) / [`S2-23-source-detail.md`](../deployment-plan/spike-2/design/archive/S2-23-source-detail.md) (list ↔ Source page; local back vs history)
-- [`S2-20-files-list.md`](../deployment-plan/spike-2/design/S2-20-files-list.md) (Source deep link)
+- [`S2-20-files-list.md`](../deployment-plan/spike-2/design/S2-20-files-list.md) (Source deep link — brief descoped with S2-21; still useful as a Files→Source jump sketch)
