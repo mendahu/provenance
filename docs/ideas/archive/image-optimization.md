@@ -1,6 +1,6 @@
 # Image optimization (async thumbnail cache + object extensions)
 
-**Status:** done — archived after `ThumbnailCache` / `CachedThumbnail` on macOS and MIME-derived extensions on `objects/…` (`files.StorageRelPath` + `EnsureObjectExtensions` on open).
+**Status:** done — archived after `ThumbnailCache` / `CachedThumbnail` on macOS and MIME-derived extensions on `objects/…` (`files.StorageRelPath`).
 
 ## Problem
 

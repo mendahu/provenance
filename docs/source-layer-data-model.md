@@ -296,7 +296,7 @@ The basename is the full lowercase hex checksum plus an optional MIME-derived ex
 
 The stored object is the **original file bytes** (JPEG, PNG, PDF, …). Hash names do not encrypt or wrap the payload. A user who opens the object in a normal viewer sees the picture or document. The ingest filename is `files.original_filename`, not the path on disk.
 
-This keeps projects relocatable and prevents `storage_path` and checksum from becoming competing sources of truth. Existing projects with extensionless objects are renamed on researcher open (`EnsureObjectExtensions`).
+This keeps projects relocatable and prevents `storage_path` and checksum from becoming competing sources of truth.
 
 ## Original filename
 

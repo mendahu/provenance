@@ -19,8 +19,6 @@ const (
 		FROM files WHERE id = ?`
 	sqlLookupChecksum = `SELECT id, checksum_sha256, COALESCE(original_filename, ''), COALESCE(media_type, ''), byte_size
 		FROM files WHERE checksum_sha256 = ?`
-	sqlList = `SELECT id, checksum_sha256, COALESCE(original_filename, ''), COALESCE(media_type, ''), byte_size
-		FROM files ORDER BY checksum_sha256`
 	sqlUpdateFilename = `UPDATE files SET original_filename = ? WHERE id = ?`
 	sqlCount          = `SELECT COUNT(*) FROM files`
 )
@@ -75,20 +73,12 @@ func ExtensionForMediaType(mediaType string) string {
 // lowercase hex checksum. ext is MIME-derived (see ExtensionForMediaType);
 // unknown media types keep the bare hex basename.
 func StorageRelPath(checksumHex, mediaType string) (string, error) {
-	base, err := storageRelPathBase(checksumHex)
-	if err != nil {
-		return "", err
-	}
-	return base + ExtensionForMediaType(mediaType), nil
-}
-
-// storageRelPathBase returns the extensionless objects/{hh}/{hh}/{hex} path.
-func storageRelPathBase(checksumHex string) (string, error) {
 	checksumHex = strings.TrimSpace(checksumHex)
 	if len(checksumHex) != 64 || !isLowerHex(checksumHex) {
 		return "", ErrInvalid
 	}
-	return "objects/" + checksumHex[0:2] + "/" + checksumHex[2:4] + "/" + checksumHex, nil
+	base := "objects/" + checksumHex[0:2] + "/" + checksumHex[2:4] + "/" + checksumHex
+	return base + ExtensionForMediaType(mediaType), nil
 }
 
 // Lookup returns a File by id, or sql.ErrNoRows.
@@ -114,28 +104,6 @@ func LookupByChecksum(c *database.Catalog, checksumHex string) (File, error) {
 		return File{}, ErrInvalid
 	}
 	return scanFile(db.QueryRow(sqlLookupChecksum, checksumHex))
-}
-
-// List returns every files row ordered by checksum.
-func List(c *database.Catalog) ([]File, error) {
-	db, err := c.DB()
-	if err != nil {
-		return nil, err
-	}
-	rows, err := db.Query(sqlList)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []File
-	for rows.Next() {
-		f, err := scanFile(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, f)
-	}
-	return out, rows.Err()
 }
 
 // Insert writes a new files row on tx. ID must be 16 bytes; checksum lowercase hex.
