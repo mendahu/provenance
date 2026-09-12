@@ -3,6 +3,7 @@ import Testing
 @testable import Provenencia
 
 @Suite
+@MainActor
 struct CatalogSessionStoreTests {
     private let projectDir = "/tmp/session.provenencia"
 
