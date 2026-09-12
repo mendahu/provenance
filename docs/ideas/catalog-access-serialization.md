@@ -181,13 +181,21 @@ Platform:      held session + serial queue     // one op at a time
 SQLite:        one exclusive connection for this project while workspace is open
 ```
 
-## Suggested phasing (when scheduled)
+## Suggested delivery (when scheduled)
 
-1. **Session + Go serial queue (A2 + B1)** — intended minimum; features can overlap awaits safely; open amortized
-2. Remove or narrow appear-time `isCatalogReady` gate once queue is proven
-3. **Measure** queue wait vs query time under real navigation
-4. **Direction C batching** — only if measurement still shows painful chatty RPCs; prefer not to; handle per feature if unavoidable
-5. **B3 multi-reader** only if overlapping reads are ever justified — not assumed
+One *job*, **two reviewable PRs** (optional third). Not one mega-PR, and not a long series that leaves mixed open-per-call vs session handlers.
+
+| PR | Delivers | Leaves the tree… |
+| --- | --- | --- |
+| **1 — Go session + serial queue + all handlers** | Held catalog session API (B1); Go mutex/serial queue (A2); **every** catalog FFI path uses the session (no leftover per-handler `openProjectCatalog` + `Close`); Go tests for overlapping calls and close/switch | Core is correct and open is amortized; Mac may still bind session lifetime awkwardly (e.g. open on first RPC / close on sign-out) until PR 2 |
+| **2 — Mac lifecycle** | Explicit session open/close on workspace enter/leave and project switch; `GenealogyStore` / FakeStore wired; drop or narrow `isCatalogReady` | Features can overlap `async` store calls end-to-end without UI lock gates |
+| **3 (optional)** | Hardening: concurrent Swift tests, clearer errors if anything bypasses the session, stack/client-pattern doc updates | Polish |
+
+**Do not** split PR 1 into “half the handlers” unless a single doorway *forbids* non-session opens — a hybrid open-per-call + session world is worse than today’s races.
+
+**Do not** ship “serialize opens only” as the lasting architecture if A+B is the locked minimum. A short-lived queue-around-`Open` on a branch is fine only as a stepping stone toward the session, not the end state.
+
+After A+B is live: **measure** queue wait vs query time. **Direction C** batching and **B3** multi-reader stay deferred (see Non-goals).
 
 ## Open questions
 
