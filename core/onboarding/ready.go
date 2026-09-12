@@ -2,6 +2,7 @@ package onboarding
 
 import (
 	"github.com/mendahu/provenencia/core/database"
+	"github.com/mendahu/provenencia/core/database/files"
 	"github.com/mendahu/provenencia/core/database/sourcecredibilitygrades"
 	"github.com/mendahu/provenencia/core/database/sourcevocab"
 	"github.com/mendahu/provenencia/core/database/users"
@@ -31,15 +32,20 @@ func createCatalog(parent, folder string) (*database.Catalog, error) {
 	return c, nil
 }
 
-// OpenCatalog opens a project for researcher use (migrate + ensure user refs).
-// FFI Source handlers and onboarding open paths must use this, not database.Open.
-// Does not re-install or heal Source vocabulary or credibility grades.
+// OpenCatalog opens a project for researcher use (migrate + ensure user refs +
+// object-store extension rename). FFI Source handlers and onboarding open paths
+// must use this, not database.Open. Does not re-install or heal Source
+// vocabulary or credibility grades.
 func OpenCatalog(projectDir string) (*database.Catalog, error) {
 	c, err := database.Open(projectDir)
 	if err != nil {
 		return nil, err
 	}
 	if err := users.EnsureRefs(c); err != nil {
+		_ = c.Close()
+		return nil, err
+	}
+	if err := files.EnsureObjectExtensions(c); err != nil {
 		_ = c.Close()
 		return nil, err
 	}

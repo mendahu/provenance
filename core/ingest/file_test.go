@@ -73,7 +73,7 @@ func TestFile(t *testing.T) {
 		if res.Reused || res.IngestedAs != "scan.jpg" {
 			t.Fatalf("result %+v", res)
 		}
-		wantRel, err := files.StorageRelPath(wantSum)
+		wantRel, err := files.StorageRelPath(wantSum, res.File.MediaType)
 		if err != nil || res.RelPath != wantRel {
 			t.Fatalf("rel %q want %q err %v", res.RelPath, wantRel, err)
 		}

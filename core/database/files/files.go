@@ -19,11 +19,13 @@ const (
 		FROM files WHERE id = ?`
 	sqlLookupChecksum = `SELECT id, checksum_sha256, COALESCE(original_filename, ''), COALESCE(media_type, ''), byte_size
 		FROM files WHERE checksum_sha256 = ?`
+	sqlList = `SELECT id, checksum_sha256, COALESCE(original_filename, ''), COALESCE(media_type, ''), byte_size
+		FROM files ORDER BY checksum_sha256`
 	sqlUpdateFilename = `UPDATE files SET original_filename = ? WHERE id = ?`
 	sqlCount          = `SELECT COUNT(*) FROM files`
 )
 
-// File is one files row. Storage path is derived from ChecksumSHA256, not stored.
+// File is one files row. Storage path is derived from ChecksumSHA256 + MediaType, not stored.
 type File struct {
 	ID               []byte
 	ChecksumSHA256   string
@@ -33,8 +35,55 @@ type File struct {
 	ByteSize  int64
 }
 
-// StorageRelPath returns objects/{hh}/{hh}/{fullhex} for a 64-char lowercase hex checksum.
-func StorageRelPath(checksumHex string) (string, error) {
+// ExtensionForMediaType returns a leading-dot suffix for known MIME types
+// (e.g. ".jpg"), or "" when unknown / empty. Strips ";…" parameters.
+func ExtensionForMediaType(mediaType string) string {
+	mediaType = strings.TrimSpace(mediaType)
+	if i := strings.IndexByte(mediaType, ';'); i >= 0 {
+		mediaType = mediaType[:i]
+	}
+	mediaType = strings.ToLower(strings.TrimSpace(mediaType))
+	switch mediaType {
+	case "image/jpeg":
+		return ".jpg"
+	case "image/png":
+		return ".png"
+	case "image/gif":
+		return ".gif"
+	case "image/webp":
+		return ".webp"
+	case "image/bmp":
+		return ".bmp"
+	case "image/tiff", "image/tif":
+		return ".tiff"
+	case "application/pdf":
+		return ".pdf"
+	case "video/mp4":
+		return ".mp4"
+	case "video/quicktime":
+		return ".mov"
+	case "audio/mpeg":
+		return ".mp3"
+	case "audio/wav", "audio/wave", "audio/x-wav":
+		return ".wav"
+	default:
+		return ""
+	}
+}
+
+// StorageRelPath returns objects/{hh}/{hh}/{fullhex}{ext} for a 64-char
+// lowercase hex checksum. ext is MIME-derived (see ExtensionForMediaType);
+// unknown media types keep the bare hex basename.
+func StorageRelPath(checksumHex, mediaType string) (string, error) {
+	base, err := storageRelPathBase(checksumHex)
+	if err != nil {
+		return "", err
+	}
+	return base + ExtensionForMediaType(mediaType), nil
+}
+
+// storageRelPathBase returns the extensionless objects/{hh}/{hh}/{hex} path.
+func storageRelPathBase(checksumHex string) (string, error) {
 	checksumHex = strings.TrimSpace(checksumHex)
 	if len(checksumHex) != 64 || !isLowerHex(checksumHex) {
 		return "", ErrInvalid
@@ -65,6 +114,28 @@ func LookupByChecksum(c *database.Catalog, checksumHex string) (File, error) {
 		return File{}, ErrInvalid
 	}
 	return scanFile(db.QueryRow(sqlLookupChecksum, checksumHex))
+}
+
+// List returns every files row ordered by checksum.
+func List(c *database.Catalog) ([]File, error) {
+	db, err := c.DB()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := db.Query(sqlList)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []File
+	for rows.Next() {
+		f, err := scanFile(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
 }
 
 // Insert writes a new files row on tx. ID must be 16 bytes; checksum lowercase hex.

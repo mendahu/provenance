@@ -369,14 +369,12 @@ struct SourcePageModelTests {
         #expect(url.path == "/tmp/proj.provenencia/objects/ab/cd/abcd")
     }
 
-    @Test func thumbnailImageMissingRelPathReturnsNil() {
-        #expect(ProjectFiles.thumbnailImage(projectDir: "/tmp/x.provenencia", relPath: "") == nil)
-        #expect(
-            ProjectFiles.thumbnailImage(
-                projectDir: "/tmp/x.provenencia",
-                relPath: "objects/no/such/file"
-            ) == nil
+    @Test func objectURLJoinsRelPathWithExtension() {
+        let url = ProjectFiles.objectURL(
+            projectDir: "/tmp/proj.provenencia",
+            relPath: "objects/ab/cd/abcd.jpg"
         )
+        #expect(url.path == "/tmp/proj.provenencia/objects/ab/cd/abcd.jpg")
     }
 
     @Test func workspaceArtifactsCarryThumbnailRelPath() async {

@@ -275,7 +275,7 @@ On macOS, register the folder as a document package with an exported reverse-DNS
 
 **Later (not MVP):** optional **locked** projects (user key; encrypt catalog **and** objects). Convert readable ↔ locked is a full rewrite. **Backup/export** payloads may be encrypted separately without changing the live readable directory.
 
-**Object names:** Files on disk are named by **SHA-256 of their bytes** (see [`source-layer-data-model.md`](source-layer-data-model.md)), sharded as `objects/{hh}/{hh}/{checksum_hex}`. `original_filename` stays in SQLite. Hash names are identity, not encryption: a JPEG is still a JPEG in Preview.
+**Object names:** Files on disk are named by **SHA-256 of their bytes** (see [`source-layer-data-model.md`](source-layer-data-model.md)), sharded as `objects/{hh}/{hh}/{checksum_hex}{ext}` where `{ext}` is a MIME-derived suffix (e.g. `.jpg`, `.pdf`) when the sniffed `media_type` is known, otherwise bare hex. `original_filename` stays in SQLite. Hash names are identity, not encryption: a JPEG is still a JPEG in Preview.
 
 **Concurrency (MVP):** one live **writer** per project directory. A second Provenencia process opening the same folder is **refused** (or the existing window is focused). Two engines must not edit one `provenencia.sqlite`. In-process: one Go core, WAL, busy timeout, tiny pool (§10); Swift does not open the SQLite file. Split views of one tree are a **later UI** on that single engine. Quit before writing the catalog with another tool; the CLI uses the same exclusive-open rule.
 
@@ -315,7 +315,7 @@ SHA-256(file contents)
 8fce3b...
         │
         ▼
-objects/8f/ce/8fce3b...
+objects/8f/ce/8fce3b....jpg   (MIME-derived extension when known)
 ```
 
 Benefits include automatic duplicate detection, integrity checking, efficient synchronization, immutable blob identity, independence from OS filename rules, and the same paths on every platform. The object is still a normal JPEG/PDF: hash names are identity, not encryption. `original_filename` remains File metadata.
@@ -658,7 +658,7 @@ Settled:
 
 - **FFI codec:** Protocol Buffers (see §7).
 - **SQLite:** cgo + official amalgamation, `github.com/mattn/go-sqlite3` (see §10). WAL, busy timeout, tiny `MaxOpenConns`.
-- **Project format:** inspectable directory named `*.provenencia`; catalog is `provenencia.sqlite`; Files on disk as SHA-256 object names (`objects/{hh}/{hh}/{hex}`); copy whole folder across Mac/Windows. Suffix is a hint; ownership is `application_id` + schema (see §12).
+- **Project format:** inspectable directory named `*.provenencia`; catalog is `provenencia.sqlite`; Files on disk as SHA-256 object names (`objects/{hh}/{hh}/{hex}{ext}`, MIME-derived extension when known); copy whole folder across Mac/Windows. Suffix is a hint; ownership is `application_id` + schema (see §12).
 - **Runtime:** app and live project on **local disk** only. Backups to NAS/internet/object storage are post-MVP (copy or sync a closed project).
 - **Encryption:** live project is plaintext; rely on OS disk encryption. Optional locked projects and encrypted backups are post-MVP (see §12).
 - **Locking:** one writer per project; second process refused. Multi-pane UI later, same engine (see §12).

@@ -289,14 +289,14 @@ For example:
 
 ```text
 SHA-256: 8fce3b...
-storage: objects/8f/ce/8fce3b...
+storage: objects/8f/ce/8fce3b....jpg
 ```
 
-The exact sharding convention (`objects/{first two hex}/{next two}/{full hex}`) is fixed as above unless a migration notes otherwise.
+The basename is the full lowercase hex checksum plus an optional MIME-derived extension (`.jpg`, `.pdf`, …) from `media_type`. Unknown or empty media types keep the bare hex name. The exact sharding convention (`objects/{first two hex}/{next two}/{full hex}{ext}`) is fixed as above unless a migration notes otherwise.
 
 The stored object is the **original file bytes** (JPEG, PNG, PDF, …). Hash names do not encrypt or wrap the payload. A user who opens the object in a normal viewer sees the picture or document. The ingest filename is `files.original_filename`, not the path on disk.
 
-This keeps projects relocatable and prevents `storage_path` and checksum from becoming competing sources of truth.
+This keeps projects relocatable and prevents `storage_path` and checksum from becoming competing sources of truth. Existing projects with extensionless objects are renamed on researcher open (`EnsureObjectExtensions`).
 
 ## Original filename
 

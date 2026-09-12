@@ -37,6 +37,9 @@
 		AA0000000000000000000331 /* DateValueDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000330 /* DateValueDraft.swift */; };
 		AA0000000000000000000335 /* DateValueEditorForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000336 /* DateValueEditorForm.swift */; };
 		AA000000000000000000031B /* ProjectFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000031C /* ProjectFiles.swift */; };
+		AA0000000000000000000391 /* ThumbnailCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000390 /* ThumbnailCache.swift */; };
+		AA0000000000000000000393 /* CachedThumbnail.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000392 /* CachedThumbnail.swift */; };
+		AA0000000000000000000395 /* ThumbnailCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000394 /* ThumbnailCacheTests.swift */; };
 		AA0000000000000000000351 /* TimestampFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000350 /* TimestampFormat.swift */; };
 		AA000000000000000000031D /* SourcePageModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000031E /* SourcePageModelTests.swift */; };
 		AA0000000000000000000333 /* DateValueDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000332 /* DateValueDraftTests.swift */; };
@@ -187,6 +190,9 @@
 		AA0000000000000000000330 /* DateValueDraft.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueDraft.swift; sourceTree = "<group>"; };
 		AA0000000000000000000336 /* DateValueEditorForm.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueEditorForm.swift; sourceTree = "<group>"; };
 		AA000000000000000000031C /* ProjectFiles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectFiles.swift; sourceTree = "<group>"; };
+		AA0000000000000000000390 /* ThumbnailCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThumbnailCache.swift; sourceTree = "<group>"; };
+		AA0000000000000000000392 /* CachedThumbnail.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CachedThumbnail.swift; sourceTree = "<group>"; };
+		AA0000000000000000000394 /* ThumbnailCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThumbnailCacheTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000350 /* TimestampFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimestampFormat.swift; sourceTree = "<group>"; };
 		AA000000000000000000031E /* SourcePageModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SourcePageModelTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000332 /* DateValueDraftTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DateValueDraftTests.swift; sourceTree = "<group>"; };
@@ -535,6 +541,8 @@
 				AA0000000000000000000016 /* GoStore.swift */,
 				AA0000000000000000000017 /* CoreInvoke.swift */,
 				AA000000000000000000031C /* ProjectFiles.swift */,
+				AA0000000000000000000390 /* ThumbnailCache.swift */,
+				AA0000000000000000000392 /* CachedThumbnail.swift */,
 				AA0000000000000000000350 /* TimestampFormat.swift */,
 				AA000000000000000000001D /* InstallPaths.swift */,
 				AA00000000000000000000F0 /* ProjectSlug.swift */,
@@ -621,6 +629,7 @@
 				AA0000000000000000000206 /* SourceTypesModelTests.swift */,
 				AA0000000000000000000312 /* SourcesModelTests.swift */,
 				AA000000000000000000031E /* SourcePageModelTests.swift */,
+				AA0000000000000000000394 /* ThumbnailCacheTests.swift */,
 				AA0000000000000000000332 /* DateValueDraftTests.swift */,
 				AA0000000000000000000232 /* PVComboBoxTests.swift */,
 			);
@@ -882,6 +891,8 @@
 				AA0000000000000000000331 /* DateValueDraft.swift in Sources */,
 				AA0000000000000000000335 /* DateValueEditorForm.swift in Sources */,
 				AA000000000000000000031B /* ProjectFiles.swift in Sources */,
+				AA0000000000000000000391 /* ThumbnailCache.swift in Sources */,
+				AA0000000000000000000393 /* CachedThumbnail.swift in Sources */,
 				AA0000000000000000000351 /* TimestampFormat.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -905,6 +916,7 @@
 				AA0000000000000000000315 /* PVListTests.swift in Sources */,
 				AA0000000000000000000313 /* SourcesModelTests.swift in Sources */,
 				AA000000000000000000031D /* SourcePageModelTests.swift in Sources */,
+				AA0000000000000000000395 /* ThumbnailCacheTests.swift in Sources */,
 				AA0000000000000000000333 /* DateValueDraftTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

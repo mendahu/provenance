@@ -181,7 +181,7 @@ func artifactProto(c *database.Catalog, a artifacts.Artifact) (*engine.Artifact,
 		if err != nil {
 			return nil, err
 		}
-		rel, err := files.StorageRelPath(f.ChecksumSHA256)
+		rel, err := files.StorageRelPath(f.ChecksumSHA256, f.MediaType)
 		if err != nil {
 			return nil, err
 		}

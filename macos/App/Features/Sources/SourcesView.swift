@@ -246,13 +246,10 @@ struct SourcesView: View {
                 secondary: { model.typeLabel(for: $0) },
                 meta: { $0.ref },
                 thumbnail: { source in
-                    if let image = ProjectFiles.thumbnailImage(
+                    CachedThumbnail(
                         projectDir: model.pageProjectDir,
                         relPath: source.thumbnailRelPath
-                    ) {
-                        return PVThumbnail.Content(image: image)
-                    }
-                    return .empty
+                    )
                 },
                 onActivate: { model.openSource(id: $0) },
                 rowAccessibilityIdentifier: { "sources.row.\($0.id)" }
