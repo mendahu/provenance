@@ -8,18 +8,16 @@ import SwiftUI
 /// `projectDir` and `userID` are non-optional: `OnboardingView` only
 /// mounts this from `.home(projectDir:userID:)`, which is set solely via
 /// `OnboardingModel.enterHome`.
+///
+/// Catalog access is a held Go session (`catalogsession`): destination
+/// content mounts immediately and may overlap `refreshAll` / feature loads.
+/// Leave closes the session via `closeCatalogSession`.
 struct WorkspaceView: View {
     var model: OnboardingModel
     let projectDir: String
     let userID: String
     @State private var workspace: WorkspaceModel
     @State private var catalogCounts: CatalogCounts
-    /// Destination content waits until nav counts finish so its `.task` load
-    /// does not open the catalog concurrently with `refreshAll` (exclusive
-    /// SQLite lock — concurrent opens fail and leave empty badges / lists).
-    /// Broader store-level serialization is parked in
-    /// `docs/ideas/catalog-access-serialization.md`.
-    @State private var isCatalogReady = false
     @Environment(SignOutCoordinator.self) private var signOutCoordinator
 
     init(model: OnboardingModel, projectDir: String, userID: String) {
@@ -33,30 +31,20 @@ struct WorkspaceView: View {
     var body: some View {
         HStack(spacing: 0) {
             WorkspaceSidebar(session: model.session, workspace: workspace, catalogCounts: catalogCounts)
-            Group {
-                if isCatalogReady {
-                    WorkspaceContent(
-                        section: workspace.selectedSection,
-                        project: model.project,
-                        projectDir: projectDir,
-                        userID: userID,
-                        sessionDisplayName: model.session?.displayName ?? "",
-                        store: model.store,
-                        catalogCounts: catalogCounts
-                    )
-                } else {
-                    PVColor.surfacePage
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .overlay { ProgressView().tint(PVColor.accent) }
-                        .accessibilityIdentifier("workspace.content.loading")
-                }
-            }
+            WorkspaceContent(
+                section: workspace.selectedSection,
+                project: model.project,
+                projectDir: projectDir,
+                userID: userID,
+                sessionDisplayName: model.session?.displayName ?? "",
+                store: model.store,
+                catalogCounts: catalogCounts
+            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(catalogCounts)
         .task {
             await catalogCounts.refreshAll()
-            isCatalogReady = true
         }
         .onAppear {
             signOutCoordinator.isAvailable = true
@@ -66,6 +54,11 @@ struct WorkspaceView: View {
         }
         .onDisappear {
             signOutCoordinator.isAvailable = false
+            let store = model.store
+            let dir = projectDir
+            Task {
+                try? await store.closeCatalogSession(projectDir: dir)
+            }
         }
         .accessibilityIdentifier("workspace")
     }

@@ -105,6 +105,15 @@ struct GoStore: GenealogyStore {
         )
     }
 
+    func closeCatalogSession(projectDir: String) async throws {
+        var req = Provenencia_Engine_V1_CloseCatalogSessionRequest()
+        req.projectDir = projectDir
+        let _: Provenencia_Engine_V1_CloseCatalogSessionResponse = try await provenenciaCall(
+            method: CoreMethod.closeCatalogSession,
+            request: req
+        )
+    }
+
     func projectInfo(projectDir: String) async throws -> ProjectInfo {
         var req = Provenencia_Engine_V1_GetProjectInfoRequest()
         req.projectDir = projectDir

@@ -36,6 +36,14 @@ SwiftUI View  →  small Swift model / store  →  FFI  →  Go core
 
 Views may format strings and enable/disable buttons. They must not open `provenencia.sqlite` or mint UUIDs. Launch and the open picker only `stat` that the catalog file exists (`InstallPaths`); Go still owns a real open.
 
+### Catalog session (workspace)
+
+Go holds one exclusive catalog session per open project and serializes FFI ops ([`docs/ideas/catalog-access-serialization.md`](ideas/catalog-access-serialization.md), `.cursor/skills/use-catalog-session/SKILL.md`).
+
+- **Enter:** mount `WorkspaceView` and start catalog traffic (`CatalogCounts.refreshAll`, feature loads). First store call opens the session; do **not** gate content on badge refresh.
+- **Leave:** `WorkspaceView.onDisappear` calls `GenealogyStore.closeCatalogSession(projectDir:)`. Sign-out / project switch also close in Go.
+- **FakeStore:** tracks `heldCatalogProjectDir` / `lastClosedCatalogProjectDir` for unit tests — no real locking.
+
 ---
 
 ## 2. Views are value types; `body` stays cheap

@@ -208,6 +208,8 @@ protocol GenealogyStore: Sendable {
         adoptUserID: String
     ) async throws -> OnboardingResult
     func removeActiveProject(identityDir: String) async throws
+    /// Releases the held exclusive catalog session for `projectDir` (workspace leave).
+    func closeCatalogSession(projectDir: String) async throws
     func projectInfo(projectDir: String) async throws -> ProjectInfo
 
     func listSources(projectDir: String) async throws -> [CatalogSource]
