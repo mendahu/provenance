@@ -3,6 +3,8 @@ import SwiftUI
 /// Shared DateValue create/edit form body (kind, qualifier, cascade, time, phrase).
 struct DateValueEditorForm: View {
     @Binding var draft: DateValueDraft
+    /// Prefix for control identifiers (default matches the Source page date dialog).
+    var accessibilityIdentifierPrefix: String = "sources.page.date"
 
     private let months: [(String, String)] = [
         ("", "—"),
@@ -44,6 +46,7 @@ struct DateValueEditorForm: View {
                     selectionLift: true,
                     action: { draft.setKind("point") }
                 )
+                .accessibilityIdentifier("\(accessibilityIdentifierPrefix).kind.point")
                 PVChip(
                     L10n.Sources.dateKindRange,
                     isSelected: draft.kind == "range",
@@ -51,6 +54,7 @@ struct DateValueEditorForm: View {
                     selectionLift: true,
                     action: { draft.setKind("range") }
                 )
+                .accessibilityIdentifier("\(accessibilityIdentifierPrefix).kind.range")
             }
             if draft.isRange {
                 Text(L10n.Sources.dateKindRangeHint)
@@ -72,24 +76,28 @@ struct DateValueEditorForm: View {
                     tone: .accent,
                     action: { draft.qualifier = "" }
                 )
+                .accessibilityIdentifier("\(accessibilityIdentifierPrefix).qualifier.exact")
                 PVChip(
                     L10n.Sources.dateQualifierAbout,
                     isSelected: draft.qualifier == "ABT",
                     tone: .accent,
                     action: { draft.qualifier = "ABT" }
                 )
+                .accessibilityIdentifier("\(accessibilityIdentifierPrefix).qualifier.abt")
                 PVChip(
                     L10n.Sources.dateQualifierBefore,
                     isSelected: draft.qualifier == "BEF",
                     tone: .accent,
                     action: { draft.qualifier = "BEF" }
                 )
+                .accessibilityIdentifier("\(accessibilityIdentifierPrefix).qualifier.bef")
                 PVChip(
                     L10n.Sources.dateQualifierAfter,
                     isSelected: draft.qualifier == "AFT",
                     tone: .accent,
                     action: { draft.qualifier = "AFT" }
                 )
+                .accessibilityIdentifier("\(accessibilityIdentifierPrefix).qualifier.aft")
             }
         }
     }
@@ -119,7 +127,8 @@ struct DateValueEditorForm: View {
                     text: yearBinding(start),
                     width: 92,
                     mono: true,
-                    isInvalid: draft.isFieldInvalid(.year, start: start)
+                    isInvalid: draft.isFieldInvalid(.year, start: start),
+                    accessibilityIdentifier: "\(accessibilityIdentifierPrefix).\(start ? "start" : "end").year"
                 )
                 monthPicker(start: start)
                 cascadeField(
@@ -128,14 +137,15 @@ struct DateValueEditorForm: View {
                     width: 76,
                     mono: true,
                     disabled: monthBinding(start).wrappedValue.isEmpty,
-                    isInvalid: draft.isFieldInvalid(.day, start: start)
+                    isInvalid: draft.isFieldInvalid(.day, start: start),
+                    accessibilityIdentifier: "\(accessibilityIdentifierPrefix).\(start ? "start" : "end").day"
                 )
             }
             if let fieldErr = draft.cascadeFieldError(start: start) {
                 Text(fieldErr)
                     .font(PVFont.body(size: PVTypeScale.micro))
                     .foregroundStyle(PVColor.danger)
-                    .accessibilityIdentifier(start ? "sources.page.date.start.fieldError" : "sources.page.date.end.fieldError")
+                    .accessibilityIdentifier(start ? "\(accessibilityIdentifierPrefix).start.fieldError" : "\(accessibilityIdentifierPrefix).end.fieldError")
             } else if !start, let err = draft.endError {
                 Text(err)
                     .font(PVFont.body(size: PVTypeScale.micro))
@@ -160,19 +170,22 @@ struct DateValueEditorForm: View {
                     .foregroundStyle(PVColor.textLink)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("\(accessibilityIdentifierPrefix).\(start ? "start" : "end").timeToggle")
             }
         }
     }
 
     private func timeBlock(start: Bool) -> some View {
-        VStack(alignment: .leading, spacing: PVSpacing.space4) {
+        let side = start ? "start" : "end"
+        return VStack(alignment: .leading, spacing: PVSpacing.space4) {
             HStack(alignment: .bottom, spacing: PVSpacing.space3) {
                 cascadeField(
                     L10n.Sources.dateHour,
                     text: hourBinding(start),
                     width: 62,
                     mono: true,
-                    isInvalid: draft.isFieldInvalid(.hour, start: start)
+                    isInvalid: draft.isFieldInvalid(.hour, start: start),
+                    accessibilityIdentifier: "\(accessibilityIdentifierPrefix).\(side).hour"
                 )
                 cascadeField(
                     L10n.Sources.dateMinute,
@@ -180,7 +193,8 @@ struct DateValueEditorForm: View {
                     width: 62,
                     mono: true,
                     disabled: hourBinding(start).wrappedValue.isEmpty,
-                    isInvalid: draft.isFieldInvalid(.minute, start: start)
+                    isInvalid: draft.isFieldInvalid(.minute, start: start),
+                    accessibilityIdentifier: "\(accessibilityIdentifierPrefix).\(side).minute"
                 )
                 if start {
                     cascadeField(
@@ -189,7 +203,8 @@ struct DateValueEditorForm: View {
                         width: 62,
                         mono: true,
                         disabled: draft.startMinute == nil,
-                        isInvalid: draft.isFieldInvalid(.second, start: true)
+                        isInvalid: draft.isFieldInvalid(.second, start: true),
+                        accessibilityIdentifier: "\(accessibilityIdentifierPrefix).start.second"
                     )
                     cascadeField(
                         L10n.Sources.dateMillisecond,
@@ -197,10 +212,17 @@ struct DateValueEditorForm: View {
                         width: 70,
                         mono: true,
                         disabled: draft.startSecond == nil,
-                        isInvalid: draft.isFieldInvalid(.millisecond, start: true)
+                        isInvalid: draft.isFieldInvalid(.millisecond, start: true),
+                        accessibilityIdentifier: "\(accessibilityIdentifierPrefix).start.millisecond"
                     )
                 }
-                cascadeField(L10n.Sources.dateTimeZone, text: tzBinding(start), width: nil, mono: false)
+                cascadeField(
+                    L10n.Sources.dateTimeZone,
+                    text: tzBinding(start),
+                    width: nil,
+                    mono: false,
+                    accessibilityIdentifier: "\(accessibilityIdentifierPrefix).\(side).timezone"
+                )
             }
         }
         .padding(PVSpacing.space5)
@@ -221,6 +243,7 @@ struct DateValueEditorForm: View {
                 .foregroundStyle(PVColor.textLink)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("\(accessibilityIdentifierPrefix).advancedToggle")
     }
 
     private var advancedSection: some View {
@@ -237,6 +260,7 @@ struct DateValueEditorForm: View {
                 }
                 .labelsHidden()
                 .frame(width: 220)
+                .accessibilityIdentifier("\(accessibilityIdentifierPrefix).calendar")
             }
             VStack(alignment: .leading, spacing: PVSpacing.space2) {
                 Text(L10n.Sources.datePhrase)
@@ -247,6 +271,7 @@ struct DateValueEditorForm: View {
                     defaultValue: "Michaelmas term",
                     comment: "Placeholder for DateValue phrase"
                 ))
+                .accessibilityIdentifier("\(accessibilityIdentifierPrefix).phrase")
                 Text(L10n.Sources.datePhraseHint)
                     .font(PVFont.body(size: PVTypeScale.micro, italic: true))
                     .foregroundStyle(PVColor.textMuted)
@@ -260,7 +285,8 @@ struct DateValueEditorForm: View {
         width: CGFloat?,
         mono: Bool,
         disabled: Bool = false,
-        isInvalid: Bool = false
+        isInvalid: Bool = false,
+        accessibilityIdentifier: String? = nil
     ) -> some View {
         VStack(alignment: .leading, spacing: PVSpacing.space2) {
             Text(label)
@@ -270,6 +296,7 @@ struct DateValueEditorForm: View {
                 .frame(width: width)
                 .disabled(disabled)
                 .opacity(disabled ? 0.42 : 1)
+                .modifier(DateOptionalAccessibilityIdentifier(identifier: accessibilityIdentifier))
         }
         .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
     }
@@ -288,6 +315,7 @@ struct DateValueEditorForm: View {
             .disabled(yearBinding(start).wrappedValue.isEmpty)
             .opacity(yearBinding(start).wrappedValue.isEmpty ? 0.42 : 1)
             .frame(width: 136)
+            .accessibilityIdentifier("\(accessibilityIdentifierPrefix).\(start ? "start" : "end").month")
         }
     }
 
@@ -419,5 +447,17 @@ struct DateValueEditorForm: View {
                 }
             }
         )
+    }
+}
+
+private struct DateOptionalAccessibilityIdentifier: ViewModifier {
+    let identifier: String?
+
+    func body(content: Content) -> some View {
+        if let identifier {
+            content.accessibilityIdentifier(identifier)
+        } else {
+            content
+        }
     }
 }

@@ -138,12 +138,14 @@ struct SourceTypesDetailPane: View {
                         prompt: model.isAdding ? L10n.SourceTypes.formLabelPlaceholder : nil,
                         isInvalid: model.formError != nil
                     )
+                    .accessibilityIdentifier("sourceTypes.form.label")
                 }
                 PVField(label: L10n.SourceTypes.formDescription, hint: L10n.SourceTypes.formDescriptionHint) {
                     PVInput(
                         text: draft.description,
                         prompt: model.isAdding ? L10n.SourceTypes.formDescriptionPlaceholder : nil
                     )
+                    .accessibilityIdentifier("sourceTypes.form.description")
                 }
                 VocabularyFormActions(
                     primaryLabel: primaryLabel,

@@ -138,6 +138,7 @@ final class SourceMetadataSection {
         }
         savingFieldID = fieldID
         defer { savingFieldID = nil }
+        context.clearPageError()
         do {
             let updated = try await context.store.setSourceMetadata(
                 projectDir: context.projectDir,
@@ -157,6 +158,7 @@ final class SourceMetadataSection {
     }
 
     func dismissSuggestion(fieldID: String) async {
+        context.clearPageError()
         do {
             let updated = try await context.store.dismissSourceMetadataSuggestion(
                 projectDir: context.projectDir,
@@ -179,6 +181,7 @@ final class SourceMetadataSection {
         savedRows.move(fromOffsets: source, toOffset: destination)
         let ordered = savedRows + suggested
         context.workspace?.metadata = ordered
+        context.clearPageError()
         do {
             let updated = try await context.store.reorderSourceMetadata(
                 projectDir: context.projectDir,
@@ -304,6 +307,7 @@ final class SourceMetadataSection {
         }
         isSavingDate = true
         defer { isSavingDate = false }
+        context.clearPageError()
         do {
             let entry = try await context.store.setSourceMetadata(
                 projectDir: context.projectDir,

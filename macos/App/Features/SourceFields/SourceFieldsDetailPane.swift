@@ -140,10 +140,12 @@ struct SourceFieldsDetailPane: View {
                         prompt: model.isAdding ? L10n.SourceFields.formLabelPlaceholder : nil,
                         isInvalid: model.formError != nil
                     )
+                    .accessibilityIdentifier("sourceFields.form.label")
                 }
                 PVField(label: L10n.SourceFields.formDataType, hint: model.isAdding ? L10n.SourceFields.formDataTypeHint : L10n.SourceFields.formDataTypeImmutableHint) {
                     if model.isAdding {
                         PVSelect(selection: draft.dataType, options: dataTypeOptions)
+                            .accessibilityIdentifier("sourceFields.form.dataType")
                     } else {
                         Text(CatalogFieldDataType.label(for: draft.wrappedValue.dataType))
                             .font(PVFont.body(size: PVTypeScale.body))
@@ -153,6 +155,7 @@ struct SourceFieldsDetailPane: View {
                 }
                 PVField(label: L10n.SourceFields.formDescription, hint: L10n.SourceFields.formDescriptionHint) {
                     PVInput(text: draft.description, prompt: model.isAdding ? L10n.SourceFields.formDescriptionPlaceholder : nil)
+                        .accessibilityIdentifier("sourceFields.form.description")
                 }
                 VocabularyFormActions(
                     primaryLabel: primaryLabel,

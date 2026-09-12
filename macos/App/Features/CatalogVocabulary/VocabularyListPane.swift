@@ -48,6 +48,7 @@ struct VocabularyListPane<Row: CatalogVocabularyRow>: View {
         HStack(spacing: PVSpacing.space5) {
             PVInput(text: $query, prompt: strings.searchPlaceholder, icon: .search)
                 .frame(maxWidth: 420)
+                .accessibilityIdentifier("\(identifierPrefix).search")
             if !query.isEmpty {
                 PVButton(strings.clearSearch, variant: .ghost, size: .sm) {
                     query = ""

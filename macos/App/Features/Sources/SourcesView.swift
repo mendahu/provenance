@@ -54,6 +54,7 @@ struct SourcesView: View {
                 cancel: L10n.Sources.cancelAction
             ),
             isRunning: model.isSaving,
+            accessibilityIdentifierPrefix: "sources.add",
             onConfirm: { Task { await model.create() } }
         ) {
             // Read options here so SourcesView observes `types` and the
@@ -86,7 +87,17 @@ struct SourcesView: View {
         VStack(spacing: 0) {
             header
             PVDivider()
-            if model.isCatalogEmpty {
+            if model.isLoading && model.sources.isEmpty && model.loadError == nil {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .padding(.top, PVSpacing.space9)
+            } else if let loadError = model.loadError, model.sources.isEmpty {
+                PVCallout(tone: .danger, message: L10n.Errors.message(for: loadError))
+                    .padding(.horizontal, PVSpacing.gutterPage)
+                    .padding(.top, PVSpacing.space8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .accessibilityIdentifier("sources.loadError")
+            } else if model.isCatalogEmpty {
                 emptyState
             } else {
                 toolbar
@@ -264,11 +275,15 @@ struct SourcesView: View {
 
     private func addForm(typeOptions: [PVComboBoxOption]) -> some View {
         VStack(alignment: .leading, spacing: PVSpacing.space6) {
-            if let loadError = model.loadError, typeOptions.isEmpty {
+            if let createError = model.createError {
+                PVCallout(tone: .danger, message: createError)
+                    .accessibilityIdentifier("sources.add.error")
+            } else if let loadError = model.loadError, typeOptions.isEmpty {
                 PVCallout(
                     tone: .danger,
                     message: L10n.Errors.message(for: loadError)
                 )
+                .accessibilityIdentifier("sources.add.loadError")
             }
             PVField(
                 label: L10n.Sources.formType,

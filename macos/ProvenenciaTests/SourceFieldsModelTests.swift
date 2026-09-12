@@ -185,7 +185,7 @@ struct SourceFieldsModelTests {
         model.openAdd()
         model.draft?.label = "Album  Code!"
         await model.submit()
-        #expect(model.formError != nil)
+        #expect(model.formError == L10n.Errors.sourceFieldsDuplicateKey(key: "album-code"))
         #expect(model.fields.count == 1)
     }
 

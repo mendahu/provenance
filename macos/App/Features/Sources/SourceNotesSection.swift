@@ -35,6 +35,7 @@ final class SourceNotesSection {
         guard !body.isEmpty, !isSaving else { return }
         isSaving = true
         defer { isSaving = false }
+        context.clearPageError()
         do {
             let note = try await context.store.addSourceNote(
                 projectDir: context.projectDir,
@@ -105,6 +106,7 @@ final class SourceNotesSection {
 
     func delete(id: String) async {
         guard !isSaving else { return }
+        context.clearPageError()
         do {
             try await context.store.deleteSourceNote(
                 projectDir: context.projectDir,

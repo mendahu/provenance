@@ -102,6 +102,7 @@ final class SourceArtifactsSection {
         }
         fieldErrors[id] = nil
         if label == art.label, desc == art.description { return }
+        context.clearPageError()
         savingID = id
         defer { savingID = nil }
         do {
@@ -200,6 +201,7 @@ final class SourceArtifactsSection {
             message: String(localized: L10n.Sources.filePickMessage)
         )
         guard let path else { return }
+        context.clearPageError()
         do {
             let ingested = try await context.store.ingestArtifactFile(
                 projectDir: context.projectDir,
@@ -220,6 +222,7 @@ final class SourceArtifactsSection {
 
     func open(_ art: CatalogArtifact) {
         guard let file = art.file, !file.relPath.isEmpty else { return }
+        context.clearPageError()
         if !ProjectFiles.openObject(projectDir: context.projectDir, relPath: file.relPath) {
             context.pageError = String(localized: L10n.Sources.fileOpenMissing)
         }

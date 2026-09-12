@@ -6,7 +6,7 @@ Finished briefs live in [`archive/`](archive/). Sprint task list: [`../README.md
 
 ## Open
 
-_None._ Remaining Spike 2 work is polish (**S2-19**), not Design.
+_None._ Spike 2 Design work is complete (see [Completed](#completed)); product polish closed as **S2-19**.
 
 ## Descoped
 

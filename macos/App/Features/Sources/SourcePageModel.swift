@@ -69,6 +69,7 @@ final class SourcePageModel {
     func load() async {
         isLoading = true
         loadError = nil
+        context.pageError = nil
         defer { isLoading = false }
         do {
             // One exclusive catalog open: the workspace payload carries the
@@ -85,6 +86,7 @@ final class SourcePageModel {
 
     private func apply(_ workspace: CatalogSourceWorkspace) {
         context.workspace = workspace
+        context.pageError = nil
         identity.reset()
         credibility.resetDrafts()
         metadata.resetDrafts()

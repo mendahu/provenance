@@ -3188,16 +3188,16 @@
       }
     },
     "sources.page.metadataEmptyMessage": {
-      "comment": "Empty state when a Source has no metadata rows",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No metadata yet — accept a type suggestion or add a field from the vocabulary."
+            "value": "Accept a type suggestion or add a field from the vocabulary."
           }
         }
-      }
+      },
+      "comment": "Empty-state body when a Source has no metadata rows"
     },
     "sources.page.metadataField": {
       "comment": "Label for metadata field picker",
@@ -3368,28 +3368,28 @@
       }
     },
     "sources.page.notesEmptyMessage": {
-      "comment": "Empty-state body under Notes",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Legibility, gaps in the film, what to order on the next visit."
+            "value": "Record what the record itself cannot say — legibility, gaps in the film, what to order on the next visit."
           }
         }
-      }
+      },
+      "comment": "Empty-state body under Notes"
     },
     "sources.page.notesEmptyTitle": {
-      "comment": "Empty-state title when a Source has no notes",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No notes yet — record what the record itself cannot say."
+            "value": "No notes yet"
           }
         }
-      }
+      },
+      "comment": "Empty-state title when a Source has no notes"
     },
     "sources.page.notesHeading": {
       "comment": "Heading for the Notes stream on the Source page",
@@ -4508,16 +4508,16 @@
       }
     },
     "workspace.section.files.placeholderNote": {
-      "comment": "Placeholder note shown in the empty Files content host",
-      "extractionState": "extracted_with_value",
+      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
-            "state": "new",
-            "value": "Artifact ingest and file preview arrive in a later update."
+            "state": "translated",
+            "value": "A project-wide Files browser is not in this release. Open files from a Source’s artifacts."
           }
         }
-      }
+      },
+      "comment": "Placeholder note for the descoped Files destination"
     },
     "workspace.section.files.title": {
       "comment": "Workspace sidebar destination and page title: Files",
@@ -4527,18 +4527,6 @@
           "stringUnit": {
             "state": "new",
             "value": "Files"
-          }
-        }
-      }
-    },
-    "workspace.section.sourceFields.placeholderNote": {
-      "comment": "Placeholder note shown in the empty Source fields content host",
-      "extractionState": "extracted_with_value",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Editing the Source metadata fields arrives in a later update."
           }
         }
       }
@@ -4555,18 +4543,6 @@
         }
       }
     },
-    "workspace.section.sources.placeholderNote": {
-      "comment": "Legacy placeholder note for Sources; the S2-17 destination replaces it",
-      "extractionState": "extracted_with_value",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "The Source catalog list and detail arrive in a later update."
-          }
-        }
-      }
-    },
     "workspace.section.sources.title": {
       "comment": "Workspace sidebar destination and page title: Sources",
       "extractionState": "extracted_with_value",
@@ -4575,18 +4551,6 @@
           "stringUnit": {
             "state": "new",
             "value": "Sources"
-          }
-        }
-      }
-    },
-    "workspace.section.sourceTypes.placeholderNote": {
-      "comment": "Placeholder note shown in the empty Source types content host",
-      "extractionState": "extracted_with_value",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Editing the Source type vocabulary arrives in a later update."
           }
         }
       }
@@ -4770,6 +4734,42 @@
           }
         }
       }
+    },
+    "sources.page.descriptionEmptyTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No description yet"
+          }
+        }
+      },
+      "comment": "Empty-state title when a Source has no description"
+    },
+    "sources.page.descriptionEmptyMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Say what this source is, and where you consulted it."
+          }
+        }
+      },
+      "comment": "Empty-state body when a Source has no description"
+    },
+    "sources.page.metadataEmptyTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No metadata yet"
+          }
+        }
+      },
+      "comment": "Empty-state title when a Source has no metadata rows"
     }
   },
   "version": "1.1"
