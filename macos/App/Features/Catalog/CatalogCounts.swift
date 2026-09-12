@@ -93,11 +93,10 @@ final class CatalogCounts {
         sources = count
     }
 
-    /// Full badge refresh via one `GetWorkspaceNavCounts` open. Workspace
-    /// bootstrap (`WorkspaceView`) awaits this **before** mounting destination
-    /// content so feature `load()` calls do not race the exclusive catalog
-    /// lock. This type does not own app-load state — callers decide when to
-    /// refresh; mutations use `publish*` instead of recounting.
+    /// Full badge refresh via `GetWorkspaceNavCounts`. Safe to overlap with
+    /// destination `load()` — Go `catalogsession` serializes catalog ops.
+    /// This type does not own app-load state — callers decide when to refresh;
+    /// mutations use `publish*` instead of recounting.
     func refreshAll() async {
         guard let nav = try? await store.workspaceNavCounts(projectDir: projectDir) else {
             return

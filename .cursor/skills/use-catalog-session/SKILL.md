@@ -5,7 +5,8 @@ description: >-
   researcher FFI and onboarding paths serialize ops instead of open-per-RPC.
   Use when adding or changing catalog FFI handlers, withProjectCatalog,
   catalogsession.Do/Close, OpenCatalog vs session, catalog.already_open,
-  CloseCatalogSession, SignOut catalog close, or overlapping store/catalog calls.
+  CloseCatalogSession, GenealogyStore.closeCatalogSession, WorkspaceView leave,
+  SignOut catalog close, or overlapping store/catalog calls.
 ---
 
 # Use the catalog session
@@ -56,10 +57,11 @@ func ListThings(in []byte) ([]byte, error) {
 - Do **not** call `database.Open`, `onboarding.OpenCatalog`, or a leftover `openProjectCatalog`.
 - New catalog RPCs: still follow `.cursor/skills/add-ffi-handler/SKILL.md`, then this pattern.
 
-## Lifecycle (today)
+## Lifecycle
 
-- **Open:** implicit on first `Do` / `withProjectCatalog` for that dir (Mac PR2 will make workspace enter/leave explicit).
-- **Close:** `SignOut` / `RemoveActiveProject` / `OpenProject` (switch) call `Close`/`CloseAll`; clients may also call `CloseCatalogSession`.
+- **Open (get-or-open):** first `Do` / `withProjectCatalog` / Mac catalog store call for that dir (typically `CatalogCounts.refreshAll` after workspace mount). No `OpenCatalogSession` FFI.
+- **Mac leave:** `WorkspaceView.onDisappear` → `GenealogyStore.closeCatalogSession(projectDir:)`. Destination content mounts immediately; overlapping loads are fine (Go queues).
+- **Also close:** Go `SignOut` / `RemoveActiveProject` / `OpenProject` (switch) call `Close`/`CloseAll`.
 - **Create (`Complete` / `createCatalog`):** create-then-close; do not register a closed handle in the session map. Later RPCs open via `Do`.
 
 ## `catalog.already_open`
@@ -71,11 +73,12 @@ Means something **bypassed** the session (second `database.Open` while held). Ov
 - After FFI/`Do` use: `t.Cleanup(func() { _ = catalogsession.CloseAll() })` (`runRPC` already does this).
 - Assert against the catalog with `catalogsession.Do`, not `database.Open`, while a session may be held.
 - External test package (`catalogsession_test`) if the test imports `onboarding` (avoids import cycle).
-- Gate: `CGO_ENABLED=1 go test ./core/catalogsession/ ./core/onboarding/ ./api/ffi/...`
+- Mac: `FakeStore` tracks `heldCatalogProjectDir` / `lastClosedCatalogProjectDir` (`CatalogSessionStoreTests`).
+- Gate: `CGO_ENABLED=1 go test ./core/catalogsession/ ./core/onboarding/ ./api/ffi/...` and Mac ProvenenciaTests for store/workspace changes.
 
 ## Do not
 
 - Open-per-RPC in handlers or onboarding list/open/info
 - Nest a second exclusive `database.Open` for the same dir while `Do` holds it
 - Put session registry logic in `database` or Swift (Go owns the contract)
-- Expect Mac `isCatalogReady` to stay forever — that gate is PR2 cleanup, not the locking model
+- Reintroduce `isCatalogReady`-style gates for catalog locking

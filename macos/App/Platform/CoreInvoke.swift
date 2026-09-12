@@ -77,6 +77,7 @@ enum CoreMethod {
     static let removeTypeField = Int32(Provenencia_Engine_V1_Method.removeTypeField.rawValue)
     static let getWorkspaceNavCounts = Int32(Provenencia_Engine_V1_Method.getWorkspaceNavCounts.rawValue)
     static let ensureFileThumbnail = Int32(Provenencia_Engine_V1_Method.ensureFileThumbnail.rawValue)
+    static let closeCatalogSession = Int32(Provenencia_Engine_V1_Method.closeCatalogSession.rawValue)
 }
 
 func provenenciaInvoke(method: Int32, request: Data) throws -> Data {

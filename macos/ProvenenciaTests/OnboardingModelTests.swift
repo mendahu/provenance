@@ -319,6 +319,7 @@ private struct ThrowingStore: GenealogyStore {
     ) async throws -> OnboardingResult { throw StoreBoom.boom }
     func removeActiveProject(identityDir _: String) async throws { throw StoreBoom.boom }
     func signOut(identityDir _: String) async throws { throw StoreBoom.boom }
+    func closeCatalogSession(projectDir _: String) async throws { throw StoreBoom.boom }
     func projectInfo(projectDir _: String) async throws -> ProjectInfo { throw StoreBoom.boom }
     func listSources(projectDir _: String) async throws -> [CatalogSource] { throw StoreBoom.boom }
     func getSourceWorkspace(projectDir _: String, sourceID _: String) async throws -> CatalogSourceWorkspace {

@@ -19,6 +19,10 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     var fieldsByProject: [String: [CatalogMetadataField]] = [:]
     var metadataBySource: [String: [CatalogMetadataEntry]] = [:]
     var fileCountByProject: [String: Int] = [:]
+    /// Project dir for which a catalog RPC has “held” a session (tests only).
+    var heldCatalogProjectDir: String?
+    /// Last `closeCatalogSession` argument (tests only).
+    var lastClosedCatalogProjectDir: String?
     /// When set, `listSources` throws instead of returning the in-memory list.
     var listSourcesError: Error?
     /// When set, `updateSource` throws (identity title/type/description saves).
@@ -169,6 +173,14 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     func signOut(identityDir _: String) async throws {
         activeProjectDir = nil
         identity = nil
+        heldCatalogProjectDir = nil
+    }
+
+    func closeCatalogSession(projectDir: String) async throws {
+        lastClosedCatalogProjectDir = projectDir
+        if heldCatalogProjectDir == projectDir {
+            heldCatalogProjectDir = nil
+        }
     }
 
     func projectInfo(projectDir: String) async throws -> ProjectInfo {
@@ -187,6 +199,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func listSources(projectDir: String) async throws -> [CatalogSource] {
+        markCatalogSessionHeld(projectDir)
         if let listSourcesError { throw listSourcesError }
         let rows = sourcesByProject[projectDir] ?? []
         return rows.map { source in
@@ -702,6 +715,7 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
     }
 
     func workspaceNavCounts(projectDir: String) async throws -> WorkspaceNavCounts {
+        markCatalogSessionHeld(projectDir)
         let types = sourceTypesByProject[projectDir] ?? []
         let fields = fieldsByProject[projectDir] ?? []
         return WorkspaceNavCounts(
@@ -710,6 +724,10 @@ final class FakeStore: GenealogyStore, @unchecked Sendable {
             sourceFields: Self.originCounts(from: fields.map(\.origin)),
             files: fileCountByProject[projectDir] ?? 0
         )
+    }
+
+    private func markCatalogSessionHeld(_ projectDir: String) {
+        heldCatalogProjectDir = projectDir
     }
 
     private static func originCounts(from origins: [String]) -> WorkspaceNavOriginCounts {

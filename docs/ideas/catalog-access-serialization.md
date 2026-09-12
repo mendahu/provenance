@@ -1,10 +1,10 @@
 # Catalog access serialization (and related DB interface performance)
 
-**Status:** PR1 landed in Go (`core/catalogsession` + all catalog FFI handlers). Mac workspace open/close lifecycle and dropping `isCatalogReady` remain **PR2**. Not part of Spike 3. Related: [`archive/aggregate-workspace-nav-counts.md`](archive/aggregate-workspace-nav-counts.md).
+**Status:** PR1 + PR2 done. Go holds/serializes the catalog (`core/catalogsession`); Mac opens on first catalog RPC and closes via `GenealogyStore.closeCatalogSession` on workspace leave (no `isCatalogReady` gate). Optional PR3 (hardening / concurrent Swift stress) remains. Not part of Spike 3. Related: [`archive/aggregate-workspace-nav-counts.md`](archive/aggregate-workspace-nav-counts.md).
 
 ## Problem
 
-### What happens today (pre-session / Mac until PR2)
+### What happened before (pre-session)
 
 Every catalog FFI handler **used to** do **open → work → close**:
 
@@ -187,9 +187,9 @@ One *job*, **two reviewable PRs** (optional third). Not one mega-PR, and not a l
 
 | PR | Delivers | Leaves the tree… |
 | --- | --- | --- |
-| **1 — Go session + serial queue + all handlers** | **Done:** held catalog session (`core/catalogsession`); Go mutex/serial queue; every catalog FFI path uses the session; `METHOD_CLOSE_CATALOG_SESSION`; SignOut / RemoveActiveProject / OpenProject close sessions; Go tests for overlapping calls and close/switch | Core is correct and open is amortized; Mac still binds session lifetime awkwardly (open on first RPC / close on sign-out) until PR 2 |
-| **2 — Mac lifecycle** | Explicit session open/close on workspace enter/leave and project switch; `GenealogyStore` / FakeStore wired; drop or narrow `isCatalogReady` | Features can overlap `async` store calls end-to-end without UI lock gates |
-| **3 (optional)** | Hardening: concurrent Swift tests, clearer errors if anything bypasses the session, stack/client-pattern doc updates | Polish |
+| **1 — Go session + serial queue + all handlers** | **Done:** held catalog session (`core/catalogsession`); Go mutex/serial queue; every catalog FFI path uses the session; `METHOD_CLOSE_CATALOG_SESSION`; SignOut / RemoveActiveProject / OpenProject close sessions; Go tests for overlapping calls and close/switch | Core is correct and open is amortized |
+| **2 — Mac lifecycle** | **Done:** `GenealogyStore.closeCatalogSession`; close on `WorkspaceView.onDisappear`; drop `isCatalogReady`; FakeStore session flags + tests. Enter = first catalog RPC (no `OpenCatalogSession` FFI) | Features can overlap `async` store calls end-to-end without UI lock gates |
+| **3 (optional)** | Hardening: concurrent Swift stress tests, clearer errors if anything bypasses the session, stack/client-pattern polish | Polish |
 
 **Do not** split PR 1 into “half the handlers” unless a single doorway *forbids* non-session opens — a hybrid open-per-call + session world is worse than today’s races.
 
@@ -202,7 +202,8 @@ After A+B is live: **measure** queue wait vs query time. **Direction C** batchin
 - Session keyed by `projectDir` string vs future `project.uuid`?
 - Multi-window: one shared session per project, or one window until later?
 - Optional A1 Swift façade on top of A2+B, or Go session API alone?
-- How does workspace “session open” bind to onboarding → home → workspace lifecycle (exact FFI: explicit OpenCatalogSession vs implicit on first RPC)?
+
+**Settled (PR2):** workspace enter = first catalog store call (no `OpenCatalogSession` FFI); leave = `closeCatalogSession` from `WorkspaceView.onDisappear`.
 
 ## Non-goals (while parked)
 
