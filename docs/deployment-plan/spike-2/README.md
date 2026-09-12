@@ -15,7 +15,7 @@ Authoritative models:
 - [`application-stack.md`](../../application-stack.md) (FFI granularity, `objects/` ingest)
 - [`macos-client-patterns.md`](../../macos-client-patterns.md)
 
-Claude Design handoffs live in [`design/`](design/) — self-contained requirement briefs, not the task list below. Remaining Design: **S2-20** Files list (**S2-01…S2-04** / **S2-23** done — [`design/archive/`](design/archive/), [`completed.md`](completed.md)).
+Claude Design handoffs live in [`design/`](design/) — self-contained requirement briefs, not the task list below. Design **S2-01…S2-04** / **S2-23** done ([`design/archive/`](design/archive/), [`completed.md`](completed.md)). **S2-20** / **S2-21** (project Files list) are **descoped** — see [Descoped](#descoped).
 
 Spike 1 left an explicit gate: **the first researched mutation must write audit**, not decorative empty tables without a write path. This spike owns that gate.
 
@@ -43,25 +43,27 @@ Onboarding (Spike 1) → signed in
        │           ├── fileless placeholder
        │           └── ingest File → objects/{hh}/{hh}/{sha256} → Artifact.file_id
        ├── Source types / Source fields (vocabulary admin)
-       ├── Files (project file list → jump to Source)
        └── Project / session (sign out, project label, contributor)
 ```
+
+(Project-wide **Files** list was planned as S2-20/S2-21; descoped. File ingest and open still happen from the Source page.)
 
 ---
 
 ## In scope
 
-- **App workspace chrome**: side navigation + content host. Spike 2 destinations: **Sources**, **Source types**, **Source fields**, **Files** (no “coming soon” stubs for later layers).
+- **App workspace chrome**: side navigation + content host. Spike 2 destinations: **Sources**, **Source types**, **Source fields** (no “coming soon” stubs for later layers). A **Files** sidebar placeholder from S2-14 may remain; building its list UI is not in scope.
 - Audit write path (`audit_transactions` / `audit_changes`) used by every Source-layer mutation.
 - Shared `date_values` table (schema + minimal Go helpers) so date-typed Source metadata can land without a second migration later.
 - Full Source-layer table set from the Source doc: `source_types`, `sources`, `source_notes`, `source_metadata_fields`, `source_type_metadata_fields`, `source_metadata`, `artifacts`, `files`, `file_derivatives`.
 - Small **seed** of types/fields (not the entire [`seeded-vocabulary.md`](../../seeded-vocabulary.md) horizon list). Create-time starter today: `birth_certificate` plus a few suggested fields; opens do not heal or expand the set.
 - Go domain packages for CRUD + ingest; FFI use-cases (coarse verbs); SwiftUI Source catalog UI inside the workspace, consuming `GenealogyStore`.
-- Claude Design boards for workspace chrome, Source fields, Source types, Sources list, Source page (Source → Artifact → File), and the Files list.
+- Claude Design boards for workspace chrome, Source fields, Source types, Sources list, and Source page (Source → Artifact → File).
 - Refs: mint `SRC-…` / `ART-…` via `core/ref` on insert ([`catalog-refs.md`](../../catalog-refs.md)).
 
 ## Out of scope (later spikes)
 
+- **Project Files list** (design S2-20 + Swift S2-21) — descoped; ingest/open stay on the Source page.
 - Interpretation beyond Source credibility on the Source page (Citations, Observations, Nodes) and Conclusion — do not add sidebar placeholders for them in this spike.
 - Claim confidence and Citation transcription certainty ([`research-judgment-model.md`](../../research-judgment-model.md)).
 - Full GEDCOM / import adapters.
@@ -90,7 +92,7 @@ Onboarding (Spike 1) → signed in
 Jake can, on his MacBook, without a server:
 
 1. Finish Spike 1 onboarding and land in an **app workspace** with a sidebar (not the old single “you’re signed in” home as the permanent shell).
-2. Use the sidebar to open Sources, Source types, Source fields, and Files.
+2. Use the sidebar to open Sources, Source types, and Source fields.
 3. Create a Source of a seeded type, edit title/description, add a note, set text (and at least one date) metadata fields suggested for that type.
 4. Add a custom Source type and/or metadata field (from their nav destinations) and use them on a Source.
 5. Add a fileless Artifact and an Artifact with an ingested image/PDF; confirm `files` row + bytes under `objects/`.
@@ -118,56 +120,53 @@ IDs stay stable even if order of *starting* work shifts; **Depends on** is the m
 Open work only (completed steps: [`completed.md`](completed.md)):
 
 ```text
-S2-20 Design — Files list (project file browser)
-        │
-        ▼
-S2-21 PR — Swift Files list (+ Source link)   ← prefers S2-26 thumbs (done)
 S2-19 PR — Dogfood polish (copy, empty states, errors, tests)
 ```
 
-Core schema / Go, workspace chrome, Source fields/types UI, Sources list (S2-17), Source page schema (S2-24), Source page UI (S2-18 / S2-25), evidence thumbnails (S2-26), and Design **S2-01…S2-04** / **S2-23** are **done** — see [`completed.md`](completed.md) and [`design/archive/`](design/archive/). Remaining Design: **S2-20**. Remaining feature UI: **S2-21** → **S2-19**. Do not start a feature UI PR until its Design step has a reviewable board (or an explicit “design enough to code” note).
+Core schema / Go, workspace chrome, Source fields/types UI, Sources list (S2-17), Source page schema (S2-24), Source page UI (S2-18 / S2-25), evidence thumbnails (S2-26), and Design **S2-01…S2-04** / **S2-23** are **done** — see [`completed.md`](completed.md) and [`design/archive/`](design/archive/). **S2-20** / **S2-21** descoped. Remaining: **S2-19**.
 
 ---
 
 ## Open steps
 
-To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](completed.md).
-
-### S2-20 — Design: Files list (project file browser)
-
-**Claude Design brief:** [`design/S2-20-files-list.md`](design/S2-20-files-list.md)
-
-| | |
-| --- | --- |
-| **Kind** | Design (Claude Design) |
-| **Depends on** | S2-01 (done — **Files** placeholder already in shell); S2-23 (done — Source page link target) |
-| **Deliverables** | Board for the **Files** destination: list rows with **thumbnail**, **media type**, **original filename**; **link to associated Source** (via Artifact). No ingest/delete on this board. Prefer not listing derivative-only Files as peer rows. |
-| **Context** | Source doc §§6–8. Association is indirect (`artifacts.file_id` → Source). Sidebar Files destination already exists; only `CountFiles` is wired today. |
-| **Out** | Ingest (S2-18); delete; Interpretation. |
-| **Feeds** | S2-21 |
-
----
-
-### S2-21 — PR: Swift Files list (+ Source link)
-
-| | |
-| --- | --- |
-| **Kind** | PR |
-| **Depends on** | S2-20 (design enough), S2-18 (Source page navigation target), S2-26 (thumbnail wiring preferred), S2-17 (done — prefer reusing `PVList`), S2-13, S2-14 |
-| **Deliverables** | **Files** destination: list thumbnail, media type, original filename via the **list-style** component from S2-17 (not `PVTable`); Source link navigates into the Sources **Source page**. Add `ListFiles` (or equivalent) FFI joining current Artifact→Source when present; exclude derivative-only rows from the peer list. Unit tests with `FakeStore`. L10n via skill. |
-| **Context** | Mount under existing S2-14 **Files** pane. Prefer sharing thumbnail helpers from S2-26. |
-| **Out** | Ingest UI; File delete/GC. |
-
----
+To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](completed.md). Descoped IDs stay listed under [Descoped](#descoped) so numbering stays stable.
 
 ### S2-19 — PR: Dogfood polish and regression net
 
 | | |
 | --- | --- |
 | **Kind** | PR |
-| **Depends on** | S2-14, S2-15, S2-22, S2-16, S2-17, S2-24, S2-18, S2-25, S2-26, S2-21 |
+| **Depends on** | S2-14, S2-15, S2-22, S2-16, S2-17, S2-24, S2-18, S2-25, S2-26 |
 | **Deliverables** | Empty/error copy pass; accessibility identifiers for workspace nav + Source flows; Go+Swift test gaps closed for happy paths and one failure each (duplicate type key, ingest missing file, audit present after create). Update [`deployment-plan/README.md`](../README.md) when archiving this spike. Optional: short “how to dogfood Source catalog” note in README or spike retro. |
 | **Out** | Product SemVer bump only if cutting a release ([`versioning.md`](../../versioning.md)). |
+
+---
+
+## Descoped
+
+IDs kept for history; do not implement in Spike 2.
+
+### S2-20 — Design: Files list (project file browser) — **descoped**
+
+**Claude Design brief (frozen):** [`design/S2-20-files-list.md`](design/S2-20-files-list.md)
+
+| | |
+| --- | --- |
+| **Kind** | Design (Claude Design) |
+| **Status** | Descoped — no Claude Design board; no Files list in this spike. |
+| **Was going to** | Board for the **Files** destination (thumbnail, media type, original filename, link to Source). |
+| **Why** | File ingest and open are already validated on the Source page; a project-wide Files browser is not needed to close Spike 2. |
+
+---
+
+### S2-21 — PR: Swift Files list (+ Source link) — **descoped**
+
+| | |
+| --- | --- |
+| **Kind** | PR |
+| **Status** | Descoped with S2-20. |
+| **Was going to** | `ListFiles` FFI + Swift **Files** destination (list → jump to Source), reusing `PVList` / S2-26 thumbs. |
+| **Why** | Same as S2-20 — Source-page ingest/open is enough for dogfood. |
 
 ---
 
@@ -175,7 +174,6 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 
 | Step | Title sketch |
 | --- | --- |
-| S2-21 | Browse project Files and jump to their Source |
 | S2-19 | Harden the Source catalog for first dogfood |
 
 ---
@@ -184,9 +182,9 @@ To-do queue for Spike 2. Finished Design/PR write-ups live in [`completed.md`](c
 
 | Track | Steps |
 | --- | --- |
-| **Design (Claude Design)** | S2-01…S2-04 / S2-23 done; remaining **S2-20** |
+| **Design (Claude Design)** | S2-01…S2-04 / S2-23 done; **S2-20** descoped |
 | **Core schema / Go** | S2-05…S2-13 / **S2-24** / **S2-25** layout — done ([`completed.md`](completed.md)) |
-| **FFI + Mac** | S2-14…S2-18 / S2-22 / S2-24 / **S2-25** / **S2-26** — done; remaining **S2-21** → **S2-19** |
+| **FFI + Mac** | S2-14…S2-18 / S2-22 / S2-24 / **S2-25** / **S2-26** — done; **S2-21** descoped; remaining **S2-19** |
 
 Prefer **many small PRs**. Do not fold the workspace shell into feature destination PRs.
 
@@ -207,7 +205,7 @@ Prefer **many small PRs**. Do not fold the workspace shell into feature destinat
 
 Likely next spikes (not scheduled here):
 
-1. Fill sidebar destinations beyond Sources / types / fields / Files (Interpretation entry, Settings) when those features exist.
+1. Fill sidebar destinations beyond Sources / types / fields (Interpretation entry, Settings, optional project Files browser from descoped S2-20/S2-21) when those features exist.
 2. Audit history UI / “what changed” for a Source.
 3. Citation → Observation → Node (Interpretation) on top of Artifacts.
 4. Project open/create UX polish beyond Spike 1 onboarding.

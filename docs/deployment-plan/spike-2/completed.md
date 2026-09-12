@@ -276,7 +276,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Deliverables** | Done. **Sources** list destination: homogeneous **list** rows (thumbnail + title + type/`SRC-…`) via design-system **`PVList`** (not `PVTable`); **`PVDialog`** **Add Source** (type + **required** title + optional description) that on Create navigates to a **separate Source page** (stub until S2-18); row select opens that page. Search/filter/sort chrome; empty states; unit tests with `FakeStore`; L10n via skill. |
 | **Context** | Mount under S2-14 **Sources** pane. Match S2-04: **not** master–detail; create is confirm-style dialog → Source page; presentation is list-not-table. Thumbnail placeholders OK until S2-18 owns real thumbs. |
 | **Out** | Source page body, Artifact detail, ingest, derivative/thumbnail ensure (S2-18). |
-| **Feeds** | S2-18; S2-21 (prefer reusing `PVList`) |
+| **Feeds** | S2-18 (S2-21 Files list descoped; `PVList` stays for Sources) |
 
 ---
 
@@ -302,7 +302,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Deliverables** | Done. Replaced the S2-17 Source page stub: **`PVBreadcrumbs`** to Sources list; editable identity (**title**, type, **description**); **Notes** stream (add/edit/delete); **credibility** control (grade + optional argument); **Artifacts** in-place accordion (`label` + `ART-…` + thumbnail **placeholder**); expand shows label/description + primary File identity; **Open** via `NSWorkspace`; **Add Artifact** centered modal (required label + optional File); **Add file…** on fileless only — **no Replace**. `FakeStore` model tests; user-selected file entitlement. Metadata UI deferred to S2-25; real thumbs to S2-26. |
 | **Context** | Thin vertical slice of S2-23. Swift does not write `objects/` itself. |
 | **Out** | Metadata suggestions / dismiss / drag reorder (S2-25); derivative thumbnail ensure/list UI (S2-26); in-app File preview; Replace file; Citations / Observations / Nodes; project Files browser (S2-21). |
-| **Feeds** | S2-25, S2-26, S2-21 |
+| **Feeds** | S2-25, S2-26 (S2-21 descoped) |
 
 ---
 
@@ -315,7 +315,7 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Deliverables** | Done. **`source_metadata_layout`** migration for per-Source suggestion **dismiss** + display **order**; `ListWorkspace` filters dismissed empty suggestions and orders by layout; FFI `DismissSourceMetadataSuggestion` / `ReorderSourceMetadata`; Source page **Metadata** section (values, quick-add suggestions with X, **Add** vocabulary dialog, drag reorder via **`PVReorderableList`**); Artifact accordion expand matched to board (two-column sunken panel). `FakeStore` model tests. |
 | **Context** | Completes the Metadata half of S2-23. |
 | **Out** | Vocabulary admin; Claim confidence. |
-| **Feeds** | S2-26, S2-21, S2-19 |
+| **Feeds** | S2-26, S2-19 (S2-21 descoped) |
 
 ---
 
@@ -326,9 +326,9 @@ IDs stay stable (`S2-NN`). Do not renumber when moving steps here.
 | **Kind** | PR |
 | **Depends on** | S2-18 (done), S2-17 (done), S2-12/S2-13 (done) |
 | **Deliverables** | Done. FFI **`EnsureFileThumbnail`** (authorize File via Artifact, lazy `derivatives.EnsureThumbnail`); enrich **`ListSources`** and workspace **`Artifact`** with `thumbnail_rel_path`; Swift maps paths into `CatalogSource` / `CatalogArtifact`, loads JPEG bytes via **`ProjectFiles.thumbnailImage`**, fills **`PVThumbnail`** on Sources list and Source-page Artifact rows. Missing/fileless/non-image → placeholder. `runRPC` + FakeStore model tests. |
-| **Context** | Shared wiring for S2-21 Files list. |
-| **Out** | In-app File preview; Files destination UI (S2-21); ingest-time ensure. |
-| **Feeds** | S2-21, S2-19 |
+| **Context** | Shared wiring for Sources / Artifact thumbs (originally also for descoped S2-21 Files list). |
+| **Out** | In-app File preview; Files destination UI (S2-21 descoped); ingest-time ensure. |
+| **Feeds** | S2-19 |
 
 ---
 
