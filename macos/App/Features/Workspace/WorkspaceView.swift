@@ -3,7 +3,7 @@ import SwiftUI
 /// The post-onboarding application shell: one leading sidebar plus one
 /// content host (W-1). Replaces `OnboardingHomeView` as the permanent
 /// chrome once a project is open (`OnboardingModel.phase == .home`) — see
-/// `docs/deployment-plan/spike-2/design/archive/S2-01-workspace-chrome.md`.
+/// `docs/deployment-plan/archive/spike-2/design/archive/S2-01-workspace-chrome.md`.
 ///
 /// `projectDir` and `userID` are non-optional: `OnboardingView` only
 /// mounts this from `.home(projectDir:userID:)`, which is set solely via

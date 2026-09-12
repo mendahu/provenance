@@ -20,7 +20,7 @@ Assume S2-01 chrome exists. **Do not redraw a second window shell.** Mount only 
 
 ## 2. Domain model (UI must reflect)
 
-Authoritative schema: [`source-layer-data-model.md`](../../../../source-layer-data-model.md) §5.1; origin rules: [`seeded-vocabulary.md`](../../../../seeded-vocabulary.md) §1.1.
+Authoritative schema: [`source-layer-data-model.md`](../../../../../source-layer-data-model.md) §5.1; origin rules: [`seeded-vocabulary.md`](../../../../../seeded-vocabulary.md) §1.1.
 
 ### 2.1 `source_metadata_fields`
 
