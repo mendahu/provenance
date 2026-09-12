@@ -17,7 +17,7 @@ Use this folder when something useful pops up mid-work and would otherwise get l
 | Idea | One-liner |
 | --- | --- |
 | [Share packages](share-packages.md) | One-button export of a Source (or later a canonical entity) as a readable, standards-friendly bundle for other researchers. |
-| [Catalog access serialization](catalog-access-serialization.md) | First-class held catalog session + serial ops; features load freely; big surgery OK. |
+| [Catalog access serialization](catalog-access-serialization.md) | PR1 done (Go session + serial queue); PR2 Mac lifecycle still open. |
 | [File-type fallback thumbnails](file-type-fallback-thumbnails.md) | MIME glyphs + curated Source-type icons (fileless / cover) + Source primary Artifact thumbnail rollup. |
 | [Ingest MIME enforcement](ingest-mime-enforcement.md) | Allowlist media types at ingest so Artifact Files stay evidence-shaped, not arbitrary blobs. |
 

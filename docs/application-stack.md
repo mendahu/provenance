@@ -230,6 +230,7 @@ Open the database through `database/sql` with that driver. Connection hygiene fo
 
 - **WAL** and a **busy timeout** in the DSN (and `PRAGMA foreign_keys = ON` on each connection).
 - **Tiny pool:** `SetMaxOpenConns` small (typically 1 for writers, or a single shared connection). `database/sql`’s default pool fights SQLite.
+- **Held session:** researcher FFI uses `core/catalogsession` (one exclusive open per project while in use; ops serialized). Do not open-per-RPC from handlers.
 
 Enable compile features the product needs with driver build tags (at least `fts5` and JSON when those land). Do not link against macOS’s system SQLite.
 
@@ -277,7 +278,7 @@ On macOS, register the folder as a document package with an exported reverse-DNS
 
 **Object names:** Files on disk are named by **SHA-256 of their bytes** (see [`source-layer-data-model.md`](source-layer-data-model.md)), sharded as `objects/{hh}/{hh}/{checksum_hex}{ext}` where `{ext}` is a MIME-derived suffix (e.g. `.jpg`, `.pdf`) when the sniffed `media_type` is known, otherwise bare hex. `original_filename` stays in SQLite. Hash names are identity, not encryption: a JPEG is still a JPEG in Preview.
 
-**Concurrency (MVP):** one live **writer** per project directory. A second Provenencia process opening the same folder is **refused** (or the existing window is focused). Two engines must not edit one `provenencia.sqlite`. In-process: one Go core, WAL, busy timeout, tiny pool (§10); Swift does not open the SQLite file. Split views of one tree are a **later UI** on that single engine. Quit before writing the catalog with another tool; the CLI uses the same exclusive-open rule.
+**Concurrency (MVP):** one live **writer** per project directory. A second Provenencia process opening the same folder is **refused** (or the existing window is focused). Two engines must not edit one `provenencia.sqlite`. In-process: `core/catalogsession` holds one exclusive catalog for the open project and **serializes** FFI ops on it (queue, don’t race); open is amortized across RPCs. `catalog.already_open` means something bypassed the session (bug), not normal overlapping Swift `async` calls. WAL, busy timeout, and `MaxOpenConns(1)` remain on the connection (§10). Swift does not open the SQLite file. Split views of one tree are a **later UI** on that single engine. Quit before writing the catalog with another tool; the CLI uses the same exclusive-open rule.
 
 Platform-specific absolute paths must not be stored in the genealogy database.
 
@@ -657,11 +658,11 @@ Web
 Settled:
 
 - **FFI codec:** Protocol Buffers (see §7).
-- **SQLite:** cgo + official amalgamation, `github.com/mattn/go-sqlite3` (see §10). WAL, busy timeout, tiny `MaxOpenConns`.
+- **SQLite:** cgo + official amalgamation, `github.com/mattn/go-sqlite3` (see §10). WAL, busy timeout, tiny `MaxOpenConns`. In-process held catalog session + serial queue (`core/catalogsession`).
 - **Project format:** inspectable directory named `*.provenencia`; catalog is `provenencia.sqlite`; Files on disk as SHA-256 object names (`objects/{hh}/{hh}/{hex}{ext}`, MIME-derived extension when known); copy whole folder across Mac/Windows. Suffix is a hint; ownership is `application_id` + schema (see §12).
 - **Runtime:** app and live project on **local disk** only. Backups to NAS/internet/object storage are post-MVP (copy or sync a closed project).
 - **Encryption:** live project is plaintext; rely on OS disk encryption. Optional locked projects and encrypted backups are post-MVP (see §12).
-- **Locking:** one writer per project; second process refused. Multi-pane UI later, same engine (see §12).
+- **Locking:** one writer per project; second process refused. In-process session serializes catalog RPCs; `catalog.already_open` is a bypass signal. Multi-pane UI later, same engine (see §12).
 - **Identity:** install-local User UUID vs project `users`; adopt or mint on first open. Cloud maps onto that UUID later ([`user-identity-model.md`](user-identity-model.md)). OS profile is not the IdP.
 - **File display:** protobuf has relative paths + metadata only; Swift reads bytes from the project directory (§7).
 - **Versioning:** one product SemVer for all clients and the Go core ([`versioning.md`](versioning.md)). Project format (`user_version`) is separate.

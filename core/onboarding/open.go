@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mendahu/provenencia/core/apperr"
+	"github.com/mendahu/provenencia/core/catalogsession"
 	"github.com/mendahu/provenencia/core/database"
 	"github.com/mendahu/provenencia/core/database/project"
 	"github.com/mendahu/provenencia/core/database/users"
@@ -15,18 +16,18 @@ import (
 
 var ErrUnknownUser = apperr.New(apperr.CodeOnboardingUnknownUser, apperr.KindNotFound)
 
-// ListContributors opens the catalog (migrates + reconciles) and lists contributors.
+// ListContributors lists contributors on the held catalog session for projectDir.
 func ListContributors(projectDir string) ([]users.User, error) {
-	projectDir = strings.TrimSpace(projectDir)
-	if projectDir == "" {
-		return nil, database.ErrNotAProject
-	}
-	proj, err := OpenCatalog(projectDir)
-	if err != nil {
-		return nil, err
-	}
-	defer proj.Close()
-	return users.List(proj)
+	var out []users.User
+	err := catalogsession.Do(projectDir, func(proj *database.Catalog) error {
+		rows, err := users.List(proj)
+		if err != nil {
+			return err
+		}
+		out = rows
+		return nil
+	})
+	return out, err
 }
 
 // Open opens an existing *.provenencia folder and remembers it as the active project.
@@ -34,6 +35,7 @@ func ListContributors(projectDir string) ([]users.User, error) {
 // (replacing a different UUID already on this Mac). Otherwise it mints or loads
 // install identity and upserts users after the catalog opens successfully.
 // Corrupt identity.json is not overwritten.
+// The catalog session stays held after a successful open.
 func Open(identityDir, projectDir, displayName, adoptUserID string) (Result, error) {
 	projectDir = strings.TrimSpace(projectDir)
 	displayName = strings.TrimSpace(displayName)
@@ -56,30 +58,31 @@ func adopt(identityDir, projectDir, adoptUserID string) (Result, error) {
 		return Result{}, err
 	}
 
-	proj, err := OpenCatalog(projectDir)
-	if err != nil {
-		return Result{}, err
-	}
-	u, err := users.Lookup(proj, uid[:])
-	if errors.Is(err, sql.ErrNoRows) {
-		_ = proj.Close()
-		return Result{}, ErrUnknownUser
-	}
-	if err != nil {
-		_ = proj.Close()
-		return Result{}, err
-	}
-	info, err := ensureProject(proj, projectDir, uid[:])
-	if err != nil {
-		_ = proj.Close()
-		return Result{}, err
-	}
-	resolved, err := resolveUpdatedBy(proj, info)
-	if err != nil {
-		_ = proj.Close()
-		return Result{}, err
-	}
-	dir, err := closeCatalog(proj)
+	var (
+		u        users.User
+		resolved ResolvedInfo
+		dir      string
+	)
+	err = catalogsession.Do(projectDir, func(proj *database.Catalog) error {
+		got, err := users.Lookup(proj, uid[:])
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrUnknownUser
+		}
+		if err != nil {
+			return err
+		}
+		u = got
+		info, err := ensureProject(proj, projectDir, uid[:])
+		if err != nil {
+			return err
+		}
+		resolved, err = resolveUpdatedBy(proj, info)
+		if err != nil {
+			return err
+		}
+		dir = proj.Dir()
+		return nil
+	})
 	if err != nil {
 		return Result{}, err
 	}
@@ -94,26 +97,26 @@ func openMint(identityDir, projectDir, displayName string) (Result, error) {
 		return Result{}, err
 	}
 
-	proj, err := OpenCatalog(projectDir)
-	if err != nil {
-		return Result{}, err
-	}
+	var (
+		resolved ResolvedInfo
+		dir      string
+	)
 	uid := id.UserID
-	if err := users.Upsert(proj, uid[:], id.DisplayName, id.Ref); err != nil {
-		_ = proj.Close()
-		return Result{}, err
-	}
-	info, err := ensureProject(proj, projectDir, uid[:])
-	if err != nil {
-		_ = proj.Close()
-		return Result{}, err
-	}
-	resolved, err := resolveUpdatedBy(proj, info)
-	if err != nil {
-		_ = proj.Close()
-		return Result{}, err
-	}
-	dir, err := closeCatalog(proj)
+	err = catalogsession.Do(projectDir, func(proj *database.Catalog) error {
+		if err := users.Upsert(proj, uid[:], id.DisplayName, id.Ref); err != nil {
+			return err
+		}
+		info, err := ensureProject(proj, projectDir, uid[:])
+		if err != nil {
+			return err
+		}
+		resolved, err = resolveUpdatedBy(proj, info)
+		if err != nil {
+			return err
+		}
+		dir = proj.Dir()
+		return nil
+	})
 	if err != nil {
 		return Result{}, err
 	}
@@ -162,37 +165,34 @@ func resolveUpdatedBy(proj *database.Catalog, info project.Info) (ResolvedInfo, 
 	return out, nil
 }
 
-// ProjectInfo loads project bookkeeping from an existing catalog (migrates + reconciles)
-// and resolves updated-by display fields in the same open.
+// ProjectInfo loads project bookkeeping from the held catalog session
+// and resolves updated-by display fields in the same op.
 func ProjectInfo(projectDir string) (ResolvedInfo, error) {
-	projectDir = strings.TrimSpace(projectDir)
-	if projectDir == "" {
-		return ResolvedInfo{}, database.ErrNotAProject
-	}
-	proj, err := OpenCatalog(projectDir)
-	if err != nil {
-		return ResolvedInfo{}, err
-	}
-	defer proj.Close()
-	info, err := project.Get(proj)
-	if errors.Is(err, project.ErrMissing) {
-		rows, listErr := users.List(proj)
-		if listErr != nil {
-			return ResolvedInfo{}, listErr
+	var out ResolvedInfo
+	err := catalogsession.Do(projectDir, func(proj *database.Catalog) error {
+		info, err := project.Get(proj)
+		if errors.Is(err, project.ErrMissing) {
+			rows, listErr := users.List(proj)
+			if listErr != nil {
+				return listErr
+			}
+			var updatedBy []byte
+			if len(rows) > 0 {
+				updatedBy = rows[0].ID
+			}
+			if len(updatedBy) != 16 {
+				out = ResolvedInfo{Info: project.Info{Label: project.LabelFromDir(projectDir)}}
+				return nil
+			}
+			info, err = ensureProject(proj, projectDir, updatedBy)
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
 		}
-		var updatedBy []byte
-		if len(rows) > 0 {
-			updatedBy = rows[0].ID
-		}
-		if len(updatedBy) != 16 {
-			return ResolvedInfo{Info: project.Info{Label: project.LabelFromDir(projectDir)}}, nil
-		}
-		info, err = ensureProject(proj, projectDir, updatedBy)
-		if err != nil {
-			return ResolvedInfo{}, err
-		}
-	} else if err != nil {
-		return ResolvedInfo{}, err
-	}
-	return resolveUpdatedBy(proj, info)
+		out, err = resolveUpdatedBy(proj, info)
+		return err
+	})
+	return out, err
 }

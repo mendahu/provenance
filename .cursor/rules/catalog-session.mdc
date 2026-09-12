@@ -1,0 +1,14 @@
+---
+description: Researcher catalog access uses catalogsession (held + serial), not open-per-RPC
+globs: core/catalogsession/**/*.go,api/ffi/handlers/**/*.go,core/onboarding/**/*.go,api/proto/engine.proto
+alwaysApply: false
+---
+
+# Catalog session
+
+Follow the project skill `.cursor/skills/use-catalog-session/SKILL.md`.
+
+- FFI catalog RPCs: `withProjectCatalog` → `catalogsession.Do`. Never `database.Open` / `OpenCatalog` + `defer Close` in handlers.
+- Onboarding list / project info / open: `catalogsession.Do`; leave the session held after a successful `Open`.
+- `catalog.already_open` = bypass bug, not normal overlapping calls.
+- Tests: `catalogsession.CloseAll` cleanup; assert via `Do`, not a second exclusive open while held.

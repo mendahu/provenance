@@ -21,24 +21,26 @@ func ListSources(in []byte) ([]byte, error) {
 	if err := proto.Unmarshal(in, &req); err != nil {
 		return nil, unmarshalErr("list_sources", err)
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
-	rows, err := sources.List(c)
-	if err != nil {
-		return nil, err
-	}
-	out := &engine.ListSourcesResponse{}
-	for _, s := range rows {
-		sp := sourceProto(s)
-		thumb, err := firstSourceThumbnailRelPath(c, s.ID)
+	var out *engine.ListSourcesResponse
+	err := withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		rows, err := sources.List(c)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		sp.ThumbnailRelPath = thumb
-		out.Sources = append(out.Sources, sp)
+		out = &engine.ListSourcesResponse{}
+		for _, s := range rows {
+			sp := sourceProto(s)
+			thumb, err := firstSourceThumbnailRelPath(c, s.ID)
+			if err != nil {
+				return err
+			}
+			sp.ThumbnailRelPath = thumb
+			out.Sources = append(out.Sources, sp)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return proto.Marshal(out)
 }
@@ -52,62 +54,63 @@ func GetSourceWorkspace(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
+	var out *engine.GetSourceWorkspaceResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		s, err := sources.Get(c, sourceID)
+		if err != nil {
+			return err
+		}
+		notes, err := sources.ListNotes(c, sourceID)
+		if err != nil {
+			return err
+		}
+		meta, err := sourcemetadata.ListWorkspace(c, sourceID)
+		if err != nil {
+			return err
+		}
+		arts, err := listArtifactsProto(c, sourceID)
+		if err != nil {
+			return err
+		}
+		cred, err := credibilityForSource(c, sourceID)
+		if err != nil {
+			return err
+		}
+		types, err := sourcetypes.List(c)
+		if err != nil {
+			return err
+		}
+		grades, err := sourcecredibilitygrades.List(c)
+		if err != nil {
+			return err
+		}
+		fields, err := sourcefields.List(c)
+		if err != nil {
+			return err
+		}
 
-	s, err := sources.Get(c, sourceID)
+		out = &engine.GetSourceWorkspaceResponse{Source: sourceProto(s)}
+		for _, n := range notes {
+			out.Notes = append(out.Notes, noteProto(n))
+		}
+		for _, e := range meta {
+			out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
+		}
+		out.Artifacts = arts
+		out.Credibility = cred
+		for _, t := range types {
+			out.Types = append(out.Types, sourceTypeProto(t))
+		}
+		for _, g := range grades {
+			out.Grades = append(out.Grades, credibilityGradeProto(g))
+		}
+		for _, f := range fields {
+			out.Fields = append(out.Fields, metadataFieldProto(f))
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	notes, err := sources.ListNotes(c, sourceID)
-	if err != nil {
-		return nil, err
-	}
-	meta, err := sourcemetadata.ListWorkspace(c, sourceID)
-	if err != nil {
-		return nil, err
-	}
-	arts, err := listArtifactsProto(c, sourceID)
-	if err != nil {
-		return nil, err
-	}
-	cred, err := credibilityForSource(c, sourceID)
-	if err != nil {
-		return nil, err
-	}
-	types, err := sourcetypes.List(c)
-	if err != nil {
-		return nil, err
-	}
-	grades, err := sourcecredibilitygrades.List(c)
-	if err != nil {
-		return nil, err
-	}
-	fields, err := sourcefields.List(c)
-	if err != nil {
-		return nil, err
-	}
-
-	out := &engine.GetSourceWorkspaceResponse{Source: sourceProto(s)}
-	for _, n := range notes {
-		out.Notes = append(out.Notes, noteProto(n))
-	}
-	for _, e := range meta {
-		out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
-	}
-	out.Artifacts = arts
-	out.Credibility = cred
-	for _, t := range types {
-		out.Types = append(out.Types, sourceTypeProto(t))
-	}
-	for _, g := range grades {
-		out.Grades = append(out.Grades, credibilityGradeProto(g))
-	}
-	for _, f := range fields {
-		out.Fields = append(out.Fields, metadataFieldProto(f))
 	}
 	return proto.Marshal(out)
 }
@@ -125,20 +128,23 @@ func CreateSource(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
-	s, err := sources.Create(c, userID, sources.CreateInput{
-		SourceTypeID: typeID,
-		Title:        req.GetTitle(),
-		Description:  req.GetDescription(),
+	var out *engine.CreateSourceResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		s, err := sources.Create(c, userID, sources.CreateInput{
+			SourceTypeID: typeID,
+			Title:        req.GetTitle(),
+			Description:  req.GetDescription(),
+		})
+		if err != nil {
+			return err
+		}
+		out = &engine.CreateSourceResponse{Source: sourceProto(s)}
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	return proto.Marshal(&engine.CreateSourceResponse{Source: sourceProto(s)})
+	return proto.Marshal(out)
 }
 
 func UpdateSource(in []byte) ([]byte, error) {
@@ -158,30 +164,33 @@ func UpdateSource(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.UpdateSourceResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		prev, err := sources.Get(c, id)
+		if err != nil {
+			return err
+		}
+		s := sources.Source{
+			ID:           id,
+			Ref:          prev.Ref,
+			SourceTypeID: typeID,
+			Title:        req.GetTitle(),
+			Description:  req.GetDescription(),
+		}
+		if err := sources.Update(c, userID, s); err != nil {
+			return err
+		}
+		got, err := sources.Get(c, id)
+		if err != nil {
+			return err
+		}
+		out = &engine.UpdateSourceResponse{Source: sourceProto(got)}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	prev, err := sources.Get(c, id)
-	if err != nil {
-		return nil, err
-	}
-	s := sources.Source{
-		ID:           id,
-		Ref:          prev.Ref,
-		SourceTypeID: typeID,
-		Title:        req.GetTitle(),
-		Description:  req.GetDescription(),
-	}
-	if err := sources.Update(c, userID, s); err != nil {
-		return nil, err
-	}
-	got, err := sources.Get(c, id)
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.UpdateSourceResponse{Source: sourceProto(got)})
+	return proto.Marshal(out)
 }
 
 func AddSourceNote(in []byte) ([]byte, error) {
@@ -197,16 +206,19 @@ func AddSourceNote(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.AddSourceNoteResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		n, err := sources.AddNote(c, userID, sourceID, req.GetBody())
+		if err != nil {
+			return err
+		}
+		out = &engine.AddSourceNoteResponse{Note: noteProto(n)}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	n, err := sources.AddNote(c, userID, sourceID, req.GetBody())
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.AddSourceNoteResponse{Note: noteProto(n)})
+	return proto.Marshal(out)
 }
 
 func UpdateSourceNote(in []byte) ([]byte, error) {
@@ -222,19 +234,22 @@ func UpdateSourceNote(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.UpdateSourceNoteResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		if err := sources.UpdateNote(c, userID, noteID, req.GetBody()); err != nil {
+			return err
+		}
+		n, err := sources.GetNote(c, noteID)
+		if err != nil {
+			return err
+		}
+		out = &engine.UpdateSourceNoteResponse{Note: noteProto(n)}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	if err := sources.UpdateNote(c, userID, noteID, req.GetBody()); err != nil {
-		return nil, err
-	}
-	n, err := sources.GetNote(c, noteID)
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.UpdateSourceNoteResponse{Note: noteProto(n)})
+	return proto.Marshal(out)
 }
 
 func DeleteSourceNote(in []byte) ([]byte, error) {
@@ -250,15 +265,18 @@ func DeleteSourceNote(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.DeleteSourceNoteResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		if err := sources.DeleteNote(c, userID, noteID); err != nil {
+			return err
+		}
+		out = &engine.DeleteSourceNoteResponse{}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	if err := sources.DeleteNote(c, userID, noteID); err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.DeleteSourceNoteResponse{})
+	return proto.Marshal(out)
 }
 
 func SetSourceMetadata(in []byte) ([]byte, error) {
@@ -278,53 +296,56 @@ func SetSourceMetadata(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
-
-	var dateID []byte
-	if d := req.GetDate(); d != nil && d.GetKind() != "" {
-		v := dateValueFromProto(d)
-		dateID, err = datevalues.Insert(c, v)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// Text-only updates keep any existing structured DateValue.
-		existing, listErr := sourcemetadata.ListBySource(c, sourceID)
-		if listErr != nil {
-			return nil, listErr
-		}
-		for _, row := range existing {
-			if bytes.Equal(row.FieldID, fieldID) {
-				dateID = row.DateValueID
-				break
+	var out *engine.SetSourceMetadataResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		var dateID []byte
+		if d := req.GetDate(); d != nil && d.GetKind() != "" {
+			v := dateValueFromProto(d)
+			var err error
+			dateID, err = datevalues.Insert(c, v)
+			if err != nil {
+				return err
+			}
+		} else {
+			// Text-only updates keep any existing structured DateValue.
+			existing, listErr := sourcemetadata.ListBySource(c, sourceID)
+			if listErr != nil {
+				return listErr
+			}
+			for _, row := range existing {
+				if bytes.Equal(row.FieldID, fieldID) {
+					dateID = row.DateValueID
+					break
+				}
 			}
 		}
-	}
-	if _, err := sourcemetadata.Set(c, userID, sourcemetadata.Input{
-		SourceID:    sourceID,
-		FieldID:     fieldID,
-		ValueText:   req.GetValueText(),
-		DateValueID: dateID,
-	}); err != nil {
-		return nil, err
-	}
-	entries, err := sourcemetadata.ListWorkspace(c, sourceID)
+		if _, err := sourcemetadata.Set(c, userID, sourcemetadata.Input{
+			SourceID:    sourceID,
+			FieldID:     fieldID,
+			ValueText:   req.GetValueText(),
+			DateValueID: dateID,
+		}); err != nil {
+			return err
+		}
+		entries, err := sourcemetadata.ListWorkspace(c, sourceID)
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			if bytes.Equal(e.Field.ID, fieldID) {
+				out = &engine.SetSourceMetadataResponse{
+					Entry: metadataEntryProto(c, e),
+				}
+				return nil
+			}
+		}
+		// Set succeeded, so the row is always in the workspace list.
+		return apperr.New(apperr.CodeInternalUnknown, apperr.KindInternal)
+	})
 	if err != nil {
 		return nil, err
 	}
-	for _, e := range entries {
-		if bytes.Equal(e.Field.ID, fieldID) {
-			return proto.Marshal(&engine.SetSourceMetadataResponse{
-				Entry: metadataEntryProto(c, e),
-			})
-		}
-	}
-	// Set succeeded, so the row is always in the workspace list.
-	return nil, apperr.New(apperr.CodeInternalUnknown, apperr.KindInternal)
+	return proto.Marshal(out)
 }
 
 func ClearSourceMetadata(in []byte) ([]byte, error) {
@@ -344,15 +365,18 @@ func ClearSourceMetadata(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.ClearSourceMetadataResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		if err := sourcemetadata.Clear(c, userID, sourceID, fieldID); err != nil {
+			return err
+		}
+		out = &engine.ClearSourceMetadataResponse{}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
-	if err := sourcemetadata.Clear(c, userID, sourceID, fieldID); err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.ClearSourceMetadataResponse{})
+	return proto.Marshal(out)
 }
 
 func DismissSourceMetadataSuggestion(in []byte) ([]byte, error) {
@@ -372,21 +396,23 @@ func DismissSourceMetadataSuggestion(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.DismissSourceMetadataSuggestionResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		if err := sourcemetadata.DismissSuggestion(c, userID, sourceID, fieldID); err != nil {
+			return err
+		}
+		entries, err := sourcemetadata.ListWorkspace(c, sourceID)
+		if err != nil {
+			return err
+		}
+		out = &engine.DismissSourceMetadataSuggestionResponse{}
+		for _, e := range entries {
+			out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	defer c.Close()
-	if err := sourcemetadata.DismissSuggestion(c, userID, sourceID, fieldID); err != nil {
-		return nil, err
-	}
-	entries, err := sourcemetadata.ListWorkspace(c, sourceID)
-	if err != nil {
-		return nil, err
-	}
-	out := &engine.DismissSourceMetadataSuggestionResponse{}
-	for _, e := range entries {
-		out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
 	}
 	return proto.Marshal(out)
 }
@@ -412,21 +438,23 @@ func ReorderSourceMetadata(in []byte) ([]byte, error) {
 		}
 		fieldIDs = append(fieldIDs, fid)
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.ReorderSourceMetadataResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		if err := sourcemetadata.Reorder(c, userID, sourceID, fieldIDs); err != nil {
+			return err
+		}
+		entries, err := sourcemetadata.ListWorkspace(c, sourceID)
+		if err != nil {
+			return err
+		}
+		out = &engine.ReorderSourceMetadataResponse{}
+		for _, e := range entries {
+			out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	defer c.Close()
-	if err := sourcemetadata.Reorder(c, userID, sourceID, fieldIDs); err != nil {
-		return nil, err
-	}
-	entries, err := sourcemetadata.ListWorkspace(c, sourceID)
-	if err != nil {
-		return nil, err
-	}
-	out := &engine.ReorderSourceMetadataResponse{}
-	for _, e := range entries {
-		out.Metadata = append(out.Metadata, metadataEntryProto(c, e))
 	}
 	return proto.Marshal(out)
 }

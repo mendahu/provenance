@@ -25,6 +25,8 @@ core/database/<domain>/
 
 Package name is the folder name (`users`, `datevalues`, later `sources`, …). Call sites use `users.Upsert(c, …)`, not `Catalog` methods.
 
+Researcher FFI/onboarding obtain `c` from **`catalogsession.Do`** / **`withProjectCatalog`** (see `.cursor/skills/use-catalog-session/SKILL.md`). Package tests may still `database.Create` / `Open` + `defer Close()`.
+
 Shared genealogical dates: follow `.cursor/skills/add-date-value/SKILL.md` (`core/database/datevalues`), not a new ad-hoc date package.
 
 Product-seeded vocabulary (`origin=provenencia` registries + `Ensure`): follow `.cursor/skills/add-seeded-vocabulary/SKILL.md`.

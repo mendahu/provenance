@@ -1,12 +1,12 @@
 # Catalog access serialization (and related DB interface performance)
 
-**Status:** idea only — not roadmapped. Not part of Spike 3. Parked for a dedicated catalog / FFI performance pass. Related: [`archive/aggregate-workspace-nav-counts.md`](archive/aggregate-workspace-nav-counts.md).
+**Status:** PR1 landed in Go (`core/catalogsession` + all catalog FFI handlers). Mac workspace open/close lifecycle and dropping `isCatalogReady` remain **PR2**. Not part of Spike 3. Related: [`archive/aggregate-workspace-nav-counts.md`](archive/aggregate-workspace-nav-counts.md).
 
 ## Problem
 
-### What happens today
+### What happens today (pre-session / Mac until PR2)
 
-Every catalog FFI handler does **open → work → close**:
+Every catalog FFI handler **used to** do **open → work → close**:
 
 ```text
 Swift feature  →  GoStore.provenenciaCall (Task.detached, parallel-friendly)
@@ -187,7 +187,7 @@ One *job*, **two reviewable PRs** (optional third). Not one mega-PR, and not a l
 
 | PR | Delivers | Leaves the tree… |
 | --- | --- | --- |
-| **1 — Go session + serial queue + all handlers** | Held catalog session API (B1); Go mutex/serial queue (A2); **every** catalog FFI path uses the session (no leftover per-handler `openProjectCatalog` + `Close`); Go tests for overlapping calls and close/switch | Core is correct and open is amortized; Mac may still bind session lifetime awkwardly (e.g. open on first RPC / close on sign-out) until PR 2 |
+| **1 — Go session + serial queue + all handlers** | **Done:** held catalog session (`core/catalogsession`); Go mutex/serial queue; every catalog FFI path uses the session; `METHOD_CLOSE_CATALOG_SESSION`; SignOut / RemoveActiveProject / OpenProject close sessions; Go tests for overlapping calls and close/switch | Core is correct and open is amortized; Mac still binds session lifetime awkwardly (open on first RPC / close on sign-out) until PR 2 |
 | **2 — Mac lifecycle** | Explicit session open/close on workspace enter/leave and project switch; `GenealogyStore` / FakeStore wired; drop or narrow `isCatalogReady` | Features can overlap `async` store calls end-to-end without UI lock gates |
 | **3 (optional)** | Hardening: concurrent Swift tests, clearer errors if anything bypasses the session, stack/client-pattern doc updates | Polish |
 
@@ -214,7 +214,8 @@ After A+B is live: **measure** queue wait vs query time. **Direction C** batchin
 
 ## Related docs
 
-- [`application-stack.md`](../application-stack.md) §10 / §12 (WAL, pool, single writer)
+- [`.cursor/skills/use-catalog-session/SKILL.md`](../../.cursor/skills/use-catalog-session/SKILL.md) — agent how-to for `Do` / FFI `withProjectCatalog`
+- [`application-stack.md`](../application-stack.md) §10 / §12 (WAL, pool, single writer, held session)
 - [`archive/aggregate-workspace-nav-counts.md`](archive/aggregate-workspace-nav-counts.md)
 - [`macos-client-patterns.md`](../macos-client-patterns.md) (`GenealogyStore` / FakeStore)
 - Spike 3 omnibar will add more concurrent catalog traffic — strengthens the case for scheduling this nearby

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mendahu/provenencia/api/proto/engine"
+	"github.com/mendahu/provenencia/core/catalogsession"
 	"github.com/mendahu/provenencia/core/onboarding"
 	"google.golang.org/protobuf/proto"
 )
@@ -33,6 +34,8 @@ func OpenProject(in []byte) ([]byte, error) {
 	if err := proto.Unmarshal(in, &req); err != nil {
 		return nil, fmt.Errorf("open_project: unmarshal: %w", err)
 	}
+	// Drop any other held session before opening (project switch).
+	_ = catalogsession.CloseAll()
 	res, err := onboarding.Open(req.GetIdentityDir(), req.GetProjectDir(), req.GetDisplayName(), req.GetAdoptUserId())
 	if err != nil {
 		return nil, err

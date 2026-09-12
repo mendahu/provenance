@@ -16,18 +16,20 @@ func ListSourceCredibilityGrades(in []byte) ([]byte, error) {
 	if err := proto.Unmarshal(in, &req); err != nil {
 		return nil, unmarshalErr("list_source_credibility_grades", err)
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
+	var out *engine.ListSourceCredibilityGradesResponse
+	err := withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		rows, err := sourcecredibilitygrades.List(c)
+		if err != nil {
+			return err
+		}
+		out = &engine.ListSourceCredibilityGradesResponse{}
+		for _, g := range rows {
+			out.Grades = append(out.Grades, credibilityGradeProto(g))
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	defer c.Close()
-	rows, err := sourcecredibilitygrades.List(c)
-	if err != nil {
-		return nil, err
-	}
-	out := &engine.ListSourceCredibilityGradesResponse{}
-	for _, g := range rows {
-		out.Grades = append(out.Grades, credibilityGradeProto(g))
 	}
 	return proto.Marshal(out)
 }
@@ -45,29 +47,31 @@ func UpsertSourceCredibilityAssessment(in []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err := openProjectCatalog(req.GetProjectDir())
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
-
-	gradeID, err := resolveCredibilityGradeID(c, &req)
-	if err != nil {
-		return nil, err
-	}
-	a, err := sourcecredibility.Upsert(c, userID, sourcecredibility.UpsertInput{
-		SourceID:           sourceID,
-		CredibilityGradeID: gradeID,
-		Argument:           req.GetArgument(),
+	var out *engine.UpsertSourceCredibilityAssessmentResponse
+	err = withProjectCatalog(req.GetProjectDir(), func(c *database.Catalog) error {
+		gradeID, err := resolveCredibilityGradeID(c, &req)
+		if err != nil {
+			return err
+		}
+		a, err := sourcecredibility.Upsert(c, userID, sourcecredibility.UpsertInput{
+			SourceID:           sourceID,
+			CredibilityGradeID: gradeID,
+			Argument:           req.GetArgument(),
+		})
+		if err != nil {
+			return err
+		}
+		ap, err := credibilityAssessmentProto(c, a)
+		if err != nil {
+			return err
+		}
+		out = &engine.UpsertSourceCredibilityAssessmentResponse{Assessment: ap}
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	ap, err := credibilityAssessmentProto(c, a)
-	if err != nil {
-		return nil, err
-	}
-	return proto.Marshal(&engine.UpsertSourceCredibilityAssessmentResponse{Assessment: ap})
+	return proto.Marshal(out)
 }
 
 func resolveCredibilityGradeID(c *database.Catalog, req *engine.UpsertSourceCredibilityAssessmentRequest) ([]byte, error) {

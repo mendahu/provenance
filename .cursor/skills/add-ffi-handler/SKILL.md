@@ -49,9 +49,16 @@ Run `CGO_ENABLED=1 go test ./api/ffi/...`.
 
 User-visible handler failures must return `core/apperr` coded errors (sentinels or `apperr.New`). Add a matching `L10n.Errors` / String Catalog entry for any new code. `provenencia_call` status 1 encodes protobuf `Error`, not English text.
 
+## Catalog RPCs
+
+Any handler that reads or mutates `provenencia.sqlite` must use **`withProjectCatalog`** (→ `catalogsession.Do`). Do **not** open-per-call with `database.Open` / `onboarding.OpenCatalog` / `defer Close`.
+
+Follow `.cursor/skills/use-catalog-session/SKILL.md`. Identity-only RPCs (install identity, active project file) do not need a catalog session.
+
 ## Do not
 
 - Grow `dispatch.go` with unmarshal or domain logic (unknown-method → `apperr` is OK)
 - Add handler tests under `api/ffi/` itself (except router / EncodeError tests)
 - Hardcode Application Support / Documents in Go
 - Return English user-facing `errors.New("…")` from handlers or core for UI paths
+- Open the catalog outside `withProjectCatalog` / `catalogsession` in FFI handlers
