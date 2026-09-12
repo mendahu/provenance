@@ -1,10 +1,10 @@
 # Catalog access serialization (and related DB interface performance)
 
-**Status:** PR1 + PR2 done. Go holds/serializes the catalog (`core/catalogsession`); Mac opens on first catalog RPC and closes via `GenealogyStore.closeCatalogSession` on workspace leave (no `isCatalogReady` gate). Optional PR3 (hardening / concurrent Swift stress) remains. Not part of Spike 3. Related: [`archive/aggregate-workspace-nav-counts.md`](archive/aggregate-workspace-nav-counts.md).
+**Status:** done — archived after PR1–PR3. Go holds/serializes the catalog (`core/catalogsession`); Mac opens on first catalog RPC and closes via `GenealogyStore.closeCatalogSession` on workspace leave (no `isCatalogReady` gate); badge refresh surfaces failures; FakeStore overlap coverage. Not part of Spike 3. Related: [`aggregate-workspace-nav-counts.md`](aggregate-workspace-nav-counts.md).
 
 ## Problem
 
-### What happened before (pre-session)
+### What used to happen (pre-session)
 
 Every catalog FFI handler **used to** do **open → work → close**:
 
@@ -16,31 +16,31 @@ Swift feature  →  GoStore.provenenciaCall (Task.detached, parallel-friendly)
                  →  defer Close()
 ```
 
-The catalog is an **exclusive** connection (`MaxOpenConns=1`, WAL, `busy_timeout` 100ms). A second open while the first is held fails as `catalog.already_open` (busy/locked), not “wait your turn.”
+The catalog was an **exclusive** connection (`MaxOpenConns=1`, WAL, `busy_timeout` 100ms). A second open while the first was held failed as `catalog.already_open` (busy/locked), not “wait your turn.”
 
-Swift does **not** serialize store calls. Feature models independently `async` load, refresh badges, mutate, ensure thumbs, etc. They collide.
+Swift did **not** serialize store calls. Feature models independently `async` loaded, refreshed badges, mutated, ensured thumbs, etc. They collided.
 
-### What researchers / dogfood already see
+### What researchers / dogfood used to see
 
 - Cold launch: nav-count refresh raced destination `load()` → empty badges and/or empty lists
-- Workspace **gates** content until `CatalogCounts.refreshAll()` finishes (`WorkspaceView.isCatalogReady`) — a **UI coordination band-aid** for one race, not a general fix
-- Any later overlap (section switch + counts publish, two panes, refresh + save, omnibar search + list load, …) can hit the same wall
-- Failures are often soft (`try?` on counts; partial loads) → silent empties instead of a clear “catalog busy”
+- Workspace **gated** content until `CatalogCounts.refreshAll()` finished (`WorkspaceView.isCatalogReady`) — a **UI coordination band-aid** for one race, not a general fix
+- Any later overlap (section switch + counts publish, two panes, refresh + save, omnibar search + list load, …) could hit the same wall
+- Failures were often soft (`try?` on counts; partial loads) → silent empties instead of a clear “catalog busy”
 
-### Product smell
+### Product smell (why we changed it)
 
-Feature authors should be able to say “load my Sources” / “refresh badges” / “save this note” **without** knowing who else is talking to SQLite. Concurrency of catalog access is a **platform concern**. Today every screen is one more accidental participant in a locking protocol.
+Feature authors should be able to say “load my Sources” / “refresh badges” / “save this note” **without** knowing who else is talking to SQLite. Concurrency of catalog access is a **platform concern**. Before the session, every screen was one more accidental participant in a locking protocol.
 
-### Performance worry (maybe we’re doing this wrong)
+### Performance worry (why open-per-RPC was wrong)
 
-Even when calls don’t collide, **open-per-RPC is heavy**:
+Even when calls did not collide, **open-per-RPC was heavy**:
 
 - Exclusive lock + immediate transaction setup/teardown on **every** small read
 - Appear-time and navigation fan out into many opens (partially mitigated by `GetWorkspaceNavCounts`, still open-per-call elsewhere)
-- cgo + SQLite open cost dominates tiny `SELECT`s
-- Feels cumbersome and slow for a local desktop app with one user and one project
+- cgo + SQLite open cost dominated tiny `SELECT`s
+- Felt cumbersome and slow for a local desktop app with one user and one project
 
-The exclusive **single-writer** rule for the *project directory* (no second Provenencia process) is still right. Burning that into **open-per-FFI-call with fail-fast busy** may be the wrong *in-process* shape.
+The exclusive **single-writer** rule for the *project directory* (no second Provenencia process) was still right. Burning that into **open-per-FFI-call with fail-fast busy** was the wrong *in-process* shape.
 
 ## Goal
 
@@ -189,21 +189,22 @@ One *job*, **two reviewable PRs** (optional third). Not one mega-PR, and not a l
 | --- | --- | --- |
 | **1 — Go session + serial queue + all handlers** | **Done:** held catalog session (`core/catalogsession`); Go mutex/serial queue; every catalog FFI path uses the session; `METHOD_CLOSE_CATALOG_SESSION`; SignOut / RemoveActiveProject / OpenProject close sessions; Go tests for overlapping calls and close/switch | Core is correct and open is amortized |
 | **2 — Mac lifecycle** | **Done:** `GenealogyStore.closeCatalogSession`; close on `WorkspaceView.onDisappear`; drop `isCatalogReady`; FakeStore session flags + tests. Enter = first catalog RPC (no `OpenCatalogSession` FFI) | Features can overlap `async` store calls end-to-end without UI lock gates |
-| **3 (optional)** | Hardening: concurrent Swift stress tests, clearer errors if anything bypasses the session, stack/client-pattern polish | Polish |
+| **3 (optional)** | **Done:** `CatalogCounts.lastRefreshError` + workspace danger toast; `already_open` L10n as bypass/bug copy; FakeStore held flags on common catalog entry points + TaskGroup overlap / refresh-error tests; idea + Spike 3 / skill polish | Polish complete |
 
 **Do not** split PR 1 into “half the handlers” unless a single doorway *forbids* non-session opens — a hybrid open-per-call + session world is worse than today’s races.
 
 **Do not** ship “serialize opens only” as the lasting architecture if A+B is the locked minimum. A short-lived queue-around-`Open` on a branch is fine only as a stepping stone toward the session, not the end state.
 
-After A+B is live: **measure** queue wait vs query time. **Direction C** batching and **B3** multi-reader stay deferred (see Non-goals).
+After A+B is live: **measure** queue wait vs query time if needed. **Direction C** batching and **B3** multi-reader stay deferred (see Non-goals).
 
 ## Open questions
 
 - Session keyed by `projectDir` string vs future `project.uuid`?
 - Multi-window: one shared session per project, or one window until later?
-- Optional A1 Swift façade on top of A2+B, or Go session API alone?
 
 **Settled (PR2):** workspace enter = first catalog store call (no `OpenCatalogSession` FFI); leave = `closeCatalogSession` from `WorkspaceView.onDisappear`.
+
+**Settled (PR3):** Optional **A1** Swift façade on `GoStore` is **deferred** — Go **A2** alone is the load-bearing contract.
 
 ## Non-goals (while parked)
 
@@ -215,8 +216,8 @@ After A+B is live: **measure** queue wait vs query time. **Direction C** batchin
 
 ## Related docs
 
-- [`.cursor/skills/use-catalog-session/SKILL.md`](../../.cursor/skills/use-catalog-session/SKILL.md) — agent how-to for `Do` / FFI `withProjectCatalog`
-- [`application-stack.md`](../application-stack.md) §10 / §12 (WAL, pool, single writer, held session)
-- [`archive/aggregate-workspace-nav-counts.md`](archive/aggregate-workspace-nav-counts.md)
-- [`macos-client-patterns.md`](../macos-client-patterns.md) (`GenealogyStore` / FakeStore)
+- [`.cursor/skills/use-catalog-session/SKILL.md`](../../../.cursor/skills/use-catalog-session/SKILL.md) — agent how-to for `Do` / FFI `withProjectCatalog`
+- [`application-stack.md`](../../application-stack.md) §10 / §12 (WAL, pool, single writer, held session)
+- [`aggregate-workspace-nav-counts.md`](aggregate-workspace-nav-counts.md)
+- [`macos-client-patterns.md`](../../macos-client-patterns.md) (`GenealogyStore` / FakeStore)
 - Spike 3 omnibar will add more concurrent catalog traffic — strengthens the case for scheduling this nearby

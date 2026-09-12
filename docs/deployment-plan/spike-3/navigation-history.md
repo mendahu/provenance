@@ -157,7 +157,7 @@ Example history document:
 3. **History store** — array + index on `WorkspaceModel` (or a dedicated type it owns); **load/save** `navigation/{projectUuid}.json` under Application Support.
 4. **Navigate API** — `go(to:)`, `goBack()`, `goForward()`, `go(toIndex:)` for menu jumps; all sidebar/deep links call `go(to:)` so the stack stays honest.
 5. **Restore** — applying a location sets sidebar selection and feature-model selection/page (`openedSourceID`, vocabulary selection, …); feature models must accept “select this id” from outside (already partly true for vocabulary). Do **not** introduce SwiftUI `NavigationStack` / `NavigationPath` for workspace session history — keep driving the existing section switch + destination swaps.
-6. **Relaunch** — after project open (UUID known), apply persisted index location once models are ready (coordinate with catalog-ready gating so restore does not race empty loads).
+6. **Relaunch** — after project open (UUID known), apply persisted index location once models are ready (session traffic may overlap; do not reintroduce catalog-ready gating).
 7. **Toolbar chrome** — hoist Back/Forward, breadcrumbs, and omnibar into the main-column header per the board; strip Source-page local breadcrumbs.
 
 Omnibar and other cross-links become history-aware automatically once they use `go(to:)`.

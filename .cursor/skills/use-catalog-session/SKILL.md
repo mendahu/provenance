@@ -13,7 +13,7 @@ description: >-
 
 Researcher catalog access is a **held exclusive session** plus a **serial queue**, not open → work → close per RPC.
 
-Authoritative product note: [`docs/ideas/catalog-access-serialization.md`](../../../docs/ideas/catalog-access-serialization.md). Stack: [`docs/application-stack.md`](../../../docs/application-stack.md) §10 / §12.
+Authoritative product note: [`docs/ideas/archive/catalog-access-serialization.md`](../../../docs/ideas/archive/catalog-access-serialization.md). Stack: [`docs/application-stack.md`](../../../docs/application-stack.md) §10 / §12.
 
 ## Doorways
 
@@ -73,7 +73,8 @@ Means something **bypassed** the session (second `database.Open` while held). Ov
 - After FFI/`Do` use: `t.Cleanup(func() { _ = catalogsession.CloseAll() })` (`runRPC` already does this).
 - Assert against the catalog with `catalogsession.Do`, not `database.Open`, while a session may be held.
 - External test package (`catalogsession_test`) if the test imports `onboarding` (avoids import cycle).
-- Mac: `FakeStore` tracks `heldCatalogProjectDir` / `lastClosedCatalogProjectDir` (`CatalogSessionStoreTests`).
+- Mac: `FakeStore` tracks `heldCatalogProjectDir` / `lastClosedCatalogProjectDir` (`CatalogSessionStoreTests`). New catalog store entry points on FakeStore must call `markCatalogSessionHeld`.
+- Badge refresh (`CatalogCounts.refreshAll`) must not swallow errors silently — set `lastRefreshError` / surface via workspace toast.
 - Gate: `CGO_ENABLED=1 go test ./core/catalogsession/ ./core/onboarding/ ./api/ffi/...` and Mac ProvenenciaTests for store/workspace changes.
 
 ## Do not

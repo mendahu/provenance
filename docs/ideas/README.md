@@ -17,7 +17,6 @@ Use this folder when something useful pops up mid-work and would otherwise get l
 | Idea | One-liner |
 | --- | --- |
 | [Share packages](share-packages.md) | One-button export of a Source (or later a canonical entity) as a readable, standards-friendly bundle for other researchers. |
-| [Catalog access serialization](catalog-access-serialization.md) | PR1+PR2 done (Go session + Mac leave close); optional PR3 hardening. |
 | [File-type fallback thumbnails](file-type-fallback-thumbnails.md) | MIME glyphs + curated Source-type icons (fileless / cover) + Source primary Artifact thumbnail rollup. |
 | [Ingest MIME enforcement](ingest-mime-enforcement.md) | Allowlist media types at ingest so Artifact Files stay evidence-shaped, not arbitrary blobs. |
 
@@ -26,6 +25,7 @@ Use this folder when something useful pops up mid-work and would otherwise get l
 | Idea | One-liner |
 | --- | --- |
 | [Aggregate workspace nav counts](archive/aggregate-workspace-nav-counts.md) | `GetWorkspaceNavCounts` for sidebar badge counts (plus vocabulary origin splits) in one FFI open. |
+| [Catalog access serialization](archive/catalog-access-serialization.md) | Held exclusive catalog session + serial queue (PR1–PR3). |
 | [Image optimization](archive/image-optimization.md) | Async in-memory thumbnail cache + MIME extensions on `objects/…` so Finder/Preview work. |
 
 Completed ideas live in [`archive/`](archive/).

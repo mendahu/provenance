@@ -25,5 +25,5 @@ See [`navigation-history.md`](navigation-history.md) § Implementation posture a
 
 - Interpretation / Conclusion catalog work
 - Files list destination (descoped in Spike 2)
-- Catalog access serialization / DB performance ([ideas parking lot](../../ideas/catalog-access-serialization.md))
+- Catalog access serialization / DB performance ([archived idea](../../ideas/archive/catalog-access-serialization.md))
 - Short human project `ref` (unless a later spike needs one)

@@ -58,6 +58,8 @@ final class CatalogCounts {
     private(set) var files: Int?
     private(set) var sourceFields: CatalogCountSummary?
     private(set) var sourceTypes: CatalogCountSummary?
+    /// Set when `refreshAll` fails; cleared on the next successful refresh.
+    private(set) var lastRefreshError: String?
 
     private let projectDir: String
     private let store: any GenealogyStore
@@ -65,6 +67,10 @@ final class CatalogCounts {
     init(projectDir: String, store: any GenealogyStore) {
         self.projectDir = projectDir
         self.store = store
+    }
+
+    func clearRefreshError() {
+        lastRefreshError = nil
     }
 
     /// Sidebar badge for a nav destination.
@@ -95,15 +101,18 @@ final class CatalogCounts {
 
     /// Full badge refresh via `GetWorkspaceNavCounts`. Safe to overlap with
     /// destination `load()` — Go `catalogsession` serializes catalog ops.
-    /// This type does not own app-load state — callers decide when to refresh;
-    /// mutations use `publish*` instead of recounting.
+    /// Failures set `lastRefreshError` and leave badges unchanged (absent until
+    /// a later success). Mutations use `publish*` instead of recounting.
     func refreshAll() async {
-        guard let nav = try? await store.workspaceNavCounts(projectDir: projectDir) else {
-            return
+        do {
+            let nav = try await store.workspaceNavCounts(projectDir: projectDir)
+            sources = nav.sources
+            sourceTypes = CatalogCountSummary(nav.sourceTypes)
+            sourceFields = CatalogCountSummary(nav.sourceFields)
+            files = nav.files
+            lastRefreshError = nil
+        } catch {
+            lastRefreshError = L10n.Errors.message(for: error)
         }
-        sources = nav.sources
-        sourceTypes = CatalogCountSummary(nav.sourceTypes)
-        sourceFields = CatalogCountSummary(nav.sourceFields)
-        files = nav.files
     }
 }

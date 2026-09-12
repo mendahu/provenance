@@ -38,7 +38,7 @@ Views may format strings and enable/disable buttons. They must not open `provene
 
 ### Catalog session (workspace)
 
-Go holds one exclusive catalog session per open project and serializes FFI ops ([`docs/ideas/catalog-access-serialization.md`](ideas/catalog-access-serialization.md), `.cursor/skills/use-catalog-session/SKILL.md`).
+Go holds one exclusive catalog session per open project and serializes FFI ops ([`docs/ideas/archive/catalog-access-serialization.md`](ideas/archive/catalog-access-serialization.md), `.cursor/skills/use-catalog-session/SKILL.md`).
 
 - **Enter:** mount `WorkspaceView` and start catalog traffic (`CatalogCounts.refreshAll`, feature loads). First store call opens the session; do **not** gate content on badge refresh.
 - **Leave:** `WorkspaceView.onDisappear` calls `GenealogyStore.closeCatalogSession(projectDir:)`. Sign-out / project switch also close in Go.
